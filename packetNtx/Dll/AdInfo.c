@@ -563,8 +563,8 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	TmpAdInfo->Next = AdaptersInfoList;
 	AdaptersInfoList = TmpAdInfo;
 	
-SkipAd:
 	ReleaseMutex(AdaptersInfoMutex);
+SkipAd:
 
 	return TRUE;
 }
@@ -833,18 +833,16 @@ BOOLEAN PacketGetAdapters()
 		Status=RegOpenKeyEx(AdapKey, AdapName, 0, KEY_READ, &OneAdapKey);
 		if ( Status != ERROR_SUCCESS )
 		{
-			RegCloseKey(AdapKey);
 			ODS("PacketGetAdapters: RegOpenKeyEx ( OneAdapKey ) Failed\n");
-			return FALSE;
+			continue;			
 		}
 
 		Status=RegOpenKeyEx(OneAdapKey, L"Linkage", 0, KEY_READ, &LinkageKey);
 		if (Status != ERROR_SUCCESS)
 		{
 			RegCloseKey(OneAdapKey);
-			RegCloseKey(AdapKey);
 			ODS("PacketGetAdapters: RegOpenKeyEx ( LinkageKey ) Failed\n");
-			return FALSE;
+			continue;
 		}
 		
 		dim = sizeof(TName);
