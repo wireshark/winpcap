@@ -42,6 +42,7 @@
 
 #include <ntddndis.h>
 
+
 LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName);
 BOOL PacketAddFakeNdisWanAdapter();
 
@@ -62,7 +63,8 @@ extern dagc_finddevs_handler p_dagc_finddevs;
 extern dagc_freedevs_handler p_dagc_freedevs;
 #endif /* HAVE_DAG_API */
 
-extern TCHAR *szWindowTitle;
+/// Title of error windows
+TCHAR   szWindowTitle[] = TEXT("PACKET.DLL");
 
 ULONG inet_addrU(const WCHAR *cp);
 
@@ -959,9 +961,11 @@ nt4:
 	}
 	
 	else{
+#ifdef _WINNT4
 		MessageBox(NULL,TEXT("Can not find TCP/IP bindings.\nIn order to run the packet capture driver you must install TCP/IP."),szWindowTitle,MB_OK);
 		ODS("Cannot find the TCP/IP bindings");
 		return FALSE;
+#endif		
 	}
 	
 	return TRUE;

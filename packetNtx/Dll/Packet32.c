@@ -39,9 +39,6 @@ char PacketLibraryVersion[64];
 /// Current NPF.sys Version. It can be retrieved directly or through the PacketGetVersion() function.
 char PacketDriverVersion[64]; 
 
-/// Title of error windows
-TCHAR   szWindowTitle[] = TEXT("PACKET.DLL");
-
 //service handles
 SC_HANDLE scmHandle = NULL;
 SC_HANDLE srvHandle = NULL;
