@@ -36,3 +36,4 @@ EXPORTS
 		PacketSetDumpLimits
 		PacketIsDumpEnded
 		PacketSendPackets
+		PacketSetSnapLen
