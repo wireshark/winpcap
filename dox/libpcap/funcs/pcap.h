@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.16 2003/06/10 11:04:56 fulvio Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.17 2003/07/08 11:45:27 fulvio Exp $ (LBL)
  */
 
 
@@ -83,7 +83,7 @@
 
 \sa pcap_open_offline(), pcap_open_dead(), pcap_findalldevs(), pcap_close()
 */
-pcap_t *pcap_open_live(char *device, int snaplen, int promisc, int to_ms, char *ebuf);
+pcap_t *pcap_open_live(const char *device, int snaplen, int promisc, int to_ms, char *ebuf);
 
 
 /*!	\brief It creates a pcap_t structure without starting a capture.
@@ -158,7 +158,7 @@ char *pcap_lookupdev(char *errbuf);
 
 \sa pcap_findalldevs()
 */
-int pcap_lookupnet(char *device, bpf_u_int32 *netp, bpf_u_int32 *maskp, char *errbuf);
+int pcap_lookupnet(const char *device, bpf_u_int32 *netp, bpf_u_int32 *maskp, char *errbuf);
 
 
 //\}
@@ -467,7 +467,7 @@ The return value can be:
 
 \sa pcap_open_live(), pcap_loop(), pcap_dispatch(), pcap_handler()
 */
-int pcap_next_ex(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data);
+int pcap_next_ex(pcap_t *p, struct pcap_pkthdr **pkt_header, const u_char **pkt_data);
 
 
 /*! \brief <b>Win32 Specific.</b> Saves a capture to file.
