@@ -235,8 +235,7 @@ again:
 // another horrible difference...
 #ifdef linux
 		pthread_suspend(p->md.timeout);
-#endif
-#ifdef WIN32
+#else
 		pthread_suspend(p->timeout);
 #endif
 		// check if now if have data; otherwise returns
@@ -320,21 +319,21 @@ int active= 0;					// active mode or not?
 		rpcap_createhdr( &header, RPCAP_MSG_CLOSE, 0, 0);
 
 		// I don't check for errors, since I'm going to close everything
-		sock_send(fp->rmt_sockctrl, (char *) &header, sizeof (struct rpcap_header), fakeerrbuf);
+		sock_send(fp->rmt_sockctrl, (char *) &header, sizeof (struct rpcap_header), fakeerrbuf, PCAP_ERRBUF_SIZE);
 	}
 	else
 	{
 		rpcap_createhdr( &header, RPCAP_MSG_ENDCAP_REQ, 0, 0);
 
 		// I don't check for errors, since I'm going to close everything
-		sock_send(fp->rmt_sockctrl, (char *) &header, sizeof (struct rpcap_header), fakeerrbuf);
+		sock_send(fp->rmt_sockctrl, (char *) &header, sizeof (struct rpcap_header), fakeerrbuf, PCAP_ERRBUF_SIZE);
 
 		// wait for the answer
 		// Don't check what we got, since the present libpcap does not uses this pcap_t anymore
-		sock_recv(fp->rmt_sockctrl, (char *) &header, sizeof(struct rpcap_header), fakeerrbuf);
+		sock_recv(fp->rmt_sockctrl, (char *) &header, sizeof(struct rpcap_header), SOCK_RECEIVEALL_YES, fakeerrbuf, PCAP_ERRBUF_SIZE);
 
 		if ( ntohl(header.plen) != 0)
-			sock_discard(fp->rmt_sockctrl, ntohl(header.plen), fakeerrbuf);
+			sock_discard(fp->rmt_sockctrl, ntohl(header.plen), fakeerrbuf, PCAP_ERRBUF_SIZE);
 	}
 
 
@@ -346,12 +345,12 @@ int active= 0;					// active mode or not?
 
 	if (fp->rmt_sockdata)
 	{
-		sock_close(fp->rmt_sockdata, fakeerrbuf);
+		sock_close(fp->rmt_sockdata, fakeerrbuf, PCAP_ERRBUF_SIZE);
 		fp->rmt_sockdata= 0;
 	}
 
 	if ( (!active) && (fp->rmt_sockctrl) )
-		sock_close(fp->rmt_sockctrl, fakeerrbuf);
+		sock_close(fp->rmt_sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
 
 	fp->rmt_sockctrl= 0;
 
@@ -441,11 +440,11 @@ int retval;							// temp variable which stores functions return value
 	rpcap_createhdr(&header, RPCAP_MSG_STATS_REQ, 0, 0);
 
 	// Send the PCAP_STATS command
-	if (sock_send(p->rmt_sockctrl, (char *) &header, sizeof (struct rpcap_header), p->errbuf) )
+	if (sock_send(p->rmt_sockctrl, (char *) &header, sizeof (struct rpcap_header), p->errbuf, PCAP_ERRBUF_SIZE) )
 		goto error;
 
 	// Receive the RPCAP stats reply message
-	if (sock_recv(p->rmt_sockctrl, (char *) &header, sizeof(struct rpcap_header), p->errbuf) == -1)
+	if (sock_recv(p->rmt_sockctrl, (char *) &header, sizeof(struct rpcap_header), SOCK_RECEIVEALL_YES, p->errbuf, PCAP_ERRBUF_SIZE) == -1)
 		goto error;
 
 	// Checks if the message is correct
@@ -475,7 +474,7 @@ int retval;							// temp variable which stores functions return value
 		}
 	}
 
-	if ( (nread= sock_recv(p->rmt_sockctrl, (char *) &netstats, sizeof(struct rpcap_stats), p->errbuf)) == -1)
+	if ( (nread= sock_recv(p->rmt_sockctrl, (char *) &netstats, sizeof(struct rpcap_stats), SOCK_RECEIVEALL_YES, p->errbuf, PCAP_ERRBUF_SIZE)) == -1)
 		goto error;
 
 	if (mode == PCAP_STATS_STANDARD)
@@ -497,7 +496,7 @@ int retval;							// temp variable which stores functions return value
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))
 	{
-		if (sock_discard(p->rmt_sockctrl, ntohl(header.plen) - nread, fakeerrbuf) == 1)
+		if (sock_discard(p->rmt_sockctrl, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE) == 1)
 			goto error;
 	}
 
@@ -505,7 +504,7 @@ int retval;							// temp variable which stores functions return value
 
 error:
 	if (nread != ntohl(header.plen))
-		sock_discard(p->rmt_sockctrl, ntohl(header.plen) - nread, fakeerrbuf);
+		sock_discard(p->rmt_sockctrl, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE);
 
 	return NULL;
 }
@@ -589,7 +588,7 @@ struct rpcap_openreply openreply;	// open reply message
 
 	// Warning: this call can be the first one called by the user.
 	// For this reason, we have to initialize the WinSock support.
-	if (sock_init(errbuf) == -1)
+	if (sock_init(errbuf, PCAP_ERRBUF_SIZE) == -1)
 		return NULL;
 
 	retval= rpcap_remoteact_getsock(host, errbuf);
@@ -612,17 +611,17 @@ struct rpcap_openreply openreply;	// open reply message
 		if ( (ctrlport == NULL) || (ctrlport[0] == 0) )
 		{
 			// the user chose not to specify the port
-			if (sock_validaddr(host, RPCAP_DEFAULT_NETPORT, &hints, &addrinfo, errbuf) == -1)
+			if (sock_initaddress(host, RPCAP_DEFAULT_NETPORT, &hints, &addrinfo, errbuf, PCAP_ERRBUF_SIZE) == -1)
 				return NULL;
 		}
 		else
 		{
 			// the user chose not to specify the port
-			if (sock_validaddr(host, ctrlport, &hints, &addrinfo, errbuf) == -1)
+			if (sock_initaddress(host, ctrlport, &hints, &addrinfo, errbuf, PCAP_ERRBUF_SIZE) == -1)
 				return NULL;
 		}
 
-		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf)) == -1)
+		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 			goto error;
 
 		freeaddrinfo(addrinfo);
@@ -635,19 +634,21 @@ struct rpcap_openreply openreply;	// open reply message
 
 	// Now it's time to start playing with the RPCAP protocol
 	// RPCAP open command: create the request message
-	if ( sock_bufferize(NULL, sizeof(struct rpcap_header), NULL, &sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, errbuf) )
+	if ( sock_bufferize(NULL, sizeof(struct rpcap_header), NULL, 
+		&sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, errbuf, PCAP_ERRBUF_SIZE) )
 		goto error;
 
 	rpcap_createhdr( (struct rpcap_header *) sendbuf, RPCAP_MSG_OPEN_REQ, 0, strlen(iface) );
 
-	if ( sock_bufferize(iface, strlen(iface), sendbuf, &sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_BUFFERIZE, errbuf) )
+	if ( sock_bufferize(iface, strlen(iface), sendbuf, &sendbufidx, 
+		RPCAP_NETBUF_SIZE, SOCKBUF_BUFFERIZE, errbuf, PCAP_ERRBUF_SIZE) )
 		goto error;
 
-	if ( sock_send(sockctrl, sendbuf, sendbufidx, errbuf) )
+	if ( sock_send(sockctrl, sendbuf, sendbufidx, errbuf, PCAP_ERRBUF_SIZE) )
 		goto error;
 
 	// Receive the RPCAP open reply message
-	if (sock_recv(sockctrl, (char *) &header, sizeof(struct rpcap_header), errbuf) == -1)
+	if (sock_recv(sockctrl, (char *) &header, sizeof(struct rpcap_header), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) == -1)
 		goto error;
 
 	// Checks if the message is correct
@@ -677,7 +678,7 @@ struct rpcap_openreply openreply;	// open reply message
 	}
 
 
-	if ( (nread+= sock_recv(sockctrl, (char *) &openreply, sizeof(struct rpcap_openreply), errbuf)) == -1)
+	if ( (nread+= sock_recv(sockctrl, (char *) &openreply, sizeof(struct rpcap_openreply), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 		goto error;
 
 	// Allocates a pcap_t struct for this end of the connection
@@ -700,7 +701,7 @@ struct rpcap_openreply openreply;	// open reply message
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))
 	{
-		if (sock_discard(sockctrl, ntohl(header.plen) - nread, fakeerrbuf) == 1)
+		if (sock_discard(sockctrl, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE) == 1)
 			goto error;
 	}
 	return fp;
@@ -713,13 +714,13 @@ error:
 
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))
-		sock_discard(sockctrl, ntohl(header.plen) - nread, fakeerrbuf);
+		sock_discard(sockctrl, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE);
 
 	if (addrinfo)
 		freeaddrinfo(addrinfo);
 
 	if (!active)
-		sock_close(sockctrl, fakeerrbuf);
+		sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
 
 	if (fp)
 	{
@@ -836,10 +837,11 @@ struct rpcap_startcapreply startcapreply;	// start capture reply message
 		hints.ai_flags = AI_PASSIVE;	// Data connection is opened by the server toward the client
 
 		// Let's the server pick up a free network port for us
-		if (sock_validaddr(NULL, "0", &hints, &addrinfo, fp->errbuf) == -1)
+		if (sock_initaddress(NULL, "0", &hints, &addrinfo, fp->errbuf, PCAP_ERRBUF_SIZE) == -1)
 			goto error;
 
-		if ( (sockdata= sock_open(addrinfo, SOCKOPEN_SERVER, 1 /* max 1 connection in queue */, fp->errbuf)) == -1)
+		if ( (sockdata= sock_open(addrinfo, SOCKOPEN_SERVER, 
+			1 /* max 1 connection in queue */, fp->errbuf, PCAP_ERRBUF_SIZE)) == -1)
 			goto error;
 
 		// addrinfo is no longer used
@@ -865,7 +867,8 @@ struct rpcap_startcapreply startcapreply;	// start capture reply message
 
 	// Now it's time to start playing with the RPCAP protocol
 	// RPCAP start ca[ture command: create the request message
-	if ( sock_bufferize(NULL, sizeof(struct rpcap_header), NULL, &sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, fp->errbuf) )
+	if ( sock_bufferize(NULL, sizeof(struct rpcap_header), NULL, 
+		&sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, fp->errbuf, PCAP_ERRBUF_SIZE) )
 		goto error;
 
 	rpcap_createhdr( (struct rpcap_header *) sendbuf, RPCAP_MSG_STARTCAP_REQ, 0,
@@ -874,7 +877,8 @@ struct rpcap_startcapreply startcapreply;	// start capture reply message
 	// Fill the structure needed to open an adapter remotely
 	startcapreq= (struct rpcap_startcapreq *) &sendbuf[sendbufidx];
 
-	if ( sock_bufferize(NULL, sizeof(struct rpcap_startcapreq), NULL, &sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, fp->errbuf) )
+	if ( sock_bufferize(NULL, sizeof(struct rpcap_startcapreq), NULL, 
+		&sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, fp->errbuf, PCAP_ERRBUF_SIZE) )
 		goto error;
 
 	memset(startcapreq, 0, sizeof(struct rpcap_startcapreq) );
@@ -883,8 +887,7 @@ struct rpcap_startcapreply startcapreply;	// start capture reply message
 #ifdef linux
 	fp->md.timeout= fp->md.timeout/2;
 	startcapreq->read_timeout= htonl(fp->md.timeout);
-#endif
-#ifdef WIN32
+#else
 	fp->timeout= fp->timeout/2;
 	startcapreq->read_timeout= htonl(fp->timeout);
 #endif
@@ -911,12 +914,12 @@ struct rpcap_startcapreply startcapreply;	// start capture reply message
 	if (pcap_pack_bpffilter(fp, &sendbuf[sendbufidx], &sendbufidx, &fp->fcode) )
 		goto error;
 
-	if ( sock_send(fp->rmt_sockctrl, sendbuf, sendbufidx, fp->errbuf) )
+	if ( sock_send(fp->rmt_sockctrl, sendbuf, sendbufidx, fp->errbuf, PCAP_ERRBUF_SIZE) )
 		goto error;
 
 
 	// Receive the RPCAP start capture reply message
-	if (sock_recv(fp->rmt_sockctrl, (char *) &header, sizeof(struct rpcap_header), fp->errbuf) == -1)
+	if (sock_recv(fp->rmt_sockctrl, (char *) &header, sizeof(struct rpcap_header), SOCK_RECEIVEALL_YES, fp->errbuf, PCAP_ERRBUF_SIZE) == -1)
 		goto error;
 
 	// Checks if the message is correct
@@ -946,7 +949,8 @@ struct rpcap_startcapreply startcapreply;	// start capture reply message
 	}
 
 
-	if ( (nread+= sock_recv(fp->rmt_sockctrl, (char *) &startcapreply, sizeof(struct rpcap_startcapreply), fp->errbuf)) == -1)
+	if ( (nread+= sock_recv(fp->rmt_sockctrl, (char *) &startcapreply, 
+		sizeof(struct rpcap_startcapreply), SOCK_RECEIVEALL_YES, fp->errbuf, PCAP_ERRBUF_SIZE)) == -1)
 		goto error;
 
 	// Data connection is opened by the client toward the server
@@ -961,10 +965,10 @@ struct rpcap_startcapreply startcapreply;	// start capture reply message
 		sprintf(portdata, "%d", ntohs(startcapreply.portdata) );
 
 		// Let's the server pick up a free network port for us
-		if (sock_validaddr(host, portdata, &hints, &addrinfo, fp->errbuf) == -1)
+		if (sock_initaddress(host, portdata, &hints, &addrinfo, fp->errbuf, PCAP_ERRBUF_SIZE) == -1)
 			goto error;
 
-		if ( (sockdata= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, fp->errbuf)) == -1)
+		if ( (sockdata= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, fp->errbuf, PCAP_ERRBUF_SIZE)) == -1)
 			goto error;
 
 		// addrinfo is no longer used
@@ -1012,7 +1016,7 @@ struct rpcap_startcapreply startcapreply;	// start capture reply message
 		}
 
 		// Now that I accepted the connection, the server socket is no longer needed
-		sock_close(sockdata, fp->errbuf);
+		sock_close(sockdata, fp->errbuf, PCAP_ERRBUF_SIZE);
 		sockdata= socktemp;
 	}
 
@@ -1041,7 +1045,7 @@ struct rpcap_startcapreply startcapreply;	// start capture reply message
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))
 	{
-		if (sock_discard(fp->rmt_sockctrl, ntohl(header.plen) - nread, fakeerrbuf) == 1)
+		if (sock_discard(fp->rmt_sockctrl, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE) == 1)
 			goto error;
 	}
 	return 0;
@@ -1054,16 +1058,16 @@ error:
 
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))
-		sock_discard(fp->rmt_sockctrl, ntohl(header.plen) - nread, fakeerrbuf);
+		sock_discard(fp->rmt_sockctrl, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE);
 
 	if (threaddata)
 		pthread_cancel(threaddata);
 
 	if ((sockdata) && (sockdata != -1))		// we can be here because sockdata said 'error'
-		sock_close(sockdata, fakeerrbuf);
+		sock_close(sockdata, fakeerrbuf, PCAP_ERRBUF_SIZE);
 
 	if (!active)
-		sock_close(fp->rmt_sockctrl, fakeerrbuf);
+		sock_close(fp->rmt_sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
 
 	if (fp)
 	{
@@ -1110,13 +1114,15 @@ unsigned int i;
 
 	filter= (struct rpcap_filter *) sendbuf;
 
-	if ( sock_bufferize(NULL, sizeof(struct rpcap_filter), NULL, sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, fp->errbuf) )
+	if ( sock_bufferize(NULL, sizeof(struct rpcap_filter), NULL, sendbufidx, 
+		RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, fp->errbuf, PCAP_ERRBUF_SIZE) )
 		return -1;
 
 	filter->filtertype= htons(RPCAP_UPDATEFILTER_BPF);
 	filter->nitems= htonl( (int32) prog->bf_len);
 
-	if ( sock_bufferize(NULL, prog->bf_len * sizeof(struct rpcap_filterbpf_insn), NULL, sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, fp->errbuf) )
+	if ( sock_bufferize(NULL, prog->bf_len * sizeof(struct rpcap_filterbpf_insn), 
+		NULL, sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, fp->errbuf, PCAP_ERRBUF_SIZE) )
 		return -1;
 	
 	insn= (struct rpcap_filterbpf_insn *) (filter + 1);
@@ -1166,7 +1172,8 @@ int sendbufidx= 0;				// index which keeps the number of bytes currently buffere
 struct rpcap_header header;		// To keep the reply message
 
 
-	if ( sock_bufferize(NULL, sizeof(struct rpcap_header), NULL, &sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, fp->errbuf) )
+	if ( sock_bufferize(NULL, sizeof(struct rpcap_header), NULL, &sendbufidx, 
+		RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, fp->errbuf, PCAP_ERRBUF_SIZE) )
 		return -1;
 
 	rpcap_createhdr( (struct rpcap_header *) sendbuf, RPCAP_MSG_UPDATEFILTER_REQ, 0,
@@ -1175,11 +1182,11 @@ struct rpcap_header header;		// To keep the reply message
 	if (pcap_pack_bpffilter(fp, &sendbuf[sendbufidx], &sendbufidx, prog) )
 		return -1;
 
-	if ( sock_send(fp->rmt_sockctrl, sendbuf, sendbufidx, fp->errbuf) )
+	if ( sock_send(fp->rmt_sockctrl, sendbuf, sendbufidx, fp->errbuf, PCAP_ERRBUF_SIZE) )
 		return -1;
 
 	// Waits for the answer
-	if (sock_recv(fp->rmt_sockctrl, (char *) &header, sizeof(struct rpcap_header), fp->errbuf) == -1)
+	if (sock_recv(fp->rmt_sockctrl, (char *) &header, sizeof(struct rpcap_header), SOCK_RECEIVEALL_YES, fp->errbuf, PCAP_ERRBUF_SIZE) == -1)
 		return -1;
 
 	// Checks if the message is correct
@@ -1205,7 +1212,7 @@ struct rpcap_header header;		// To keep the reply message
 
 	if (ntohl(header.plen) != 0)	// the message has an unexpected size
 	{
-		if (sock_discard(fp->rmt_sockctrl, ntohl(header.plen), fp->errbuf) == -1)
+		if (sock_discard(fp->rmt_sockctrl, ntohl(header.plen), fp->errbuf, PCAP_ERRBUF_SIZE) == -1)
 			return -1;
 	}
 
@@ -1399,7 +1406,7 @@ again:
 					// I'm going to read a new packet; so I reset the number of bytes (payload only) read
 					nread= 0;
 
-					if (sock_recv(fp->rmt_sockdata, (char *) &header, sizeof(struct rpcap_header), errbuf) == -1)
+					if (sock_recv(fp->rmt_sockdata, (char *) &header, sizeof(struct rpcap_header), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) == -1)
 						goto error;
 
 					// Checks if the message is correct
@@ -1425,7 +1432,8 @@ again:
 					}
 
 					// Read the RPCAP packet header from the network
-					if ( (nread= sock_recv(fp->rmt_sockdata, (char *) &net_pkt_header, sizeof(struct rpcap_pkthdr), errbuf)) == -1)
+					if ( (nread= sock_recv(fp->rmt_sockdata, (char *) &net_pkt_header, 
+						sizeof(struct rpcap_pkthdr), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 						goto error;
 				}
 
@@ -1444,7 +1452,8 @@ again:
 					fp->md.TotCapt++;
 
 					// Copies the packet into the data buffer
-					if ( (nread+= sock_recv(fp->rmt_sockdata, (char *) bp + sizeof(struct pcap_pkthdr), pkt_header->caplen, errbuf)) == -1)
+					if ( (nread+= sock_recv(fp->rmt_sockdata, (char *) bp + sizeof(struct pcap_pkthdr), pkt_header->caplen, 
+						SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 						goto error;
 
 					bp += BPF_WORDALIGN(pkt_header->caplen + sizeof(struct pcap_pkthdr));
@@ -1452,7 +1461,7 @@ again:
 
 					// Checks if all the data has been read; if not, discard the data in excess
 					if (nread != ntohl(header.plen))
-						sock_discard(fp->rmt_sockdata, ntohl(header.plen) - nread, fakeerrbuf);
+						sock_discard(fp->rmt_sockdata, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE);
 
 				}
 				else
@@ -1579,7 +1588,7 @@ again:
 				if (!pending)
 				{
 					// Read the entire message from the network
-					if (sock_recv_dgram(fp->rmt_sockdata, netbuf, RPCAP_NETBUF_SIZE, errbuf) == -1)
+					if (sock_recv(fp->rmt_sockdata, netbuf, RPCAP_NETBUF_SIZE, SOCK_RECEIVEALL_NO, errbuf, PCAP_ERRBUF_SIZE) == -1)
 						goto error;
 					header= (struct rpcap_header *) netbuf;
 
@@ -1717,13 +1726,15 @@ uint16 length;
 
 	rpcap_createhdr( (struct rpcap_header *) sendbuf, RPCAP_MSG_ERROR, errcode, length);
 
-	if ( sock_bufferize(NULL, sizeof(struct rpcap_header), NULL, &sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, errbuf) )
+	if ( sock_bufferize(NULL, sizeof(struct rpcap_header), NULL, &sendbufidx, 
+		RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, errbuf, PCAP_ERRBUF_SIZE) )
 		return -1;
 
-	if ( sock_bufferize(error, length, sendbuf, &sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_BUFFERIZE, errbuf) )
+	if ( sock_bufferize(error, length, sendbuf, &sendbufidx, 
+		RPCAP_NETBUF_SIZE, SOCKBUF_BUFFERIZE, errbuf, PCAP_ERRBUF_SIZE) )
 		return -1;
 
-	if ( sock_send(sock, sendbuf, sendbufidx, errbuf) )
+	if ( sock_send(sock, sendbuf, sendbufidx, errbuf, PCAP_ERRBUF_SIZE) )
 		return -1;
 
 	return 0;
@@ -1787,14 +1798,16 @@ int retval;							// temp variable which stores functions return value
 	}
 
 
-	if ( sock_bufferize(NULL, sizeof(struct rpcap_header), NULL, &sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, errbuf) )
+	if ( sock_bufferize(NULL, sizeof(struct rpcap_header), NULL, 
+		&sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, errbuf, PCAP_ERRBUF_SIZE) )
 		return -1;
 
 	rpcap_createhdr( (struct rpcap_header *) sendbuf, RPCAP_MSG_AUTH_REQ, 0, length);
 
 	rpauth= (struct rpcap_auth *) &sendbuf[sendbufidx];
 
-	if ( sock_bufferize(NULL, sizeof(struct rpcap_auth), NULL, &sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, errbuf) )
+	if ( sock_bufferize(NULL, sizeof(struct rpcap_auth), NULL, 
+		&sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, errbuf, PCAP_ERRBUF_SIZE) )
 		return -1;
 
 	memset(rpauth, 0, sizeof (struct rpcap_auth) );
@@ -1809,7 +1822,8 @@ int retval;							// temp variable which stores functions return value
 		else
 			rpauth->slen1= 0;
 
-		if ( sock_bufferize(auth->username, rpauth->slen1, sendbuf, &sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_BUFFERIZE, errbuf) )
+		if ( sock_bufferize(auth->username, rpauth->slen1, sendbuf, 
+			&sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_BUFFERIZE, errbuf, PCAP_ERRBUF_SIZE) )
 			return -1;
 
 		if (auth->password)
@@ -1817,17 +1831,18 @@ int retval;							// temp variable which stores functions return value
 		else
 			rpauth->slen2= 0;
 
-		if ( sock_bufferize(auth->password, rpauth->slen2, sendbuf, &sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_BUFFERIZE, errbuf) )
+		if ( sock_bufferize(auth->password, rpauth->slen2, sendbuf, 
+			&sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_BUFFERIZE, errbuf, PCAP_ERRBUF_SIZE) )
 			return -1;
 
 		rpauth->slen1= htons (rpauth->slen1);
 		rpauth->slen2= htons (rpauth->slen2);
 	}
 
-	if ( sock_send(sock, sendbuf, sendbufidx, errbuf) )
+	if ( sock_send(sock, sendbuf, sendbufidx, errbuf, PCAP_ERRBUF_SIZE) )
 		return -1;
 
-	if ( sock_recv(sock, (char *) &header, sizeof(struct rpcap_header), errbuf) == -1)
+	if ( sock_recv(sock, (char *) &header, sizeof(struct rpcap_header), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) == -1)
 		return -1;
 
 	retval= rpcap_checkmsg(errbuf, sock, &header, RPCAP_MSG_AUTH_REPLY, RPCAP_MSG_ERROR, 0);
@@ -1857,7 +1872,7 @@ int retval;							// temp variable which stores functions return value
 
 	if (ntohl(header.plen) )
 	{
-		if (sock_discard(sock, ntohl(header.plen), errbuf) )
+		if (sock_discard(sock, ntohl(header.plen), errbuf, PCAP_ERRBUF_SIZE) )
 			return -1;
 	}
 	
@@ -1974,16 +1989,17 @@ int32 len;
 
 			if (len >= PCAP_ERRBUF_SIZE)
 			{
-				if (sock_recv(sock, errbuf, PCAP_ERRBUF_SIZE -1, errbuf) )
+				if (sock_recv(sock, errbuf, PCAP_ERRBUF_SIZE - 1, SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) )
 					return -3;
-				sock_discard(sock, len - (PCAP_ERRBUF_SIZE - 1), fakeerrbuf);
+
+				sock_discard(sock, len - (PCAP_ERRBUF_SIZE - 1), fakeerrbuf, PCAP_ERRBUF_SIZE);
 
 				// Put '\0' at the end of the string
 				errbuf[PCAP_ERRBUF_SIZE - 1]= 0;
 			}
 			else
 			{
-				if (sock_recv(sock, errbuf, len, errbuf) == -1)
+				if (sock_recv(sock, errbuf, len, SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) == -1)
 					return -3;
 
 				// Put '\0' at the end of the string
@@ -2006,7 +2022,7 @@ int32 len;
 	}
 
 	// we already have an error, so please discard this one
-	sock_discard(sock, ntohl(header->plen), fakeerrbuf);
+	sock_discard(sock, ntohl(header->plen), fakeerrbuf, PCAP_ERRBUF_SIZE);
 
 	snprintf(errbuf, PCAP_ERRBUF_SIZE, "The other endpoint sent a message that is not allowed here.");
 	SOCK_ASSERT(errbuf, 1);
@@ -2054,7 +2070,7 @@ int rpcap_checkver(SOCKET sock, struct rpcap_header *header, char *errbuf)
 		snprintf(errbuf, PCAP_ERRBUF_SIZE, "Incompatible version number: message discarded.");
 
 		// we already have an error, so please discard this one
-		sock_discard(sock, ntohl(header->plen), fakeerrbuf);
+		sock_discard(sock, ntohl(header->plen), fakeerrbuf, PCAP_ERRBUF_SIZE);
 		return -1;
 	}
 

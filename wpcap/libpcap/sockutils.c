@@ -32,22 +32,26 @@
 
 
 
+/*!
+	\file sockutils.c
+
+	The goal of this file it to privide a common set of primitives for socket manipulation.
+	Although the socket interface defined in the RFC 2553 (and its updates) is excellent, several
+	minor issues are still hidden in supporting several operating systems.
+
+	These calls do not want to provide a better socket interface; vice versa, they intend to
+	provide a set of calls that is portable among several operating systems, hiding their
+	differences.
+*/
+
+
 #include "sockutils.h"
 #include <string.h>	// for strerror
 #include <errno.h>	// for the errno variable
 #include <stdio.h>	// for the stderr file
 
-/*!
-	\file sockutils.c
 
-	The goal of this file it to provide a common set of primitives for socket manipulation.
-	Although the socket interface defined in the RFC 2553 (and its updates) is excellent, several
-	minor issues are still hidden when we want to operate on several operating systems.
 
-	These calls do not want to provide a better socket interface; vice versa, they want to
-	provide a set of calls that is portable among several operating systems, hiding their
-	differences.
-*/
 
 
 
@@ -65,6 +69,17 @@
 #endif
 
 
+//! Size of the buffer that has to keep error messages
+#define SOCK_ERRBUF_SIZE 1024
+
+
+	// Constants; used in order to keep strings here
+#define SOCKET_NO_NAME_AVAILABLE "No name available"
+#define SOCKET_NO_PORT_AVAILABLE "No port available"
+#define SOCKET_NAME_NULL_DAD "Null address (DAD Phase)"
+
+
+
 
 /****************************************************
  *                                                  *
@@ -76,26 +91,16 @@ int sock_ismcastaddr(const struct sockaddr *saddr);
 
 
 
-/*
-	\brief Global variable; needed to keep the message due to an error that we want to discard.
-	
-	This can happen, for instance, because we already have an error message and we want to keep 
-	the first one.
-*/
-char fakeerrbuf[SOCK_ERRBUF_SIZE + 1];
-
-
-
 
 
 /****************************************************
  *                                                  *
- * Function bodies                                 *
+ * Function bodies                                  *
  *                                                  *
  ****************************************************/
 
 
-/*!	\ingroup remote_pri_func
+/*!
 	\brief It retrieves the error message after an error occurred in the socket interface.
 
 	This function is defined because of the different way errors are returned in UNIX
@@ -106,58 +111,80 @@ char fakeerrbuf[SOCK_ERRBUF_SIZE + 1];
 	to be printed *before* the true error message. It could be, for example, 'this error
 	comes from the recv() call at line 31'.
 	
-	\param string: a pointer to an user-allocated buffer that will contain the complete
-	error message. This buffer has to be at least 'size' in length.
+	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
+	error message. This buffer has to be at least 'errbuflen' in length.
+	It can be NULL; in this case the error cannot be printed.
 
-	\param size: the size of the buffer in which the error message will be copied.
+	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
+	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return No return values. The error message is returned in the 'string' parameter.
 */
-void sock_geterror(const char *caller, char *string, int size)
+void sock_geterror(const char *caller, char *errbuf, int errbuflen)
 {
 #ifdef WIN32
 	int retval;
 	int code;
-	char message[SOCK_ERRBUF_SIZE];
+	TCHAR message[SOCK_ERRBUF_SIZE];	/* It will be char (if we're using ascii) or wchar_t (if we're using unicode) */
 	
 		code= GetLastError();
 	
 		retval= FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS |
 	                  FORMAT_MESSAGE_MAX_WIDTH_MASK,
 	                  NULL, code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-	                  (LPSTR) message, SOCK_ERRBUF_SIZE, NULL);
+	                  message, sizeof(message) / sizeof(TCHAR), NULL);
 	
 		if (retval == 0)
 		{
-			snprintf(string, size, "%sUnable to get the exact error message", caller);
+			if (errbuf)
+			{
+				snprintf(errbuf, errbuflen, "%sUnable to get the exact error message", caller);
+				errbuf[errbuflen - 1]= 0;
+			}
+
 			return;
 		}
 	
-		snprintf(string, size, "%s%s (code %d)", caller, message, code);
+		if (errbuf)
+		{
+			snprintf(errbuf, errbuflen, "%s%s (code %d)", caller, message, code);
+			errbuf[errbuflen - 1]= 0;
+		}
+
 
 #else
 	char *message;
 	
 		message= strerror(errno);
-		snprintf(string, size, "%s%s (code %d)", caller, message, errno);
+
+		if (errbuf)
+		{
+			snprintf(errbuf, errbuflen, "%s%s (code %d)", caller, message, errno);
+			errbuf[errbuflen - 1]= 0;
+		}
+
 #endif
 }
 
 
 
-/*!	\ingroup remote_pri_func
+/*!
 	\brief It initializes sockets.
 
 	This function is pretty useless on UNIX, since socket initialization is not required.
 	However it is required on Win32. In UNIX, this function appears to be completely empty.
 
-	\param errbuf: a pointer to a user-allocated buffer (of size SOCK_ERRBUF_SIZE)
-	that will contain the error message (in case there is one).
+	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
+	error message. This buffer has to be at least 'errbuflen' in length.
+	It can be NULL; in this case the error cannot be printed.
+
+	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
+	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return '0' if everything is fine, '-1' if some errors occurred. The error message is returned
 	in the 'errbuf' variable.
 */
-int sock_init(char *errbuf)
+int sock_init(char *errbuf, int errbuflen)
 {
 #ifdef WIN32
 	if (sockcount == 0)
@@ -167,8 +194,14 @@ int sock_init(char *errbuf)
 		// Ask for Winsock version 2.2.
 		if ( WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
 		{
-			snprintf(errbuf, SOCK_ERRBUF_SIZE, "Failed to initialize Winsock\n");
+			if (errbuf)
+			{
+				snprintf(errbuf, errbuflen, "Failed to initialize Winsock\n");
+				errbuf[errbuflen - 1]= 0;
+			}
+
 			WSACleanup();
+
 			return -1;
 		}
 	}
@@ -181,7 +214,7 @@ int sock_init(char *errbuf)
 
 
 
-/*!	\ingroup remote_pri_func
+/*!
 	\brief It deallocates sockets.
 
 	This function is pretty useless on UNIX, since socket deallocation is not required.
@@ -193,6 +226,7 @@ void sock_cleanup()
 {
 #ifdef WIN32
 	sockcount--;
+
 	if (sockcount == 0)
 		WSACleanup();
 #endif
@@ -200,7 +234,7 @@ void sock_cleanup()
 
 
 
-/*!	\ingroup remote_pri_func
+/*!
 	\brief It checks if the sockaddr variable contains a multicast address.
 
 	\return '0' if the address is multicast, '-1' if it is not. 
@@ -223,7 +257,7 @@ int sock_ismcastaddr(const struct sockaddr *saddr)
 
 
 
-/*!	\ingroup remote_pri_func
+/*!
 	\brief It initializes a network connection both from the client and the server side.
 
 	In case of a client socket, this function calls socket() and connect().
@@ -232,33 +266,36 @@ int sock_ismcastaddr(const struct sockaddr *saddr)
 
 	In case of a server socket, the function calls socket(), bind() and listen().
 
-	In no cases this fucntion will authenticate the user on the remote host. This function
-	has to be done in the rpcap_sendauth().
+	This function is usually preceeded by the sock_initaddress().
 
 	\param addrinfo: pointer to an addrinfo variable which will be used to
 	open the socket and such. This variable is the one returned by the previous call to
-	sockvalidateaddr().
+	sock_initaddress().
 
 	\param server: '1' if this is a server socket, '0' otherwise.
 
 	\param nconn: number of the connections that are allowed to wait into the listen() call.
 	This value has no meanings in case of a client socket.
 
-	\param errbuf: a pointer to a user-allocated buffer (of size SOCK_ERRBUF_SIZE)
-	that will contain the error message (in case there is one).
+	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
+	error message. This buffer has to be at least 'errbuflen' in length.
+	It can be NULL; in this case the error cannot be printed.
+
+	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
+	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return the socket that has been opened (that has to be used in the following sockets calls)
 	if everything is fine, '-1' if some errors occurred. The error message is returned
 	in the 'errbuf' variable.
 */
-int sock_open(struct addrinfo *addrinfo, int server, int nconn, char *errbuf)
+SOCKET sock_open(struct addrinfo *addrinfo, int server, int nconn, char *errbuf, int errbuflen)
 {
 SOCKET sock;
 
 	sock = socket(addrinfo->ai_family, addrinfo->ai_socktype, addrinfo->ai_protocol);
 	if (sock == -1)
 	{
-		sock_geterror("socket(): ", errbuf, SOCK_ERRBUF_SIZE);
+		sock_geterror("socket(): ", errbuf, errbuflen);
 		return -1;
 	}
 
@@ -278,7 +315,11 @@ SOCKET sock;
 
 			if (setsockopt(sock, IPPROTO_IPV6, IPV6_BINDV6ONLY, (char *)&on, sizeof (int)) == -1)
 			{
-				snprintf(errbuf, SOCK_ERRBUF_SIZE, "setsockopt(IPV6_BINDV6ONLY)");
+				if (errbuf)
+				{
+					snprintf(errbuf, errbuflen, "setsockopt(IPV6_BINDV6ONLY)");
+					errbuf[errbuflen - 1]= 0;
+				}
 				return -1;
 			}
 		} 
@@ -287,14 +328,14 @@ SOCKET sock;
 		// WARNING: if the address is a mcast one, I should place the proper Win32 code here
 		if (bind(sock, addrinfo->ai_addr, addrinfo->ai_addrlen) != 0)
 		{
-			sock_geterror("bind(): ", errbuf, SOCK_ERRBUF_SIZE);
+			sock_geterror("bind(): ", errbuf, errbuflen);
 			return -1;
 		}
 
 		if (addrinfo->ai_socktype == SOCK_STREAM)
 			if (listen(sock, nconn) == -1)
 			{
-				sock_geterror("listen(): ", errbuf, SOCK_ERRBUF_SIZE);
+				sock_geterror("listen(): ", errbuf, errbuflen);
 				return -1;
 			}
 
@@ -303,21 +344,38 @@ SOCKET sock;
 	}
 	else	// we're the client
 	{
-		if (connect(sock, addrinfo->ai_addr, addrinfo->ai_addrlen) == -1)
+	struct addrinfo *tempaddrinfo;
+
+		tempaddrinfo= addrinfo;
+
+		// We have to loop though all the addinfo returned.
+		// For instance, we can have both IPv6 and IPv4 addresses, but the service we're trying
+		// to connect to is unavailable in IPv6, so we have to try in IPv4 as well
+		while (tempaddrinfo)
 		{
-			sock_geterror("Is libpcap/WinPcap properly installed on the other host? connect() failed: ", errbuf, SOCK_ERRBUF_SIZE);
+			if (connect(sock, tempaddrinfo->ai_addr, tempaddrinfo->ai_addrlen) == -1)
+				tempaddrinfo= tempaddrinfo->ai_next;
+			else
+				break;
+		}
+
+		// Check how we exit from the previous loop
+		// If tempaddrinfo is equal to NULL, it means that all the connect() failed.
+		if (tempaddrinfo == NULL) 
+		{
+			sock_geterror("Is the server properly installed on the other host? connect() failed: ", errbuf, errbuflen);
 			closesocket(sock);
 			return -1;
 		}
-
-		return sock;
+		else
+			return sock;
 	}
 }
 
 
 
 
-/*!	\ingroup remote_pri_func
+/*!
 	\brief Closes the present (TCP and UDP) socket connection.
 
 	This function sends a shutdown() on the socket in order to disable send() calls
@@ -325,20 +383,24 @@ SOCKET sock;
 
 	\param sock: the socket identifier of the connection that has to be closed.
 
-	\param errbuf: a pointer to a user-allocated buffer (of size SOCK_ERRBUF_SIZE)
-	that will contain the error message (in case there is one).
+	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
+	error message. This buffer has to be at least 'errbuflen' in length.
+	It can be NULL; in this case the error cannot be printed.
+
+	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
+	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return '0' if everything is fine, '-1' if some errors occurred. The error message is returned
 	in the 'errbuf' variable.
 */
-int sock_close(SOCKET sock, char *errbuf)
+int sock_close(SOCKET sock, char *errbuf, int errbuflen)
 {
 	// SHUT_WR: subsequent calls to the send function are disallowed. 
 	// For TCP sockets, a FIN will be sent after all data is sent and 
 	// acknowledged by the Server.
 	if (shutdown(sock, SHUT_WR) )
 	{
-		sock_geterror("shutdown(): ", errbuf, SOCK_ERRBUF_SIZE);
+		sock_geterror("shutdown(): ", errbuf, errbuflen);
 		// close the socket anyway
 		closesocket(sock);
 		return -1;
@@ -353,7 +415,7 @@ int sock_close(SOCKET sock, char *errbuf)
 
 
 
-/*!	\ingroup remote_pri_func
+/*!
 	\brief Checks that the address, port and flags given are valids and it returns an 'addrinfo' stucture.
 
 	This function basically calls the getaddrinfo() calls, and it performs a set of sanity checks
@@ -373,8 +435,12 @@ int sock_close(SOCKET sock, char *errbuf)
 	(passed by reference), which will be allocated by this function and returned back to the caller.
 	This variable will be used in the next sockets calls.
 
-	\param errbuf: a pointer to a user-allocated buffer (of size SOCK_ERRBUF_SIZE)
-	that will contain the error message (in case there is one).
+	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
+	error message. This buffer has to be at least 'errbuflen' in length.
+	It can be NULL; in this case the error cannot be printed.
+
+	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
+	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return '0' if everything is fine, '-1' if some errors occurred. The error message is returned
 	in the 'errbuf' variable. The addrinfo variable that has to be used in the following sockets calls is 
@@ -382,9 +448,13 @@ int sock_close(SOCKET sock, char *errbuf)
 
 	\warning The 'addrinfo' variable has to be deleted by the programmer by calling freeaddrinfo() when
 	it is no longer needed.
+
+	\warning This function requires the 'hints' variable as parameter. The semantic of this variable is the same
+	of the one of the corresponding variable used into the standard getaddrinfo() socket function. We suggest
+	the programmer to look at that function in order to set the 'hints' variable appropriately.
 */
-int sock_validaddr(const char *address, const char *port,
-							struct addrinfo *hints, struct addrinfo **addrinfo, char *errbuf)
+int sock_initaddress(const char *address, const char *port,
+							struct addrinfo *hints, struct addrinfo **addrinfo, char *errbuf, int errbuflen)
 {
 int retval;
 	
@@ -392,34 +462,52 @@ int retval;
 	if (retval != 0)
 	{
 		// if the getaddrinfo() fails, you have to use gai_strerror(), instead of using the standard
-		// error routines (WSAGetLastError() in Win32 anderrono in UNIX)
-		snprintf(errbuf, SOCK_ERRBUF_SIZE, "getaddrinfo() %s", gai_strerror(retval));
-		return -1;
+		// error routines (errno) in UNIX; WIN32 suggests using the GetLastError() instead.
+		if (errbuf)
+#ifdef WIN32
+			sock_geterror("getaddrinfo(): ", errbuf, errbuflen);
+#else
+			if (errbuf)
+			{
+				snprintf(errbuf, errbuflen, "getaddrinfo() %s", gai_strerror(retval));
+				errbuf[errbuflen - 1]= 0;
+			}
+#endif
+		return 0;
 	}
 /*!
-	\warning SOCKET: I should check all the accept() in order to bind to all addresses (in case
-	addrinfo has more han one pointers, and all connect() to use all addresses (in the case the firs one fails)
+	\warning SOCKET: I should check all the accept() in order to bind to all addresses in case
+	addrinfo has more han one pointers
 */
 
 	// This software only supports PF_INET and PF_INET6.
 	if (( (*addrinfo)->ai_family != PF_INET) && ( (*addrinfo)->ai_family != PF_INET6))
 	{
-		snprintf(errbuf, SOCK_ERRBUF_SIZE, "getaddrinfo(): socket type not supported");
-		return -1;
+		if (errbuf)
+		{
+			snprintf(errbuf, errbuflen, "getaddrinfo(): socket type not supported");
+			errbuf[errbuflen - 1]= 0;
+		}
+		return 0;
 	}
 
 	if ( ( (*addrinfo)->ai_socktype == SOCK_STREAM) && (sock_ismcastaddr( (*addrinfo)->ai_addr) == 0) )
 	{
-		snprintf(errbuf, SOCK_ERRBUF_SIZE, "getaddrinfo(): multicast addresses are not valid when using TCP streams");
-		return -1;
+		if (errbuf)
+		{
+			snprintf(errbuf, errbuflen, "getaddrinfo(): multicast addresses are not valid when using TCP streams");
+			errbuf[errbuflen - 1]= 0;
+		}
+
+		return 0;
 	}
 
-	return 0;
+	return -1;
 }
 
 
 
-/*!	\ingroup remote_pri_func
+/*!
 	\brief It sends the amount of data contained into 'buffer' on the given socket.
 
 	This function basically calls the send() socket function and it checks that all
@@ -434,24 +522,28 @@ int retval;
 
 	\param size: number of bytes that have to be sent.
 
-	\param errbuf: a pointer to a user-allocated buffer (of size SOCK_ERRBUF_SIZE)
-	that will contain the error message (in case there is one).
+	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
+	error message. This buffer has to be at least 'errbuflen' in length.
+	It can be NULL; in this case the error cannot be printed.
+
+	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
+	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return '0' if everything is fine, '-1' if some errors occurred. The error message is returned
 	in the 'errbuf' variable.
 */
-int sock_send(SOCKET socket, const char *buffer, int size, char *errbuf)
+int sock_send(SOCKET socket, const char *buffer, int size, char *errbuf, int errbuflen)
 {
 int nsent;
 
 send:
 #ifdef linux
 /*
-	Another pain... in Linux there's this flag
+	Another pain... in Linux there's this flag 
 	MSG_NOSIGNAL
-		Requests not to send SIGPIPE on  errors  on  stream
-		oriented sockets when the other end breaks the con­
-		nection. The EPIPE error is still returned.
+		Requests not to send SIGPIPE on errors on stream-oriented 
+		sockets when the other end breaks the connection.
+		The EPIPE error is still returned.
 */
 	nsent = send(socket, buffer, size, MSG_NOSIGNAL);
 #else
@@ -460,7 +552,7 @@ send:
 
 	if (nsent == -1)
 	{
-		sock_geterror("send(): ", errbuf, SOCK_ERRBUF_SIZE);
+		sock_geterror("send(): ", errbuf, errbuflen);
 		return -1;
 	}
 
@@ -475,7 +567,7 @@ send:
 }
 
 
-/*!	\ingroup remote_pri_func
+/*!
 	\brief It copies the amount of data contained into 'buffer' into 'tempbuf'.
 	and it checks for buffer overflows.
 
@@ -490,6 +582,11 @@ send:
 	data (maybe because the producer writes directly into the target buffer), so
 	only the buffer overflow check has to be made.
 	In this case, both 'buffer' and 'tempbuf' can be NULL values.
+
+	This function is useful in case the userland application does not know immediately
+	all the data it has to write into the socket. This function provides a way to create
+	the "stream" step by step, appendning the new data to the old one. Then, when all the
+	data has been bufferized, the application can call the sock_send() function.
 
 	\param buffer: a char pointer to a user-allocated buffer that keeps the data
 	that has to be copied.
@@ -507,8 +604,12 @@ send:
 	\param checkonly: '1' if we do not want to copy data into the buffer and we
 	want just do a buffer ovreflow control, '0' if data has to be copied as well.
 
-	\param errbuf: a pointer to a user-allocated buffer (of size SOCK_ERRBUF_SIZE)
-	that will contain the error message (in case there is one).
+	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
+	error message. This buffer has to be at least 'errbuflen' in length.
+	It can be NULL; in this case the error cannot be printed.
+
+	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
+	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return '0' if everything is fine, '-1' if some errors occurred. The error message
 	is returned in the 'errbuf' variable. When the function returns, 'tempbuf' will 
@@ -521,12 +622,17 @@ send:
 	\warning In case of 'checkonly', be carefully to call this function *before* copying
 	the data into the buffer. Otherwise, the control about the buffer overflow is useless.
 */
-int sock_bufferize(const char *buffer, int size, char *tempbuf, int *offset, int totsize, int checkonly, char *errbuf)
+int sock_bufferize(const char *buffer, int size, char *tempbuf, int *offset, int totsize, int checkonly, char *errbuf, int errbuflen)
 {
 
 	if ((*offset + size) > totsize)
 	{
-		snprintf(errbuf, SOCK_ERRBUF_SIZE, "Not enough space in the temporary send buffer.");
+		if (errbuf)
+		{
+			snprintf(errbuf, errbuflen, "Not enough space in the temporary send buffer.");
+			errbuf[errbuflen - 1]= 0;
+		}
+
 		return -1;
 	};
 
@@ -540,13 +646,19 @@ int sock_bufferize(const char *buffer, int size, char *tempbuf, int *offset, int
 
 
 
-/*!	\ingroup remote_pri_func
-	\brief It waits on a connected socket and it manages to receive exactly 'size' bytes.
+/*!
+	\brief It waits on a connected socket and it manages to receive data.
 
 	This function basically calls the recv() socket function and it checks that no
 	error occurred. If that happens, it writes the error message into 'errbuf'.
+
+	This function changes its behaviour according to the 'receiveall' flag: if we
+	want to receive exactly 'size' byte, it loops on the recv()	until all the requested 
+	data is arrived. Otherwise, it returns the data currently available.
+
 	In case the socket does not have enough data available, it cycles on the recv()
 	util the requested data (of size 'size') is arrived.
+	In this case, it blocks until the number of bytes read is equal to 'size'.
 
 	\param sock: the connected socket currently opened.
 
@@ -554,16 +666,22 @@ int sock_bufferize(const char *buffer, int size, char *tempbuf, int *offset, int
 
 	\param size: size of the allocated buffer. WARNING: this indicates the number of bytes
 	that we are expecting to be read.
-	This function (differenctly from the rpcap_recv_dgram() ) block until the number of
-	bytes read is equal to 'size'.
 
-	\param errbuf: a pointer to a user-allocated buffer (of size SOCK_ERRBUF_SIZE)
-	that will contain the error message (in case there is one), due to a network problem.
+	\param receiveall: if '0' (or SOCK_RECEIVEALL_NO), it returns as soon as some data 
+	is ready; otherwise, (or SOCK_RECEIVEALL_YES) it waits until 'size' data has been 
+	received (in case the socket does not have enough data available).
+
+	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
+	error message. This buffer has to be at least 'errbuflen' in length.
+	It can be NULL; in this case the error cannot be printed.
+
+	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
+	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return the number of bytes read if everything is fine, '-1' if some errors occurred.
 	The error message is returned in the 'errbuf' variable.
 */
-int sock_recv(SOCKET sock, char *buffer, int size, char *errbuf)
+int sock_recv(SOCKET sock, char *buffer, int size, int receiveall, char *errbuf, int errbuflen)
 {
 int nread;
 int totread= 0;
@@ -581,15 +699,25 @@ again:
 
 	if (nread == -1)
 	{
-		sock_geterror("recv(): ", errbuf, SOCK_ERRBUF_SIZE);
+		sock_geterror("recv(): ", errbuf, errbuflen);
 		return -1;
 	}
 
 	if (nread == 0)
 	{
-		snprintf(errbuf, SOCK_ERRBUF_SIZE, "The other host terminated the connection.");
+		if (errbuf)
+		{
+			snprintf(errbuf, errbuflen, "The other host terminated the connection.");
+			errbuf[errbuflen - 1]= 0;
+		}
+
 		return -1;
 	}
+
+	// If we want to return as soon as some data has been received, 
+	// let's do the job
+	if (!receiveall)
+		return nread;
 
 	totread+= nread;
 
@@ -601,7 +729,7 @@ again:
 
 
 
-/*!	\ingroup remote_pri_func
+/*!
 	\brief It waits on a connected socket and it manages to receive one message.
 
 	There is a difference here between this function and the sock_recv(): the
@@ -626,13 +754,18 @@ again:
 	This function (differenctly from the rpcap_recv_dgram() ) does not block if 
 	the number of bytes read is equal to 'size'.
 
-	\param errbuf: a pointer to a user-allocated buffer (of size SOCK_ERRBUF_SIZE)
-	that will contain the error message (in case there is one), due to a network problem.
+	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
+	error message. This buffer has to be at least 'errbuflen' in length.
+	It can be NULL; in this case the error cannot be printed.
+
+	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
+	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return the number of bytes read if everything is fine, '-1' if some errors occurred.
 	The error message is returned in the 'errbuf' variable.
 */
-int sock_recv_dgram(SOCKET sock, char *buffer, int size, char *errbuf)
+/*
+int sock_recv(SOCKET sock, char *buffer, int size, char *errbuf, int errbuflen)
 {
 int nread;
 
@@ -640,15 +773,27 @@ int nread;
 
 	if (nread == -1)
 	{
-		sock_geterror("recv(): ", errbuf, SOCK_ERRBUF_SIZE);
+		sock_geterror("recv(): ", errbuf, errbuflen);
+		return -1;
+	}
+
+	if (nread == 0)
+	{
+		if (errbuf)
+		{
+			snprintf(errbuf, errbuflen, "The other host terminated the connection.");
+			errbuf[errbuflen - 1]= 0;
+		}
+
 		return -1;
 	}
 
 	return nread;
 }
+*/
 
 
-/*!	\ingroup remote_pri_func
+/*!
 	\brief It discards N bytes that are currently waiting to be read on the current socket.
 
 	This function is useful in case we receive a message we cannot undestand (e.g.
@@ -663,13 +808,17 @@ int nread;
 
 	\param size: number of bytes that have to be discarded.
 
-	\param errbuf: a pointer to a user-allocated buffer (of size SOCK_ERRBUF_SIZE)
-	that will contain the error message (in case there is one), due to a network problem.
+	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
+	error message. This buffer has to be at least 'errbuflen' in length.
+	It can be NULL; in this case the error cannot be printed.
+
+	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
+	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return '0' if everything is fine, '-1' if some errors occurred.
 	The error message is returned in the 'errbuf' variable.
 */
-int sock_discard(SOCKET sock, int size, char *errbuf)
+int sock_discard(SOCKET sock, int size, char *errbuf, int errbuflen)
 {
 #define TEMP_BUF_SIZE 65536
 
@@ -682,8 +831,9 @@ char buffer[TEMP_BUF_SIZE];		// network buffer, to be used when the message is d
 
 	while (size > TEMP_BUF_SIZE)
 	{
-		if (sock_recv(sock, buffer, TEMP_BUF_SIZE, errbuf) == -1)
+		if (sock_recv(sock, buffer, TEMP_BUF_SIZE, SOCK_RECEIVEALL_YES, errbuf, errbuflen) == -1)
 			return -1;
+
 		size-= TEMP_BUF_SIZE;
 	}
 
@@ -691,7 +841,7 @@ char buffer[TEMP_BUF_SIZE];		// network buffer, to be used when the message is d
 	// In this case, the data can fit into the temporaty buffer
 	if (size)
 	{
-		if (sock_recv(sock, buffer, size, errbuf) == -1)
+		if (sock_recv(sock, buffer, size, SOCK_RECEIVEALL_YES, errbuf, errbuflen) == -1)
 			return -1;
 	}
 
@@ -702,7 +852,7 @@ char buffer[TEMP_BUF_SIZE];		// network buffer, to be used when the message is d
 
 
 
-/*!	\ingroup remote_pri_func
+/*!
 	\brief Checks that one host (identified by the sockaddr_storage structure) belongs to an 'allowed list'.
 
 	This function is useful after an accept() call in order to check if the connecting
@@ -717,13 +867,17 @@ char buffer[TEMP_BUF_SIZE];		// network buffer, to be used when the message is d
 
 	\param from: a sockaddr_storage structure, as it is returned by the accept() call.
 
-	\param errbuf: a pointer to a user-allocated buffer (of size SOCK_ERRBUF_SIZE)
-	that will contain the error message (in case there is one).
+	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
+	error message. This buffer has to be at least 'errbuflen' in length.
+	It can be NULL; in this case the error cannot be printed.
+
+	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
+	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return '0' if everything is fine, '-1' if some errors occurred.
 	The error message is returned in the 'errbuf' variable.
 */
-int	sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage *from, char *errbuf)
+int sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage *from, char *errbuf, int errbuflen)
 {
 	// checks if the connecting host is among the ones allowed
 	if (hostlist[0])
@@ -735,7 +889,7 @@ int	sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage
 		temphostlist= (char *) malloc (strlen(hostlist) + 1);
 		if (temphostlist == NULL)
 		{
-			sock_geterror("sock_check_hostlist(), malloc() failed", errbuf, SOCK_ERRBUF_SIZE);
+			sock_geterror("sock_check_hostlist(), malloc() failed", errbuf, errbuflen);
 			return -1;
 		}
 		
@@ -758,7 +912,12 @@ int	sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage
 			retval = getaddrinfo(token, "0", &hints, &addrinfo);
 			if (retval != 0)
 			{
-				snprintf(errbuf, SOCK_ERRBUF_SIZE, "getaddrinfo() %s", gai_strerror(retval));
+				if (errbuf)
+				{
+					snprintf(errbuf, errbuflen, "getaddrinfo() %s", gai_strerror(retval));
+					errbuf[errbuflen - 1]= 0;
+				}
+
 				SOCK_ASSERT(errbuf, 1);
 
 				// Get next token
@@ -783,6 +942,7 @@ int	sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage
 
 			freeaddrinfo(addrinfo);
 			addrinfo= NULL;
+
 			// Get next token
 			token = strtok( NULL, sep);
 		}
@@ -793,16 +953,22 @@ int	sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage
 			addrinfo= NULL;
 		}
 
-		snprintf(errbuf, SOCK_ERRBUF_SIZE, "The host is not in the allowed host list. Connection refused.");
+		if (errbuf)
+		{
+			snprintf(errbuf, errbuflen, "The host is not in the allowed host list. Connection refused.");
+			errbuf[errbuflen - 1]= 0;
+		}
+
 		free(temphostlist);
 		return -1;
 	}
 
-	return 0;
+	// No hostlist, so we have to return failure
+	return -1;
 }
 
 
-/*!	\ingroup remote_pri_func
+/*!
 	\brief Compares two addresses contained into two sockaddr_storage structures.
 
 	This function is useful to compare two addresses, given their internal representation,
@@ -842,4 +1008,170 @@ int sock_cmpaddr(struct sockaddr_storage *first, struct sockaddr_storage *second
 
 	return -1;
 }
+
+
+
+/*!
+	\brief It retrieves two strings containing the address and the port of a given 'sockaddr' variable.
+
+	This function is basically an extended version of the inet_ntop(), which does not exist in
+	WIN32 because the same result can be obtained by using the getnameinfo().
+	However, differently from inet_ntop(), this function is able to return also literal names
+	(e.g. 'locahost') dependingly from the 'Flags' parameter.
+
+	The function accepts a sockaddr_storage variable (which can be returned by several functions
+	like bind(), connect(), accept(), and more) and it transforms its content into a 'human'
+	form. So, for instance, it is able to translate an hex address (stored in bynary form) into
+	a standard IPv6 address like "::1".
+
+	The behaviour of this function depends on the parameters we have in the 'Flags' variable, which
+	are the ones allowed in the standard getnameinfo() socket function.
+	
+	\param sockaddr: a 'sockaddr_in' or 'sockaddr_in6' structure containing the address that 
+	need to be translated from network form into the presentation form. This structure must be 
+	zero-ed prior using it, and the address family field must be filled with the proper value. 
+	The user must cast any 'sockaddr_in' or 'sockaddr_in6' structures to 'sockaddr_storage' before 
+	calling this function.
+
+	\param address: it contains the address that will be returned by the function. This buffer
+	must be properly allocated by the user. The address can be either literal or numeric depending
+	on the value of 'Flags'.
+
+	\param addrlen: the length of the 'Addr' buffer.
+
+	\param port: it contains the port that will be returned by the function. This buffer
+	must be properly allocated by the user.
+
+	\param portlen: the length of the 'Port' buffer.
+
+	\param flags: a set of flags (the ones defined into the getnameinfo() standard socket function)
+	that determine if the resulting address must be in numeric / literal form, and so on.
+
+	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
+	error message. This buffer has to be at least 'errbuflen' in length.
+	It can be NULL; in this case the error cannot be printed.
+
+	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
+	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
+
+	\return It returns '-1' if this function succeed, '0' otherwise.
+	The address and port corresponding to the given SockAddr is returned back in the buffers 'Addr'
+	and 'Port'.
+	In any case, the returned strings are '0' terminated.
+*/
+int sock_getascii_addrport(const struct sockaddr_storage *sockaddr, char *address, int addrlen, char *port, int portlen, int flags, char *errbuf, int errbuflen)
+{
+socklen_t sockaddrlen;
+int retval;					// Variable that keeps the return value;
+
+	retval= -1;
+
+#ifdef WIN32
+	if (sockaddr->ss_family == AF_INET)
+		sockaddrlen = sizeof(struct sockaddr_in);
+	else
+		sockaddrlen = sizeof(struct sockaddr_in6);
+#else
+	sockaddrlen = sizeof(struct sockaddr_storage);
+#endif
+
+/* TEMP
+	if ( (SockAddr->ss_family == AF_INET6) &&
+		(memcmp( &((sockaddr_in6 *) SockAddr)->sin6_addr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", sizeof(struct in6_addr) ) == 0) )
+	{
+		strncpy(Name, SOCKET_NAME_NULL_DAD, NameLen);
+		return -1;
+	}
+*/
+
+	if ( getnameinfo((struct sockaddr *) sockaddr, sockaddrlen, address, addrlen, port, portlen, flags) != 0)
+	{
+		// If the user wants to receive an error message
+		if (errbuf)
+		{
+			sock_geterror("getnameinfo(): ", errbuf, errbuflen);
+			errbuf[errbuflen-1]= 0;
+		}
+
+		if (address)
+		{
+			strncpy(address, SOCKET_NO_NAME_AVAILABLE, addrlen);
+			address[addrlen-1]= 0;
+		}
+
+		if (port)
+		{
+			strncpy(port, SOCKET_NO_PORT_AVAILABLE, portlen);
+			port[portlen-1]= 0;
+		}
+
+		retval= 0;
+	}
+
+	return retval;
+}
+
+
+
+/*!
+	\brief It translates an address from the 'presentation' form into the 'network' form.
+
+	This function basically replaces inet_pton(), which does not exist in WIN32 because
+	the same result can be obtained by using the getaddrinfo().
+	An addictional advantage is that 'Address' can be both a numeric address (e.g. '127.0.0.1',
+	like in inet_pton() ) and a literal name (e.g. 'localhost').
+
+	This function does the reverse job of sock_getascii_addrport().
+
+	\param address: a zero-terminated string which contains the name you have to
+	translate. The name can be either literal (e.g. 'localhost') or numeric (e.g. '::1').
+
+	\param sockaddr: a user-allocated sockaddr_storage structure which will contains the
+	'network' form of the requested address.
+
+	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
+	error message. This buffer has to be at least 'errbuflen' in length.
+	It can be NULL; in this case the error cannot be printed.
+
+	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
+	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
+
+	\return '-1' if the translation succeded, '-2' if there was some non critical error, '0' 
+	otherwise. In case it fails, the content of the SockAddr variable remains unchanged.
+	A 'non critical error' can occur in case the 'Address' is a literal name, which can be mapped
+	to several network addresses (e.g. 'foo.bar.com' => '10.2.2.2' and '10.2.2.3'). In this case
+	the content of the SockAddr parameter will be the address corresponding to the first mapping.
+
+	\warning The sockaddr_storage structure MUST be allocated by the user.
+*/
+int sock_present2network(const char *address, struct sockaddr_storage *sockaddr, char *errbuf, int errbuflen)
+{
+int retval;
+struct addrinfo *addrinfo;
+
+	if ( (retval= sock_initaddress(address, "22222" /* fake port */, NULL, &addrinfo, errbuf, errbuflen)) == -1 )
+		return retval;
+
+	if (addrinfo->ai_family == PF_INET)
+		memcpy(sockaddr, addrinfo->ai_addr, sizeof(struct sockaddr_in) );
+	else
+		memcpy(sockaddr, addrinfo->ai_addr, sizeof(struct sockaddr_in6) );
+
+	if (addrinfo->ai_next != NULL)
+	{
+		freeaddrinfo(addrinfo);
+
+		if (errbuf)
+		{
+			snprintf(errbuf, errbuflen, "More than one socket requested; using the first one returned");
+			errbuf[errbuflen - 1]= 0;
+		}
+
+		return -2;
+	}
+
+	freeaddrinfo(addrinfo);
+	return -1;
+}
+
 

@@ -228,7 +228,7 @@ pcap_t *pcap_open(const char *source, int snaplen, int flags, int read_timeout, 
 int pcap_createsrcstr(char *source, int type, const char *host, const char *port, const char *name, char *errbuf);
 int pcap_parsesrcstr(const char *source, int *type, char *host, char *port, char *name, char *errbuf);
 int pcap_findalldevs_ex(char *host, char *port, SOCKET sockctrl, struct pcap_rmtauth *auth, pcap_if_t **alldevs, char *errbuf);
-int pcap_remoteact_accept(const char *address, const char *port, const char *hostlist, char *connectinghost, struct pcap_rmtauth *auth, char *errbuf);
+SOCKET pcap_remoteact_accept(const char *address, const char *port, const char *hostlist, char *connectinghost, struct pcap_rmtauth *auth, char *errbuf);
 int pcap_remoteact_list(char *hostlist, char sep, int size, char *errbuf);
 int pcap_remoteact_close(const char *host, char *errbuf);
 void pcap_remoteact_cleanup();

@@ -33,7 +33,9 @@
 #ifndef __PCAP_REMOTE_H__
 #define __PCAP_REMOTE_H__
 
+
 #include "pcap.h"
+#include "sockutils.h"	// Needed for some structures (like SOCKET, sockaddr_in) which are used here
 
 
 /*!

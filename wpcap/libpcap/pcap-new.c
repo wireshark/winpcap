@@ -180,7 +180,7 @@ int active= 0;	// 'true' if we the other end-party is in active mode
 
 	// Warning: this call can be the first one called by the user.
 	// For this reason, we have to initialize the WinSock support.
-	if (sock_init(errbuf) == -1)
+	if (sock_init(errbuf, PCAP_ERRBUF_SIZE) == -1)
 		return -1;
 
 	// Check for active mode
@@ -203,16 +203,16 @@ int active= 0;	// 'true' if we the other end-party is in active mode
 		if ( (port == NULL) || (port[0] == 0) )
 		{
 			// the user chose not to specify the port
-			if (sock_validaddr(host, RPCAP_DEFAULT_NETPORT, &hints, &addrinfo, errbuf) == -1)
+			if (sock_initaddress(host, RPCAP_DEFAULT_NETPORT, &hints, &addrinfo, errbuf, PCAP_ERRBUF_SIZE) == -1)
 				return -1;
 		}
 		else
 		{
-			if (sock_validaddr(host, port, &hints, &addrinfo, errbuf) == -1)
+			if (sock_initaddress(host, port, &hints, &addrinfo, errbuf, PCAP_ERRBUF_SIZE) == -1)
 				return -1;
 		}
 
-		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf)) == -1)
+		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 			goto error;
 
 		// addrinfo is no longer used
@@ -223,7 +223,7 @@ int active= 0;	// 'true' if we the other end-party is in active mode
 		{
 			// Control connection has to be closed only in case the remote machine is in passive mode
 			if (!active)
-				sock_close(sockctrl, fakeerrbuf);
+				sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
 			return -1;
 		}
 	}
@@ -231,10 +231,10 @@ int active= 0;	// 'true' if we the other end-party is in active mode
 	// RPCAP findalldevs command
 	rpcap_createhdr(&header, RPCAP_MSG_FINDALLIF_REQ, 0, 0);
 
-	if ( sock_send(sockctrl, (char *) &header, sizeof(struct rpcap_header), errbuf) == -1 )
+	if ( sock_send(sockctrl, (char *) &header, sizeof(struct rpcap_header), errbuf, PCAP_ERRBUF_SIZE) == -1 )
 		goto error;
 
-	if ( sock_recv(sockctrl, (char *) &header, sizeof(struct rpcap_header), errbuf) == -1)
+	if ( sock_recv(sockctrl, (char *) &header, sizeof(struct rpcap_header), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) == -1)
 		goto error;
 
 	// Checks if the message is correct
@@ -260,7 +260,7 @@ int active= 0;	// 'true' if we the other end-party is in active mode
 		}
 
 		if (!active)
-			sock_close(sockctrl, fakeerrbuf);
+			sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
 
 		return -1;
 	}
@@ -276,7 +276,7 @@ int active= 0;	// 'true' if we the other end-party is in active mode
 
 		// receive the findalldevs structure from remote hsot
 		if ( (nread+= sock_recv(sockctrl, (char *) &findalldevs_if, 
-			sizeof(struct rpcap_findalldevs_if), errbuf) ) == -1)
+			sizeof(struct rpcap_findalldevs_if), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) ) == -1)
 			goto error;
 
 		findalldevs_if.namelen= ntohs(findalldevs_if.namelen);
@@ -314,7 +314,7 @@ int active= 0;	// 'true' if we the other end-party is in active mode
 				goto error;
 			}
 			// Retrieve adapter name and description
-			if ( (nread+= sock_recv(sockctrl, dev->name, findalldevs_if.namelen, errbuf) ) == -1)
+			if ( (nread+= sock_recv(sockctrl, dev->name, findalldevs_if.namelen, SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) ) == -1)
 				goto error;
 			dev->name[findalldevs_if.namelen]= 0;
 		}
@@ -330,7 +330,7 @@ int active= 0;	// 'true' if we the other end-party is in active mode
 				goto error;
 			}
 			// Retrieve adapter name and description
-			if ( (nread+= sock_recv(sockctrl, dev->description, findalldevs_if.desclen, errbuf) ) == -1)
+			if ( (nread+= sock_recv(sockctrl, dev->description, findalldevs_if.desclen, SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) ) == -1)
 				goto error;
 			dev->description[findalldevs_if.desclen]= 0;
 		}
@@ -347,7 +347,7 @@ int active= 0;	// 'true' if we the other end-party is in active mode
 
 			// Retrieve the interface addresses
 			if (  (nread+= sock_recv(sockctrl, (char *) &ifaddr, 
-				sizeof(struct rpcap_findalldevs_ifaddr), errbuf) ) == -1)
+				sizeof(struct rpcap_findalldevs_ifaddr), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) ) == -1)
 				goto error;
 
 			// WARNING libpcap bug: the address listing is available only for AF_INET
@@ -402,7 +402,7 @@ int active= 0;	// 'true' if we the other end-party is in active mode
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))
 	{
-		if (sock_discard(sockctrl, ntohl(header.plen) - nread, errbuf) == 1)
+		if (sock_discard(sockctrl, ntohl(header.plen) - nread, errbuf, PCAP_ERRBUF_SIZE) == 1)
 			return -1;
 	}
 
@@ -410,7 +410,7 @@ int active= 0;	// 'true' if we the other end-party is in active mode
 	if (!active)
 	{
 		// DO not send RPCAP_CLOSE, since we did not open a pcap_t; no need to free resources
-		if ( sock_close(sockctrl, errbuf) )
+		if ( sock_close(sockctrl, errbuf, PCAP_ERRBUF_SIZE) )
 			return -1;
 	}
 
@@ -433,13 +433,13 @@ error:
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))
 	{
-		if (sock_discard(sockctrl, ntohl(header.plen) - nread, fakeerrbuf) == 1)
+		if (sock_discard(sockctrl, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE) == 1)
 			return -1;
 	}
 
 	// Control connection has to be closed only in case the remote machine is in passive mode
 	if (!active)
-		sock_close(sockctrl, fakeerrbuf);
+		sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
 
 	// To avoid inconsistencies in the number of sock_init()
 	sock_cleanup();
@@ -898,7 +898,7 @@ pcap_t *fp;
 	switch (type) 
 	{
 		case PCAP_SRC_FILE:
-			fp = pcap_open_offline(name, NULL);
+			fp = pcap_open_offline(name, errbuf);
 			break;
 
 		case PCAP_SRC_IFREMOTE:
@@ -911,10 +911,10 @@ pcap_t *fp;
 				return NULL;
 
 			fp->snapshot= snaplen;
-#ifdef WIN32
-			fp->timeout= read_timeout;
-#else
+#ifdef linux
 			fp->md.timeout= read_timeout;
+#else
+			fp->timeout= read_timeout;
 #endif
 			fp->rmt_flags= flags;
 			break;
@@ -993,7 +993,7 @@ pcap_t *fp;
 	longer able to accept other connections until the program (i.e. the process) stops.
 	In order to solve the problem, call the pcap_remoteact_cleanup().
 */
-int pcap_remoteact_accept(const char *address, const char *port, const char *hostlist, char *connectinghost, struct pcap_rmtauth *auth, char *errbuf)
+SOCKET pcap_remoteact_accept(const char *address, const char *port, const char *hostlist, char *connectinghost, struct pcap_rmtauth *auth, char *errbuf)
 {
 // socket-related variables
 struct addrinfo hints;			// temporary struct to keep settings needed to open the new socket
@@ -1014,13 +1014,13 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 
 	// Warning: this call can be the first one called by the user.
 	// For this reason, we have to initialize the WinSock support.
-	if (sock_init(errbuf) == -1)
+	if (sock_init(errbuf, PCAP_ERRBUF_SIZE) == -1)
 		return -1;
 
 	// Do the work
 	if ((port == NULL) || (port[0] == 0) )
 	{	
-		if (sock_validaddr(address, RPCAP_DEFAULT_NETPORT_ACTIVE, &hints, &addrinfo, errbuf) == -1)
+		if (sock_initaddress(address, RPCAP_DEFAULT_NETPORT_ACTIVE, &hints, &addrinfo, errbuf, PCAP_ERRBUF_SIZE) == -1)
 		{
 			SOCK_ASSERT(errbuf, 1);
 			return -2;
@@ -1028,7 +1028,7 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 	}
 	else
 	{
-		if (sock_validaddr(address, port, &hints, &addrinfo, errbuf) == -1)
+		if (sock_initaddress(address, port, &hints, &addrinfo, errbuf, PCAP_ERRBUF_SIZE) == -1)
 		{
 			SOCK_ASSERT(errbuf, 1);
 			return -2;
@@ -1036,7 +1036,7 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 	}
 
 
-	if ( (sockmain= sock_open(addrinfo, SOCKOPEN_SERVER, 1, errbuf)) == -1)
+	if ( (sockmain= sock_open(addrinfo, SOCKOPEN_SERVER, 1, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 	{
 		SOCK_ASSERT(errbuf, 1);
 		return -2;
@@ -1064,17 +1064,17 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 	{
 		sock_geterror("getnameinfo(): ", errbuf, PCAP_ERRBUF_SIZE);
 		rpcap_senderror(sockctrl, errbuf, PCAP_ERR_REMOTEACCEPT, fakeerrbuf);
-		sock_close(sockctrl, fakeerrbuf);
+		sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
 		return -1;
 	}
 
 	// checks if the connecting host is among the ones allowed
 	if ( (hostlist) && (hostlist[0]) )
 	{
-		if (sock_check_hostlist((char *) hostlist, RPCAP_HOSTLIST_SEP, &from, errbuf) )
+		if (sock_check_hostlist((char *) hostlist, RPCAP_HOSTLIST_SEP, &from, errbuf, PCAP_ERRBUF_SIZE) )
 		{
 			rpcap_senderror(sockctrl, errbuf, PCAP_ERR_REMOTEACCEPT, fakeerrbuf);
-			sock_close(sockctrl, fakeerrbuf);
+			sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
 			return -1;
 		}
 	}
@@ -1083,7 +1083,7 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 	if ( rpcap_sendauth(sockctrl, auth, errbuf) == -1)
 	{
 		rpcap_senderror(sockctrl, errbuf, PCAP_ERR_REMOTEACCEPT, fakeerrbuf);
-		sock_close(sockctrl, fakeerrbuf);
+		sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
 		return -3;
 	}
 
@@ -1119,7 +1119,7 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 	{
 		snprintf(errbuf, PCAP_ERRBUF_SIZE, "malloc() failed: %s", pcap_strerror(errno));
 		rpcap_senderror(sockctrl, errbuf, PCAP_ERR_REMOTEACCEPT, fakeerrbuf);
-		sock_close(sockctrl, fakeerrbuf);
+		sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
 		return -1;
 	}
 
@@ -1185,9 +1185,9 @@ int retval;
 				rpcap_createhdr( &header, RPCAP_MSG_CLOSE, 0, 0);
 
 				// I don't check for errors, since I'm going to close everything
-				sock_send(temp->sockctrl, (char *) &header, sizeof (struct rpcap_header), errbuf);
+				sock_send(temp->sockctrl, (char *) &header, sizeof (struct rpcap_header), errbuf, PCAP_ERRBUF_SIZE);
 
-				if (sock_close(temp->sockctrl, errbuf) )
+				if (sock_close(temp->sockctrl, errbuf, PCAP_ERRBUF_SIZE) )
 				{
 					// To avoid inconsistencies in the number of sock_init()
 					sock_cleanup();

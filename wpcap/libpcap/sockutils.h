@@ -31,38 +31,64 @@
  */
 
 
-#ifndef __SOCKUTILS_H__
-#define __SOCKUTILS_H__
+#ifndef _SOCKUTILS_H_
+#define _SOCKUTILS_H_
 
 
-
-// Definition for Microsoft Visual Studio
 #if _MSC_VER > 1000
 #pragma once
 #endif
+
 
 #ifdef WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #else
+#include <stdio.h>
+#include <string.h>	/* for memset() */
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>	/* DNS lookup */
 #include <unistd.h>	/* close() */
+#include <errno.h>	/* errno() */
+#include <netinet/in.h> /* for sockaddr_in, in BSD at least */
+#include <arpa/inet.h>
+#include <net/if.h>
 #endif
+
+
+/*!
+	\defgroup SockUtils Cross-platform socket utilities (IPv4-IPv6)
+*/
+
+
+/*! \addtogroup SockUtils
+	\{
+*/
+
+
+
+/*!
+	\defgroup ExportedStruct Exported Structures and Definitions
+*/
+
+/*! \addtogroup ExportedStruct
+	\{
+*/
+
 
 
 
 // Some minor differences between UNIX and Win32
 #ifdef WIN32
-/*! \ingroup remote_struct
+/*!
 	\brief In Win32, sockets use unsigned integers; in UNIX, they use signed integer.
 	
 	So, we define a generic SOCKET in order to be cross-platform compatible.
 */
 	#define SOCKET unsigned int	
 #else
-/*! \ingroup remote_struct
+/*!
 	\brief In Win32, sockets use unsigned integers; in UNIX, they use signed integer.
 	
 	So, we define a generic SOCKET in order to be cross-platform compatible.
@@ -70,7 +96,7 @@
 
 	#define SOCKET int
 
-/*! \ingroup remote_struct
+/*!
 	\brief In Win32, the close() call cannot be used for socket.
 	
 	So, we define a generic closesocket() call in order to be cross-platform compatible.
@@ -80,12 +106,6 @@
 
 
 
-
-
-// All this stuff is private
-/*! \addtogroup remote_pri_struct
-	\{
-*/
 
 
 /*!
@@ -127,17 +147,26 @@
  *                                                  *
  ****************************************************/
 
-#define SOCKBUF_CHECKONLY 1		/*!< 'checkonly' flag, into the rpsock_bufferize() */
-#define SOCKBUF_BUFFERIZE 0		/*!< no 'checkonly' flag, into the rpsock_bufferize() */
+//! 'checkonly' flag, into the rpsock_bufferize()
+#define SOCKBUF_CHECKONLY 1	
+//! no 'checkonly' flag, into the rpsock_bufferize()
+#define SOCKBUF_BUFFERIZE 0
 
-#define SOCKOPEN_CLIENT 0		/*!< no 'server' flag; it opens a client socket */
-#define SOCKOPEN_SERVER 1		/*!< 'server' flag; it opens a server socket */
+//! no 'server' flag; it opens a client socket
+#define SOCKOPEN_CLIENT 0
+//! 'server' flag; it opens a server socket
+#define SOCKOPEN_SERVER 1
 
-#define SOCK_ERRBUF_SIZE 256	/*!< Size of the buffer that has to keep error messages */
+//! Changes the behaviour of the sock_recv(); it does not wait to receive all data
+#define SOCK_RECEIVEALL_NO 0
+//! Changes the behaviour of the sock_recv(); it waits to receive all data
+#define SOCK_RECEIVEALL_YES 1
+
 
 /*!
 	\}
-*/ // end of private documentation
+*/
+
 
 
 #ifdef __cplusplus
@@ -145,21 +174,35 @@ extern "C" {
 #endif
 
 
-void sock_geterror(const char *caller, char *string, int size);
-int sock_init(char *errbuf);
-void sock_cleanup();
-int sock_validaddr(const char *address, const char *port,
-						struct addrinfo *hints, struct addrinfo **addrinfo, char *errbuf);
-int sock_recv(SOCKET socket, char *buffer, int size, char *errbuf);
-int sock_recv_dgram(SOCKET sock, char *buffer, int size, char *errbuf);
-int sock_open(struct addrinfo *addrinfo, int server, int nconn, char *errbuf);
-int sock_close(SOCKET sock, char *errbuf);
 
-int sock_send(SOCKET socket, const char *buffer, int size, char *errbuf);
-int sock_bufferize(const char *buffer, int size, char *tempbuf, int *offset, int totsize, int checkonly, char *errbuf);
-int sock_discard(SOCKET socket, int size, char *errbuf);
-int	sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage *from, char *errbuf);
+/*!
+	\defgroup ExportedFunc Exported Functions
+*/
+
+/*! \addtogroup ExportedFunc
+	\{
+*/
+
+
+int sock_init(char *errbuf, int errbuflen);
+void sock_cleanup();
+// It is 'public' because there are calls (like accept() ) which are not managed from inside the sockutils files
+void sock_geterror(const char *caller, char *errbuf, int errbufsize);
+int sock_initaddress(const char *address, const char *port,
+						struct addrinfo *hints, struct addrinfo **addrinfo, char *errbuf, int errbuflen);
+int sock_recv(SOCKET socket, char *buffer, int size, int receiveall, char *errbuf, int errbuflen);
+//int sock_recv_dgram(SOCKET sock, char *buffer, int size, char *errbuf, int errbuflen);
+SOCKET sock_open(struct addrinfo *addrinfo, int server, int nconn, char *errbuf, int errbuflen);
+int sock_close(SOCKET sock, char *errbuf, int errbuflen);
+
+int sock_send(SOCKET socket, const char *buffer, int size, char *errbuf, int errbuflen);
+int sock_bufferize(const char *buffer, int size, char *tempbuf, int *offset, int totsize, int checkonly, char *errbuf, int errbuflen);
+int sock_discard(SOCKET socket, int size, char *errbuf, int errbuflen);
+int	sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage *from, char *errbuf, int errbuflen);
 int sock_cmpaddr(struct sockaddr_storage *first, struct sockaddr_storage *second);
+
+int sock_getascii_addrport(const struct sockaddr_storage *sockaddr, char *address, int addrlen, char *port, int portlen, int flags, char *errbuf, int errbuflen);
+int sock_present2network(const char *address, struct sockaddr_storage *sockaddr, char *errbuf, int errbuflen);
 
 
 #ifdef __cplusplus
@@ -167,5 +210,16 @@ int sock_cmpaddr(struct sockaddr_storage *first, struct sockaddr_storage *second
 #endif
 
 
-#endif
+/*!
+	\}
+*/
 
+
+
+/*!
+	\}
+*/
+
+
+
+#endif 
