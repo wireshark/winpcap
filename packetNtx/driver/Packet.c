@@ -756,21 +756,20 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		Open->bpfprogram=TmpBPFProgram;
 		
 		// Create the new JIT filter function
-
 		if(!IsExtendedFilter)
-			if((Open->Filter=BPF_jitter((struct bpf_insn*)Open->bpfprogram,cnt))
-			== NULL)
-		{
-			IF_LOUD(DbgPrint("Error jittering filter");)
-			EXIT_FAILURE(0);
-		}
+			if((Open->Filter=BPF_jitter((struct bpf_insn*)Open->bpfprogram,cnt)) == NULL)
+			{
+				IF_LOUD(DbgPrint("Error jittering filter");)
+					EXIT_FAILURE(0);
+			}
 
 		//return
 		Open->Bhead = 0;
 		Open->Btail = 0;
-		Open->BLastByte = 0;
+		(INT)Open->BLastByte = -1;
 		Open->Received = 0;		
 		Open->Dropped = 0;
+		Open->Accepted = 0;
 
 		EXIT_SUCCESS(IrpSp->Parameters.DeviceIoControl.InputBufferLength);
 		
@@ -913,7 +912,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		Open->Buffer = tpointer;
 		Open->Bhead = 0;
 		Open->Btail = 0;
-		Open->BLastByte = 0;
+		(INT)Open->BLastByte = -1;
 		
 		Open->BufSize = (UINT)dim;
 		EXIT_SUCCESS(dim);

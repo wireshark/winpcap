@@ -350,7 +350,6 @@ typedef struct _OPEN_INSTANCE
 	MEM_TYPE			mem_ex;				///< Memory used by the TME virtual co-processor
 	TME_CORE			tme;				///< Data structure containing the virtualization of the TME co-processor
 	NDIS_SPIN_LOCK		machine_lock;		///< SpinLock that protects the mem_ex buffer
-
 }
 OPEN_INSTANCE, *POPEN_INSTANCE;
 
@@ -361,15 +360,15 @@ OPEN_INSTANCE, *POPEN_INSTANCE;
 
 /// Macro used in the I/O routines to return the control to user-mode with a success status.
 #define EXIT_SUCCESS(quantity) Irp->IoStatus.Information=quantity;\
-Irp->IoStatus.Status = STATUS_SUCCESS;\
-IoCompleteRequest(Irp, IO_NO_INCREMENT);\
-return STATUS_SUCCESS;\
+	Irp->IoStatus.Status = STATUS_SUCCESS;\
+	IoCompleteRequest(Irp, IO_NO_INCREMENT);\
+	return STATUS_SUCCESS;\
 
 /// Macro used in the I/O routines to return the control to user-mode with a failure status.
 #define EXIT_FAILURE(quantity) Irp->IoStatus.Information=quantity;\
-Irp->IoStatus.Status = STATUS_UNSUCCESSFUL;\
-IoCompleteRequest(Irp, IO_NO_INCREMENT);\
-return STATUS_UNSUCCESSFUL;\
+	Irp->IoStatus.Status = STATUS_UNSUCCESSFUL;\
+	IoCompleteRequest(Irp, IO_NO_INCREMENT);\
+	return STATUS_UNSUCCESSFUL;\
 
 /**
  *  @}

@@ -113,8 +113,14 @@ the second one is the file that applications need to link in order to use the
 it. The debug version of these files will be generated in the directory dll\project\debug,
 the release version in dll\project\release.</p>
 <h2>Compiling wpcap.dll</h2>
-<p>A single project is available for wpcap.dll. It can be compiled on any Win32
-platform and the generated dll is system independent.</p>
+<p>wpcap.dll can be compiled on any Win32
+platform and the generated dll is system independent. <span lang="EN-GB" style="mso-fareast-font-family:&quot;MS Mincho&quot;;
+mso-ansi-language:EN-GB">Note that wpcap.dll contains the source code of libpcap,
+from <a href="http://www.tcpdump.org/">www.tcpdump.org</a>. You will be able to
+include and build a different libpcap version simply copying it in the directory
+winpcap\wpcap\prj of the WinPcap source code distribution.<o:p>
+</o:p>
+</span></p>
 <p>System Requirement:</p>
 <ul>
   <li>Microsoft <font size="3">Visual C++ 6.0 compiler.</font></li>

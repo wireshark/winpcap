@@ -44,10 +44,31 @@ extern "C"
 TCHAR szWindowTitle[] = TEXT ("PACKET.DLL");
 LPADAPTER lpTheAdapter = NULL;
 
-#if DBG
+#if _DBG
 #define ODS(_x) OutputDebugString(TEXT(_x))
+#define ODSEx(_x, _y)
 #else
-#define ODS(_x)
+#ifdef _DEBUG_TO_FILE
+#include <stdio.h>
+// Macro to print a debug string. The behavior differs depending on the debug level
+#define ODS(_x) { \
+	FILE *f; \
+	f = fopen("winpcap_debug.txt", "a"); \
+	fprintf(f, "%s", _x); \
+	fclose(f); \
+}
+// Macro to print debug data with the printf convention. The behavior differs depending on */
+#define ODSEx(_x, _y) { \
+	FILE *f; \
+	f = fopen("winpcap_debug.txt", "a"); \
+	fprintf(f, _x, _y); \
+	fclose(f); \
+}
+
+#else
+#define ODS(_x)		
+#define ODSEx(_x, _y)
+#endif
 #endif
 
 typedef DWORD(CALLBACK* OPENVXDHANDLE)(HANDLE);
@@ -56,7 +77,7 @@ BOOLEAN StartPacketDriver (LPTSTR ServiceName);
 BOOLEAN StopPacketDriver (void);
 BOOLEAN PacketSetMaxLookaheadsize (LPADAPTER AdapterObject);
 
-char PacketLibraryVersion[] = "2.3"; 
+char PacketLibraryVersion[] = "3.0 alpha"; 
 
 //---------------------------------------------------------------------------
 
@@ -150,13 +171,14 @@ LPADAPTER PacketOpenAdapter (LPTSTR AdapterName)
 	UINT		BytesReturned;
 	struct _timeb time;
 
-    ODS ("Packet32: PacketOpenAdapter\n");
+    ODSEx ("Packet32: PacketOpenAdapter, opening %s\n", AdapterName);
 	
 	nAdapter = (LPADAPTER) GlobalAllocPtr (GMEM_MOVEABLE | GMEM_ZEROINIT,sizeof (ADAPTER));
 	if (nAdapter == NULL)
 	{
 		error=GetLastError();
 		ODS ("Packet32: PacketOpenAdapter GlobalAlloc Failed\n");
+		ODSEx("Error=%d\n",error);
 		//set the error to the one on which we failed
 		SetLastError(error);
 		return NULL;
@@ -175,7 +197,8 @@ LPADAPTER PacketOpenAdapter (LPTSTR AdapterName)
 	if (nAdapter->hFile == INVALID_HANDLE_VALUE)
 	{
 		error=GetLastError();
-		ODS ("Packet32: PacketOpenAdapter Could not open adapter\n");
+		ODS ("Packet32: PacketOpenAdapter Could not open adapter, 1\n");
+		ODSEx("Error=%d\n",error);
 		GlobalFreePtr (nAdapter);
 		//set the error to the one on which we failed
 		SetLastError(error);
@@ -201,7 +224,8 @@ LPADAPTER PacketOpenAdapter (LPTSTR AdapterName)
 		_ftime(&time);
 		if(DeviceIoControl(nAdapter->hFile,pBIOCSTIMEZONE,&time.timezone,2,NULL,0,&BytesReturned,NULL)==FALSE){
 			error=GetLastError();
-			ODS ("Packet32: PacketOpenAdapter Could not open adapter\n");
+			ODS ("Packet32: PacketOpenAdapter Could not open adapter, 2\n");
+			ODSEx("Error=%d\n",error);
 			GlobalFreePtr (nAdapter);
 			//set the error to the one on which we failed
 			SetLastError(error);
@@ -218,7 +242,8 @@ LPADAPTER PacketOpenAdapter (LPTSTR AdapterName)
 		// pass the event to the driver
 		if(DeviceIoControl(nAdapter->hFile,pBIOCEVNAME,&KernEvent,4,NULL,0,&BytesReturned,NULL)==FALSE){
 			error=GetLastError();
-			ODS ("Packet32: PacketOpenAdapter Could not open adapter\n");
+			ODS("Packet32: PacketOpenAdapter Could not open adapter, 3\n");
+			ODSEx("Error=%d\n",error);
 			GlobalFreePtr (nAdapter);
 			//set the error to the one on which we failed
 			SetLastError(error);
@@ -235,7 +260,8 @@ LPADAPTER PacketOpenAdapter (LPTSTR AdapterName)
 	}
 err:
 	error=GetLastError();
-	ODS ("Packet32: PacketOpenAdapter Could not open adapter\n");
+	ODS ("Packet32: PacketOpenAdapter Could not open adapter, 4\n");
+	ODSEx("Error=%d\n",error);
 	//set the error to the one on which we failed
 	SetLastError(error);
     return NULL;
@@ -742,6 +768,8 @@ BOOLEAN PacketGetAdapterNames (PTSTR pStr,
 		
 		while(*TpStr!=0){
 			
+			ODSEx("Found adapter: %s\n", TpStr);
+
 			adapter=PacketOpenAdapter(TpStr);
 			if(adapter==NULL){
 				strcpy(DpStr,"Unknown");
@@ -761,6 +789,9 @@ BOOLEAN PacketGetAdapterNames (PTSTR pStr,
 			Status = PacketRequest(adapter,FALSE,OidData);
 			if(Status==0){
 				strcpy(DpStr,"Unknown");
+
+				ODSEx("Adapter description: %s\n", DpStr);
+
 				DpStr+=7;
 				*DpStr++=0;
 				
@@ -773,6 +804,9 @@ BOOLEAN PacketGetAdapterNames (PTSTR pStr,
 			}
 
 			TTpStr=(char*)(OidData->Data);
+
+			ODSEx("Adapter description: %s\n", TTpStr);
+
 			while(*TTpStr!=0){
 				*DpStr++=*TTpStr++;
 			}
