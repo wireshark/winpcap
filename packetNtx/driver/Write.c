@@ -302,6 +302,7 @@ NPF_SendComplete(
 	Open= (POPEN_INSTANCE)ProtocolBindingContext;
 	
 	if( RESERVED(pPacket)->FreeBufAfterWrite ){
+		
 		// Free the MDL associated with the packet
 		NdisUnchainBufferAtFront(pPacket, &TmpMdl);
 		IoFreeMdl(TmpMdl);
@@ -311,19 +312,12 @@ NPF_SendComplete(
 			NdisSetEvent(&Open->WriteEvent);
 		
 		Open->Multiple_Write_Counter--;
-	}
-	
-	//  recyle the packet
-	NdisReinitializePacket(pPacket);
-	
-	//  Put the packet back on the free list
-	NdisFreePacket(pPacket);
-	
-	if( !(RESERVED(pPacket)->FreeBufAfterWrite) ){
-		if(Open->Multiple_Write_Counter==0){
+
+		if(Open->Multiple_Write_Counter == 0){
 			// Release the buffer and awake the application
 			NdisUnchainBufferAtFront(pPacket, &TmpMdl);
 			
+			// Complete the request
 			Irp=RESERVED(pPacket)->Irp;
 			irpSp = IoGetCurrentIrpStackLocation(Irp);
 
@@ -333,6 +327,13 @@ NPF_SendComplete(
 			
 		}
 	}
+		
+	//  recyle the packet
+	NdisReinitializePacket(pPacket);
+	
+	//  Put the packet back on the free list
+	NdisFreePacket(pPacket);
+
 
 	return;
 }
