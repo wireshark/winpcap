@@ -88,9 +88,7 @@ NPF_Write(
 	{
 		IF_LOUD(DbgPrint("frame size out of range, send aborted\n");)
 
-        Irp->IoStatus.Status = NDIS_STATUS_SUCCESS;
-        IoCompleteRequest (Irp, IO_NO_INCREMENT);
-        return NDIS_STATUS_SUCCESS;
+		EXIT_FAILURE(0); 
 	}
 
 
