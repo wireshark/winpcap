@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.11 2003/04/04 11:41:35 fulvio Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.12 2003/04/17 14:36:31 fulvio Exp $ (LBL)
  */
 
 
@@ -306,9 +306,8 @@ filtering engine.
 */
 int pcap_compile(pcap_t *p, struct bpf_program *fp, char *str, int optimize, bpf_u_int32 netmask);
 
-/*!\brief <b> Deprecated, use pcap_open_dead() and pcap_compile() instead </b>.\n Compiles a packet filter without the need of opening an adapter. Converts an high level filtering expression 
-(see \ref language) in a program that can be interpreted by the kernel-level
-filtering engine.
+/*!\brief Compiles a packet filter without the need of opening an adapter. Converts an high level filtering expression 
+(see \ref language) in a program that can be interpreted by the kernel-level filtering engine.
 
        pcap_compile_nopcap() is similar to pcap_compile() except 
        that  instead  of passing a pcap structure, one passes the
