@@ -59,16 +59,9 @@ LPPACKET   lpPacket;
 int        i;
 DWORD      dwErrorCode;
 
-DWORD dwVersion;
-DWORD dwWindowsMajorVersion;
-
-//unicode strings (winnt)
-WCHAR		AdapterName[8192]; // string that contains a list of the network adapters
-WCHAR		*temp,*temp1;
-
-//ascii strings (win95)
-char		AdapterNamea[8192]; // string that contains a list of the network adapters
-char		*tempa,*temp1a;
+//ascii strings
+char		AdapterName[8192]; // string that contains a list of the network adapters
+char		*temp,*temp1;
 
 
 int			AdapterNum=0,Open;
@@ -86,67 +79,31 @@ struct bpf_stat stat;
 	printf("Adapters installed:\n");
 	i=0;	
 
-	// the data returned by PacketGetAdapterNames is different in Win95 and in WinNT.
-	// We have to check the os on which we are running
-	dwVersion=GetVersion();
-	dwWindowsMajorVersion =  (DWORD)(LOBYTE(LOWORD(dwVersion)));
-	if (!(dwVersion >= 0x80000000 && dwWindowsMajorVersion >= 4))
-	{  // Windows NT
-		AdapterLength = sizeof(AdapterName);
+	AdapterLength = sizeof(AdapterName);
 
-		if(PacketGetAdapterNames(AdapterName,&AdapterLength)==FALSE){
-			printf("Unable to retrieve the list of the adapters!\n");
-			return -1;
-		}
-		temp=AdapterName;
-		temp1=AdapterName;
-		while ((*temp!='\0')||(*(temp-1)!='\0'))
-		{
-			if (*temp=='\0') 
-			{
-				memcpy(AdapterList[i],temp1,(temp-temp1)*2);
-				temp1=temp+1;
-				i++;
-		}
-	
-		temp++;
-		}
-	  
-		AdapterNum=i;
-		for (i=0;i<AdapterNum;i++)
-			wprintf(L"\n%d- %s\n",i+1,AdapterList[i]);
-		printf("\n");
-		
+	if(PacketGetAdapterNames(AdapterName,&AdapterLength)==FALSE){
+		printf("Unable to retrieve the list of the adapters!\n");
+		return -1;
 	}
+	temp=AdapterName;
+	temp1=AdapterName;
 
-	else	//windows 95
+	while ((*temp!='\0')||(*(temp-1)!='\0'))
 	{
-		AdapterLength = sizeof(AdapterNamea);
-
-		if(PacketGetAdapterNames(AdapterNamea,&AdapterLength)==FALSE){
-			printf("Unable to retrieve the list of the adapters!\n");
-			return -1;
-		}
-		tempa=AdapterNamea;
-		temp1a=AdapterNamea;
-
-		while ((*tempa!='\0')||(*(tempa-1)!='\0'))
+		if (*temp=='\0') 
 		{
-			if (*tempa=='\0') 
-			{
-				memcpy(AdapterList[i],temp1a,tempa-temp1a);
-				temp1a=tempa+1;
-				i++;
-			}
-			tempa++;
+			memcpy(AdapterList[i],temp1,temp-temp1);
+			temp1=temp+1;
+			i++;
 		}
-		  
-		AdapterNum=i;
-		for (i=0;i<AdapterNum;i++)
-			printf("\n%d- %s\n",i+1,AdapterList[i]);
-		printf("\n");
-
+		temp++;
 	}
+		  
+	AdapterNum=i;
+	for (i=0;i<AdapterNum;i++)
+		printf("\n%d- %s\n",i+1,AdapterList[i]);
+	printf("\n");
+
 
 	do 
 	{

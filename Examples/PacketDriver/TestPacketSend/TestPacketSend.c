@@ -63,16 +63,9 @@ LPPACKET   lpPacket;
 int        i,npacks,Snaplen;
 DWORD      dwErrorCode;
 
-DWORD dwVersion;
-DWORD dwWindowsMajorVersion;
-
-//unicode strings (winnt)
-WCHAR		AdapterName[8192]; // string that contains a list of the network adapters
-WCHAR		*temp,*temp1;
-
-//ascii strings (win95)
-char		AdapterNamea[8192]; // string that contains a list of the network adapters
-char		*tempa,*temp1a;
+//ascii strings
+char		AdapterName[8192]; // string that contains a list of the network adapters
+char		*temp,*temp1;
 
 int			AdapterNum=0,Open;
 ULONG		AdapterLength;
@@ -80,7 +73,7 @@ ULONG		AdapterLength;
 float	cpu_time;
 	
 	printf("Traffic Generator v 0.9999\nCopyright 1999 Loris Degioanni (loris@netgroup-serv.polito.it)");
-	printf("\nSends a set of packets to the network using packet.dll API.");
+	printf("\nSends a set of packets to the network using packet.dll API.\n");
 	
 	if (argc == 1){
 		printf("\n\n Usage: TestpacketSend [-i adapter] -n npacks -s size");
@@ -89,7 +82,7 @@ float	cpu_time;
 	}
 	
 	
-	AdapterNamea[0]=0;
+	AdapterName[0]=0;
 	
 	//get the command line parameters
 	for(i=1;i<argc;i+=2){
@@ -98,7 +91,7 @@ float	cpu_time;
 		{
 			
 		case 'i':
-			sscanf(argv[i+1],"%s",AdapterNamea);
+			sscanf(argv[i+1],"%s",AdapterName);
 			break;
 			
 		case 'n':
@@ -115,7 +108,7 @@ float	cpu_time;
 	
 	
 	
-	if(AdapterNamea[0]==0){
+	if(AdapterName[0]==0){
 		
 		//
 		// Obtain the name of the adapters installed on this machine		
@@ -123,69 +116,31 @@ float	cpu_time;
 		printf("Adapters installed:\n");
 		i=0;
 		
-		// the data returned by PacketGetAdapterNames is different in Win95 and in WinNT.
-		// We have to check the os on which we are running
-		dwVersion=GetVersion();
-		dwWindowsMajorVersion =  (DWORD)(LOBYTE(LOWORD(dwVersion)));
-		if (!(dwVersion >= 0x80000000 && dwWindowsMajorVersion >= 4))
-		{  // Windows NT
-			AdapterLength = sizeof(AdapterName);
+		AdapterLength = sizeof(AdapterName);
 
-			if(PacketGetAdapterNames(AdapterName,&AdapterLength)==FALSE){
-				printf("Unable to retrieve the list of the adapters!\n");
-				return -1;
-			}
-
-			temp=AdapterName;
-			temp1=AdapterName;
-			while ((*temp!='\0')||(*(temp-1)!='\0'))
-			{
-				if (*temp=='\0') 
-				{
-					memcpy(AdapterList[i],temp1,(temp-temp1)*2);
-					temp1=temp+1;
-					i++;
-				}
-				
-				temp++;
-			}
-			
-			AdapterNum=i;
-			for (i=0;i<AdapterNum;i++)
-				wprintf(L"\n%d- %s\n",i+1,AdapterList[i]);
-			printf("\n");
-			
+		if(PacketGetAdapterNames(AdapterName,&AdapterLength)==FALSE){
+			printf("Unable to retrieve the list of the adapters!\n");
+			return -1;
 		}
-		
-		else	//windows 95
+		temp=AdapterName;
+		temp1=AdapterName;
+			
+		while ((*temp!='\0')||(*(temp-1)!='\0'))
 		{
-			AdapterLength = sizeof(AdapterNamea);
-
-			if(PacketGetAdapterNames(AdapterNamea,&AdapterLength)==FALSE){
-				printf("Unable to retrieve the list of the adapters!\n");
-				return -1;
-			}
-			tempa=AdapterNamea;
-			temp1a=AdapterNamea;
-			
-			while ((*tempa!='\0')||(*(tempa-1)!='\0'))
+			if (*temp=='\0') 
 			{
-				if (*tempa=='\0') 
-				{
-					memcpy(AdapterList[i],temp1a,tempa-temp1a);
-					temp1a=tempa+1;
-					i++;
-				}
-				tempa++;
+				memcpy(AdapterList[i],temp1,temp-temp1);
+				temp1=temp+1;
+				i++;
 			}
-			
-			AdapterNum=i;
-			for (i=0;i<AdapterNum;i++)
-				printf("\n%d- %s\n",i+1,AdapterList[i]);
-			printf("\n");
-			
+			temp++;
 		}
-		
+			
+		AdapterNum=i;
+		for (i=0;i<AdapterNum;i++)
+			printf("\n%d- %s\n",i+1,AdapterList[i]);
+		printf("\n");
+			
 		do 
 		{
 			printf("Select the number of the adapter to open : ");scanf("%d",&Open);
@@ -208,7 +163,7 @@ float	cpu_time;
 	}
 	else{
 		
-		lpAdapter =  PacketOpenAdapter(AdapterNamea);
+		lpAdapter =  PacketOpenAdapter(AdapterName);
 		
 		if (!lpAdapter || (lpAdapter->hFile == INVALID_HANDLE_VALUE))
 		{
