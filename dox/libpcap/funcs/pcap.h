@@ -31,11 +31,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.9 2003/02/28 08:13:37 fulvio Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.10 2003/03/13 13:05:47 fulvio Exp $ (LBL)
  */
 
 
-/** \defgroup remote Remote Capture Section
+/** \defgroup remote Remote Capture
 */
 
 /** \defgroup remote_help Using WinPcap Remote Capture
