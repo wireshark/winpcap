@@ -5,6 +5,7 @@ DESCRIPTION 'Packet driver dll'
 EXPORTS
 		PacketLibraryVersion
 		PacketGetVersion
+		PacketGetDriverVersion
 		PacketOpenAdapter
 		PacketInitPacket
 		PacketAllocatePacket
