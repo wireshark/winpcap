@@ -3,25 +3,25 @@
 
 main()
 {
-    pcap_if_t *alldevs;
-    pcap_if_t *d;
-    int inum;
-    int i=0;
-    pcap_t *adhandle;
-    int res;
-    char errbuf[PCAP_ERRBUF_SIZE];
-    struct tm *ltime;
-    char timestr[16];
-    struct pcap_pkthdr *header;
-    u_char *pkt_data;
+pcap_if_t *alldevs;
+pcap_if_t *d;
+int inum;
+int i=0;
+pcap_t *adhandle;
+int res;
+char errbuf[PCAP_ERRBUF_SIZE];
+struct tm *ltime;
+char timestr[16];
+struct pcap_pkthdr *header;
+u_char *pkt_data;
 	
     
-    /* Retrieve the device list */
-    if (pcap_findalldevs(&alldevs, errbuf) == -1)
-    {
-        fprintf(stderr,"Error in pcap_findalldevs: %s\n", errbuf);
-        exit(1);
-    }
+	/* Retrieve the device list on the local machine */
+	if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf) == -1)
+	{
+		fprintf(stderr,"Error in pcap_findalldevs: %s\n", errbuf);
+		exit(1);
+	}
     
     /* Print the list */
     for(d=alldevs; d; d=d->next)
@@ -53,20 +53,21 @@ main()
     /* Jump to the selected adapter */
     for(d=alldevs, i=0; i< inum-1 ;d=d->next, i++);
     
-    /* Open the adapter */
-    if ( (adhandle= pcap_open_live(d->name, // name of the device
-		65536,     // portion of the packet to capture. 
-		// 65536 grants that the whole packet will be captured on all the MACs.
-		1,         // promiscuous mode
-		1000,      // read timeout
-		errbuf     // error buffer
-		) ) == NULL)
-    {
-        fprintf(stderr,"\nUnable to open the adapter. %s is not supported by WinPcap\n");
-        /* Free the device list */
-        pcap_freealldevs(alldevs);
-        return -1;
-    }
+	/* Open the device */
+	if ( (adhandle= pcap_open(d->name,			// name of the device
+							  65536,			// portion of the packet to capture. 
+												// 65536 guarantees that the whole packet will be captured on all the link layers
+							  PCAP_OPENFLAG_PROMISCUOUS, 	// promiscuous mode
+							  1000,				// read timeout
+							  NULL,				// authentication on the remote machine
+							  errbuf			// error buffer
+							  ) ) == NULL)
+	{
+		fprintf(stderr,"\nUnable to open the adapter. %s is not supported by WinPcap\n", d->name);
+		/* Free the device list */
+		pcap_freealldevs(alldevs);
+		return -1;
+	}
     
     printf("\nlistening on %s...\n", d->description);
 	

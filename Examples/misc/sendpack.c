@@ -3,25 +3,31 @@
 
 #include <pcap.h>
 
-void usage();
 
-void main(int argc, char **argv) {
-	pcap_t *fp;
-	char error[PCAP_ERRBUF_SIZE];
-	u_char packet[100];
-	int i;
+void main(int argc, char **argv)
+{
+pcap_t *fp;
+char errbuf[PCAP_ERRBUF_SIZE];
+u_char packet[100];
+int i;
 
 	/* Check the validity of the command line */
 	if (argc != 2)
 	{
-		printf("usage: %s inerface", argv[0]);
+		printf("usage: %s interface (e.g. 'rpcap://eth0')", argv[0]);
 		return;
 	}
-
-	/* Open the output adapter */
-	if((fp = pcap_open_live(argv[1], 100, 1, 1000, error) ) == NULL)
+    
+	/* Open the output device */
+	if ( (fp= pcap_open(argv[1],			// name of the device
+						100,				// portion of the packet to capture (only the first 100 bytes)
+						PCAP_OPENFLAG_PROMISCUOUS, 	// promiscuous mode
+						1000,				// read timeout
+						NULL,				// authentication on the remote machine
+						errbuf				// error buffer
+						) ) == NULL)
 	{
-		fprintf(stderr,"\nError opening adapter: %s\n", error);
+		fprintf(stderr,"\nUnable to open the adapter. %s is not supported by WinPcap\n", argv[1]);
 		return;
 	}
 
@@ -42,14 +48,17 @@ void main(int argc, char **argv) {
 	packet[11]=2;
 	
 	/* Fill the rest of the packet */
-	for(i=12;i<100;i++){
+	for(i=12;i<100;i++)
+	{
 		packet[i]=i%256;
 	}
 
 	/* Send down the packet */
-	pcap_sendpacket(fp,
-		packet,
-		100);
+	if (pcap_sendpacket(fp, packet, 100 /* size */) != 0)
+	{
+		fprintf(stderr,"\nError sending the packet: \n", pcap_geterr(fp));
+		return;
+	}
 
 	return;
 }
