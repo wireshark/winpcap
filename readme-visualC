@@ -1,5 +1,5 @@
 WinPcap
-See 		http://netgroup-serv.polito.it/winpcap
+See 		http://winpcap.polito.it
 
 Building the drivers  
 --------------------
@@ -20,11 +20,16 @@ If your system satisfies the requirements, follow these steps:
 
 1. From the Window NT Start menu, select the folder Programs and then Windows NT DDK. From here select the voice Checked Build Environment if you want to build a debug version, or Free Build Environment if you want to build a release version. 
 2. A DOS shell will be opened. Move to the directory whit the driver's source code and type the command
- compile
-This command will generate the driver (packet.sys). The debug version of the files will be generated in the directory \i386\checked. The release version in \i386\free. 
+ compile2k   for Win2000/XP drivers
+ compilent4  for NT4 drivers
+
+This command will generate the driver (npf.sys). The debug version of the files will be generated in the directory \i386\checked. The release version in \i386\free. 
 3. To compile the sources of PACKET.DLL, load the project contained in the directory packetNTx\dll\project in the Visual C++ 6.0 IDE. Build the project to obtain the PACKET.DLL and packet.lib files. The debug version of these files will be generated in the directory packetNTx\dll\project\debug, the release version in packetNTx\dll\project\release. 
 
 Warning: usually, during the first compilation of the driver, a lot of 'last line incomplete' errors are generated. Ignore these errors and let the compilation process continue. These errors usually disappear from the second compilation.
+
+The normal driver uses timestamps packets and data using the Assembler instruction RDTSC. If you want to compile the driver using the normal KeQueryPerformanceCounter DDK API to obtain timestamps, use "compile2k kqpc", or "compilent4 kqpc"
+
 
 Windows 95/98/ME
 ----------------
