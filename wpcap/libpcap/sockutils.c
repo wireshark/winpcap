@@ -332,7 +332,7 @@ SOCKET sock;
 		if (bind(sock, addrinfo->ai_addr, addrinfo->ai_addrlen) != 0)
 		{
 			sock_geterror("bind(): ", errbuf, errbuflen);
-			return -1;
+			return 0;
 		}
 
 		if (addrinfo->ai_socktype == SOCK_STREAM)
