@@ -48,7 +48,7 @@ PADAPTER_INFO AdaptersInfoList = NULL;	///< Head of the adapter information list
 HANDLE AdaptersInfoMutex;		///< Mutex that protects the adapter information list. NOTE: every API that takes an ADAPTER_INFO as parameter assumes that it has been called with the mutex acquired.
 
 #define FAKE_NDISWAN_ADAPTER_NAME "\\Device\\NPF_GenericNdisWanAdapter"  ///< Name of a fake ndiswan adapter that is always available on 2000/XP/2003, used to capture NCP/LCP packets
-#define FAKE_NDISWAN_ADAPTER_DESCRIPTION "Generic NdisWan adapter, useful to capture NCP/LCP packets" ///< Description of a fake ndiswan adapter that is always available on 2000/XP/2003, used to capture NCP/LCP packets
+#define FAKE_NDISWAN_ADAPTER_DESCRIPTION "Generic NdisWan adapter"       ///< Description of a fake ndiswan adapter that is always available on 2000/XP/2003, used to capture NCP/LCP packets
 
 extern FARPROC GetAdaptersAddressesPointer;
 
