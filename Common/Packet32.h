@@ -179,7 +179,7 @@ struct bpf_hdr {
   It is simpler than the bpf_hdr, because it corresponds to the header associated by WinPcap and libpcap to a
   packet in a dump file. This makes straightforward sending WinPcap dump files to the network.
 */
-struct dumbpf_hdr{
+struct dump_bpf_hdr{
     struct timeval	ts;			///< Time stamp of the packet
     UINT			caplen;		///< Length of captured portion. The captured portion can smaller than the 
 								///< the original packet, because it is possible (with a proper filter) to 
