@@ -343,7 +343,5 @@ int rpcap_sendauth(SOCKET sock, struct pcap_rmtauth *auth, char *errbuf);
 
 int rpcap_remoteact_getsock(const char *host, char *errbuf);
 
-void pthread_suspend(int msec);
-
 #endif
 

@@ -179,7 +179,7 @@ int rpcap_deseraddr(struct sockaddr_storage *sockaddrin, struct sockaddr_storage
 
 /*!	\ingroup remote_pri_func
 
-	\brief It reads a packet from the network socket. This does not make used of 
+	\brief It reads a packet from the network socket. This does not make use of 
 	callback (hence the "nocb" string into its name).
 
 	This function is called by the several pcap_next_ex() when they detect that 
@@ -202,53 +202,155 @@ int rpcap_deseraddr(struct sockaddr_storage *sockaddrin, struct sockaddr_storage
 */
 int pcap_read_nocb_remote(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data)
 {
-int cc;
-register u_char *ep, *bp;
+struct rpcap_header *header;			// general header according to the RPCAP format
+struct rpcap_pkthdr *net_pkt_header;	// header of the packet
+char netbuf[RPCAP_NETBUF_SIZE];	// size of the network buffer in which the packet is copied, just for UDP
+unsigned int nread;						// number of bytes (of payload) currently read from the network (referred to the current pkt)
+int retval;								// generic return value
 
-	cc= p->cc;
-	bp= p->bp;
+// Structures needed for the select() call
+fd_set rfds;							// set of socket descriptors we have to check
+struct timeval tv;						// maximum time the select() can block waiting for data
 
-	ep = bp + cc;
 
-	if (bp < ep) 
+	// Define the read timeout, to be used in the select()
+	// 'timeout', in pcap_t, is in milliseconds; we have to convert it into sec and microsec
+#ifdef linux
+	tv.tv_sec = p->md.timeout/1000;
+	tv.tv_usec = (p->md.timeout - tv.tv_sec * 1000 )* 1000;
+#else
+	tv.tv_sec = p->timeout/1000;
+	tv.tv_usec = (p->timeout - tv.tv_sec * 1000 )* 1000;
+#endif
+
+	// Watch out sockdata to see if it has input
+	FD_ZERO(&rfds);
+
+	// 'fp->rmt_sockdata' has always to be set before calling the select(),
+	// since it is cleared by the select()
+	FD_SET(p->rmt_sockdata, &rfds);
+
+	retval = select(p->rmt_sockdata + 1, &rfds, NULL, NULL, &tv);
+	if (retval == -1)
 	{
-		register int caplen, hdrlen;
-again:
-		caplen = ((struct pcap_pkthdr *)bp)->caplen;
-		hdrlen= sizeof(struct pcap_pkthdr);
-			
-		/*
-		 * XXX A bpf_hdr matches a pcap_pkthdr.
-		 */
-		*pkt_header = (struct pcap_pkthdr *) bp;
-		*pkt_data = bp + hdrlen;
-		bp += BPF_WORDALIGN(caplen + hdrlen);
-		
-		p->bp = bp;
-		p->cc = ep - bp;
-		return (1);
+		sock_geterror("select(): ", p->errbuf, PCAP_ERRBUF_SIZE);
+		return -1;
+	}
+
+	// There is no data waiting, so return '0'
+	if (retval == 0)
+		return 0;
+
+	// data is here; so, let's copy it into the user buffer
+	// I'm going to read a new packet; so I reset the number of bytes (payload only) read
+	nread= 0;
+
+	// We have to define 'header' as a pointer to a larger buffer, 
+	// because in case of UDP we have to read all the message within a single call
+	header= (struct rpcap_header *) netbuf;
+	net_pkt_header= (struct rpcap_pkthdr *) (netbuf + sizeof(struct rpcap_header) );
+
+	if (p->rmt_flags & PCAP_OPENFLAG_UDP_DP)
+	{
+		// Read the entire message from the network
+		if (sock_recv(p->rmt_sockdata, netbuf, RPCAP_NETBUF_SIZE, SOCK_RECEIVEALL_NO, p->errbuf, PCAP_ERRBUF_SIZE) == -1)
+			return -1;
 	}
 	else
 	{
-		p->cc = 0;
-		// If there are no packets, the read thread must be suspended
-// another horrible difference...
-#ifdef linux
-		pthread_suspend(p->md.timeout);
-#else
-		pthread_suspend(p->timeout);
-#endif
-		// check if now if have data; otherwise returns
-		cc= p->cc;
-		bp= p->bp;
-
-		ep = bp + cc;
-
-		if (bp < ep) 
-			goto again;
-
-		return (0);
+		if (sock_recv(p->rmt_sockdata, netbuf, sizeof(struct rpcap_header), SOCK_RECEIVEALL_YES, p->errbuf, PCAP_ERRBUF_SIZE) == -1)
+			return -1;
 	}
+
+	// Checks if the message is correct
+	retval= rpcap_checkmsg(p->errbuf, p->rmt_sockdata, header, RPCAP_MSG_PACKET, 0);
+
+	if (retval != RPCAP_MSG_PACKET)		// the message is not the one expected
+	{
+		switch (retval)
+		{
+			case -3:		// Unrecoverable network error									
+				return -1;	// Do nothing; just exit from here; the error code is already into the errbuf
+
+			case -2:		// The other endpoint sent a message that is not allowed here
+			case -1:		// The other endpoint has a version number that is not compatible with our
+				return 0;	// Return 'no packets received'
+
+			default:
+			{
+				SOCK_ASSERT("Internal error", 1);
+				return 0;	// Return 'no packets received
+			};
+		}
+	}
+	
+	// In case of TCP, read the remaining of the packet from the socket
+	if ( !(p->rmt_flags & PCAP_OPENFLAG_UDP_DP))
+	{
+		// Read the RPCAP packet header from the network
+		if ( (nread= sock_recv(p->rmt_sockdata, (char *) net_pkt_header, 
+					sizeof(struct rpcap_pkthdr), SOCK_RECEIVEALL_YES, p->errbuf, PCAP_ERRBUF_SIZE)) == -1)
+			return -1;
+	}
+
+	if ( (ntohl(net_pkt_header->caplen) + sizeof(struct pcap_pkthdr) ) <= ( (unsigned) p->bufsize) )
+	{
+		// Initialize returned structures
+		*pkt_header= (struct pcap_pkthdr *) p->buffer;
+		*pkt_data= p->buffer + sizeof(struct pcap_pkthdr);
+
+		(*pkt_header)->caplen= ntohl(net_pkt_header->caplen);
+		(*pkt_header)->len= ntohl(net_pkt_header->len);
+		(*pkt_header)->ts.tv_sec= ntohl(net_pkt_header->timestamp_sec);
+		(*pkt_header)->ts.tv_usec= ntohl(net_pkt_header->timestamp_usec);
+
+		// I don't update the counter of the packets dropped by the network since we're using TCP;
+		// therefore no packets are dropped. Just update the number of packets received correctly
+		p->md.TotCapt++;
+
+		// Copies the packet into the data buffer
+		if (p->rmt_flags & PCAP_OPENFLAG_UDP_DP)
+		{
+		unsigned int npkt;
+
+			// In case of UDP the packet has already been read; we have to copy it into 'buffer'
+			// Another option should bne to declare 'netbuf' as 'static'; however this prevents
+			// using several pcap instances within the same process (because the static buffer is shared among
+			// all processes)
+			strncpy(*pkt_data, netbuf + sizeof(struct rpcap_header) + sizeof(struct pcap_pkthdr), (*pkt_header)->caplen);
+
+			// We're using UDP, so we need to update the counter of the packets dropped by the network
+			npkt= ntohl(net_pkt_header->npkt);
+
+			if (p->md.TotCapt != npkt)
+			{
+				p->md.TotNetDrops+= (npkt - p->md.TotCapt);
+				p->md.TotCapt= npkt;
+			}
+
+		}
+		else
+		{
+			// In case of TCP, read the remaining of the packet from the socket
+			if ( (nread+= sock_recv(p->rmt_sockdata, *pkt_data, (*pkt_header)->caplen, SOCK_RECEIVEALL_YES, p->errbuf, PCAP_ERRBUF_SIZE)) == -1)
+				return -1;
+
+			// Checks if all the data has been read; if not, discard the data in excess
+			// This check has to be done only on TCP connections
+			if (nread != ntohl(header->plen))
+				sock_discard(p->rmt_sockdata, ntohl(header->plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE);
+		}
+
+
+		// Packet read successfully
+		return 1;
+	}
+	else
+	{
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "Received a packet that is larger than the internal buffer size.");
+		return -1;
+	}
+
 }
 
 
@@ -334,13 +436,6 @@ int active= 0;					// active mode or not?
 
 		if ( ntohl(header.plen) != 0)
 			sock_discard(fp->rmt_sockctrl, ntohl(header.plen), fakeerrbuf, PCAP_ERRBUF_SIZE);
-	}
-
-
-	if (fp->rmt_threaddata)
-	{
-		pthread_cancel(fp->rmt_threaddata);
-		fp->rmt_threaddata= 0;
 	}
 
 	if (fp->rmt_sockdata)
@@ -556,7 +651,6 @@ char host[PCAP_BUF_SIZE], ctrlport[PCAP_BUF_SIZE], iface[PCAP_BUF_SIZE];
 
 char sendbuf[RPCAP_NETBUF_SIZE];// temporary buffer in which data to be sent is buffered
 int sendbufidx= 0;				// index which keeps the number of bytes currently buffered
-pthread_t threaddata= 0;		// handle to the receiving thread
 struct pcap *fp= NULL;			// pcap_t main variable
 unsigned int nread= 0;			// number of bytes of the payload read from the socket
 int retval;						// store the return value of the functions
@@ -764,7 +858,6 @@ int pcap_startcapture_remote(pcap_t *fp)
 char sendbuf[RPCAP_NETBUF_SIZE];// temporary buffer in which data to be sent is buffered
 int sendbufidx= 0;				// index which keeps the number of bytes currently buffered
 char portdata[PCAP_BUF_SIZE];	// temp variable needed to keep the network port for the the data connection
-pthread_t threaddata= 0;		// handle to the receiving thread
 unsigned int nread= 0;			// number of bytes of the payload read from the socket
 int retval;						// store the return value of the functions
 int active= 0;					// '1' if we're in active mode
@@ -783,6 +876,10 @@ int ai_family;					// temp, keeps the address family used by the control connect
 struct rpcap_header header;					// header of the RPCAP packet
 struct rpcap_startcapreq *startcapreq;		// start capture request message
 struct rpcap_startcapreply startcapreply;	// start capture reply message
+
+// Variables related to the buffer setting
+int res, itemp;
+int sockbufsize= 0;
 
 
 	// detect if we're in active mode
@@ -953,43 +1050,113 @@ struct rpcap_startcapreply startcapreply;	// start capture reply message
 		sizeof(struct rpcap_startcapreply), SOCK_RECEIVEALL_YES, fp->errbuf, PCAP_ERRBUF_SIZE)) == -1)
 		goto error;
 
-	// Data connection is opened by the client toward the server
-	// This happens because (a) we're not in active mode, and (b) we're not using UDP
-	// So, let's start the connection
-	if ( (!active) && !(fp->rmt_flags & PCAP_OPENFLAG_UDP_DP) )
+	// In case of UDP data stream, the connection is always opened by the daemon
+	// So, this case is already covered by the code above.
+	// Now, we have still to handle TCP connections, because:
+	// - if we're in active mode, we have to wait for a remote connection
+	// - if we're in passive more, we have to start a connection
+	//
+	// We have to do he job in two steps because in case we're opening a tcp connection, we have
+	// to tell the port we're using to the remote side; in case we're accepting a TCP
+	// connection, we have to wait this info from the remote side.
+
+	if (!(fp->rmt_flags & PCAP_OPENFLAG_UDP_DP))
 	{
-		memset(&hints, 0, sizeof(struct addrinfo) );
-		hints.ai_family = ai_family;		// Use the same address family of the control socket
-		hints.ai_socktype = (fp->rmt_flags & PCAP_OPENFLAG_UDP_DP) ? SOCK_DGRAM : SOCK_STREAM;
+		if (!active)
+		{
+			memset(&hints, 0, sizeof(struct addrinfo) );
+			hints.ai_family = ai_family;		// Use the same address family of the control socket
+			hints.ai_socktype = (fp->rmt_flags & PCAP_OPENFLAG_UDP_DP) ? SOCK_DGRAM : SOCK_STREAM;
 
-		sprintf(portdata, "%d", ntohs(startcapreply.portdata) );
+			sprintf(portdata, "%d", ntohs(startcapreply.portdata) );
 
-		// Let's the server pick up a free network port for us
-		if (sock_initaddress(host, portdata, &hints, &addrinfo, fp->errbuf, PCAP_ERRBUF_SIZE) == -1)
-			goto error;
+			// Let's the server pick up a free network port for us
+			if (sock_initaddress(host, portdata, &hints, &addrinfo, fp->errbuf, PCAP_ERRBUF_SIZE) == -1)
+				goto error;
 
-		if ( (sockdata= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, fp->errbuf, PCAP_ERRBUF_SIZE)) == -1)
-			goto error;
+			if ( (sockdata= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, fp->errbuf, PCAP_ERRBUF_SIZE)) == -1)
+				goto error;
 
-		// addrinfo is no longer used
-		freeaddrinfo(addrinfo);
-		addrinfo= NULL;
+			// addrinfo is no longer used
+			freeaddrinfo(addrinfo);
+			addrinfo= NULL;
+		}
+		else
+		{
+		SOCKET socktemp;	// We need another socket, since we're going to accept() a connection
+
+			// Connection creation
+			saddrlen = sizeof(struct sockaddr_storage);
+
+			socktemp= accept(sockdata, (struct sockaddr *) &saddr, &saddrlen);
+			
+			if (socktemp == -1)
+			{
+				sock_geterror("accept(): ", fp->errbuf, PCAP_ERRBUF_SIZE);
+				goto error;
+			}
+
+			// Now that I accepted the connection, the server socket is no longer needed
+			sock_close(sockdata, fp->errbuf, PCAP_ERRBUF_SIZE);
+			sockdata= socktemp;
+		}
 	}
 
+	// Let's save the socket of the data connection
+	fp->rmt_sockdata= sockdata;
 
-	// Allocates WinPcap/libpcap user buffer
+	// Allocates WinPcap/libpcap user buffer, which is a socket buffer in case of a remote capture
 	// It has the same size of the one used on the other side of the connection
 	fp->bufsize= ntohl(startcapreply.bufsize);
+
+	// Let's get the actual size of the socket buffer
+	itemp= sizeof(sockbufsize);
+
+	res= getsockopt(sockdata, SOL_SOCKET, SO_RCVBUF, (char *) &sockbufsize, &itemp);
+	if (res == -1)
+	{
+		sock_geterror("pcap_startcapture_remote()", fp->errbuf, PCAP_ERRBUF_SIZE);
+		SOCK_ASSERT(fp->errbuf, 1);
+	}
 
 	/*
 		Warning: on some kernels (e.g. linux), the size of the user buffer does not take
 		into account the pcap_header and such, and it is set equal to the snaplen.
-		In our view, this is wrong (the meaning of the bufsize becames a bit strange).
-		So, in our view, bufsize is the whole size of the user buffer.
-		In case the bufsize returned is too small, adjust it accordingly.
+		In my view, this is wrong (the meaning of the bufsize becames a bit strange).
+		So, here bufsize is the whole size of the user buffer.
+		In case the bufsize returned is too small, let's adjust it accordingly.
 	*/
 	if (fp->bufsize <= fp->snapshot)
 		fp->bufsize+= sizeof (struct pcap_pkthdr);
+
+	// if the current socket buffer is smaller than the desired one
+	if (sockbufsize < fp->bufsize)
+	{
+		// Loop until the buffer size is OK or the original socket buffer size is larger than this one
+		while (1)
+		{
+			res= setsockopt(sockdata, SOL_SOCKET, SO_RCVBUF, (char *) &(fp->bufsize), sizeof(fp->bufsize) );
+
+			if (res == 0)
+				break;
+
+			// If something goes wrong, half the buffer size (checking that it does not become smaller than
+			// the current one)
+			fp->bufsize/= 2;
+
+			if (sockbufsize >= fp->bufsize)
+			{
+				fp->bufsize= sockbufsize;
+				break;
+			}
+		}
+	}
+
+	// Let's allocate the packet; this is required in order to put the packet somewhere when 
+	// extracting data from the socket
+	// Since buffering has already been done in the socket buffer, here we need just a buffer,
+	// whose size is equal to the pcap header plus the snapshot length
+	fp->bufsize= fp->snapshot + sizeof (struct pcap_pkthdr);
 
 	fp->buffer = (u_char *) malloc(fp->bufsize);
 	if (fp->buffer == NULL)
@@ -998,49 +1165,6 @@ struct rpcap_startcapreply startcapreply;	// start capture reply message
 		goto error;
 	}
 
-	// The server is trying to connect to me; so it have to block on an accept() call
-	// However, if the data connection is UDP, I don't have to call accept()
-	if ( (active) && !(fp->rmt_flags & PCAP_OPENFLAG_UDP_DP) )
-	{
-	SOCKET socktemp;	// We need another socket, since we're going to accept() a connection
-
-		// Connection creation
-		saddrlen = sizeof(struct sockaddr_storage);
-
-		socktemp= accept(sockdata, (struct sockaddr *) &saddr, &saddrlen);
-		
-		if (socktemp == -1)
-		{
-			sock_geterror("accept(): ", fp->errbuf, PCAP_ERRBUF_SIZE);
-			goto error;
-		}
-
-		// Now that I accepted the connection, the server socket is no longer needed
-		sock_close(sockdata, fp->errbuf, PCAP_ERRBUF_SIZE);
-		sockdata= socktemp;
-	}
-
-	fp->rmt_sockdata= sockdata;
-
-	// Now we have to create a new thread to receive packets
-	if (fp->rmt_flags & PCAP_OPENFLAG_UDP_DP)
-	{
-		if ( pthread_create( &threaddata, NULL, (void *) &rpcap_thrdatamain_dgram, (void *) fp) )
-		{
-			snprintf(fp->errbuf, PCAP_ERRBUF_SIZE, "Error creating the data thread");
-			goto error;
-		}
-	}
-	else
-	{
-		if ( pthread_create( &threaddata, NULL, (void *) &rpcap_thrdatamain_stream, (void *) fp) )
-		{
-			snprintf(fp->errbuf, PCAP_ERRBUF_SIZE, "Error creating the data thread");
-			goto error;
-		}
-	}
-
-	fp->rmt_threaddata= threaddata;
 
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))
@@ -1059,9 +1183,6 @@ error:
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))
 		sock_discard(fp->rmt_sockctrl, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE);
-
-	if (threaddata)
-		pthread_cancel(threaddata);
 
 	if ((sockdata) && (sockdata != -1))		// we can be here because sockdata said 'error'
 		sock_close(sockdata, fakeerrbuf, PCAP_ERRBUF_SIZE);
@@ -1248,435 +1369,6 @@ int pcap_setfilter_remote(pcap_t *fp, struct bpf_program *prog)
 
 	return 0;
 }
-
-
-
-/*!	\ingroup remote_pri_func
-	\brief Suspends a pthread for msec milliseconds.
-
-	This function is provided since pthreads do not have a suspend() call.
-*/
-void pthread_suspend(int msec)
-{
-#ifdef WIN32
-	Sleep(msec);
-#else
-struct timespec abstime;
-struct timeval now;
-
-	pthread_cond_t cond;
-	pthread_mutex_t mutex;
-	pthread_mutexattr_t attr;
-
-	pthread_mutexattr_init(&attr);
-	pthread_mutex_init(&mutex, &attr);
-	pthread_mutex_lock(&mutex);
-
-	pthread_cond_init(&cond, NULL);
-
-	gettimeofday(&now, NULL);
-	
-	abstime.tv_sec = now.tv_sec + msec/1000;
-	abstime.tv_nsec = now.tv_usec * 1000 + (msec%1000) * 1000 * 1000;
-
-	pthread_cond_timedwait(&cond, &mutex, &abstime);
-
-	pthread_mutex_destroy(&mutex);
-	pthread_cond_destroy(&cond);
-#endif
-}
-
-
-
-/*!	\ingroup remote_pri_func
-	\brief Main function of the thread which waits for data packets (i.e.
-	packets which carry a captured packet) in case of a TCP data connection.
-
-	This function does basically the job of the Operating System kernel in the local
-	capture: it takes packets and it puts them into the user buffer.
-
-	\param ptr: it is a void pointer that will be casted into a pcap_t structure.
-	This parameter is needed to retrieve the the socket (i.e. sockdata) we are currently 
-	using for the data connection, the control socket (in case we want to send error messages),
-	and so on.
-
-	\return Nothing.
-*/
-void rpcap_thrdatamain_stream(void *ptr)
-{
-char errbuf[PCAP_ERRBUF_SIZE + 1];	// error buffer
-pcap_t *fp;							// pointer to a 'pcap' structure
-int retval;							// general variable used to keep the return value of other functions
-struct rpcap_pkthdr net_pkt_header;	// header of the packet
-struct pcap_pkthdr *pkt_header;		// pointer to the buffer that contains the header of the current packet
-struct rpcap_header header;			// general header according to the RPCAP format
-int cc;								// number of bytes of data available into the user buffer
-unsigned int nread;					// number of bytes (of payload) currently read from the network (referred to the current pkt)
-int pending= 0;						// '1' if we've already read the pkt header, but there was not enough space to read the pkt data
-
-// Structures needed for the select() call
-fd_set rfds;						// set of socket descriptors we have to check
-struct timeval tv;					// maximum time the select() can block waiting for data
-
-	fp= (pcap_t *) ptr;
-
-	*errbuf= 0;	// Initialize errbuf
-
-	// Modify thread params so that it can be killed at any time
-	if (pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL) )
-		goto error;
-	if (pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL) )
-		goto error;
-
-	// Watch out sockdata to see if it has input
-	FD_ZERO(&rfds);
-
-	// We do not have to block on the select()
-	tv.tv_sec = 0;
-	tv.tv_usec = 0;
-
-	/*
-		The algorithm chosen to manage ths user buffer is quite simple, although
-		not completely optimized. For instance, this is the same algorithm that
-		is implemented when a packet is read from the kernel.
-
-		The producer (i.e. this thread) reads data from the network only when the
-		user has already consumed all the data into the buffer.
-		When data is read, it is copied at the beginning of the buffer.
-		So, this is not a circular buffer.
-		This job ends when (1) there is no data coming from the network, (2)
-		the user buffer is completely full.
-
-		The consumer (i.e. the thread that calls pcap_next_ex) can read only when
-		the producer finished its job. In other words, even if there is already 
-		data into the user buffer, the consumer cannot read it because the producer
-		updates the status variables (fp->cc, fp->bp) only when it ends its job.
-		This is the reason we do not need spinlocks.
-
-		This algorithm has two main drawbacks:
-		- even if there is data into the user buffer, the application could not be 
-		able to see it
-		- the producer reads the data from the network all at once, so the resulting
-		behaviour is that all of a sudden the socket buffer is emptied and the TCP
-		starts sending several acknowledges at the same time. This could lead to
-		bursty traffic patterns.
-	*/
-	while (1)
-	{
-		if (fp->cc == 0) 
-		{
-			u_char *bp= fp->buffer;
-			cc= 0;
-
-			/*
-				We will exit from this cycle while when:
-				- the socket does not have data in it
-				- the buffer does not have space left
-
-				In all cases, the pcap status variables will be updated
-				before calling 'break'.
-			*/
-			while (1)
-			{
-again:
-				// 'fp->rmt_sockdata' has always to be set before calling the select(),
-				// since it is cleared by the select()
-				FD_SET(fp->rmt_sockdata, &rfds);
-
-				retval = select(fp->rmt_sockdata + 1, &rfds, NULL, NULL, &tv);
-				if (retval == -1)
-				{
-					sock_geterror("select(): ", errbuf, PCAP_ERRBUF_SIZE);
-						goto error;
-				}
-
-				// There is no data waiting
-				if (retval == 0)
-				{
-					// Update the pcap_t pointers so that the user application can read from the buffer
-					fp->bp= fp->buffer;
-					fp->cc= cc;
-
-					pthread_suspend(100);	// Suspend 100 ms
-					break;
-				}
-
-				if (!pending)
-				{
-					// I'm going to read a new packet; so I reset the number of bytes (payload only) read
-					nread= 0;
-
-					if (sock_recv(fp->rmt_sockdata, (char *) &header, sizeof(struct rpcap_header), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) == -1)
-						goto error;
-
-					// Checks if the message is correct
-					retval= rpcap_checkmsg(errbuf, fp->rmt_sockdata, &header, RPCAP_MSG_PACKET, 0);
-
-					if (retval != RPCAP_MSG_PACKET)		// the message is not the one expected
-					{
-						switch (retval)
-						{
-							case -3:		// Unrecoverable network error									
-								goto error;	// Do nothing; just exit from here; the error code is already into the errbuf
-
-							case -2:		// The other endpoint sent a message that is not allowed here
-							case -1:		// The other endpoint has a version number that is not compatible with our
-								goto again;
-
-							default:
-							{
-								SOCK_ASSERT("Internal error", 1);
-								goto error;
-							};
-						}
-					}
-
-					// Read the RPCAP packet header from the network
-					if ( (nread= sock_recv(fp->rmt_sockdata, (char *) &net_pkt_header, 
-						sizeof(struct rpcap_pkthdr), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE)) == -1)
-						goto error;
-				}
-
-				if ( (cc + ntohl(net_pkt_header.caplen) + sizeof(struct pcap_pkthdr) ) <= ( (unsigned) fp->bufsize) )
-				{
-					pending= 0;
-
-					pkt_header= (struct pcap_pkthdr *) bp;
-					pkt_header->caplen= ntohl(net_pkt_header.caplen);
-					pkt_header->len= ntohl(net_pkt_header.len);
-					pkt_header->ts.tv_sec= ntohl(net_pkt_header.timestamp_sec);
-					pkt_header->ts.tv_usec= ntohl(net_pkt_header.timestamp_usec);
-
-					// I don't update the counter of the packets dropped by the network since we're using TCP;
-					// therefore no packets are dropped. Just update the number of packets received correctly
-					fp->md.TotCapt++;
-
-					// Copies the packet into the data buffer
-					if ( (nread+= sock_recv(fp->rmt_sockdata, (char *) bp + sizeof(struct pcap_pkthdr), pkt_header->caplen, 
-						SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE)) == -1)
-						goto error;
-
-					bp += BPF_WORDALIGN(pkt_header->caplen + sizeof(struct pcap_pkthdr));
-					cc += BPF_WORDALIGN(pkt_header->caplen + sizeof(struct pcap_pkthdr));
-
-					// Checks if all the data has been read; if not, discard the data in excess
-					if (nread != ntohl(header.plen))
-						sock_discard(fp->rmt_sockdata, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE);
-
-				}
-				else
-				{
-					pending= 1;
-
-					// Update the pcap_t pointers so that the user application can read from the buffer
-					fp->bp= fp->buffer;
-					fp->cc= cc;
-
-					break;
-				}
-			} // end while (1)
-		}
-		else
-		{
-			pthread_suspend(100);	// Suspend 100 ms
-		}
-
-	}	// end main while(1)
-
-error:
-	SOCK_ASSERT("Exiting from the child data thread", 1);
-	SOCK_ASSERT(errbuf, 1);
-
-	// Removes the descriptor s from set
-	FD_CLR(fp->rmt_sockdata, &rfds);
-
- 	closesocket(fp->rmt_sockdata);
-	fp->rmt_sockdata= 0;
-	fp->rmt_threaddata= 0;
-}
-
-
-
-/*!	\ingroup remote_pri_func
-	\brief Main function of the thread which waits for data packets (i.e.
-	packets which carry a captured packet) in case of a UDP data connection.
-
-	This function does basically the job of the Operating System kernel in the local
-	capture: it takes packet and it puts them into the user buffer.
-
-	This function is different from the rpcap_thrdatamain_stream(), because UDP requires
-	that a message coming from the network is received using a single recv() call.
-	Vice versa, TCP sockets allows you reading only a few bytes each time, and the remaining part 
-	of the message is retained.
-
-	From this point of view, UDP sockets makes this thread more epensive, because the message is 
-	first copied into a temporary buffer (allocated by the thread itself), then, if the 
-	WinPcap/libpcap user buffer has enough space, the data is copied into that buffer.
-
-	\param ptr: it is a void pointer that will be casted into a pcap_t structure.
-	This parameter is needed to retrieve the the socket (i.e. sockdata) we are currently 
-	using for the data connection, the control socket (in case we want to send error messages),
-	and so on.
-
-	\return Nothing.
-*/
-void rpcap_thrdatamain_dgram(void *ptr)
-{
-char errbuf[PCAP_ERRBUF_SIZE + 1];	// error buffer
-char netbuf[RPCAP_NETBUF_SIZE];		// size of the network buffer in which the packet is copied
-pcap_t *fp;							// pointer to a 'pcap' structure
-int retval;							// general variable used to keep the return value of other functions
-struct rpcap_header *header;		// general header according to the RPCAP format
-struct rpcap_pkthdr *net_pkt_header;// header of the packet
-struct pcap_pkthdr *pkt_header;		// pointer to the buffer that contains the header of the current packet
-int cc;								// number of bytes of data available into the user buffer
-int pending= 0;						// '1' if we've already read the pkt header, but there was not enough space to read the pkt data
-
-// Structures needed for the select() call
-fd_set rfds;						// set of socket descriptors we have to check
-struct timeval tv;					// maximum time the select() can block waiting for data
-
-
-	// See the rpcap_thrdatamain_stream() for any comment about the code
-	fp= (pcap_t *) ptr;
-
-	*errbuf= 0;	// Initialize errbuf
-
-	// Modify thread params so that it can be killed at any time
-	if (pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL) )
-		goto error;
-	if (pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL) )
-		goto error;
-
-	// Watch out sockdata to see if it has input
-	FD_ZERO(&rfds);
-
-	// We do not have to block here
-	tv.tv_sec = 0;
-	tv.tv_usec = 0;
-
-	while (1)
-	{
-		if (fp->cc == 0) 
-		{
-			u_char *bp= fp->buffer;
-			cc= 0;
-
-			while (1)
-			{
-again:
-				FD_SET(fp->rmt_sockdata, &rfds);
-
-				retval = select(1, &rfds, NULL, NULL, &tv);
-				if (retval == -1)
-				{
-					sock_geterror("select(): ", errbuf, PCAP_ERRBUF_SIZE);
-						goto error;
-				}
-
-				// There is no data waiting
-				if (retval == 0)
-				{
-					// Update the pcap_t pointers so that the user application can read from the buffer
-					fp->bp= fp->buffer;
-					fp->cc= cc;
-
-					pthread_suspend(100);	// Suspend 100 ms
-					break;
-				}
-
-				if (!pending)
-				{
-					// Read the entire message from the network
-					if (sock_recv(fp->rmt_sockdata, netbuf, RPCAP_NETBUF_SIZE, SOCK_RECEIVEALL_NO, errbuf, PCAP_ERRBUF_SIZE) == -1)
-						goto error;
-					header= (struct rpcap_header *) netbuf;
-
-					// Checks if the message is correct
-					retval= rpcap_checkmsg(errbuf, fp->rmt_sockdata, (struct rpcap_header *) netbuf, RPCAP_MSG_PACKET, 0);
-
-					if (retval != RPCAP_MSG_PACKET)		// the message is not the one expected
-					{
-						switch (retval)
-						{
-							case -3:		// Unrecoverable network error							
-								goto error;	// Do nothing; just exit from here; the error code is already into the errbuf
-
-							case -2:		// The other endpoint sent a message that is not allowed here
-							case -1:	// The other endpoint has a version number that is not compatible with our
-								goto again;
-
-							default:
-							{
-								SOCK_ASSERT("Internal error", 0);
-								goto error;
-							};
-						}
-					}
-
-					// Set a pointer to the RPCAP packet header
-					net_pkt_header= (struct rpcap_pkthdr *) (netbuf + sizeof(struct rpcap_header));
-				}
-
-				if ( (cc + ntohl(net_pkt_header->caplen) + sizeof(struct pcap_pkthdr) ) <= ( (unsigned) fp->bufsize) )
-				{
-					unsigned int npkt;
-					pending= 0;
-
-					pkt_header= (struct pcap_pkthdr *) bp;
-					pkt_header->caplen= ntohl(net_pkt_header->caplen);
-					pkt_header->len= ntohl(net_pkt_header->len);
-					pkt_header->ts.tv_sec= ntohl(net_pkt_header->timestamp_sec);
-					pkt_header->ts.tv_usec= ntohl(net_pkt_header->timestamp_usec);
-
-					// Update the number of packets received correctly
-					fp->md.TotCapt++;
-
-					// We're using UDP, so I need to update the counter of the packets dropped by the network
-					npkt= ntohl(net_pkt_header->npkt);
-
-					if (fp->md.TotCapt != npkt)
-					{
-						fp->md.TotNetDrops+= (npkt - fp->md.TotCapt);
-						fp->md.TotCapt= npkt;
-					}
-
-					// Copies the packet into the data buffer
-					memcpy( bp + sizeof(struct pcap_pkthdr), netbuf + sizeof(struct rpcap_header), pkt_header->caplen);
-
-					bp += BPF_WORDALIGN(pkt_header->caplen + sizeof(struct pcap_pkthdr));
-					cc += BPF_WORDALIGN(pkt_header->caplen + sizeof(struct pcap_pkthdr));
-				}
-				else
-				{
-					pending= 1;
-
-					// Update the pcap_t pointers so that the user application can read from the buffer
-					fp->bp= fp->buffer;
-					fp->cc= cc;
-
-					break;
-				}
-			} // end while (1)
-		}
-		else
-		{
-			pthread_suspend(100);	// Suspend 100 ms
-		}
-	}	// end main while(1)
-
-error:
-	SOCK_ASSERT("Exiting from the child data thread", 1);
-	SOCK_ASSERT(errbuf, 1);
-
-	// Removes the descriptor s from set
-	FD_CLR(fp->rmt_sockdata, &rfds);
-
- 	closesocket(fp->rmt_sockdata);
-	fp->rmt_sockdata= 0;
-	fp->rmt_threaddata= 0;
-}
-
 
 
 
