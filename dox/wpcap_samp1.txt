@@ -1,9 +1,9 @@
 /** @ingroup wpcapsamps
  */
 
-/** @defgroup wpcapsamp1 pktdump_ex example
+/** @defgroup wpcapsamp1 pktdump example
 @{
 
-\include pktdump_ex\pktdump_ex.c
+\include pktdump/pktdump.c
 
 @}*/

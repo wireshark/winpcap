@@ -2,10 +2,11 @@
  */
 
 /** @defgroup wpcapsamps Using WinPcap in your programs
-@{ \htmlonly&nbsp;
+@{
+
+\htmlonly&nbsp;
 <h2>How to create an application that uses wpcap.dll</h2>
-<p>To create an application that uses wpcap.dll with Microsoft Visual C++, follow the next
-steps:</p>
+<p>To create an application that uses wpcap.dll with Microsoft Visual C++, follow the next steps:</p>
 <ul>
   <li>Include the file <i>pcap.h</i> at the beginning of every source file that
     uses the functions exported by library.</li>
@@ -27,34 +28,35 @@ steps:</p>
   <li>To add a new library to the project with Microsoft Visual C++, you must
     select <em>Settings</em> from the <em>Project</em> menu, then select <em>Link</em>
     from the tab control, and then add the name of the new library in the <em>Objcet/library
-    modules</em>  editbox.
+    modules</em> editbox.
   <li>To add a new path where Microsoft Visual C++ will look for the libraries,
     you must select <em>Options</em> from the <em>Tools</em> menu, then <em>Link</em>
     from the tab control, <em>library files</em> from the <em>show directories
-    for</em>  combobox, and the add the path in the <em>directories</em> box.
-  <li>To add a new path where Microsoft Visual C++ will look for include files, you must select <em>Options</em> from the <em>Tools</em> menu, then <em>Link</em>
+    for</em> combobox, and the add the path in the <em>directories</em> box.
+  <li>To add a new path where Microsoft Visual C++ will look for include
+    files, you must select <em>Options</em> from the <em>Tools</em> menu, then <em>Link</em>
     from the tab control, <em>include files</em> from the <em>show directories
-    for</em>  combobox, and the add the path in the <em>directories</em> box.</li>
+    for</em> combobox, and the add the path in the <em>directories</em> box.</li>
 </ul>
 <h2>Sample programs</h2>
 <p>
 \endhtmlonly</p>
 <p>A couple of sample programs are provided to show the usage of the WinPcap API. The
-source of the examples, along with all the files needed to compile and run them, can be found in the <a href="http://winpcap.polito.it/install/bin">Developer's
+source of the examples, along with all the files needed to compile and run
+them, can be found in the <a href="http://winpcap.polito.it/install/bin">Developer's
 Pack</a>.&nbsp; For didactic purpose we provide here a browsable
-version of the code: it is possible to click on the variables and functions to jump the documentation of each of
-them.
+version of the code: it is possible to click on the variables and functions to jump the documentation of each of them.
 For a more complete and better documented set of samples, give a look at the
 tutorial section (\ref wpcap_tut).</p>
 &nbsp;
 <p>&nbsp;</p>
 <p>
 \ref wpcapsamp1</p>
-<p>This program reads the packets from a file or a network adapter, depending on
-a command line switch. If a source is not provided, the program shows a list of
-available adapters and gives the possibility to choose one of them. Once the
-capture is started, the program prints the timestamp, the length and the raw
-content of the packets. Once compiled, it can run on all the Win32 platforms. It can be compiled
+<p>This program reads the packets from a file or a network adapter,
+depending on a command line switch. If a source is not provided, the program
+shows a list of available adapters and gives the possibility to choose one of
+them. Once the capture is started, the program prints the timestamp, the length and the
+raw content of the packets. Once compiled, it can run on all the Win32 platforms. It can be compiled
 to run on Unix as well (the makefile is provided).</p>
 &nbsp;
 <p>
