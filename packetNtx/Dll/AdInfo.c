@@ -49,6 +49,15 @@ HANDLE AdaptersInfoMutex;		///< Mutex that protects the adapter information list
 
 extern FARPROC GetAdaptersAddressesPointer;
 
+#ifdef HAVE_DAG_API
+extern dagc_open_handler p_dagc_open;
+extern dagc_close_handler p_dagc_close;
+extern dagc_getlinktype_handler p_dagc_getlinktype;
+extern dagc_getlinkspeed_handler p_dagc_getlinkspeed;
+extern dagc_finddevs_handler p_dagc_finddevs;
+extern dagc_freedevs_handler p_dagc_freedevs;
+#endif /* HAVE_DAG_API */
+
 extern TCHAR *szWindowTitle;
 
 ULONG inet_addrU(const WCHAR *cp);
@@ -446,6 +455,7 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	UINT i;
 	struct sockaddr_in *TmpAddr;
 	CHAR TName[256];
+	LPADAPTER adapter;
 	
 	// Create the NPF device name from the original device name
 	strcpy(TName, "\\Device\\NPF_");
@@ -463,6 +473,25 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 			goto SkipAd;
 		}
 	}
+	
+	if(IphAd->Type == IF_TYPE_PPP || IphAd->Type == IF_TYPE_SLIP)
+	{
+		// NdisWan adapter. We don't try to open them because of problems with the Netmon Com object.
+	}
+	else
+	{
+		adapter = PacketOpenAdapterNPF(TName);
+		if(adapter == NULL)
+		{
+			// We are not able to open this adapter. Skip to the next one.
+			ODS("PacketGetAdaptersIPH: unable to open the adapter\n");
+			goto SkipAd;
+		}
+		else
+		{
+			PacketCloseAdapter(adapter);
+		}
+	}	
 	
 	// 
 	// Adapter valid and not yet present in the list. Allocate the ADAPTER_INFO structure
@@ -524,7 +553,7 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	if(IphAd->Type == IF_TYPE_PPP || IphAd->Type == IF_TYPE_SLIP)
 	{
 		// NdisWan adapter
-		TmpAdInfo->IsNdisWan = TRUE;
+		TmpAdInfo->Flags = INFO_FLAG_NDISWAN_ADAPTER;
 	}
 	
 	
@@ -599,7 +628,7 @@ BOOLEAN PacketGetAdaptersIPH()
   \param AdName Name of the adapter to add
   \return If the function succeeds, the return value is nonzero.
 
-  Used by PacketGetAdapters(). Quesries the registry to fill the PADAPTER_INFO describing the new adapter.
+  Used by PacketGetAdapters(). Queries the registry to fill the PADAPTER_INFO describing the new adapter.
 */
 BOOLEAN AddAdapter(PCHAR AdName)
 {
@@ -612,7 +641,7 @@ BOOLEAN AddAdapter(PCHAR AdName)
 	PADAPTER_INFO TAdInfo;	
 	PWCHAR		UAdName;
 	
-	ODS("PacketGetAdapters\n");
+	ODS("AddAdapter\n");
 
 
 	for(TAdInfo = AdaptersInfoList; 
@@ -621,7 +650,7 @@ BOOLEAN AddAdapter(PCHAR AdName)
 	{
 		if(strcmp(AdName, TAdInfo->Name) == 0)
 		{
-			ODS("PacketGetAdapters: Adapter already present in the list\n");
+			ODS("AddAdapter: Adapter already present in the list\n");
 			return TRUE;
 		}
 	}
@@ -632,7 +661,6 @@ BOOLEAN AddAdapter(PCHAR AdName)
 	adapter = PacketOpenAdapterNPF((PCHAR)UAdName);
 
 	GlobalFreePtr(UAdName);
-
 	
 	if(adapter == NULL)
 	{
@@ -643,7 +671,7 @@ BOOLEAN AddAdapter(PCHAR AdName)
 	// Allocate a buffer to get the vendor description from the driver
 	OidData = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,512);
 	if (OidData == NULL) {
-		ODS("PacketGetAdapters: GlobalAlloc Failed\n");
+		ODS("AddAdapter: GlobalAlloc Failed\n");
 		PacketCloseAdapter(adapter);
 		return FALSE;
 	}
@@ -724,8 +752,8 @@ BOOLEAN AddAdapter(PCHAR AdName)
 	PacketAddIP6Addresses(TmpAdInfo);
 #endif // _WINNT4
 	
-	TmpAdInfo->IsNdisWan = FALSE;	// NdisWan adapters are not exported by the NPF driver,
-	// therefore it's impossible to see them here
+	TmpAdInfo->Flags = INFO_FLAG_NDIS_ADAPTER;	// NdisWan adapters are not exported by the NPF driver,
+									// therefore it's impossible to see them here
 
 	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
 
@@ -916,8 +944,124 @@ nt4:
 	return TRUE;
 }
 
+#ifdef HAVE_DAG_API
 /*!
-  \brief Find the information about an adapter scanning the global ADAPTER_INFO list.
+  \brief Add a dag adapter to the adapters info list, gathering information from the dagc API
+  \param name Name of the adapter.
+  \param description description of the adapter.
+  \return If the function succeeds, the return value is nonzero.
+*/
+BOOLEAN PacketAddAdapterDag(PCHAR name, PCHAR description, BOOLEAN IsAFile)
+{
+	CHAR ebuf[DAGC_ERRBUF_SIZE];
+	PADAPTER_INFO TmpAdInfo;
+	dagc_t *dagfd;
+
+			//
+			// Allocate a descriptor for this adapter
+			//			
+			TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));
+			if (TmpAdInfo == NULL) 
+			{
+				ODS("PacketAddAdapterDag: GlobalAlloc Failed\n");
+				return FALSE;
+			}
+			
+			// Copy the device name and description
+			_snprintf(TmpAdInfo->Name, 
+				sizeof(TmpAdInfo->Name), 
+				"%s", 
+				name);
+			
+			_snprintf(TmpAdInfo->Description, 
+				sizeof(TmpAdInfo->Description), 
+				"%s", 
+				description);
+			
+			if(IsAFile)
+				TmpAdInfo->Flags = INFO_FLAG_DAG_FILE;
+			else
+				TmpAdInfo->Flags = INFO_FLAG_DAG_CARD;
+
+			dagfd = p_dagc_open(name,
+				0,
+				ebuf);
+
+			if(!dagfd)
+			{
+				GlobalFreePtr(TmpAdInfo);
+				return FALSE;
+			}
+
+			TmpAdInfo->LinkLayer.LinkType = p_dagc_getlinktype(dagfd);
+						
+			switch(p_dagc_getlinktype(dagfd)) 
+			{
+			case TYPE_HDLC_POS:
+				TmpAdInfo->LinkLayer.LinkType = NdisMediumCHDLC; // Note: custom linktype, NDIS doesn't provide an equivalent
+				break;
+			case -TYPE_HDLC_POS:
+				TmpAdInfo->LinkLayer.LinkType = NdisMediumPPPSerial; // Note: custom linktype, NDIS doesn't provide an equivalent
+				break;
+			case TYPE_ETH:
+				TmpAdInfo->LinkLayer.LinkType = NdisMedium802_3;
+				break;
+			case TYPE_ATM: 
+				TmpAdInfo->LinkLayer.LinkType = NdisMediumAtm;
+				break;
+			default:
+				TmpAdInfo->LinkLayer.LinkType = NdisMediumNull; // Note: custom linktype, NDIS doesn't provide an equivalent
+				break;
+			}			
+
+			TmpAdInfo->LinkLayer.LinkSpeed = (p_dagc_getlinkspeed(dagfd) == -1)?
+				100000000:  // Unknown speed, default to 100Mbit
+				p_dagc_getlinkspeed(dagfd) * 1000000; 
+
+			p_dagc_close(dagfd);
+
+			WaitForSingleObject(AdaptersInfoMutex, INFINITE);
+			
+			// Update the AdaptersInfo list
+			TmpAdInfo->Next = AdaptersInfoList;
+			AdaptersInfoList = TmpAdInfo;
+			
+			ReleaseMutex(AdaptersInfoMutex);
+
+			return TRUE;
+}
+
+/*!
+  \brief Updates the list of the adapters using the DAGC API.
+  \return If the function succeeds, the return value is nonzero.
+
+  This function populates the list of adapter descriptions, looking for DAG cards on the system. 
+*/
+BOOLEAN PacketGetAdaptersDag()
+{
+	CHAR ebuf[DAGC_ERRBUF_SIZE];
+	dagc_if_t *devs = NULL, *tmpdevs;
+	UINT i;
+	
+	if(p_dagc_finddevs(&devs, ebuf))
+		// No dag cards found on this system
+		return FALSE;
+	else
+	{
+		for(tmpdevs = devs, i=0; tmpdevs != NULL; tmpdevs = tmpdevs->next)
+		{
+			PacketAddAdapterDag(tmpdevs->name, tmpdevs->description, FALSE);
+		}
+	}
+	
+	p_dagc_freedevs(devs);
+	
+	return TRUE;
+}
+#endif // HAVE_DAG_API
+
+/*!
+\brief Find the information about an adapter scanning the global ADAPTER_INFO list.
   \param AdapterName Name of the adapter whose information has to be retrieved.
   \return If the function succeeds, the return value is non-null.
 */
@@ -988,12 +1132,22 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 	if(AddAdapter(AdapterName) == TRUE)
 		return TRUE;
 #ifndef _WINNT4
-	if(PacketGetAdaptersIPH() == TRUE)
-		return TRUE;
+	// 
+	// Not a tradiditonal adapter, but possibly a Wan or DAG interface 
+	// Gather all the available adapters from IPH API and dagc API
+	//
+	PacketGetAdaptersIPH();
+#ifdef HAVE_DAG_API
+	if(p_dagc_open == NULL)	
+		return TRUE;	// dagc.dll not present on this system.
+	else
+	PacketGetAdaptersDag();
+#endif // HAVE_DAG_API
+
 #endif // _WINNT4
 
 	// Adapter not found
-	return FALSE;
+	return TRUE;
 }
 
 /*!
@@ -1033,15 +1187,28 @@ void PacketPopulateAdaptersInfoList()
 	if(!PacketGetAdapters())
 	{
 		// No info about adapters in the registry. 
-		ODS("PacketPopulateAdaptersInfoList: Registry scan for adapters failed!\n");
+		ODS("PacketPopulateAdaptersInfoList: registry scan for adapters failed!\n");
 	}
 #ifndef _WINNT4
 	if(!PacketGetAdaptersIPH()){
 		// IP Helper API not present. We are under WinNT 4 or TCP/IP is not installed
-		ODS("PacketPopulateAdaptersInfoList: Registry scan for adapters failed!\n");
+		ODS("PacketPopulateAdaptersInfoList: failed to get adapters from the IP Helper API!\n");
 	}
-#endif // _WINNT4
 
+#ifdef HAVE_DAG_API
+	if(p_dagc_open == NULL)	
+		return;	// dagc.dll not present on this system.
+	else
+	{
+		if(!PacketGetAdaptersDag())
+		{
+			// No info about adapters in the registry. 
+			ODS("PacketPopulateAdaptersInfoList: lookup of dag cards failed!\n");
+		}
+	}
+#endif // HAVE_DAG_API
+
+#endif // _WINNT4
 }
 
 

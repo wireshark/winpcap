@@ -60,6 +60,23 @@ typedef VOID (*GAAHandler)(
   PULONG);
 GAAHandler GetAdaptersAddressesPointer = NULL;
 
+#ifdef HAVE_DAG_API
+/* We load dinamically the dag library in order link it only when it's present on the system */
+dagc_open_handler p_dagc_open = NULL;
+dagc_close_handler p_dagc_close = NULL;
+dagc_getlinktype_handler p_dagc_getlinktype = NULL;
+dagc_getlinkspeed_handler p_dagc_getlinkspeed = NULL;
+dagc_getfcslen_handler p_dagc_getfcslen = NULL;
+dagc_receive_handler p_dagc_receive = NULL;
+dagc_wait_handler p_dagc_wait = NULL;
+dagc_stats_handler p_dagc_stats = NULL;
+dagc_setsnaplen_handler p_dagc_setsnaplen = NULL;
+dagc_finddevs_handler p_dagc_finddevs = NULL;
+dagc_freedevs_handler p_dagc_freedevs = NULL;
+#endif /* HAVE_DAG_API */
+
+BOOLEAN PacketAddAdapterDag(PCHAR name, PCHAR description, BOOLEAN IsAFile);
+
 //---------------------------------------------------------------------------
 
 /*! 
@@ -70,6 +87,9 @@ BOOL APIENTRY DllMain (HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 {
     BOOLEAN Status=TRUE;
 	HMODULE IPHMod;
+#ifdef HAVE_DAG_API
+	HMODULE DagcLib;
+#endif // HAVE_DAG_API
 
     switch(Reason)
     {
@@ -109,6 +129,29 @@ BOOL APIENTRY DllMain (HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 		IPHMod = GetModuleHandle(TEXT("Iphlpapi"));
 		
 		GetAdaptersAddressesPointer = (GAAHandler) GetProcAddress(IPHMod ,"GetAdaptersAddresses");
+
+#ifdef HAVE_DAG_API
+		/* We load dinamically the dag library in order link it only when it's present on the system */
+		if((DagcLib =  LoadLibrary(TEXT("dagc.dll"))) == NULL)
+		{
+			// Report the error but go on
+			ODS("dag capture library not found on this system\n");
+			break;
+		}
+
+		p_dagc_open = (dagc_open_handler) GetProcAddress(DagcLib, "dagc_open");
+		p_dagc_close = (dagc_close_handler) GetProcAddress(DagcLib, "dagc_close");
+		p_dagc_setsnaplen = (dagc_setsnaplen_handler) GetProcAddress(DagcLib, "dagc_setsnaplen");
+		p_dagc_getlinktype = (dagc_getlinktype_handler) GetProcAddress(DagcLib, "dagc_getlinktype");
+		p_dagc_getlinkspeed = (dagc_getlinkspeed_handler) GetProcAddress(DagcLib, "dagc_getlinkspeed");
+		p_dagc_getfcslen = (dagc_getfcslen_handler) GetProcAddress(DagcLib, "dagc_getfcslen");
+		p_dagc_receive = (dagc_receive_handler) GetProcAddress(DagcLib, "dagc_receive");
+		p_dagc_wait = (dagc_wait_handler) GetProcAddress(DagcLib, "dagc_wait");
+		p_dagc_stats = (dagc_stats_handler) GetProcAddress(DagcLib, "dagc_stats");
+		p_dagc_finddevs = (dagc_finddevs_handler) GetProcAddress(DagcLib, "dagc_finddevs");
+		p_dagc_freedevs = (dagc_freedevs_handler) GetProcAddress(DagcLib, "dagc_freedevs");
+		
+#endif /* HAVE_DAG_API */
 
 		break;
 
@@ -477,7 +520,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 
 	ODS("PacketOpenAdapterNPF\n");
 	
-	scmHandle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+	scmHandle = OpenSCManager(NULL, NULL, GENERIC_READ);
 	
 	if(scmHandle == NULL){
 		error = GetLastError();
@@ -523,7 +566,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 							if (scmHandle != NULL) 
 								CloseServiceHandle(scmHandle);
 							error = GetLastError();
-							ODSEx("PacketOpenAdapter: StartService failed, Error=%d\n",error);
+							ODSEx("PacketOpenAdapterNPF: StartService failed, Error=%d\n",error);
 							return NULL;
 						}
 					}				
@@ -563,7 +606,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 							if(error!=ERROR_SERVICE_ALREADY_RUNNING && error!=ERROR_ALREADY_EXISTS){
 								SetLastError(error);
 								if (scmHandle != NULL) CloseServiceHandle(scmHandle);
-								ODSEx("PacketOpenAdapter: StartService failed, Error=%d\n",error);
+								ODSEx("PacketOpenAdapterNPF: StartService failed, Error=%d\n",error);
 								return NULL;
 							}
 						}
@@ -586,11 +629,11 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 	lpAdapter=(LPADAPTER)GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER));
 	if (lpAdapter==NULL)
 	{
-		ODS("PacketOpenAdapter: GlobalAlloc Failed\n");
+		ODS("PacketOpenAdapterNPF: GlobalAlloc Failed\n");
 		error=GetLastError();
 		//set the error to the one on which we failed
 		SetLastError(error);
-	    ODS("PacketOpenAdapter: Failed to allocate the adapter structure\n");
+	    ODS("PacketOpenAdapterNPF: Failed to allocate the adapter structure\n");
 		return NULL;
 	}
 	lpAdapter->NumWrites=1;
@@ -611,11 +654,11 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 
 		if(PacketSetReadEvt(lpAdapter)==FALSE){
 			error=GetLastError();
-			ODS("PacketOpenAdapter: Unable to open the read event\n");
+			ODS("PacketOpenAdapterNPF: Unable to open the read event\n");
 			GlobalFreePtr(lpAdapter);
 			//set the error to the one on which we failed
 			SetLastError(error);
-		    ODSEx("PacketOpenAdapter: PacketSetReadEvt failed, Error=%d\n",error);
+		    ODSEx("PacketOpenAdapterNPF: PacketSetReadEvt failed, Error=%d\n",error);
 			return NULL;
 		}		
 		
@@ -631,9 +674,114 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 	GlobalFreePtr(lpAdapter);
 	//set the error to the one on which we failed
 	SetLastError(error);
-    ODSEx("PacketOpenAdapter: CreateFile failed, Error=2,%d\n",error);
+    ODSEx("PacketOpenAdapterNPF: CreateFile failed, Error=2,%d\n",error);
 	return NULL;
 }
+
+/*! 
+  \brief Opens an adapter using the DAG capture API.
+  \param AdapterName A string containing the name of the device to open. 
+  \return If the function succeeds, the return value is the pointer to a properly initialized ADAPTER object,
+   otherwise the return value is NULL.
+
+  \note internal function used by PacketOpenAdapter()
+*/
+#ifdef HAVE_DAG_API
+LPADAPTER PacketOpenAdapterDAG(PCHAR AdapterName, BOOLEAN IsAFile)
+{
+	CHAR DagEbuf[DAGC_ERRBUF_SIZE];
+    LPADAPTER lpAdapter;
+	LONG	status;
+	HKEY dagkey;
+	DWORD lptype;
+	DWORD fpc;
+	DWORD lpcbdata = sizeof(fpc);
+	WCHAR keyname[512];
+	PWCHAR tsn;
+
+	
+	lpAdapter = (LPADAPTER) GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,
+		sizeof(ADAPTER));
+	if (lpAdapter == NULL)
+	{
+		return NULL;
+	}
+
+	if(IsAFile)
+	{
+		// We must add an entry to the adapter description list, otherwise many function will not
+		// be able to work
+		if(!PacketAddAdapterDag(AdapterName, "DAG file", IsAFile))
+		{
+			GlobalFreePtr(lpAdapter);
+			return NULL;					
+		}
+
+		// Flag that this is a DAG file
+		lpAdapter->Flags = INFO_FLAG_DAG_FILE;
+	}
+	else
+	{
+		// Flag that this is a DAG card
+		lpAdapter->Flags = INFO_FLAG_DAG_CARD;
+	}
+
+	//
+	// See if the user is asking for fast capture with this device
+	//
+
+	lpAdapter->DagFastProcess = FALSE;
+
+	tsn = SChar2WChar(strstr(strlwr((char*)AdapterName), "dag"));
+
+	_snwprintf(keyname, sizeof(keyname), L"%s\\CardParams\\%ws", 
+		L"SYSTEM\\CurrentControlSet\\Services\\DAG",
+		tsn);
+
+	GlobalFreePtr(tsn);
+
+	do
+	{
+		status = RegOpenKeyEx(HKEY_LOCAL_MACHINE, keyname, 0 , KEY_READ, &dagkey);
+		if(status != ERROR_SUCCESS)
+			break;
+		
+		status = RegQueryValueEx(dagkey,
+			L"FastCap",
+			NULL,
+			&lptype,
+			(char*)&fpc,
+			&lpcbdata);
+		
+		if(status == ERROR_SUCCESS)
+			lpAdapter->DagFastProcess = fpc;
+		
+		RegCloseKey(dagkey);
+	}
+	while(FALSE);
+		  
+	//
+	// Open the card
+	//
+	lpAdapter->pDagCard = p_dagc_open(AdapterName,
+	 0, 
+	 DagEbuf);
+	
+	if(lpAdapter->pDagCard == NULL)
+	{
+		GlobalFreePtr(lpAdapter);
+		return NULL;					
+	}
+		  
+	lpAdapter->DagFcsLen = p_dagc_getfcslen(lpAdapter->pDagCard);
+				
+	_snprintf(lpAdapter->Name, ADAPTER_NAME_LENGTH, "%s", AdapterName);
+	
+	// XXX we could create the read event here
+
+	return lpAdapter;
+}
+#endif // HAVE_DAG_API
 
 //---------------------------------------------------------------------------
 // PUBLIC API
@@ -748,42 +896,78 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 	{
 		PacketUpdateAdInfo(AdapterNameA);
 		TAdInfo = PacketFindAdInfo(AdapterNameA);
-		if(TAdInfo == NULL)	return NULL;
-	}
-
-	if (TAdInfo->IsNdisWan == TRUE)
-	{
-		//
-		// This is a wan adapter. Open it using the netmon API
-		//
-		lpAdapter = (LPADAPTER) GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,sizeof(ADAPTER));
-		if (lpAdapter == NULL)
+		if(TAdInfo == NULL)
 		{
-			if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
-			else GlobalFreePtr(AdapterNameA);
-			return NULL;
-		}
-		
-		lpAdapter->pWanAdapter = WanPacketOpenAdapter();
-		if (lpAdapter->pWanAdapter == NULL)
-		{
+			//can be an ERF file?
+			lpAdapter = PacketOpenAdapterDAG(AdapterNameA, TRUE);
+			
 			if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
 			else GlobalFreePtr(AdapterNameA);
 			
-			GlobalFreePtr(lpAdapter);
-			return NULL;
+			return lpAdapter;
 		}
-		
-		_snprintf(lpAdapter->Name, ADAPTER_NAME_LENGTH, "%s", AdapterNameA);
-		
-		lpAdapter->ReadEvent = WanPacketGetReadEvent(lpAdapter->pWanAdapter);
-		
-		if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
-		else GlobalFreePtr(AdapterNameA);
-		
-		return lpAdapter;
 	}
-      
+	
+	if(TAdInfo->Flags != INFO_FLAG_NDIS_ADAPTER)
+	{
+		//
+		// Not a standard NDIS adapter, we must have specific handling
+		//
+		
+		if(TAdInfo->Flags & INFO_FLAG_NDISWAN_ADAPTER)
+		{
+			//
+			// This is a wan adapter. Open it using the netmon API
+			//
+			
+			lpAdapter = (LPADAPTER) GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,
+				sizeof(ADAPTER));
+			if (lpAdapter == NULL)
+			{
+				if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
+				else GlobalFreePtr(AdapterNameA);
+				return NULL;
+			}
+			
+			// Backup flags for future usage
+			lpAdapter->Flags = TAdInfo->Flags;
+			
+			// Open the adapter
+			lpAdapter->pWanAdapter = WanPacketOpenAdapter();
+			if (lpAdapter->pWanAdapter == NULL)
+			{
+				if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
+				else GlobalFreePtr(AdapterNameA);
+				
+				GlobalFreePtr(lpAdapter);
+				return NULL;
+			}
+			
+			_snprintf(lpAdapter->Name, ADAPTER_NAME_LENGTH, "%s", AdapterNameA);
+			
+			lpAdapter->ReadEvent = WanPacketGetReadEvent(lpAdapter->pWanAdapter);
+			
+			if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
+			else GlobalFreePtr(AdapterNameA);
+			
+			return lpAdapter;
+		}
+		else
+			if(TAdInfo->Flags & INFO_FLAG_DAG_CARD)
+			{
+				//
+				// This is a Dag card. Open it using the dagc API
+				//
+								
+				lpAdapter = PacketOpenAdapterDAG(AdapterNameA, FALSE);
+
+				if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
+				else GlobalFreePtr(AdapterNameA);
+
+				return lpAdapter;
+			}
+			
+	}
 #endif // _WINNT4
    
 	lpAdapter = PacketOpenAdapterNPF(AdapterName);
@@ -810,6 +994,18 @@ VOID PacketCloseAdapter(LPADAPTER lpAdapter)
 		GlobalFreePtr(lpAdapter);
 		return;
 	}
+#ifdef HAVE_DAG_API
+	else
+		if(lpAdapter->pDagCard != NULL)
+		{
+			if(lpAdapter->Flags & INFO_FLAG_DAG_FILE & ~INFO_FLAG_DAG_CARD)
+			{
+				// This is a file. We must remove the entry in the adapter description list
+				PacketUpdateAdInfo(lpAdapter->Name);
+			}
+			p_dagc_close(lpAdapter->pDagCard);
+		}
+#endif // HAVE_DAG_API
 #endif // _WINNT4
 	
 	CloseHandle(lpAdapter->hFile);
@@ -923,7 +1119,19 @@ BOOLEAN PacketReceivePacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sy
 		lpPacket->ulBytesReceived = WanPacketReceivePacket(AdapterObject->pWanAdapter, lpPacket->Buffer, lpPacket->Length);
 		return TRUE;
 	}
-	
+#ifdef HAVE_DAG_API
+	else
+		if(AdapterObject->pDagCard != NULL)
+		{
+
+			p_dagc_wait(AdapterObject->pDagCard, &AdapterObject->DagReadTimeout);
+
+			if(p_dagc_receive(AdapterObject->pDagCard, &AdapterObject->DagBuffer, &lpPacket->ulBytesReceived) == 0)
+				return TRUE;
+			else
+				return FALSE;
+		}
+#endif // HAVE_DAG_API
 #endif // _WINNT4
 	
 	if((int)AdapterObject->ReadTimeOut != -1)
@@ -969,7 +1177,7 @@ BOOLEAN PacketSendPacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sync)
     
 
 #ifndef _WINNT4
-	if (AdapterObject->pWanAdapter != NULL)
+	if(AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
 	{
 		ODS("PacketSendPacket: packet sending not allowed on wan adapters\n");
 		return FALSE;
@@ -1018,7 +1226,7 @@ INT PacketSendPackets(LPADAPTER AdapterObject, PVOID PacketBuff, ULONG Size, BOO
 	ODS("PacketSendPackets");
 
 #ifndef _WINNT4
-	if (AdapterObject->pWanAdapter != NULL)
+	if(AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
 	{
 		ODS("PacketSendPackets: packet sending not allowed on wan adapters\n");
 		return FALSE;
@@ -1092,8 +1300,14 @@ BOOLEAN PacketSetMinToCopy(LPADAPTER AdapterObject,int nbytes)
 	DWORD BytesReturned;
 
 #ifndef _WINNT4
-   if (AdapterObject->pWanAdapter != NULL)
+   if (AdapterObject->Flags == INFO_FLAG_NDISWAN_ADAPTER)
       return WanPacketSetMinToCopy(AdapterObject->pWanAdapter, nbytes);
+#ifdef HAVE_DAG_API
+	else
+		if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
+			// No mintocopy with DAGs
+			return TRUE;
+#endif // HAVE_DAG_API
 #endif // _WINNT4
    
    return DeviceIoControl(AdapterObject->hFile,pBIOCSMINTOCOPY,&nbytes,4,NULL,0,&BytesReturned,NULL);
@@ -1171,7 +1385,7 @@ BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len)
 	WCHAR	*NamePos;
 
 #ifndef _WINNT4
-	if (AdapterObject->pWanAdapter != NULL)
+	if (AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
 	{
 		ODS("PacketSetDumpName: not allowed on wan adapters\n");
 		return FALSE;
@@ -1222,7 +1436,7 @@ BOOLEAN PacketSetDumpLimits(LPADAPTER AdapterObject, UINT maxfilesize, UINT maxn
 	UINT valbuff[2];
 
 #ifndef _WINNT4
-	if (AdapterObject->pWanAdapter != NULL)
+	if (AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
 	{
 		ODS("PacketSetDumpLimits: not allowed on wan adapters\n");
 		return FALSE;
@@ -1262,7 +1476,7 @@ BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync)
 	BOOLEAN	res;
 
 #ifndef _WINNT4
-	if (AdapterObject->pWanAdapter != NULL)
+	if(AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
 	{
 		ODS("PacketIsDumpEnded: not allowed on wan adapters\n");
 		return FALSE;
@@ -1323,7 +1537,7 @@ BOOLEAN PacketSetNumWrites(LPADAPTER AdapterObject,int nwrites)
 	DWORD BytesReturned;
 
 #ifndef _WINNT4
-	if (AdapterObject->pWanAdapter != NULL)
+	if(AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
 	{
 		ODS("PacketSetNumWrites: not allowed on wan adapters\n");
 		return FALSE;
@@ -1357,6 +1571,34 @@ BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
 
 	AdapterObject->ReadTimeOut=timeout;
 
+#ifdef HAVE_DAG_API
+	// Under DAG, we simply store the timeout value and then 
+	if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
+	{
+		if(timeout == 1)
+		{
+			// tell DAG card to return immediately
+			AdapterObject->DagReadTimeout.tv_sec = 0;
+			AdapterObject->DagReadTimeout.tv_usec = 0;
+		}
+		else
+			if(timeout == 1)
+			{
+				// tell the DAG card to wait forvever
+				AdapterObject->DagReadTimeout.tv_sec = -1;
+				AdapterObject->DagReadTimeout.tv_usec = -1;
+			}
+			else
+			{
+				// Set the timeout for the DAG card
+				AdapterObject->DagReadTimeout.tv_sec = timeout / 1000;
+				AdapterObject->DagReadTimeout.tv_usec = (timeout * 1000) % 1000000;
+			}
+			
+			return TRUE;
+	}
+#endif // HAVE_DAG_API
+
     return DeviceIoControl(AdapterObject->hFile,pBIOCSRTIMEOUT,&DriverTimeOut,4,NULL,0,&BytesReturned,NULL);
 }
 
@@ -1381,8 +1623,15 @@ BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim)
 	DWORD BytesReturned;
 
 #ifndef _WINNT4
-   if (AdapterObject->pWanAdapter != NULL)
-      return WanPacketSetBufferSize(AdapterObject->pWanAdapter, dim);
+	if (AdapterObject->pWanAdapter != NULL)
+		return WanPacketSetBufferSize(AdapterObject->pWanAdapter, dim);
+#ifdef HAVE_DAG_API
+	else
+		if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
+			// We can't change DAG buffers
+			return TRUE;
+#endif // HAVE_DAG_API
+
 #endif // _WINNT4
     return DeviceIoControl(AdapterObject->hFile,pBIOCSETBUFFERSIZE,&dim,4,NULL,0,&BytesReturned,NULL);
 }
@@ -1407,16 +1656,47 @@ BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim)
   flags to obtain the pseudocode.
 
 */
-BOOLEAN PacketSetBpf(LPADAPTER AdapterObject,struct bpf_program *fp)
+BOOLEAN PacketSetBpf(LPADAPTER AdapterObject, struct bpf_program *fp)
 {
 	DWORD BytesReturned;
 
 #ifndef _WINNT4
    if (AdapterObject->pWanAdapter != NULL)
       return WanPacketSetBpfFilter(AdapterObject->pWanAdapter, (PUCHAR)fp->bf_insns, fp->bf_len * sizeof(struct bpf_insn));
+#ifdef HAVE_DAG_API
+	else
+		if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
+			// Delegate the filtering to higher layers since it's too expensive here
+			return TRUE;
+#endif // HAVE_DAG_API
 #endif // _WINNT4
 
    return DeviceIoControl(AdapterObject->hFile,pBIOCSETF,(char*)fp->bf_insns,fp->bf_len*sizeof(struct bpf_insn),NULL,0,&BytesReturned,NULL);
+}
+
+/*!
+  \brief Sets the snap len on the adapters that allow it.
+  \param AdapterObject Pointer to an _ADAPTER structure.
+  \param snaplen Desired snap len for this capture.
+  \return If the function succeeds, the return value is nonzero and specifies the actual snaplen that 
+   the card is using. If the function fails or if the card does't allow to set sna length, the return 
+   value is 0.
+
+  The snap len is the amount of packet that is actually captured by the interface and received by the
+  application. Some interfaces allow to capture only a portion of any packet for performance reasons.
+
+  \note: the return value can be different from the snaplen parameter, for example some boards round the
+  snaplen to 4 bytes.
+*/
+INT PacketSetSnapLen(LPADAPTER AdapterObject, int snaplen)
+{
+
+#ifdef HAVE_DAG_API
+	if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
+		return p_dagc_setsnaplen(AdapterObject->pDagCard, snaplen);
+	else
+#endif // HAVE_DAG_API
+		return 0;
 }
 
 /*!
@@ -1437,22 +1717,43 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
 	BOOLEAN Res;
 	DWORD BytesReturned;
 	struct bpf_stat tmpstat;	// We use a support structure to avoid kernel-level inconsistencies with old or malicious applications
-
+	
 #ifndef _WINNT4
-   if ( AdapterObject->pWanAdapter != NULL)
-		Res = WanPacketGetStats(AdapterObject->pWanAdapter, &tmpstat);
+#ifdef HAVE_DAG_API
+	if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
+	{
+		dagc_stats_t DagStats;
+		
+		// Note: DAG cards are currently very limited from the statistics reporting point of view,
+		// so most of the values returned by dagc_stats() are zero at the moment
+		if(p_dagc_stats(AdapterObject->pDagCard, &DagStats) == 0)
+		{
+			// XXX: Only copy the dropped packets for now, since the received counter is not supported by
+			// DAGS at the moment
+
+			s->bs_recv = (ULONG)DagStats.received;
+			s->bs_drop = (ULONG)DagStats.dropped;
+			return TRUE;
+		}
+		else
+			return FALSE;
+	}
 	else
+#endif // HAVE_DAG_API
+		if ( AdapterObject->pWanAdapter != NULL)
+			Res = WanPacketGetStats(AdapterObject->pWanAdapter, (PVOID)&tmpstat);
+		else
 #endif // _WINNT4
-
-	Res = DeviceIoControl(AdapterObject->hFile,
-		pBIOCGSTATS,
-		NULL,
-		0,
-		&tmpstat,
-		sizeof(struct bpf_stat),
-		&BytesReturned,
-		NULL);
-
+			
+			Res = DeviceIoControl(AdapterObject->hFile,
+			pBIOCGSTATS,
+			NULL,
+			0,
+			&tmpstat,
+			sizeof(struct bpf_stat),
+			&BytesReturned,
+			NULL);
+		
 
 	// Copy only the first two values retrieved from the driver
 	s->bs_recv = tmpstat.bs_recv;
@@ -1480,8 +1781,22 @@ BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s)
 	struct bpf_stat tmpstat;	// We use a support structure to avoid kernel-level inconsistencies with old or malicious applications
 
 #ifndef _WINNT4
-   if ( AdapterObject->pWanAdapter != NULL)
-		Res = WanPacketGetStats(AdapterObject->pWanAdapter, &tmpstat);
+#ifdef HAVE_DAG_API
+		if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
+		{
+			dagc_stats_t DagStats;
+
+			// Note: DAG cards are currently very limited from the statistics reporting point of view,
+			// so most of the values returned by dagc_stats() are zero at the moment
+			p_dagc_stats(AdapterObject->pDagCard, &DagStats);
+			s->bs_recv = (ULONG)DagStats.received;
+			s->bs_drop = (ULONG)DagStats.dropped;
+			s->ps_ifdrop = 0;
+			s->bs_capt = (ULONG)DagStats.captured;
+		}
+#endif // HAVE_DAG_API
+   if(AdapterObject->pWanAdapter != NULL)
+		Res = WanPacketGetStats(AdapterObject->pWanAdapter, (PVOID)&tmpstat);
 	else
 #endif // _WINNT4
 
@@ -1520,7 +1835,7 @@ BOOLEAN PacketRequest(LPADAPTER  AdapterObject,BOOLEAN Set,PPACKET_OID_DATA  Oid
     BOOLEAN		Result;
 
 #ifndef _WINNT4
-	if (AdapterObject->pWanAdapter != NULL)
+	if(AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
 		return FALSE;
 #endif // _WINNT4
     
@@ -1560,7 +1875,7 @@ BOOLEAN PacketSetHwFilter(LPADAPTER  AdapterObject,ULONG Filter)
     PPACKET_OID_DATA  OidData;
 
 #ifndef _WINNT4
-	if (AdapterObject->pWanAdapter != NULL)
+	if(AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
 		return TRUE;
 #endif // _WINNT4
     
@@ -1737,7 +2052,7 @@ BOOLEAN PacketGetNetInfoEx(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntrie
   - NdisMediumAtm: ATM 
   - NdisMediumArcnet878_2: ARCNET (878.2) 
 */
-BOOLEAN PacketGetNetType (LPADAPTER AdapterObject, NetType *type)
+BOOLEAN PacketGetNetType(LPADAPTER AdapterObject, NetType *type)
 {
 	PADAPTER_INFO TAdInfo;
 	
