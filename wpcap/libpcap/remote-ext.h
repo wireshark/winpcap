@@ -197,28 +197,6 @@
 #define PCAP_OPENFLAG_PROMISCUOUS		1
 
 /*!
-	\brief It defines who is responsible for opening the data connection in case
-	of a remote capture (it means 'server open data path').
-
-	If it is '1', it specifies if the data connection has to be intitiated 
-	by the capturing device (which becomes like 'active'). If '0', the connection 
-	will be initiated by the client workstation.
-	This flag is used to overcome the problem of firewalls, which allow
-	only outgoing connections. In that case, the capturing device can open
-	a connection toward the client workstation in order to allow the
-	data trasfer.
-	In fact, the data connection is opened using a random port (while the
-	control connection uses a standard port), so it is hard to configure
-	a firewall to permit traffic on the data path.
-	This flag is meaningless if the source is not a remote interface.
-	Addictionally, it is meaningless if the data connection is done using
-	the UDP protocol, since in this case the connection wil always be opened
-	by the server.
-	In these cases, it is simply ignored.
-*/
-#define PCAP_OPENFLAG_SERVEROPEN_DP		2
-
-/*!
 	\brief It defines if the data trasfer (in case of a remote
 	capture) has to be done with UDP protocol.
 
@@ -230,7 +208,7 @@
 	This flag is meaningless if the source is not a remote interface.
 	In that case, it is simply ignored.
 */
-#define PCAP_OPENFLAG_UDP_DP			4
+#define PCAP_OPENFLAG_UDP_DP			2
 
 /*!
 	\}
