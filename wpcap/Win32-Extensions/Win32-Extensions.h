@@ -20,10 +20,14 @@
  */
 
 /* Definitions */
+
+/*!
+  \brief A queue of raw packets that will be sent to the network with pcap_sendqueue_transmit().
+*/
 struct pcap_send_queue{
-	u_int maxlen;
-	u_int len;
-	char *buffer;
+	u_int maxlen;		///< Maximum size of the the queue, in bytes. This variable contains the size of the buffer field.
+	u_int len;			///< Current size of the queue, in bytes.
+	char *buffer;		///< Buffer containing the packets to be sent.
 };
 
 typedef struct pcap_send_queue pcap_send_queue;

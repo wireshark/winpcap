@@ -326,6 +326,14 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
     return DeviceIoControl(AdapterObject->hFile,pBIOCGSTATS,NULL,0,s,sizeof(struct bpf_stat),&BytesReturned,NULL);
 }
 
+//---------------------------------------------------------------------------
+
+BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s)
+{
+	int BytesReturned;
+
+    return DeviceIoControl(AdapterObject->hFile,pBIOCGSTATS,NULL,0,s,sizeof(struct bpf_stat),&BytesReturned,NULL);
+}
 
 //---------------------------------------------------------------------------
 VOID PacketCloseAdapter (LPADAPTER lpAdapter)
@@ -998,6 +1006,24 @@ BOOLEAN PacketGetNetInfoEx(LPTSTR AdapterName, npf_if_addr* buffer, PLONG NEntri
 	*NEntries = naddrs + 1;
 
 	return TRUE;
+}
+
+// not supported in Win9x
+BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len)
+{
+	return FALSE;
+}
+
+// not supported in Win9x
+BOOLEAN PacketSetDumpLimits(LPADAPTER AdapterObject, UINT maxfilesize, UINT maxnpacks)
+{
+	return FALSE;
+}
+
+// not supported in Win9x
+BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync)
+{
+	return FALSE;
 }
 
 //---------------------------------------------------------------------------

@@ -96,7 +96,7 @@ pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue* queue, int sync){
 	if (p->adapter==NULL)
 	{
 		sprintf(p->errbuf, "Cannot transmit a queue to an offline capture");
-		return NULL;
+		return -1;
 	}	
 
 	res = PacketSendPackets(p->adapter,
@@ -254,7 +254,7 @@ pcap_live_dump(pcap_t *p, char *filename, int maxsize, int maxpacks){
 	if (p->adapter==NULL)
 	{
 		sprintf(p->errbuf, "live dump needs a physical interface");
-		return NULL;
+		return -1;
 	}	
 
 	/* Set the packet driver in dump mode */
@@ -280,20 +280,12 @@ pcap_live_dump(pcap_t *p, char *filename, int maxsize, int maxpacks){
 int 
 pcap_live_dump_ended(pcap_t *p, int sync){
 
-	BOOLEAN res;
-
-	if (p->adapter==NULL)
+	if (p->adapter == NULL)
 	{
 		sprintf(p->errbuf, "wrong interface type. A physical interface is needed");
-		return NULL;
+		return -1;
 	}	
 
-	res = PacketIsDumpEnded(p->adapter, (BOOLEAN)sync);
+	return PacketIsDumpEnded(p->adapter, (BOOLEAN)sync);
 
-	if(res == FALSE){
-		sprintf(p->errbuf, "Error checking the state of the kernel dump file name.");
-		return -1;
-	}
-
-	return 0;
 }

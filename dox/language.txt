@@ -7,7 +7,7 @@
 \htmlonly
 
 <DL COMPACT>
-<DT>Note: this document has been drawn from the tcpdump man page. The source can
+<DT>Note: this document has been drawn from the tcpdump man page. The original version can
   be found at&nbsp; <a href="http://www.tcpdump.org">www.tcpdump.org</a>.
 <dd>&nbsp;</dd>
 <DT>wpcap filters are based on a declarative predicate syntax. A filter is

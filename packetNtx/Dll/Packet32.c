@@ -366,7 +366,6 @@ PCHAR PacketGetVersion(){
   - NdisMediumAtm: ATM 
   - NdisMediumArcnet878_2: ARCNET (878.2) 
 */
-
 BOOLEAN PacketGetNetType (LPADAPTER AdapterObject,NetType *type)
 {
     BOOLEAN    Status;
@@ -405,7 +404,6 @@ BOOLEAN PacketGetNetType (LPADAPTER AdapterObject,NetType *type)
   Note that the driver is physically stopped and unloaded only when all the files on its devices 
   are closed, i.e. when all the applications that use WinPcap close all their adapters.
 */
-
 BOOL PacketStopDriver()
 {
 	SC_HANDLE		scmHandle;
@@ -467,7 +465,6 @@ BOOL PacketStopDriver()
   accepts both the ASCII and the UNICODE format. If a ASCII string is received, it is converted to UNICODE 
   by PACKET.DLL before being passed to the driver.
 */
-
 LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 {
     LPADAPTER lpAdapter;
@@ -679,7 +676,6 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 
   PacketCloseAdapter closes the given adapter and frees the associated ADAPTER structure
 */
-
 VOID PacketCloseAdapter(LPADAPTER lpAdapter)
 {
     CloseHandle(lpAdapter->hFile);
@@ -700,7 +696,6 @@ VOID PacketCloseAdapter(LPADAPTER lpAdapter)
   The buffer \b must be allocated by the application, and associated to the PACKET structure 
   with a call to PacketInitPacket.
 */
-
 LPPACKET PacketAllocatePacket(void)
 {
 
@@ -722,7 +717,6 @@ LPPACKET PacketAllocatePacket(void)
   by this function and \b must be explicitly deallocated by the programmer.
 
 */
-
 VOID PacketFreePacket(LPPACKET lpPacket)
 
 {
@@ -784,7 +778,6 @@ VOID PacketInitPacket(LPPACKET lpPacket,PVOID Buffer,UINT Length)
   Examples can be seen either in the TestApp sample application (see the \ref packetsamps page) provided
   in the developer's pack, or in the pcap_read() function of wpcap.
 */
-
 BOOLEAN PacketReceivePacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sync)
 {
 	BOOLEAN res;
@@ -826,7 +819,6 @@ BOOLEAN PacketReceivePacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sy
   that uses the multiple write method will run in Windows 9x as well, but its performance will be very low 
   compared to the one of WindowsNTx.
 */
-
 BOOLEAN PacketSendPacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sync)
 
 {
@@ -977,7 +969,6 @@ BOOLEAN PacketSetMinToCopy(LPADAPTER AdapterObject,int nbytes)
    Look at the NetMeter example in the 
    WinPcap developer's pack to see how to use statistics mode.
 */
-
 BOOLEAN PacketSetMode(LPADAPTER AdapterObject,int mode)
 {
 	int BytesReturned;
@@ -1081,11 +1072,12 @@ BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync)
 {
 	int		BytesReturned;
 	int		IsDumpEnded;
+	BOOLEAN	res;
 
 	if(sync)
 		WaitForSingleObject(AdapterObject->ReadEvent, INFINITE);
 
-    DeviceIoControl(AdapterObject->hFile,
+    res = DeviceIoControl(AdapterObject->hFile,
 		pBIOCISDUMPENDED,
 		NULL,
 		0,
@@ -1093,6 +1085,8 @@ BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync)
 		4,
 		&BytesReturned,
 		NULL);
+
+	if(res == FALSE) return TRUE; // If the IOCTL returns an error we consider the dump finished
 
 	return (BOOLEAN)IsDumpEnded;
 }
@@ -1116,7 +1110,6 @@ BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync)
   need to wait concurrently on several events.
 
 */
-
 HANDLE PacketGetReadEvent(LPADAPTER AdapterObject)
 {
     return AdapterObject->ReadEvent;
@@ -1130,7 +1123,6 @@ HANDLE PacketGetReadEvent(LPADAPTER AdapterObject)
 
 	See PacketSendPacket() for details.
 */
-
 BOOLEAN PacketSetNumWrites(LPADAPTER AdapterObject,int nwrites)
 {
 	int BytesReturned;
@@ -1149,7 +1141,6 @@ BOOLEAN PacketSetNumWrites(LPADAPTER AdapterObject,int nwrites)
   \note This function works also if the adapter is working in statistics mode, and can be used to set the 
   time interval between two statistic reports.
 */
-
 BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
 {
 	int BytesReturned;
@@ -1176,7 +1167,6 @@ BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
   The buffer size is set to 0 when an instance of the driver is opened: the programmer should remember to 
   set it to a proper value. As an example, wpcap sets the buffer size to 1MB at the beginning of a capture.
 */
-
 BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim)
 {
 	int BytesReturned;
@@ -1203,7 +1193,6 @@ BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim)
   flags to obtain the pseudocode.
 
 */
-
 BOOLEAN PacketSetBpf(LPADAPTER AdapterObject,struct bpf_program *fp)
 {
 	int BytesReturned;
@@ -1223,11 +1212,61 @@ BOOLEAN PacketSetBpf(LPADAPTER AdapterObject,struct bpf_program *fp)
   - the number of packets that have been dropped by the driver. A packet is dropped when the kernel
    buffer associated with the adapter is full. 
 */
-
 BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
 {
+	BOOLEAN Res;
 	int BytesReturned;
-	return DeviceIoControl(AdapterObject->hFile,pBIOCGSTATS,NULL,0,s,sizeof(struct bpf_stat),&BytesReturned,NULL);
+	struct bpf_stat tmpstat;	// We use a support structure to avoid kernel-level inconsistencies with old or malicious applications
+
+	Res = DeviceIoControl(AdapterObject->hFile,
+		pBIOCGSTATS,
+		NULL,
+		0,
+		&tmpstat,
+		sizeof(struct bpf_stat),
+		&BytesReturned,
+		NULL);
+
+	// Copy only the first two values retrieved from the driver
+	s->bs_recv = tmpstat.bs_recv;
+	s->bs_drop = tmpstat.bs_drop;
+
+	return Res;
+}
+
+/*!
+  \brief Returns statistic values about the current capture session. Enhanced version of PacketGetStats().
+  \param AdapterObject Pointer to an _ADAPTER structure.
+  \param s Pointer to a user provided bpf_stat structure that will be filled by the function.
+  \return If the function succeeds, the return value is nonzero.
+
+  With this function, the programmer can retireve the sname values provided by PacketGetStats(), plus:
+
+  - the number of drops by interface (not yet supported, always 0). 
+  - the number of packets that reached the application, i.e that were accepted by the kernel filter and
+  that fitted in the kernel buffer. 
+*/
+BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s)
+{
+	BOOLEAN Res;
+	int BytesReturned;
+	struct bpf_stat tmpstat;	// We use a support structure to avoid kernel-level inconsistencies with old or malicious applications
+
+	Res = DeviceIoControl(AdapterObject->hFile,
+		pBIOCGSTATS,
+		NULL,
+		0,
+		&tmpstat,
+		sizeof(struct bpf_stat),
+		&BytesReturned,
+		NULL);
+
+	s->bs_recv = tmpstat.bs_recv;
+	s->bs_drop = tmpstat.bs_drop;
+	s->ps_ifdrop = tmpstat.ps_ifdrop;
+	s->bs_capt = tmpstat.bs_capt;
+
+	return Res;
 }
 
 /*!
@@ -1242,7 +1281,6 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
   provided by all the cards (see the Microsoft DDKs to see which functions are mandatory). If you use a 
   facultative function, be careful to enclose it in an if statement to check the result.
 */
-
 BOOLEAN PacketRequest(LPADAPTER  AdapterObject,BOOLEAN Set,PPACKET_OID_DATA  OidData)
 {
     UINT       BytesReturned;
@@ -1277,7 +1315,6 @@ BOOLEAN PacketRequest(LPADAPTER  AdapterObject,BOOLEAN Set,PPACKET_OID_DATA  Oid
   - NDIS_PACKET_TYPE_ALL_MULTICAST: every multicast packet is accepted. 
   - NDIS_PACKET_TYPE_ALL_LOCAL: all local packets, i.e. NDIS_PACKET_TYPE_DIRECTED + NDIS_PACKET_TYPE_BROADCAST + NDIS_PACKET_TYPE_MULTICAST 
 */
-
 BOOLEAN PacketSetHwFilter(LPADAPTER  AdapterObject,ULONG Filter)
 {
     BOOLEAN    Status;

@@ -48,6 +48,8 @@ EXPORTS
 		pcap_open_dead
 		pcap_findalldevs
 		pcap_freealldevs
+		pcap_live_dump
+		pcap_live_dump_ended
 		bpf_filter
 		bpf_validate
 		bpf_image

@@ -34,7 +34,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "@(#) $Header: /tcpdump/master/libpcap/inet.c,v 1.45 2001/10/28 20:40:43 guy Exp $ (LBL)";
+    "@(#) $Header: /usr/cvsroot/winpcap/wpcap/libpcap/inet.c,v 1.2 2002/05/28 07:36:59 degioanni Exp $ (LBL)";
 #endif
 
 #ifdef HAVE_CONFIG_H
@@ -477,6 +477,8 @@ pcap_add_if_win32(pcap_if_t **devlist, char *name, const char *desc,
 		 * "curdev" is an entry for this interface; add an entry for
 		 * this address to its list of addresses.
 		 */
+		if(curdev == NULL)
+			break;
 		res = add_addr_to_list(curdev,
 		    (struct sockaddr *)&if_addrs[if_addr_size].IPAddress,
 		    (struct sockaddr *)&if_addrs[if_addr_size].SubnetMask,

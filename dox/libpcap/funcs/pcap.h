@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.3 2002/05/08 09:15:10 degioanni Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.4 2002/06/18 14:33:34 degioanni Exp $ (LBL)
  */
 
 /** @defgroup wpcap_fn Exported functions
@@ -695,16 +695,17 @@ int pcap_read_ex(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data);
 
 /*! \brief <b>Win32 Specific.</b> Saves a capture to file.
 
-pcap_live_dump() exploits the capabilities of the NPF packet driver to dump the packets from an interface to
+pcap_live_dump() dumps the network traffic from an interface to
 a file. Using this function the dump is performed at kernel level, therefore it is more efficient than using
 pcap_dump().
 
 The parameters of this function are an interface descriptor (obtained with pcap_open_live()), the name of the
-dump file, the maximum of the file (in bytes) and the maximum number of packets that the file
-will contain. When maxsize or maxpacks are reached, the driver stops to save the packets to the file. 
-Setting maxsize or maxpacks to 0 means no limit.
+dump file, the maximum size of the file (in bytes) and the maximum number of packets that the file
+will contain. Setting maxsize or maxpacks to 0 means no limit. When maxsize or maxpacks are reached, 
+the dump ends.
 
-pcap_live_dump_ended() can be used to check if the limits are reached.
+pcap_live_dump() is non-blocking, threfore it returns immediately. pcap_live_dump_ended() can be used to 
+check the status of the dump process or to wait until it is finished.
 
 Note that when one of the two limits is reached, the dump is stopped, but the file remains opened. In order 
 to correctly flush the data and to access the file consistently, the adapter must be closed with 
@@ -718,8 +719,9 @@ int pcap_live_dump(pcap_t *p, char *filename, int maxsize, int maxpacks);
 /*! \brief <b>Win32 Specific.</b> Returns the status of the kernel dump process, i.e. tells if one of the limits defined with pcap_live_dump() has been reached.
 
 pcap_live_dump_ended() informs the user about the limits that were set with a previous call to 
-pcap_live_dump() on the interface pointed by p. If sync is nonzero, the function blocks until the dump is 
-finished, otherwise it returns immediately.
+pcap_live_dump() on the interface pointed by p: the return value is nonzero, one of the limits has been 
+reched and the dump process is finished. 
+If sync is nonzero, the function blocks until the dump is finished, otherwise it returns immediately.
 
 \warning if the dump process has no limits (i.e. if the maxsize and maxpacks arguments of pcap_live_dump() 
 were both 0), setting sync to TRUE will block the application on this call forever.

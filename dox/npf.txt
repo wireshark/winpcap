@@ -101,7 +101,7 @@ setting or requesting parameters on the NIC, etc.</p>
 NPF driver.</p>
 
 <p>&nbsp; \endhtmlonly 
-\image html npf.gif &quot;Figure 2: NPF device driver" 
+\image html npf.gif "Figure 2: NPF device driver" 
 \htmlonly
 
 <p class="MsoNormal"><span lang="EN-US">NPF is able to

@@ -125,10 +125,13 @@ struct bpf_insn {
 struct bpf_stat {
 	UINT bs_recv;		///< Number of packets that the driver received from the network adapter 
 						///< from the beginning of the current capture. This value includes the packets 
-						///< lost by the driver as well.
+						///< lost by the driver.
 	UINT bs_drop;		///< number of packets that the driver lost from the beginning of a capture. 
 						///< Basically, a packet is lost when the the buffer of the driver is full. 
 						///< In this situation the packet cannot be stored and the driver rejects it.
+	UINT ps_ifdrop;		///< drops by interface XXX not yet supported
+	UINT bs_capt;		///< number of packets that pass the filter, find place in the kernel buffer and
+						///< thus reach the application.
 };
 
 /*!
@@ -257,6 +260,7 @@ BOOLEAN PacketSetMode(LPADAPTER AdapterObject,int mode);
 BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout);
 BOOLEAN PacketSetBpf(LPADAPTER AdapterObject,struct bpf_program *fp);
 BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s);
+BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s);
 BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim);
 BOOLEAN PacketGetNetType (LPADAPTER AdapterObject,NetType *type);
 LPADAPTER PacketOpenAdapter(LPTSTR AdapterName);

@@ -19,6 +19,7 @@ EXPORTS
 		PacketSetBuff
 		PacketSetBpf
 		PacketGetStats
+		PacketGetStatsEx
 		PacketGetNetType
 		PacketSetReadTimeout
 		PacketSetMode
