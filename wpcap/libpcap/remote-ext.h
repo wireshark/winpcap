@@ -41,6 +41,9 @@
 #pragma once
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*!
 	\file remote-ext.h
@@ -409,6 +412,10 @@ int pcap_remoteact_close(const char *host, char *errbuf);
 void pcap_remoteact_cleanup();
 //\}
 // End of remote capture functions
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif
