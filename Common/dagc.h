@@ -30,9 +30,9 @@
  *
  */
 
-#include <dagnew.h>
-#include <dagtoken.h>
-#include <dagapi.h>
+//#include <dagnew.h>
+//#include <dagtoken.h>
+//#include <dagapi.h>
 
 #define DAGC_ERRBUF_SIZE   512
 #define FILEBUFSIZE         65536
@@ -95,38 +95,7 @@ typedef struct dagc_stats_t
  * Note: the dagc_t descriptor is completely opaque to the application. It can be compared 
  * to a file descriptor.
  */
-typedef struct dagc_t 
-{
-   struct dagc_t *next;
-   int         fd;            /* handle to the open device if this is a live capture, 
-                           otherwise NULL */
-   FILE      *infile;      /* pointer to the file if this is an offline capture, 
-                           otherwise NULL */
-   char      *buf;         /* Buffer containing the packets */
-   u_int      bufsize;      /* Size of buffer containing the packets */
-   u_int      borrow;         /* Size of buffer containing the packets */
-   int         linktype;      /* libpcap style linktype. NOTE: for DLT_PPP_SERIAL encapsulation, 
-                           linktype=-TYPE_HDLC_POS. MINUS!! */
-   u_int      snaplen;      /* portion of the packet actually captured */
-   FILE      *dumpfile;      /* file used to save the packets */
-
-#ifdef _KERNEL_SCHEDULER
-   HANDLE      holeevent;         /* Event used to synchronize with the kernel scheduler */
-#endif /* _KERNEL_SCHEDULER */
-   char      *hole;         /* DAG card memory base address */
-   u_int      holesize;      /* for PBMOFFSET */
-   u_int      holebottom;      /* Current position inside the hole */
-   u_int      holetop;      /* Current end of buffer inside the hole */
-   dag_reg_t   *regs;         /* Card registers */
-   u_char      *iom;         /* IO memory pointer */
-   unsigned   brokencuraddr;   /* for PBMOFFSET */
-   unsigned   byteswap;       /* endinness for 3.4/3.51ecm */
-   char      name[32];      /* device name */
-   char      errbuf[DAGC_ERRBUF_SIZE + 1]; /* for functions error strings. Far better than 
-                                    panic */
-   dagc_stats_t stats;         /* Statistcs about current session */
-} dagc_t;
-
+typedef struct dagc dagc_t;
 
 /*
  * Card description.
