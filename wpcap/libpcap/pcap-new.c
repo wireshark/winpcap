@@ -1281,8 +1281,7 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 	}
 
 	// Get the numeric for of the name of the connecting host
-	if (getnameinfo( (struct sockaddr *) &from, fromlen, connectinghost, 
-			RPCAP_HOSTLIST_SIZE, NULL, 0, NI_NUMERICHOST) )
+	if (getnameinfo( (struct sockaddr *) &from, fromlen, connectinghost, RPCAP_HOSTLIST_SIZE, NULL, 0, NI_NUMERICHOST) )
 	{
 		sock_geterror("getnameinfo(): ", errbuf, PCAP_ERRBUF_SIZE);
 		rpcap_senderror(sockctrl, errbuf, PCAP_ERR_REMOTEACCEPT, fakeerrbuf);
@@ -1518,11 +1517,15 @@ char hoststr[RPCAP_HOSTLIST_SIZE + 1];
 
 	while (temp)
 	{
-		// Get the numeric for of the name of the connecting host
-		if (getnameinfo( (struct sockaddr *) &temp->host, sizeof (struct sockaddr_storage), hoststr, 
-				RPCAP_HOSTLIST_SIZE, NULL, 0, NI_NUMERICHOST) )
+//int sock_getascii_addrport(const struct sockaddr_storage *sockaddr, char *address, int addrlen, char *port, int portlen, int flags, char *errbuf, int errbuflen)
+
+		// Get the numeric form of the name of the connecting host
+		if (sock_getascii_addrport( (struct sockaddr_storage *) &temp->host,hoststr, 
+				RPCAP_HOSTLIST_SIZE, NULL, 0, NI_NUMERICHOST, errbuf, PCAP_ERRBUF_SIZE) != -1)
+//		if (getnameinfo( (struct sockaddr *) &temp->host, sizeof (struct sockaddr_storage), hoststr, 
+//				RPCAP_HOSTLIST_SIZE, NULL, 0, NI_NUMERICHOST) )
 		{
-			sock_geterror("getnameinfo(): ", errbuf, PCAP_ERRBUF_SIZE);
+//			sock_geterror("getnameinfo(): ", errbuf, PCAP_ERRBUF_SIZE);
 			return -1;
 		}
 
