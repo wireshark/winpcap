@@ -7,6 +7,7 @@ EXPORTS
 		PacketGetVersion
 		PacketOpenAdapter
 		PacketSendPacket
+		PacketSendPackets
 		PacketAllocatePacket
 		PacketInitPacket
 		PacketFreePacket

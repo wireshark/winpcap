@@ -54,7 +54,7 @@ int i;
 
 //-------------------------------------------------------------------
 
-NTSTATUS PacketOpen(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
+NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 {
 
     PDEVICE_EXTENSION DeviceExtension;
@@ -219,8 +219,19 @@ NTSTATUS PacketOpen(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	//allocate the spinlock for the buffer pointers
     NdisAllocateSpinLock(&Open->BufLock);
 	
-    IoMarkIrpPending(Irp);
+    //
+    //  link up the request stored in our open block
+    //
+    for (i=0;i<MAX_REQUESTS;i++) {
+        ExInterlockedInsertTailList(
+            &Open->RequestList,
+            &Open->Requests[i].ListElement,
+            &Open->RequestSpinLock);
+		
+    }
 	
+
+    IoMarkIrpPending(Irp);
 	
     //
     //  Try to open the MAC
@@ -244,7 +255,7 @@ NTSTATUS PacketOpen(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 
 	if (Status != NDIS_STATUS_PENDING)
     {
-		PacketOpenAdapterComplete(Open,Status,NDIS_STATUS_SUCCESS);
+		NPF_OpenAdapterComplete(Open,Status,NDIS_STATUS_SUCCESS);
     }
 	
     return(STATUS_PENDING);
@@ -252,7 +263,7 @@ NTSTATUS PacketOpen(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 
 //-------------------------------------------------------------------
 
-VOID PacketOpenAdapterComplete(
+VOID NPF_OpenAdapterComplete(
 	IN NDIS_HANDLE  ProtocolBindingContext,
     IN NDIS_STATUS  Status,
     IN NDIS_STATUS  OpenErrorStatus)
@@ -292,7 +303,7 @@ VOID PacketOpenAdapterComplete(
 //-------------------------------------------------------------------
 
 NTSTATUS
-PacketClose(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
+NPF_Close(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 {
 
     POPEN_INSTANCE    Open;
@@ -352,7 +363,7 @@ PacketClose(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
  
 	// If this instance is in dump mode, complete the dump and close the file
  	if((Open->mode & MODE_DUMP) && Open->DumpFileHandle != NULL)
- 		PacketCloseDumpFile(Open);
+ 		NPF_CloseDumpFile(Open);
  	
 	// Destroy the read Event
 	ZwClose(Open->ReadEventHandle);
@@ -365,7 +376,7 @@ PacketClose(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 	if (Status != NDIS_STATUS_PENDING) {
 		
-		PacketCloseAdapterComplete(
+		NPF_CloseAdapterComplete(
 			Open,
 			Status
 			);
@@ -379,7 +390,7 @@ PacketClose(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 //-------------------------------------------------------------------
 
 VOID
-PacketCloseAdapterComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  Status)
+NPF_CloseAdapterComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  Status)
 {
     POPEN_INSTANCE    Open;
     PIRP              Irp;
@@ -425,7 +436,7 @@ PacketCloseAdapterComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS
 //-------------------------------------------------------------------
 
 VOID
-PacketBindAdapter(
+NPF_BindAdapter(
     OUT PNDIS_STATUS            Status,
     IN  NDIS_HANDLE             BindContext,
     IN  PNDIS_STRING            DeviceName,
@@ -433,13 +444,13 @@ PacketBindAdapter(
     IN  PVOID                   SystemSpecific2
     )
 {
-	IF_LOUD(DbgPrint("NPF: PacketBindAdapter\n");)
+	IF_LOUD(DbgPrint("NPF: NPF_BindAdapter\n");)
 }
 
 //-------------------------------------------------------------------
 
 VOID
-PacketUnbindAdapter(
+NPF_UnbindAdapter(
     OUT PNDIS_STATUS        Status,
     IN  NDIS_HANDLE         ProtocolBindingContext,
     IN  NDIS_HANDLE         UnbindContext
@@ -448,7 +459,7 @@ PacketUnbindAdapter(
     POPEN_INSTANCE   Open =(POPEN_INSTANCE)ProtocolBindingContext;
 	NDIS_STATUS		 lStatus;
 
-	IF_LOUD(DbgPrint("NPF: PacketUNBindAdapter\n");)
+	IF_LOUD(DbgPrint("NPF: NPF_UnbindAdapter\n");)
 
 	// Reset the buffer size. This tells the dump thread to stop.
  	Open->BufSize=0;
@@ -466,7 +477,7 @@ PacketUnbindAdapter(
 
 	// If this instance is in dump mode, complete the dump and close the file
  	if((Open->mode & MODE_DUMP) && Open->DumpFileHandle != NULL)
- 		PacketCloseDumpFile(Open);
+ 		NPF_CloseDumpFile(Open);
 
 	// Destroy the read Event
 	ZwClose(Open->ReadEventHandle);
@@ -479,7 +490,7 @@ PacketUnbindAdapter(
 
     if (lStatus != NDIS_STATUS_PENDING) {
 
-        PacketCloseAdapterComplete(
+        NPF_CloseAdapterComplete(
             Open,
             lStatus
             );
@@ -496,7 +507,7 @@ PacketUnbindAdapter(
 //-------------------------------------------------------------------
 
 VOID
-PacketResetComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  Status)
+NPF_ResetComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  Status)
 
 {
     POPEN_INSTANCE      Open;

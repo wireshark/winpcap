@@ -31,6 +31,8 @@
 
 #include "jitter.h"
 
+#define  MAX_REQUESTS   32 ///< Maximum number of simultaneous IOCTL requests.
+
 #define Packet_ALIGNMENT sizeof(int) ///< Alignment macro. Defines the alignment size.
 #define Packet_WORDALIGN(x) (((x)+(Packet_ALIGNMENT-1))&~(Packet_ALIGNMENT-1))	///< Alignment macro. Rounds up to the next 
 																				///< even multiple of Packet_ALIGNMENT. 
@@ -132,7 +134,27 @@
 */
 #define  BIOCGEVNAME 7415
 
-//working modes
+/*!
+  \brief IOCTL code: Send a buffer containing multiple packets to the network, ignoring the timestamps.
+
+  Command used to send a buffer of packets in a single system call. Every packet in the buffer is preceded by
+  a sf_pkthdr structure. The timestamps of the packets are ignored, i.e. the packets are sent as fast as 
+  possible. The NPF_BufferedWrite() function is invoked to send the packets.
+*/
+#define  BIOCSENDPACKETSNOSYNC 9032
+
+/*!
+  \brief IOCTL code: Send a buffer containing multiple packets to the network, considering the timestamps.
+
+  Command used to send a buffer of packets in a single system call. Every packet in the buffer is preceded by
+  a sf_pkthdr structure. The timestamps of the packets are used to synchronize the write, i.e. the packets 
+  are sent to the network respecting the intervals specified in the sf_pkthdr structure assiciated with each
+  packet. NPF_BufferedWrite() function is invoked to send the packets. 
+*/
+#define  BIOCSENDPACKETSSYNC 9033
+
+
+// Working modes
 #define MODE_CAPT 0x0		///< Capture working mode
 #define MODE_STAT 0x1		///< Statistical working mode
 #define MODE_DUMP 0x10		///< Kernel dump working mode
@@ -166,7 +188,7 @@ struct packet_file_header
 /*!
   \brief A microsecond precise timestamp.
 
-  included in the sf_pkthdr that NPF associates with every packet. 
+  included in the sf_pkthdr or the bpf_hdr that NPF associates with every packet. 
 */
 struct timeval {
         long    tv_sec;         ///< seconds
@@ -182,10 +204,7 @@ struct sf_pkthdr {
     UINT			caplen;		///< Length of captured portion. The captured portion can be different from 
 								///< the original packet, because it is possible (with a proper filter) to 
 								///< instruct the driver to capture only a portion of the packets. 
-    UINT			len;		///< Length of bpf header (this struct plus alignment padding). In some cases, 
-								///< a padding is added between the end of this structure and the packet 
-								///< data for performance reasons. This filed can be used to retrieve the 
-								///< actual data of the packet. 
+    UINT			len;		///< Length of the original packet (off wire).
 };
 
 /*!
@@ -211,9 +230,11 @@ typedef struct _INTERNAL_REQUEST {
   maintaining information about the IRPs to complete.
 */
 typedef struct _PACKET_RESERVED {
-    LIST_ENTRY     ListElement;		///< Used to handle lists of packets.
-    PIRP           Irp;				///< Irp that performed the request
-    PMDL           pMdl;			///< MDL mapping the buffer of the packet.
+    LIST_ENTRY		ListElement;		///< Used to handle lists of packets.
+    PIRP			Irp;				///< Irp that performed the request
+    PMDL			pMdl;				///< MDL mapping the buffer of the packet.
+	BOOLEAN			FreeBufAfterWrite;	///< True if the memory buffer associated with the packet must be freed 
+										///< after a call to NdisSend().
 }  PACKET_RESERVED, *PPACKET_RESERVED;
 
 #define RESERVED(_p) ((PPACKET_RESERVED)((_p)->ProtocolReserved)) ///< Macro to obtain a NDIS_PACKET from a PACKET_RESERVED
@@ -252,6 +273,7 @@ typedef struct _OPEN_INSTANCE
 	KSPIN_LOCK			RequestSpinLock;	///< SpinLock used to synchronize the OID requests.
 	LIST_ENTRY          RequestList;		///< List of pending OID requests.
 	LIST_ENTRY          ResetIrpList;		///< List of pending adapter reset requests.
+    INTERNAL_REQUEST    Requests[MAX_REQUESTS]; ///< Array of structures that wrap every single OID request.
 	PMDL				BufferMdl;			///< Pointer to a Memory descriptor list (MDL) that maps the circular buffer's memory.
 	PKEVENT				ReadEvent;			///< Pointer to the event on which the read calls on this instance must wait.
 	HANDLE				ReadEventHandle;	///< Handle of the event on which the read calls on this instance must wait.
@@ -305,11 +327,12 @@ typedef struct _OPEN_INSTANCE
 	NDIS_EVENT			DumpEvent;			///< Event used to synchronize the dump thread with the tap when the instance is in dump mode.
 	LARGE_INTEGER		DumpOffset;			///< Current offset in the dump file.
 	UNICODE_STRING      DumpFileName;		///< String containing the name of the dump file.
-} 
+}
 OPEN_INSTANCE, *POPEN_INSTANCE;
 
 
-#define TRANSMIT_PACKETS 128	///< Maximum number of packet that can be transmitted with a single NDIS call.
+#define TRANSMIT_PACKETS 256	///< Maximum number of packets in the transmit packet pool. This value is an upper bound to the number
+								///< of packets that can be transmitted at the same time or with a single call to NdisSendPackets.
 
 
 /// Macro used in the I/O routines to return the control to user-mode with a success status.
@@ -397,12 +420,12 @@ BOOLEAN createDevice(
   \return The status of the operation. See ntstatus.h in the DDK.
 
   This function is called by the OS when a new instance of the driver is opened, i.e. when a user application 
-  performs a CreateFile on a device created by NPF. PacketOpen allocates and initializes variables, objects
+  performs a CreateFile on a device created by NPF. NPF_Open allocates and initializes variables, objects
   and buffers needed by the new instance, fills the OPEN_INSTANCE structure associated with it and opens the 
   adapter with a call to NdisOpenAdapter.
 */
 NTSTATUS
-PacketOpen(
+NPF_Open(
     IN PDEVICE_OBJECT DeviceObject,
     IN PIRP Irp
     );
@@ -414,10 +437,10 @@ PacketOpen(
   \param OpenErrorStatus not used by NPF.
 
   Callback function associated with the NdisOpenAdapter() NDIS function. It is invoked by NDIS when the NIC 
-  driver has finished an open operation that was previously started by PacketOpen().
+  driver has finished an open operation that was previously started by NPF_Open().
 */
 VOID
-PacketOpenAdapterComplete(
+NPF_OpenAdapterComplete(
     IN NDIS_HANDLE  ProtocolBindingContext,
     IN NDIS_STATUS  Status,
     IN NDIS_STATUS  OpenErrorStatus
@@ -434,7 +457,7 @@ PacketOpenAdapterComplete(
   instance and closing the files. The network adapter is then closed with a call to NdisCloseAdapter. 
 */
 NTSTATUS
-PacketClose(
+NPF_Close(
     IN PDEVICE_OBJECT DeviceObject,
     IN PIRP Irp
     );
@@ -445,10 +468,10 @@ PacketClose(
   \param Status Status of the close operation performed by NDIS.
 
   Callback function associated with the NdisCloseAdapter() NDIS function. It is invoked by NDIS when the NIC 
-  driver has finished a close operation that was previously started by PacketClose().
+  driver has finished a close operation that was previously started by NPF_Close().
 */
 VOID
-PacketCloseAdapterComplete(
+NPF_CloseAdapterComplete(
     IN NDIS_HANDLE  ProtocolBindingContext,
     IN NDIS_STATUS  Status
     );
@@ -469,14 +492,14 @@ PacketCloseAdapterComplete(
   \param PacketSize Total size of the incoming packet, excluded the header.
   \return The status of the operation. See ntstatus.h in the DDK.
 
-  Packet_tap() is called by the underlying NIC for every incoming packet. It is the most important and one of 
+  NPF_tap() is called by the underlying NIC for every incoming packet. It is the most important and one of 
   the most complex functions of NPF: it executes the filter, runs the statistical engine (if the instance is in 
-  statistical mode), gathers the timestamp, moves the packet in the buffer. Packet_tap() is the only function,
+  statistical mode), gathers the timestamp, moves the packet in the buffer. NPF_tap() is the only function,
   along with the filtering ones, that is executed for every incoming packet, therefore it is carefully 
   optimized.
 */
 NDIS_STATUS
-Packet_tap(
+NPF_tap(
     IN NDIS_HANDLE ProtocolBindingContext,
     IN NDIS_HANDLE MacReceiveContext,
     IN PVOID HeaderBuffer,
@@ -497,7 +520,7 @@ Packet_tap(
   driver has finished the transfer of a packet from the NIC driver memory to the NPF circular buffer.
 */
 VOID
-PacketTransferDataComplete(
+NPF_TransferDataComplete(
     IN NDIS_HANDLE ProtocolBindingContext,
     IN PNDIS_PACKET Packet,
     IN NDIS_STATUS Status,
@@ -511,7 +534,7 @@ PacketTransferDataComplete(
   does nothing in NPF
 */
 VOID
-PacketReceiveComplete(IN NDIS_HANDLE  ProtocolBindingContext);
+NPF_ReceiveComplete(IN NDIS_HANDLE  ProtocolBindingContext);
 
 /*!
   \brief Handles the IOCTL calls.
@@ -520,7 +543,7 @@ PacketReceiveComplete(IN NDIS_HANDLE  ProtocolBindingContext);
   \return The status of the operation. See ntstatus.h in the DDK.
 
   Once the packet capture driver is opened it can be configured from user-level applications with IOCTL commands
-  using the DeviceIoControl() system call. PacketIoControl receives and serves all the IOCTL calls directed to NPF.
+  using the DeviceIoControl() system call. NPF_IoControl receives and serves all the IOCTL calls directed to NPF.
   The following commands are recognized: 
   - #BIOCSETBUFFERSIZE 
   - #BIOCSETF 
@@ -533,9 +556,11 @@ PacketReceiveComplete(IN NDIS_HANDLE  ProtocolBindingContext);
   - #BIOCQUERYOID 
   - #BIOCSETDUMPFILENAME
   - #BIOCGEVNAME
+  -	#BIOCSENDPACKETSSYNC
+  -	#BIOCSENDPACKETSNOSYNC
 */
 NTSTATUS
-PacketIoControl(
+NPF_IoControl(
     IN PDEVICE_OBJECT DeviceObject,
     IN PIRP Irp
     );
@@ -549,9 +574,9 @@ VOID
   \param Status Status of the operation.
 
   Callback function associated with the NdisRequest() NDIS function. It is invoked by NDIS when the NIC 
-  driver has finished an OID request operation that was previously started by PacketIoControl().
+  driver has finished an OID request operation that was previously started by NPF_IoControl().
 */
-PacketRequestComplete(
+NPF_RequestComplete(
     IN NDIS_HANDLE   ProtocolBindingContext,
     IN PNDIS_REQUEST pRequest,
     IN NDIS_STATUS   Status
@@ -564,28 +589,52 @@ PacketRequestComplete(
   \return The status of the operation. See ntstatus.h in the DDK.
 
   This function is called by the OS in consequence of user WriteFile() call, with the data of the packet that must
-  be sent on the net. The data is contained in the buffer associated with Irp, PacketWrite takes it and
+  be sent on the net. The data is contained in the buffer associated with Irp, NPF_Write takes it and
   delivers it to the NIC driver via the NdisSend() function. The Nwrites field of the OPEN_INSTANCE structure 
   associated with Irp indicates the number of copies of the packet that will be sent: more than one copy of the
   packet can be sent for performance reasons.
 */
 NTSTATUS
-PacketWrite(
+NPF_Write(
 			IN PDEVICE_OBJECT DeviceObject,
 			IN PIRP Irp
 			);
 
+
+/*!
+  \brief Writes a buffer of raw packets to the network.
+  \param Irp Pointer to the IRP containing the user request.
+  \param UserBuff Pointer to the buffer containing the packets to send.
+  \param UserBuffSize Size of the buffer with the packets.
+  \return The amount of bytes actually sent. If the return value is smaller than the Size parameter, an
+          error occurred during the send. The error can be caused by an adapter problem or by an
+		  inconsistent/bogus user buffer.
+
+  This function is called by the OS in consequence of a BIOCSENDPACKETSNOSYNC or a BIOCSENDPACKETSSYNC IOCTL.
+  The buffer received as input parameter contains an arbitrary number of packets, each of which preceded by a
+  sf_pkthdr structure. NPF_BufferedWrite() scans the buffer and sends every packet via the NdisSend() function.
+  When Sync is set to TRUE, the packets are synchronized with the KeQueryPerformanceCounter() function.
+  This requires a remarkable amount of CPU, but allows to respect the timestamps associated with packets with a precision 
+  of some microseconds (depending on the precision of the performance counter of the machine).
+  If Sync is false, the timestamps are ignored and the packets are sent as fat as possible.
+*/
+
+INT NPF_BufferedWrite(IN PIRP Irp, 
+						IN PCHAR UserBuff, 
+						IN ULONG UserBuffSize,
+						BOOLEAN sync);
+
 /*!
   \brief Ends a send operation.
   \param ProtocolBindingContext Context of the function. Contains a pointer to the OPEN_INSTANCE structure associated with the current instance.
-  \param pRequest Pointer to the NDIS PACKET structure used by PacketWrite() to send the packet. 
+  \param pRequest Pointer to the NDIS PACKET structure used by NPF_Write() to send the packet. 
   \param Status Status of the operation.
 
   Callback function associated with the NdisSend() NDIS function. It is invoked by NDIS when the NIC 
-  driver has finished an OID request operation that was previously started by PacketWrite().
+  driver has finished an OID request operation that was previously started by NPF_Write().
 */
 VOID
-PacketSendComplete(
+NPF_SendComplete(
     IN NDIS_HANDLE   ProtocolBindingContext,
     IN PNDIS_PACKET  pPacket,
     IN NDIS_STATUS   Status
@@ -597,11 +646,11 @@ PacketSendComplete(
   \param Status Status of the operation.
 
   Callback function associated with the NdisReset() NDIS function. It is invoked by NDIS when the NIC 
-  driver has finished an OID request operation that was previously started by PacketIoControl(), in an IOCTL_PROTOCOL_RESET 
+  driver has finished an OID request operation that was previously started by NPF_IoControl(), in an IOCTL_PROTOCOL_RESET 
   command.
 */
 VOID
-PacketResetComplete(
+NPF_ResetComplete(
     IN NDIS_HANDLE  ProtocolBindingContext,
     IN NDIS_STATUS  Status
     );
@@ -610,7 +659,7 @@ PacketResetComplete(
   \brief Callback for NDIS StatusHandler. Not used by NPF
 */
 VOID
-PacketStatus(
+NPF_Status(
     IN NDIS_HANDLE   ProtocolBindingContext,
     IN NDIS_STATUS   Status,
     IN PVOID         StatusBuffer,
@@ -622,7 +671,7 @@ PacketStatus(
   \brief Callback for NDIS StatusCompleteHandler. Not used by NPF
 */
 VOID
-PacketStatusComplete(IN NDIS_HANDLE  ProtocolBindingContext);
+NPF_StatusComplete(IN NDIS_HANDLE  ProtocolBindingContext);
 
 /*!
   \brief Function called by the OS when NPF is unloaded.
@@ -633,7 +682,7 @@ PacketStatusComplete(IN NDIS_HANDLE  ProtocolBindingContext);
   service (from control panel or with a console 'net stop npf').
 */
 VOID
-PacketUnload(IN PDRIVER_OBJECT DriverObject);
+NPF_Unload(IN PDRIVER_OBJECT DriverObject);
 
 
 /*!
@@ -644,9 +693,9 @@ PacketUnload(IN PDRIVER_OBJECT DriverObject);
 
   This function is called by the OS in consequence of user ReadFile() call. It moves the data present in the
   kernel buffer to the user buffer associated with Irp.
-  First of all, PacketRead checks the amount of data in kernel buffer associated with current NPF instance. 
+  First of all, NPF_Read checks the amount of data in kernel buffer associated with current NPF instance. 
   - If the instance is in capture mode and the buffer contains more than OPEN_INSTANCE::MinToCopy bytes,
-  PacketRead moves the data in the user buffer and returns immediatly. In this way, the read performed by the
+  NPF_Read moves the data in the user buffer and returns immediatly. In this way, the read performed by the
   user is not blocking.
   - If the buffer contains less than MinToCopy bytes, the application's request isn't 
   satisfied immediately, but it's blocked until at least MinToCopy bytes arrive from the net 
@@ -655,7 +704,7 @@ PacketUnload(IN PDRIVER_OBJECT DriverObject);
   timeout kept in OPEN_INSTANCE::TimeOut expires.
 */
 NTSTATUS
-PacketRead(
+NPF_Read(
     IN PDEVICE_OBJECT DeviceObject,
     IN PIRP Irp
     );
@@ -666,20 +715,20 @@ PacketRead(
   Normally not used in recent versions of NPF.
 */
 NTSTATUS
-PacketReadRegistry(
+NPF_ReadRegistry(
     IN  PWSTR              *MacDriverName,
     IN  PWSTR              *PacketDriverName,
     IN  PUNICODE_STRING     RegistryPath
     );
 
 /*!
-  \brief Function used by PacketReadRegistry() to quesry the registry keys associated woth NPF if the driver 
+  \brief Function used by NPF_ReadRegistry() to quesry the registry keys associated woth NPF if the driver 
   is manually installed via the control panel.
 
   Normally not used in recent versions of NPF.
 */
 NTSTATUS
-PacketQueryRegistryRoutine(
+NPF_QueryRegistryRoutine(
     IN PWSTR     ValueName,
     IN ULONG     ValueType,
     IN PVOID     ValueData,
@@ -693,7 +742,7 @@ PacketQueryRegistryRoutine(
   
   Function called by NDIS when a new adapter is installed on the machine With Plug and Play.
 */
-VOID PacketBindAdapter(
+VOID NPF_BindAdapter(
     OUT PNDIS_STATUS            Status,
     IN  NDIS_HANDLE             BindContext,
     IN  PNDIS_STRING            DeviceName,
@@ -703,17 +752,17 @@ VOID PacketBindAdapter(
 
 /*!
   \brief Callback for NDIS UnbindAdapterHandler.
-  \param Status out variable filled by PacketUnbindAdapter with the status of the unbind operation.
+  \param Status out variable filled by NPF_UnbindAdapter with the status of the unbind operation.
   \param ProtocolBindingContext Context of the function. Contains a pointer to the OPEN_INSTANCE structure associated with current instance.
   \param UnbindContext Specifies a handle, supplied by NDIS, that NPF can use to complete the opration.
   
   Function called by NDIS when a new adapter is removed from the machine without shutting it down.
-  PacketUnbindAdapter closes the adapter calling NdisCloseAdapter() and frees the memory and the structures
+  NPF_UnbindAdapter closes the adapter calling NdisCloseAdapter() and frees the memory and the structures
   associated with it. It also releases the waiting user-level app and closes the dump thread if the instance
   is in dump mode.
 */
 VOID
-PacketUnbindAdapter(
+NPF_UnbindAdapter(
     OUT PNDIS_STATUS        Status,
     IN  NDIS_HANDLE         ProtocolBindingContext,
     IN  NDIS_HANDLE         UnbindContext
@@ -762,7 +811,7 @@ UINT bpf_filter(register struct bpf_insn *pc,
   \return The portion of the packet to keep, in bytes. 0 means that the packet must be rejected, -1 means that
    the whole packet must be kept.
   
-  This function is used when NDIS passes the packet to Packet_tap() in two buffers instaed than in a single one.
+  This function is used when NDIS passes the packet to NPF_tap() in two buffers instaed than in a single one.
 */
 UINT bpf_filter_with_2_buffers(register struct bpf_insn *pc,
 							   register UCHAR *p,
@@ -778,7 +827,7 @@ UINT bpf_filter_with_2_buffers(register struct bpf_insn *pc,
   \param append Boolean value that specifies if the data must be appended to the file.
   \return The status of the operation. See ntstatus.h in the DDK.
 */
-NTSTATUS PacketOpenDumpFile(POPEN_INSTANCE Open , PUNICODE_STRING fileName, BOOLEAN append);
+NTSTATUS NPF_OpenDumpFile(POPEN_INSTANCE Open , PUNICODE_STRING fileName, BOOLEAN append);
 
 /*!
   \brief Starts dump to file.
@@ -788,7 +837,7 @@ NTSTATUS PacketOpenDumpFile(POPEN_INSTANCE Open , PUNICODE_STRING fileName, BOOL
   This function performs two operations. First, it writes the libpcap header at the beginning of the file.
   Second, it starts the thread that asynchronously dumps the network data to the file.
 */
-NTSTATUS PacketStartDump(POPEN_INSTANCE Open);
+NTSTATUS NPF_StartDump(POPEN_INSTANCE Open);
 
 /*!
   \brief The dump thread.
@@ -797,7 +846,7 @@ NTSTATUS PacketStartDump(POPEN_INSTANCE Open);
   This function moves the content of the NPF kernel buffer to file. It runs in the user context, so at lower 
   priority than the TAP.
 */
-VOID PacketDumpThread(PVOID Open);
+VOID NPF_DumpThread(PVOID Open);
 
 /*!
   \brief Writes a block of packets on the dump file.
@@ -808,10 +857,10 @@ VOID PacketDumpThread(PVOID Open);
   \param IoStatusBlock Used by the function to return the status of the operation.
   \return The status of the operation. See ntstatus.h in the DDK.
 
-  PacketWriteDumpFile addresses directly the file system, creating a custom IRP and using it to send a portion
-  of the NPF circular buffer to disk. This function is used by PacketDumpThread().
+  NPF_WriteDumpFile addresses directly the file system, creating a custom IRP and using it to send a portion
+  of the NPF circular buffer to disk. This function is used by NPF_DumpThread().
 */
-VOID PacketWriteDumpFile(PFILE_OBJECT FileObject,
+VOID NPF_WriteDumpFile(PFILE_OBJECT FileObject,
 			                    PLARGE_INTEGER Offset,
 								ULONG Length,
 								PMDL Mdl,
@@ -824,7 +873,7 @@ VOID PacketWriteDumpFile(PFILE_OBJECT FileObject,
   \param Open The NPF instance that closes the file.
   \return The status of the operation. See ntstatus.h in the DDK.
 */
-NTSTATUS PacketCloseDumpFile(POPEN_INSTANCE Open);
+NTSTATUS NPF_CloseDumpFile(POPEN_INSTANCE Open);
 
 /**
  *  @}

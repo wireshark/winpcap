@@ -31,7 +31,7 @@
 //-------------------------------------------------------------------
 
 NTSTATUS
-PacketOpenDumpFile(POPEN_INSTANCE Open , PUNICODE_STRING fileName, BOOLEAN Append)
+NPF_OpenDumpFile(POPEN_INSTANCE Open , PUNICODE_STRING fileName, BOOLEAN Append)
 {
 	NTSTATUS ntStatus;
 	IO_STATUS_BLOCK IoStatus;
@@ -138,7 +138,7 @@ PacketOpenDumpFile(POPEN_INSTANCE Open , PUNICODE_STRING fileName, BOOLEAN Appen
 //-------------------------------------------------------------------
 
 NTSTATUS
-PacketStartDump(POPEN_INSTANCE Open)
+NPF_StartDump(POPEN_INSTANCE Open)
 {
 	NTSTATUS ntStatus;
 	struct packet_file_header hdr;
@@ -219,7 +219,7 @@ PacketStartDump(POPEN_INSTANCE Open)
 		(ACCESS_MASK)0L,
 		0,
 		0,
-		PacketDumpThread,
+		NPF_DumpThread,
 		Open);
 	
     if ( !NT_SUCCESS( ntStatus ) )
@@ -239,7 +239,7 @@ PacketStartDump(POPEN_INSTANCE Open)
 
 //-------------------------------------------------------------------
 
-NTSTATUS PacketCloseDumpFile(POPEN_INSTANCE Open){
+NTSTATUS NPF_CloseDumpFile(POPEN_INSTANCE Open){
 	NTSTATUS	ntStatus;
 	IO_STATUS_BLOCK IoStatus;
     PMDL		WriteMdl;
@@ -247,7 +247,7 @@ NTSTATUS PacketCloseDumpFile(POPEN_INSTANCE Open){
 	UINT		VMBufLen;
 
 
-    IF_LOUD(DbgPrint("NPF: PacketCloseDumpFile.\n");)
+    IF_LOUD(DbgPrint("NPF: NPF_CloseDumpFile.\n");)
 
     IF_LOUD(DbgPrint("Dumpoffset=%d\n",Open->DumpOffset.QuadPart);)
 
@@ -255,7 +255,7 @@ NTSTATUS PacketCloseDumpFile(POPEN_INSTANCE Open){
 
 	ObDereferenceObject(Open->DumpFileObject);
 
-	PacketOpenDumpFile(Open,&Open->DumpFileName, TRUE);
+	NPF_OpenDumpFile(Open,&Open->DumpFileName, TRUE);
 
 	//fill the application buffer
 	if(Open->Btail>Open->Bhead){
@@ -297,7 +297,7 @@ NTSTATUS PacketCloseDumpFile(POPEN_INSTANCE Open){
 // Dump Thread
 //-------------------------------------------------------------------
 
-VOID PacketDumpThread(POPEN_INSTANCE Open)
+VOID NPF_DumpThread(POPEN_INSTANCE Open)
 {
 	UINT		Thead;
 	UINT		Ttail;
@@ -350,7 +350,7 @@ VOID PacketDumpThread(POPEN_INSTANCE Open)
 			MmBuildMdlForNonPagedPool(lMdl);
 
 			// Write to disk
-			PacketWriteDumpFile(Open->DumpFileObject,
+			NPF_WriteDumpFile(Open->DumpFileObject,
 				&Open->DumpOffset,
 				Ttail-Thead,
 				lMdl,
@@ -381,7 +381,7 @@ VOID PacketDumpThread(POPEN_INSTANCE Open)
 			MmBuildMdlForNonPagedPool(lMdl);
 			
 			// Write to disk
-			PacketWriteDumpFile(Open->DumpFileObject,
+			NPF_WriteDumpFile(Open->DumpFileObject,
 				&Open->DumpOffset,
 				TLastByte-Thead,
 				lMdl,
@@ -422,7 +422,7 @@ static NTSTATUS PacketDumpCompletion(PDEVICE_OBJECT DeviceObject,
 
 //-------------------------------------------------------------------
 
-VOID PacketWriteDumpFile(PFILE_OBJECT FileObject,
+VOID NPF_WriteDumpFile(PFILE_OBJECT FileObject,
 			                    PLARGE_INTEGER Offset,
 								ULONG Length,
 								PMDL Mdl,

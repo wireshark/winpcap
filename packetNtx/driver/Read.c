@@ -75,7 +75,7 @@ UINT n,i,NBlocks;
 
 //-------------------------------------------------------------------
 
-NTSTATUS PacketRead(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
+NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 {
     POPEN_INSTANCE      Open;
     PIO_STACK_LOCATION  IrpSp;
@@ -258,7 +258,7 @@ NTSTATUS PacketRead(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 //-------------------------------------------------------------------
 
-NDIS_STATUS Packet_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacReceiveContext,
+NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacReceiveContext,
                         IN PVOID HeaderBuffer,IN UINT HeaderBufferSize,IN PVOID LookAheadBuffer,
                         IN UINT LookaheadBufferSize,IN UINT PacketSize)
 {
@@ -403,7 +403,7 @@ NDIS_STATUS Packet_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE Mac
 		if (Status != NDIS_STATUS_SUCCESS)
 		{
 			IF_LOUD(DbgPrint("NPF: Tap - No free packets\n");)
-				IoFreeMdl(pMdl);
+			IoFreeMdl(pMdl);
 			Open->Dropped++;
 			return NDIS_STATUS_NOT_ACCEPTED;
 		}
@@ -500,7 +500,7 @@ NDIS_STATUS Packet_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE Mac
 
 		if( Open->TransferMdl != NULL)
 			// Complete the request and free the buffers
-			PacketTransferDataComplete(Open,pPacketb,Status,fres);
+			NPF_TransferDataComplete(Open,pPacketb,Status,fres);
 		else{
 			// Unfreeze the consumer
 			if(GetBuffOccupation(Open)>Open->MinToCopy){
@@ -520,7 +520,7 @@ NDIS_STATUS Packet_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE Mac
 
 //-------------------------------------------------------------------
 
-VOID PacketTransferDataComplete (IN NDIS_HANDLE ProtocolBindingContext,IN PNDIS_PACKET pPacket,
+VOID NPF_TransferDataComplete (IN NDIS_HANDLE ProtocolBindingContext,IN PNDIS_PACKET pPacket,
                                  IN NDIS_STATUS Status,IN UINT BytesTransfered)
 {
     POPEN_INSTANCE      Open;
@@ -547,8 +547,8 @@ VOID PacketTransferDataComplete (IN NDIS_HANDLE ProtocolBindingContext,IN PNDIS_
 
 //-------------------------------------------------------------------
 
-VOID PacketReceiveComplete(IN NDIS_HANDLE ProtocolBindingContext)
+VOID NPF_ReceiveComplete(IN NDIS_HANDLE ProtocolBindingContext)
 {
-    IF_LOUD(DbgPrint("NPF: PacketReceiveComplete\n");)
+    IF_LOUD(DbgPrint("NPF: NPF_ReceiveComplete\n");)
     return;
 }

@@ -798,7 +798,7 @@ BOOLEAN PacketReceivePacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sy
 }
 
 /*! 
-  \brief Send one (or more) packets to the network.
+  \brief Sends one (or more) copies of a packet to the network.
   \param AdapterObject Pointer to an _ADAPTER structure identifying the network adapter that will 
    send the packets.
   \param lpPacket Pointer to a PACKET structure with the packet to send.
@@ -833,6 +833,88 @@ BOOLEAN PacketSendPacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sync)
     DWORD        BytesTransfered;
     
     return WriteFile(AdapterObject->hFile,lpPacket->Buffer,lpPacket->Length,&BytesTransfered,NULL);
+}
+
+
+/*! 
+  \brief Sends a buffer of packets to the network.
+  \param AdapterObject Pointer to an _ADAPTER structure identifying the network adapter that will 
+   send the packets.
+  \param PacketBuff Pointer to buffer with the packets to send.
+  \param Size Size of the buffer pointed by the PacketBuff argument.
+  \param Sync if TRUE, the packets are sent respecting the timestamps. If FALSE, the packets are sent as
+         fast as possible
+  \return The amount of bytes actually sent. If the return value is smaller than the Size parameter, an
+          error occurred during the send. The error can be caused by a driver/adapter problem or by an
+		  inconsistent/bogus packet buffer.
+
+  This function is used to send a buffer of raw packets to the network. The buffer can contain an arbitrary
+  number of raw packets, each of which preceded by a dump_bpf_hdr structure. The dump_bpf_hdr is the same used
+  by WinPcap and libpcap to store the packets in a file, therefore sending a capture file is straightforward.
+  'Raw packets' means that the sending application will have to include the protocol headers, since every packet 
+  is sent to the network 'as is'. The CRC of the packets needs not to be calculated, because it will be 
+  transparently added by the network interface.
+
+  \note Using this function if more efficient than issuing a series of PacketSendPacket(), because the packets are
+  buffered in the kernel driver, so the number of context switches is reduced.
+
+  \note When Sync is set to TRUE, the packets are synchronized in the kerenl with a high precision timestamp.
+  This requires a remarkable amount of CPU, but allows to send the packets with a precision of some microseconds
+  (depending on the precision of the performance counter of the machine). Such a precision cannot be reached 
+  sending the packets separately with PacketSendPacket().
+*/
+INT PacketSendPackets(LPADAPTER AdapterObject, PVOID PacketBuff, ULONG Size, BOOLEAN Sync)
+{
+    BOOLEAN			Res;
+    DWORD			BytesTransfered, TotBytesTransfered=0;
+	struct timeval	BufStartTime;
+	LARGE_INTEGER	StartTicks, CurTicks, TargetTicks, TimeFreq;
+
+
+	ODS("PacketSendPackets");
+
+	// Obtain starting timestamp of the buffer
+	BufStartTime.tv_sec = ((struct timeval*)(PacketBuff))->tv_sec;
+	BufStartTime.tv_usec = ((struct timeval*)(PacketBuff))->tv_usec;
+
+	// Retrieve the reference time counters
+	QueryPerformanceCounter(&StartTicks);
+	QueryPerformanceFrequency(&TimeFreq);
+
+	CurTicks.QuadPart = StartTicks.QuadPart;
+
+	do{
+		// Send the data to the driver
+		Res = DeviceIoControl(AdapterObject->hFile,
+			(Sync)?pBIOCSENDPACKETSSYNC:pBIOCSENDPACKETSNOSYNC,
+			(PCHAR)PacketBuff + TotBytesTransfered,
+			Size - TotBytesTransfered,
+			NULL,
+			0,
+			&BytesTransfered,
+			NULL);
+
+		TotBytesTransfered += BytesTransfered;
+
+		// calculate the time interval to wait before sending the next packet
+		TargetTicks.QuadPart = StartTicks.QuadPart +
+		(LONGLONG)
+		((((struct timeval*)((PCHAR)PacketBuff + TotBytesTransfered))->tv_sec - BufStartTime.tv_sec) * 1000000 +
+		(((struct timeval*)((PCHAR)PacketBuff + TotBytesTransfered))->tv_usec - BufStartTime.tv_usec)) *
+		(TimeFreq.QuadPart) / 1000000;
+
+		// Exit from the loop on termination or error
+		if(TotBytesTransfered >= Size || Res != TRUE)
+			break;
+		
+		// Wait until the time interval has elapsed
+		while( CurTicks.QuadPart <= TargetTicks.QuadPart )
+			QueryPerformanceCounter(&CurTicks);
+
+	}
+	while(TRUE);
+
+	return TotBytesTransfered;
 }
 
 /*! 
@@ -1270,7 +1352,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	ODS("Dumping BpStr:");
 	{
 		FILE *f;
-		f = fopen("Pcap_debug.txt", "a");
+		f = fopen("winpcap_debug.txt", "a");
 		for(i=0;i<k;i++){
 			if(!(i%32))fprintf(f, "\n ");
 			fprintf(f, "%c " , *((LPBYTE)BpStr+i));
@@ -1305,9 +1387,9 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 			// Create the device name
 			rewind=k;
 			memcpy(pStr+k,BpStr+i,16);
-			memcpy(pStr+k+8,TEXT("Packet_"),14);
+			memcpy(pStr+k+8,TEXT("NPF_"),8);
 			i+=8;
-			k+=15;
+			k+=12;
 			while(BpStr[i-1]!=0){
 				pStr[k++]=BpStr[i++];
 			}
@@ -1408,9 +1490,9 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 				// Create the device name
 				rewind=k;
 				memcpy(pStr+k,BpStr+i,16);
-				memcpy(pStr+k+8,TEXT("Packet_"),14);
+				memcpy(pStr+k+8,TEXT("NPF_"),8);
 				i+=8;
-				k+=15;
+				k+=12;
 				while(BpStr[i-1]!=0){
 					pStr[k++]=BpStr[i++];
 				}
@@ -1514,8 +1596,8 @@ BOOLEAN PacketGetNetInfoEx(LPTSTR AdapterName, npf_if_addr* buffer, PLONG NEntri
 		ifname = AdapterName;
 	else
 		ifname++;
-	if (wcsncmp(ifname, L"Packet_", 7) == 0)
-		ifname += 7;
+	if (wcsncmp(ifname, L"NPF_", 4) == 0)
+		ifname += 4;
 
 	if(	RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT("SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces"), 0, KEY_READ, &UnderTcpKey) == ERROR_SUCCESS)
 	{
@@ -1757,8 +1839,8 @@ BOOLEAN PacketGetNetInfo(LPTSTR AdapterName, PULONG netp, PULONG maskp)
 		ifname = AdapterName;
 	else
 		ifname++;
-	if (wcsncmp(ifname, L"Packet_", 7) == 0)
-		ifname += 7;
+	if (wcsncmp(ifname, L"NPF_", 4) == 0)
+		ifname += 4;
 	status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,TEXT("SYSTEM\\CurrentControlSet\\Services"),0,KEY_READ,&SystemKey);
 	if (status != ERROR_SUCCESS)
 		goto fail;

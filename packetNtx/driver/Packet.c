@@ -45,7 +45,7 @@ PDEVICE_EXTENSION GlobalDeviceExtension;
 //
 // Global strings
 //
-NDIS_STRING PacketName = NDIS_STRING_CONST("Packet_");
+NDIS_STRING NPF_Prefix = NDIS_STRING_CONST("NPF_");
 NDIS_STRING devicePrefix = NDIS_STRING_CONST("\\Device\\");
 NDIS_STRING symbolicLinkPrefix = NDIS_STRING_CONST("\\DosDevices\\");
 NDIS_STRING tcpLinkageKeyName = NDIS_STRING_CONST("\\Registry\\Machine\\System"
@@ -114,19 +114,19 @@ DriverEntry(
 #endif
     ProtocolChar.MinorNdisVersion            = 0;
     ProtocolChar.Reserved                    = 0;
-    ProtocolChar.OpenAdapterCompleteHandler  = PacketOpenAdapterComplete;
-    ProtocolChar.CloseAdapterCompleteHandler = PacketCloseAdapterComplete;
-    ProtocolChar.SendCompleteHandler         = PacketSendComplete;
-    ProtocolChar.TransferDataCompleteHandler = PacketTransferDataComplete;
-    ProtocolChar.ResetCompleteHandler        = PacketResetComplete;
-    ProtocolChar.RequestCompleteHandler      = PacketRequestComplete;
-    ProtocolChar.ReceiveHandler              = Packet_tap;
-    ProtocolChar.ReceiveCompleteHandler      = PacketReceiveComplete;
-    ProtocolChar.StatusHandler               = PacketStatus;
-    ProtocolChar.StatusCompleteHandler       = PacketStatusComplete;
+    ProtocolChar.OpenAdapterCompleteHandler  = NPF_OpenAdapterComplete;
+    ProtocolChar.CloseAdapterCompleteHandler = NPF_CloseAdapterComplete;
+    ProtocolChar.SendCompleteHandler         = NPF_SendComplete;
+    ProtocolChar.TransferDataCompleteHandler = NPF_TransferDataComplete;
+    ProtocolChar.ResetCompleteHandler        = NPF_ResetComplete;
+    ProtocolChar.RequestCompleteHandler      = NPF_RequestComplete;
+    ProtocolChar.ReceiveHandler              = NPF_tap;
+    ProtocolChar.ReceiveCompleteHandler      = NPF_ReceiveComplete;
+    ProtocolChar.StatusHandler               = NPF_Status;
+    ProtocolChar.StatusCompleteHandler       = NPF_StatusComplete;
 #ifdef NDIS50
-    ProtocolChar.BindAdapterHandler          = PacketBindAdapter;
-    ProtocolChar.UnbindAdapterHandler        = PacketUnbindAdapter;
+    ProtocolChar.BindAdapterHandler          = NPF_BindAdapter;
+    ProtocolChar.UnbindAdapterHandler        = NPF_UnbindAdapter;
     ProtocolChar.ReceivePacketHandler        = NULL;
 #endif
     ProtocolChar.Name                        = ProtoName;
@@ -149,13 +149,13 @@ DriverEntry(
     // Set up the device driver entry points.
     //
 
-    DriverObject->MajorFunction[IRP_MJ_CREATE] = PacketOpen;
-    DriverObject->MajorFunction[IRP_MJ_CLOSE]  = PacketClose;
-    DriverObject->MajorFunction[IRP_MJ_READ]   = PacketRead;
-    DriverObject->MajorFunction[IRP_MJ_WRITE]  = PacketWrite;
-    DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL]  = PacketIoControl;
+    DriverObject->MajorFunction[IRP_MJ_CREATE] = NPF_Open;
+    DriverObject->MajorFunction[IRP_MJ_CLOSE]  = NPF_Close;
+    DriverObject->MajorFunction[IRP_MJ_READ]   = NPF_Read;
+    DriverObject->MajorFunction[IRP_MJ_WRITE]  = NPF_Write;
+    DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL]  = NPF_IoControl;
 
-    DriverObject->DriverUnload = PacketUnload;
+    DriverObject->DriverUnload = NPF_Unload;
 
 
     //
@@ -163,7 +163,7 @@ DriverEntry(
     //  to bind to from the registry
     //
 
-    Status=PacketReadRegistry(
+    Status=NPF_ReadRegistry(
                &BindString,
                &ExportString,
                RegistryPath
@@ -519,13 +519,13 @@ BOOLEAN createDevice(IN OUT PDRIVER_OBJECT adriverObjectP,
   }
 
   deviceName.Length = 0;
-  deviceName.MaximumLength = (USHORT)(amacNameP->Length + PacketName.Length + sizeof(UNICODE_NULL));
+  deviceName.MaximumLength = (USHORT)(amacNameP->Length + NPF_Prefix.Length + sizeof(UNICODE_NULL));
   deviceName.Buffer = ExAllocatePool(PagedPool, deviceName.MaximumLength);
  
   if (deviceName.Buffer != NULL) 
   {
     RtlAppendUnicodeStringToString(&deviceName, &devicePrefix);
-    RtlAppendUnicodeStringToString(&deviceName, &PacketName);
+    RtlAppendUnicodeStringToString(&deviceName, &NPF_Prefix);
     RtlAppendUnicodeToString(&deviceName, amacNameP->Buffer +
                              devicePrefix.Length / sizeof(WCHAR));
     
@@ -561,7 +561,7 @@ BOOLEAN createDevice(IN OUT PDRIVER_OBJECT adriverObjectP,
 
 //-------------------------------------------------------------------
 
-VOID PacketUnload(IN PDRIVER_OBJECT DriverObject)
+VOID NPF_Unload(IN PDRIVER_OBJECT DriverObject)
 {
 	
     PDEVICE_OBJECT     DeviceObject;
@@ -606,7 +606,7 @@ VOID PacketUnload(IN PDRIVER_OBJECT DriverObject)
 
 //-------------------------------------------------------------------
 
-NTSTATUS PacketIoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
+NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 {
     POPEN_INSTANCE      Open;
     PIO_STACK_LOCATION  IrpSp;
@@ -625,6 +625,8 @@ NTSTATUS PacketIoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	ULONG				mode;
 	PWSTR				DumpNameBuff;
 	PUCHAR				TmpBPFProgram;
+	INT					WriteRes;
+	BOOLEAN				SyncWrite = FALSE;
 
     IF_LOUD(DbgPrint("NPF: IoControl\n");)
 		
@@ -655,14 +657,34 @@ NTSTATUS PacketIoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		break;
 		
 	case BIOCGEVNAME: //function to get the name of the event associated with the current instance
-		
+
 		if(IrpSp->Parameters.DeviceIoControl.OutputBufferLength<26){			
 			EXIT_FAILURE(0);
 		}
 
 		RtlCopyMemory(Irp->UserBuffer,(Open->ReadEventName.Buffer)+18,26);
 
-		EXIT_SUCCESS(26);		
+		EXIT_SUCCESS(26);
+
+		break;
+
+	case BIOCSENDPACKETSSYNC:
+
+		SyncWrite = TRUE;
+
+	case BIOCSENDPACKETSNOSYNC:
+
+		WriteRes = NPF_BufferedWrite(Irp,
+			(PUCHAR)Irp->AssociatedIrp.SystemBuffer,
+			IrpSp->Parameters.DeviceIoControl.InputBufferLength,
+			SyncWrite);
+
+		if( WriteRes != -1)
+		{
+			EXIT_SUCCESS(WriteRes);
+		}
+		
+		EXIT_FAILURE(WriteRes);
 
 		break;
 
@@ -763,7 +785,7 @@ NTSTATUS PacketIoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			
 			// Close current dump file
 			if(Open->DumpFileHandle != NULL){
-				PacketCloseDumpFile(Open);
+				NPF_CloseDumpFile(Open);
 				Open->DumpFileHandle = NULL;
 			}
 			
@@ -790,8 +812,8 @@ NTSTATUS PacketIoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			IF_LOUD(DbgPrint("NPF: dump file name set to %ws, len=%d\n",Open->DumpFileName.Buffer,IrpSp->Parameters.DeviceIoControl.InputBufferLength);)
 				
 			// Try to create the file
-			if ( NT_SUCCESS( PacketOpenDumpFile(Open,&Open->DumpFileName,FALSE)) &&
-				NT_SUCCESS( PacketStartDump(Open))){
+			if ( NT_SUCCESS( NPF_OpenDumpFile(Open,&Open->DumpFileName,FALSE)) &&
+				NT_SUCCESS( NPF_StartDump(Open))){
 				
 				EXIT_SUCCESS(0);
 			}
@@ -876,7 +898,7 @@ NTSTATUS PacketIoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
         if (Status != NDIS_STATUS_PENDING)
         {
             IF_LOUD(DbgPrint("NPF: IoControl - ResetComplete being called\n");)
-				PacketResetComplete(Open,Status);
+				NPF_ResetComplete(Open,Status);
         }
 		
 		break;
@@ -950,7 +972,7 @@ NTSTATUS PacketIoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
         if (Status != NDIS_STATUS_PENDING) {
             IF_LOUD(DbgPrint("NPF: Calling RequestCompleteHandler\n");)
 				
-			PacketRequestComplete(Open, &pRequest->Request, Status);
+			NPF_RequestComplete(Open, &pRequest->Request, Status);
             return Status;
 			
         }
@@ -973,7 +995,7 @@ NTSTATUS PacketIoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 //-------------------------------------------------------------------
 
 VOID
-PacketRequestComplete(
+NPF_RequestComplete(
     IN NDIS_HANDLE   ProtocolBindingContext,
     IN PNDIS_REQUEST NdisRequest,
     IN NDIS_STATUS   Status
@@ -1051,7 +1073,7 @@ PacketRequestComplete(
 //-------------------------------------------------------------------
 
 VOID
-PacketStatus(
+NPF_Status(
     IN NDIS_HANDLE   ProtocolBindingContext,
     IN NDIS_STATUS   Status,
     IN PVOID         StatusBuffer,
@@ -1069,7 +1091,7 @@ PacketStatus(
 //-------------------------------------------------------------------
 
 VOID
-PacketStatusComplete(
+NPF_StatusComplete(
     IN NDIS_HANDLE  ProtocolBindingContext
     )
 
@@ -1084,7 +1106,7 @@ PacketStatusComplete(
 //-------------------------------------------------------------------
 
 NTSTATUS
-PacketReadRegistry(
+NPF_ReadRegistry(
     IN  PWSTR              *MacDriverName,
     IN  PWSTR              *PacketDriverName,
     IN  PUNICODE_STRING     RegistryPath
@@ -1146,7 +1168,7 @@ PacketReadRegistry(
     //  Get the name of the mac driver we should bind to
     //
 
-    ParamTable[1].QueryRoutine = PacketQueryRegistryRoutine;
+    ParamTable[1].QueryRoutine = NPF_QueryRegistryRoutine;
     ParamTable[1].Flags = RTL_QUERY_REGISTRY_REQUIRED |
                           RTL_QUERY_REGISTRY_NOEXPAND;
 
@@ -1158,7 +1180,7 @@ PacketReadRegistry(
     //  Get the name that we should use for the driver object
     //
 
-    ParamTable[2].QueryRoutine = PacketQueryRegistryRoutine;
+    ParamTable[2].QueryRoutine = NPF_QueryRegistryRoutine;
     ParamTable[2].Flags = RTL_QUERY_REGISTRY_REQUIRED |
                           RTL_QUERY_REGISTRY_NOEXPAND;
 
@@ -1184,7 +1206,7 @@ PacketReadRegistry(
 //-------------------------------------------------------------------
 
 NTSTATUS
-PacketQueryRegistryRoutine(
+NPF_QueryRegistryRoutine(
     IN PWSTR     ValueName,
     IN ULONG     ValueType,
     IN PVOID     ValueData,
