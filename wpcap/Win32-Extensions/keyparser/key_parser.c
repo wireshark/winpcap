@@ -534,10 +534,14 @@ pcap_compile_multiple(pcap_t *p, struct bpf_program *program,
 	if (switch_ptr==NULL)
 	{
 		free(buf);
-		return -1;
+		buf=(char*)malloc(sizeof(char)*(2*strlen(buf_ori)+1+strlen("switch(\"\")")));
+		if (buf==NULL) 
+			return -1;
+		sprintf(buf,"switch(%s\"%s\")",buf_ori,buf_ori);
+		switch_ptr = buf;
 	}
-
-	strcpy(buf,buf_ori);
+	else
+		strcpy(buf,buf_ori);
 	
 	strncpy(pre_filter.filter,buf,switch_ptr-buf);
 	pre_filter.filter[switch_ptr-buf]='\0';
