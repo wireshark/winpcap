@@ -1,8 +1,13 @@
-/** @defgroup internals WinPcap internals
-@}
+<html>
 
-\htmlonly
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title></title>
+</head>
 
+<body>
 This Portion of the manual documents the internal structure and interfaces of WinPcap, starting from the lowest-level module. It is targeted to people that must extend or modify this software, or to the ones interested in how it works. Therefore, developers that want to use WinPcap in their software don't need to read it.
 
 <h2>WinPcap structure</h2>
@@ -15,11 +20,12 @@ system-independent library (wpcap.dll).</i></p>
 that requires a strict interaction with the network adapter and with the
 operating system, in particular with its networking implementation, so a simple
 library is not sufficient.</p>
-<p>The following figure shows the various components of WinPcap.</p>
-<p>&nbsp;</p>
-\endhtmlonly
-\image html arch.gif
-\htmlonly<p>First, a capture system needs to bypass the protocol stack in order to access
+<p>The following figure shows the various components of WinPcap:</p>
+<p align="center">
+<img src="internals-arch.gif" width="280" height="355">
+<p align="center">
+<b>Main components of WinPcap.</b>
+<p>First, a capture system needs to bypass the protocol stack in order to access
 the raw data transiting on the network. This requires a portion
 running inside the kernel of OS, interacting directly with the network interface
 drivers. This portion is very system dependent, and in
@@ -47,4 +53,6 @@ underlying network hardware and operating system.</p>
 <b>packet.dll</b> as the first set of functions, whereas <b>wpcap</b>, <b>wpcap.dll</b> or <b>libpcap</b>
  will refer to the to the second one.</p>
 
-*/
+</body>
+
+</html>

@@ -5,7 +5,7 @@
 /** @defgroup wpcap_tut1 Obtaining the device list
  *  @{
 
-The first thing that usually a WinPcap based application needs is a list of suitable network adapters. Libpcap provides the pcap_findalldevs() function for this purpose: this function returns a linked list of pcap_if structures, each of which contains comprehensive information about an adapter. In particular the fields \e name and \e description contain the name and a human readable description of the device.
+The first thing that usually a WinPcap based application needs is a list of suitable network adapters. Libpcap provides the pcap_findalldevs_ex() function for this purpose: this function returns a linked list of pcap_if structures, each of which contains comprehensive information about an adapter. In particular the fields \e name and \e description contain the name and a human readable description of the device.
 
 The following code retrieves the adapter list and shows it on the screen, printing an error if no adapters are found.
 
@@ -19,10 +19,10 @@ main()
 	int i=0;
 	char errbuf[PCAP_ERRBUF_SIZE];
 	
-	/* Retrieve the device list */
-	if (pcap_findalldevs(&alldevs, errbuf) == -1)
+	/* Retrieve the device list from the local machine */
+	if (pcap_findalldevs_ex("rpcap://", NULL, &alldevs, errbuf) == -1)
 	{
-		fprintf(stderr,"Error in pcap_findalldevs: %s\n", errbuf);
+		fprintf(stderr,"Error in pcap_findalldevs_ex: %s\n", errbuf);
 		exit(1);
 	}
 	
@@ -48,9 +48,9 @@ main()
 
 Some comments about this code.
 
-First of all, pcap_findalldevs(), like other libpcap functions, has an \e errbuf parameter. This parameter points to a string filled by libpcap with a description of the error if something goes wrong. 
+First of all, pcap_findalldevs_ex(), like other libpcap functions, has an \e errbuf parameter. This parameter points to a string filled by libpcap with a description of the error if something goes wrong. 
 
-Second, note that pcap_findalldevs() is provided by libpcap under Unix as well, but remember that not all the OSes supported by libpcap provide a description of the network interfaces, therefore if we want to write a portable application, we must consider the case in which \e description is null: we print the string "No description available" in that situation.
+Second, note that pcap_findalldevs_ex() is provided by libpcap under Unix as well, but remember that not all the OSes supported by libpcap provide a description of the network interfaces, therefore if we want to write a portable application, we must consider the case in which \e description is null: we print the string "No description available" in that situation.
 
 Note finally that we free the list with pcap_freealldevs() once when we have finished with it.
 

@@ -10,6 +10,8 @@ Lesson 1 (\ref wpcap_tut1) showed how to get basic information (i.e. device name
 - a list of broadcast addresses (each of which corresponds to an entry in the addresses list).
 - a list of destination addresses (each of which corresponds to an entry in the addresses list).
 
+Additionally, the pcap_findalldevs_ex() allows returning also remote adapters and a list of pcap files that are located in a given local folder.
+
 The following sample provides an ifprint() function that prints the whole content of a pcap_if structure. It is invoked by the program for every entry returned by pcap_findalldevs().
 
 \include iflist/iflist.c

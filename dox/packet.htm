@@ -1,12 +1,15 @@
-/** @ingroup internals
- */
+<html>
 
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title></title>
+</head>
 
-/** @defgroup packetapi Packet Driver API developer's manual
- *  @{ \htmlonly
-@}
-
-Packet.dll is a dynamic link library that offers a set of low level functions
+<body>
+<code>
+Packet.dll</code> is a dynamic link library that offers a set of low level functions
 to:
 <ul>
   <li>install, start and stop the NPF device driver</li>
@@ -38,8 +41,7 @@ attempts to access an adapter. This avoids the manual installation of the driver
 through the control panel.</p>
 <h2>Important note, read carefully!</h2>
 <p>If you are writing a capture application and you do not have particular/low
-level requrements, you are <b>recommended</b> to use the functions of wpcap (see
-the section&nbsp; \endhtmlonly \ref wpcap \htmlonly), that are compatible
+level requirements, you are <b>recommended</b> to use the functions of wpcap, that are compatible
 with the ones of the Unix packet capture library (<i>libpcap</i>), instead of
 the API described in this chapter. wpcap.dll relies on packet.dll, but provides
 a more powerful, immediate and easy to use programming environment. With
@@ -48,11 +50,12 @@ saving a dump on a file are safely implemented and intuitive to use.&nbsp; Moreo
 Unix thanks to the compatibility between Win32 and Unix versions of this
 library.</p>
 <p>As a consequence, since the <b>normal</b> and <b>suggested</b> way for an
-application to use WinPcap is through wpcap.dll, <b>we don't grant that the
+application to use WinPcap is through wpcap.dll, <b>we cannot guarantee that the
 packet.dll API will not be changed in the future releases</b>.</p>
 <p>However, since libpcap was written to be portable and to offer a
 system-independent capture API, it cannot exploit all the features offered by
 the driver. Use packet.dll only if you need one of these features.</p>
 
-\endhtmlonly
-*/
+</body>
+
+</html>

@@ -1,14 +1,15 @@
-/** @ingroup internals
- */
+<html>
 
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title></title>
+</head>
 
-/** @defgroup NPF NPF driver internals manual 
- *  @{
-@}
- 
-\htmlonly
+<body>
 
-&nbsp;<p>This section documents the internals of the Netgroup Packet Filter (NPF), the kernel
+<p>This section documents the internals of the Netgroup Packet Filter (NPF), the kernel
 portion of WinPcap. Normal users are probably interested in how to use WinPcap
 and not in its internal structure. Therefore
 the information present in this module is destined mainly to WinPcap developers and maintainers, or to
@@ -77,9 +78,8 @@ NDIS: NPF is NDIS 5 compliant under Windows 2000 and its derivations (like
 Windows XP), NDIS 3
 compliant on the other Win32 platforms.&nbsp;</p>
 <p>Next figure shows the position of NPF inside the NDIS stack:</p>
-\endhtmlonly
-\image html ndis.gif "Figure 1: NPF inside NDIS"
-\htmlonly
+<p align="center"><img border="0" src="npf-ndis.gif"></p>
+<p align="center"><b>Figure 1: NPF inside NDIS.</b></p>
 <p>The interaction with the OS is normally asynchronous. This means that the
 driver provides a set of callback functions that are invoked by the system when
 some operation is required to NPF. NPF exports callback functions for all the I/O operations of the
@@ -100,9 +100,9 @@ setting or requesting parameters on the NIC, etc.</p>
 <p>Next figure shows the structure of WinPcap, with particular reference to the
 NPF driver.</p>
 
-<p>&nbsp; \endhtmlonly 
-\image html npf.gif "Figure 2: NPF device driver" 
-\htmlonly
+<p align="center"><img border="0" src="npf-npf.gif" width="500" height="412"></p>
+
+<p align="center"><b>Figure 2: NPF device driver.</b>
 
 <p>NPF is able to
 perform a number of different operations: capture, monitoring, dump to disk,
@@ -212,9 +212,10 @@ allocated at kernel and user level.</p>
 capability can be used to save the network data to disk directly from kernel
 mode.
 </p>
-<p>\endhtmlonly 
-\image html npf_dump.gif "Figure 3: packet capture versus kernel-level dump" 
-\htmlonly</p>
+<p align="center"><img border="0" src="npf-dump.gif" width="400" height="187">
+</p>
+<p align="center"><b>Figure 3: packet capture versus kernel-level dump.</b>
+</p>
 <p>In
 traditional systems, the path covered by the packets that are saved to disk is
 the one followed by the black arrows in Figure
@@ -254,5 +255,9 @@ technologies, architectures, and protocols for computer communications, August
 <p>The code documented in this manual is the one of the Windows NTx version of
 NPF.&nbsp;The Windows 9x code is very similar, but it is less efficient and
 lacks advanced features like kernel-mode dump.</p>
-<p>&nbsp;\endhtmlonly
-*/</p>
+<p>
+
+
+</body>
+
+</html>

@@ -1,11 +1,13 @@
-/** @ingroup wpcap
-*/
+<html>
 
-/** @defgroup language Filtering expression syntax
- *  @{
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title></title>
+</head>
 
-\htmlonly
-
+<body>
 <DL COMPACT>
 <DT>Note: this document has been drawn from the tcpdump man page. The original version can
   be found at&nbsp; <a href="http://www.tcpdump.org">www.tcpdump.org</a>.
@@ -168,17 +170,25 @@ True if the IPv4/v6 source field of the packet is <I>host</I>.
 True if either the IPv4/v6 source or destination of the packet is <I>host</I>.
 Any of the above host expressions can be prepended with the keywords,
 <B>ip</B>, <B>arp</B>, <B>rarp</B>, or <B>ip6</B> as in:
+<dl COMPACT>
+  <dd>
 
-<PRE>
-<B>ip host </B><I>host</I>
-</PRE>
+<PRE><B>ip host </B><I>host</I></PRE>
+
+
+  </dd>
+</dl>
 
 
 which is equivalent to:
+<dl COMPACT>
+  <dd>
 
-<PRE>
-<B>ether proto </B><I>\ip</I><B> and host </B><I>host</I>
-</PRE>
+<PRE><B>ether proto </B><I>\ip</I><B> and host </B><I>host</I></PRE>
+
+
+  </dd>
+</dl>
 
 
 If <I>host</I> is a name with multiple IP addresses, each address will
@@ -204,10 +214,14 @@ must be found both by the machine's host-name-to-IP-address resolution
 mechanisms (host name file, DNS, NIS, etc.) and by the machine's
 host-name-to-Ethernet-address resolution mechanism (/etc/ethers, etc.).
 (An equivalent expression is
+<dl COMPACT>
+  <dd>
 
-<PRE>
-<B>ether host </B><I>ehost </I><B>and not host </B><I>host</I>
-</PRE>
+<PRE><B>ether host </B><I>ehost </I><B>and not host </B><I>host</I></PRE>
+
+
+  </dd>
+</dl>
 
 
 which can be used with either names or numbers for <I>host / ehost</I>.)
@@ -252,29 +266,41 @@ True if the packet has a source port value of <I>port</I>.
 True if either the source or destination port of the packet is <I>port</I>.
 Any of the above port expressions can be prepended with the keywords,
 <B>tcp</B> or <B>udp</B>, as in:
+<dl COMPACT>
+  <dd>
 
-<PRE>
-<B>tcp src port </B><I>port</I>
-</PRE>
+<PRE><B>tcp src port </B><I>port</I></PRE>
+
+
+  </dd>
+</dl>
 
 
 which matches only tcp packets whose source port is <I>port</I>.
 <DT><B>less </B><I>length</I><DD>
 True if the packet has a length less than or equal to <I>length</I>.
 This is equivalent to:
+<dl COMPACT>
+  <dd>
 
-<PRE>
-<B>len &lt;= </B><I>length</I>.
-</PRE>
+<PRE><B>len &lt;= </B><I>length</I>.</PRE>
+
+
+  </dd>
+</dl>
 
 
 <DT><B>greater </B><I>length</I><DD>
 True if the packet has a length greater than or equal to <I>length</I>.
 This is equivalent to:
+<dl COMPACT>
+  <dd>
 
-<PRE>
-<B>len &gt;= </B><I>length</I>.
-</PRE>
+<PRE><B>len &gt;= </B><I>length</I>.</PRE>
+
+
+  </dd>
+</dl>
 
 
 <DT><B>ip proto </B><I>protocol</I><DD>
@@ -296,10 +322,14 @@ True if the packet is IPv6 packet,
 and contains protocol header with type <I>protocol</I>
 in its protocol header chain.
 For example,
+<dl COMPACT>
+  <dd>
 
-<PRE>
-<B>ip6 protochain 6</B>
-</PRE>
+<PRE><B>ip6 protochain 6</B></PRE>
+
+
+  </dd>
+</dl>
 
 
 matches any IPv6 packet with TCP protocol header in the protocol header chain.
@@ -385,19 +415,27 @@ True if either the DECNET source or destination address is
 
 <DT><B>ip</B>, <B>ip6</B>, <B>arp</B>, <B>rarp</B>, <B>atalk</B>, <B>aarp</B>, <B>decnet</B>, <B>iso</B>, <B>stp</B>, <B>ipx</B>, <I>netbeui</I><DD>
 Abbreviations for:
+<dl COMPACT>
+  <dd>
 
-<PRE>
-<B>ether proto </B><I>p</I>
-</PRE>
+<PRE><B>ether proto </B><I>p</I></PRE>
+
+
+  </dd>
+</dl>
 
 
 where <I>p</I> is one of the above protocols.
 <DT><B>lat</B>, <B>moprc</B>, <B>mopdl</B><DD>
 Abbreviations for:
+<dl COMPACT>
+  <dd>
 
-<PRE>
-<B>ether proto </B><I>p</I>
-</PRE>
+<PRE><B>ether proto </B><I>p</I></PRE>
+
+
+  </dd>
+</dl>
 
 
 where <I>p</I> is one of the above protocols.
@@ -412,10 +450,14 @@ changes the decoding offsets for the remainder of <I>expression</I>
 on the assumption that the packet is a VLAN packet.
 <DT><B>tcp</B>, <B>udp</B>, <B>icmp</B><DD>
 Abbreviations for:
+<dl COMPACT>
+  <dd>
 
-<PRE>
-<B>ip proto </B><I>p</I><B> or ip6 proto </B><I>p</I>
-</PRE>
+<PRE><B>ip proto </B><I>p</I><B> or ip6 proto </B><I>p</I></PRE>
+
+
+  </dd>
+</dl>
 
 
 where <I>p</I> is one of the above protocols.
@@ -425,10 +467,14 @@ True if the packet is an OSI packet of protocol type <I>protocol</I>.
 <I>clnp</I>, <I>esis</I>, or <I>isis</I>.
 <DT><B>clnp</B>, <B>esis</B>, <B>isis</B><DD>
 Abbreviations for:
+<dl COMPACT>
+  <dd>
 
-<PRE>
-<B>iso proto </B><I>p</I>
-</PRE>
+<PRE><B>iso proto </B><I>p</I></PRE>
+
+
+  </dd>
+</dl>
 
 
 where <I>p</I> is one of the above protocols.
@@ -514,23 +560,30 @@ If an identifier is given without a keyword, the most recent keyword
 is assumed.
 For example,
 
-<PRE>
-<B>not host vs and ace</B>
-</PRE>
+<blockquote>
+
+<PRE><B>not host vs and ace</B></PRE>
+
+
+</blockquote>
 
 
 is short for
+<blockquote>
 
-<PRE>
-<B>not host vs and host ace</B>
-</PRE>
+<PRE><B>not host vs and host ace</B></PRE>
+
+
+</blockquote>
 
 
 which should not be confused with
+<blockquote>
 
-<PRE>
-<B>not ( host vs or ace )</B>
-</PRE>
+<PRE><B>not ( host vs or ace )</B></PRE>
+
+
+</blockquote>
 
 
 <P>
@@ -542,6 +595,6 @@ easier to pass it as a single, quoted argument.
 Multiple arguments are concatenated with spaces before being parsed.
 <p>
 
-*/
+</body>
 
-/*@}*/
+</html>
