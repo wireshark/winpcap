@@ -13,10 +13,9 @@ therefore it should be quite easy to locate which point you have to modify.
 
 ******************** COMPILE LIBPCAP WITH RPCAP SUPPORT UNDER UNIX ********************
 
-First, you have to create the configure by launching 'autoconf' in the libpcap folder.
-This will create the './configure' file.
-
-Then, you have to type '/.configure' in order to create the makefile.
+First, you have to type '/.configure' in order to create the makefile.
+In case this step fails, you should re-create the configure by launching 'autoconf'
+(version 2.50 or higher) in the libpcap folder.
 
 Finally, you have to compile the project by typing 'make'.
 In case some error occurs, let's try to delete all the config.* files from the 'libpcap' 
