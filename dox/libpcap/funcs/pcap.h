@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.10 2003/03/13 13:05:47 fulvio Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.11 2003/04/04 11:41:35 fulvio Exp $ (LBL)
  */
 
 
@@ -708,7 +708,7 @@ be reached sending the packets with pcap_sendpacket().
 */
 u_int pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue* queue, int sync);
 
-/*! \brief <b>Win32 Specific.</b> Read a packet from an interface or from an offline capture.
+/*! \brief Read a packet from an interface or from an offline capture.
 
 This function is used to retrieve the next available packet, bypassing the callback method traditionally 
 provided by libpcap.
@@ -768,12 +768,28 @@ int pcap_live_dump_ended(pcap_t *p, int sync);
 
 /*! \brief<b> Win32 Specific.</b> Returns statistics on current capture.
 
-  This functions has the same purpose and behavior of pcap_stats(), but it returns a further counter,
-  the number of packets that are actually captured.
+pcap_stats_ex() extends the pcap_stats() allowing to return more statistical parameters than the old call.
+One of the advantages of this new call is that the pcap_stat structure is not allocated by the user; instead,
+it is returned back by the system. This allow to extend the pcap_stat structure without affecting backward compatibility
+on older applications. These will simply check at the values of the members at the beginning of the structure, 
+while only newest applications are able to read new statistical values, which are appended in tail.
+
+To be sure not to read a piece of mamory which has not been allocated by the system, the variable pcap_stat_size
+will return back the size of the structure pcap_stat allocated by the system.
+
+\param p: pointer to the pcap_t currently in use.
+\param pcap_stat_size: pointer to an integer that will contain (when the function returns back) the size of the
+structure pcap_stat as it has been allocated by the system.
+
+\return: a pointer to a pcap_stat structure, that will contain the statistics related to the current device.
+The return value is NULL in case of errors, and the  error text can be obtained with pcap_perror() or pcap_geterr().
+
+\warning pcap_stats_ex()  is  supported  only on live captures, not on  "savefiles"; no statistics are stored in
+"savefiles", so no statistics are available when reading from a "savefile".
 
 \sa pcap_stats()
 */
-int pcap_stats_ex(pcap_t *p, struct pcap_stat *ps);
+struct pcap_stat *pcap_stats_ex(pcap_t *p, int *pcap_stat_size);
 
 /*! \brief Prototype of the callback function that receives the packets. 
 
