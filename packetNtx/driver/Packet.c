@@ -685,8 +685,6 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 		if(prog==NULL)
 		{
-			IF_LOUD(DbgPrint("0001");)
-			
 			Open->SkipProcessing = 0;
 			EXIT_FAILURE(0);
 		}
@@ -698,7 +696,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 		IF_LOUD(DbgPrint("Operative instructions=%u\n",cnt);)
 
-		if (((struct bpf_insn*)prog)[cnt].code==BPF_SEPARATION && (insns-cnt-1)!=0) 
+		if ( cnt != insns && insns != cnt+1 && ((struct bpf_insn*)prog)[cnt].code == BPF_SEPARATION ) 
 		{
 			IF_LOUD(DbgPrint("Initialization instructions=%u\n",insns-cnt-1);)
 	
