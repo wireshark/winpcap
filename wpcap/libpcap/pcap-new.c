@@ -153,6 +153,8 @@ char host[PCAP_BUF_SIZE], port[PCAP_BUF_SIZE], name[PCAP_BUF_SIZE], path[PCAP_BU
 int type;
 pcap_t *fp;
 char tmpstring[PCAP_BUF_SIZE + 1];		// Needed to convert names and descriptions from 'old' syntax to the 'new' one
+pcap_if_t *dev;		// Previous device into the pcap_if_t chain
+
 
 	if (strlen(source) > PCAP_BUF_SIZE)
 	{
@@ -172,8 +174,6 @@ char tmpstring[PCAP_BUF_SIZE + 1];		// Needed to convert names and descriptions 
 
 	if (type == PCAP_SRC_IFLOCAL)
 	{
-	pcap_if_t *dev;		// Previous device into the pcap_if_t chain
-
 		if (pcap_parsesrcstr(source, &type, host, NULL, NULL, errbuf) == -1)
 			return -1;
 
@@ -500,7 +500,6 @@ char tmpstring[PCAP_BUF_SIZE + 1];		// Needed to convert names and descriptions 
 	for (i= 0; i < nif; i++)
 	{
 	struct rpcap_findalldevs_if findalldevs_if;
-	pcap_if_t *dev;		// Previous device into the pcap_if_t chain
 	char tmpstring2[PCAP_BUF_SIZE + 1];		// Needed to convert names and descriptions from 'old' syntax to the 'new' one
 	int stringlen;
 
