@@ -208,7 +208,7 @@ float	cpu_time;
 	
 	printf("\n\nGenerating %d packets...",npacks);
 	
-	cpu_time = clock ();
+	cpu_time = (float)clock ();
 	
 	if(PacketSendPacket(lpAdapter,lpPacket,TRUE)==FALSE){
 		printf("Error sending the packets!\n");
