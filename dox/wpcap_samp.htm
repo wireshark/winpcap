@@ -1,8 +1,13 @@
-/** @ingroup wpcap
- */
+<html>
 
-/** @defgroup wpcapsamps Using WinPcap in your programs
-@{ \htmlonly&nbsp;
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title></title>
+</head>
+
+<body>
 <h2>How to create an application that uses wpcap.dll</h2>
 <p>To create an application that uses wpcap.dll with Microsoft Visual C++, follow the next
 steps:</p>
@@ -37,41 +42,14 @@ steps:</p>
     for</em>  combobox, and the add the path in the <em>directories</em> box.</li>
 </ul>
 <h2>Sample programs</h2>
-<p>
-\endhtmlonly</p>
 <p>A couple of sample programs are provided to show the usage of the WinPcap API. The
 source of the examples, along with all the files needed to compile and run them, can be found in the <a href="http://winpcap.polito.it/install/bin">Developer's
 Pack</a>.&nbsp; For didactic purpose we provide here a browsable
 version of the code: it is possible to click on the variables and functions to jump the documentation of each of
 them.
-For a more complete and better documented set of samples, give a look at the
-tutorial section (\ref wpcap_tut).</p>
-&nbsp;
-<p>&nbsp;</p>
-<p>
-\ref wpcapsamp1</p>
-<p>This program reads the packets from a file or a network adapter, depending on
-a command line switch. If a source is not provided, the program shows a list of
-available adapters and gives the possibility to choose one of them. Once the
-capture is started, the program prints the timestamp, the length and the raw
-content of the packets. Once compiled, it can run on all the Win32 platforms. It can be compiled
-to run on Unix as well (the makefile is provided).</p>
-&nbsp;
-<p>
-\ref wpcapsamp2</p>
-<p>This is a more complete example of libpcap usage. It shows, among other
-things, how to create and set filters and how to save a capture to disk. It can
-be compiled under Win32 or Unix (projects and makefiles are provided).
-Pcap_filter (pf.exe)
-is a general-purpose packet filtering application: its input parameters are a source of
-packets (it can be a physical interface or a file), a filter and an output file.
-It takes packets from the source until CTRL+C is pressed or the whole file is
-processed, applies the filter to
-the incoming packets and saves them to the output file if they satisfy the
-filter. Pcap_filter can be used to dump network data according to a
-particular filter, but also to extract a set of packets from a previously saved
-file. The format of both input and output files is the libpcap one, i.e. same of
-WinDump, tcpdump and many other network tools.</p>
-<p>
-@}
-*/</p>
+For a more complete and better documented set of samples, give a look at the <a href="group__wpcap__tut.htm">WinPcap
+Tutorial Section</a>.</p>
+
+</body>
+
+</html>
