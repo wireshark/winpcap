@@ -646,9 +646,8 @@ JIT_BPF_Filter* BPF_jitter(struct bpf_insn *fp, INT nins)
 #else
 		free(Filter->mem);
 		free(Filter);
-
-		return NULL;
 #endif
+		return NULL;
 	}
 
 	return Filter;
