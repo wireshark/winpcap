@@ -926,17 +926,16 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		while(Flag);  //BUSY FORM WAITING...
 
 		if (dim / NCpu < sizeof(struct PacketHeader))
+			dim = 0;
+		else
 		{
-			Open->SkipProcessing = 0;
-			EXIT_FAILURE(0);
-		}
-
-		tpointer = ExAllocatePoolWithTag(NonPagedPool, dim, '6PWA');
-		if (tpointer==NULL)
-		{
-			// no memory
-			Open->SkipProcessing = 0;
-			EXIT_FAILURE(0);
+			tpointer = ExAllocatePoolWithTag(NonPagedPool, dim, '6PWA');
+			if (tpointer==NULL)
+			{
+				// no memory
+				Open->SkipProcessing = 0;
+				EXIT_FAILURE(0);
+			}
 		}
 
 		if (Open->CpuData[0].Buffer != NULL)
@@ -944,7 +943,10 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 		for (i=0;i<NCpu;i++)
 		{
-			Open->CpuData[i].Buffer=(PUCHAR)tpointer + (dim/NCpu)*i;
+			if (dim > 0) 
+				Open->CpuData[i].Buffer=(PUCHAR)tpointer + (dim/NCpu)*i;
+			else
+				Open->CpuData[i].Buffer = NULL;
 			IF_LOUD(DbgPrint("Loop %p\n",Open->CpuData[i].Buffer);)
 			Open->CpuData[i].Free = dim/NCpu;
 			Open->CpuData[i].P = 0;
