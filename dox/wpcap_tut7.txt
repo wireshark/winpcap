@@ -4,7 +4,7 @@
 /** @defgroup wpcap_tut7 Handling offline dump files
  *  @{
 
-In the previous lessons we became experts in packet capture from network cards, now we're going to learn how to handle packet dumps. WinPcap offers a wide range of functions to save the network traffic to a file and to read the content of dumps; this lesson will teach how to use all these functions. We'll see also how to use the kernel dump feature of WinPcap to obtain high-performance dumps. 
+In the previous lessons we became experts in packet capture from network cards, now we're going to learn how to handle packet dumps. WinPcap offers a wide range of functions to save the network traffic to a file and to read the content of dumps; this lesson will teach how to use all these functions. We'll see also how to use the kernel dump feature of WinPcap to obtain high-performance dumps (<b>NOTE:</b> At the moment, due to some problems with the new kernel buffer, this feature has been disabled). 
 
 The file format is the libpcap one. This format, very simple, contains the data of the captured packets in binary form and is a standard used by a lot of network tools like for example WinDump, Ethereal and Snort.
 
@@ -33,6 +33,8 @@ The following example has the same purpose of the last one, but pcap_next_ex() i
 \include misc\readfile_ex.c
 
 <b>Writing packets to a dump file with pcap_live_dump</b>
+
+<b>NOTE:</b> At the moment, due to some problems with the new kernel buffer, this feature has been disabled. 
 
 Recent versions of WinPcap provide a further way to save network traffic to disk, the pcap_live_dump() function. pcap_live_dump() takes three parameters: a file name, the maximum size (in bytes) that this file is allowed to reach and the maximum amount of packets that the file is allowed to contain. Zero means no limit for both these values. Notice that the program can set a filter (with pcap_setfilter(), see the tutorial \ref wpcap_tut5) before calling pcap_live_dump() to define the subset of the traffic that will be saved.
 
