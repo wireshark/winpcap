@@ -20,12 +20,6 @@ or
 Compile2k, to build the driver for Windows NT 5 OSes, (like Windows 2000 or Windows XP)
 
 This commands will generate the driver (packet.sys), that will be put in the DDK output directory (usually \i386).
-3. It is possible to generate a driver that uses the RDTSC x86 instruction instead of the KeQueryPerformanceCounter WinNTx kernel function. Such a driver is more efficient than the standard one, but in some situations (like processors with the Speedstep technology) it can show inconsistences in the timestamps. To build this driver, move to the directory PacketNTx inside the WinPcap source folder and type the command
-
-CompileNT4 RDTSC, to build the driver for Windows NT 4
-or
-Compile2k RDTSC, to build the driver for Windows NT 5 OSes, (like Windows 2000 or Windows XP)
-
 
 Warning: sometimes, during the compilation of the driver, a lot of 'last line incomplete' errors are generated. Ignore these errors and let the compilation process continue, they are due to bugs in some DDK versions.
 
@@ -96,8 +90,23 @@ System Requirement:
 - Microsoft Visual C++ 6.0 compiler.
 - Microsoft Software Development Kit (SDK)
 
-Project files are in the directory winpcap\wpcap\prj of the WinPcap source code distribution. Load wpcap.dsw from the Visual C++ IDE and build the program. The output file wpcap.lib will be generated in winpcap\wpcap\lib\. The output dll wpcap.dll will be generated in winpcap\wpcap\prj\release or winpcap\wpcap\prj\debug depending on the type of binary that is being generated.
+Project files are in the directory winpcap\wpcap\prj of the WinPcap source code distribution. Load wpcap.dsw from the Visual C++ IDE and build the program.
+There are six build project configurations:
+- Wpcap debug: no support for DAG cards and Remote capture, debug version
+- Wpcap release: no support for DAG cards and Remote capture, release version
+- Wpcap debug REMOTE: support for Remote capture, no support for DAG cards, debug version
+- Wpcap release REMOTE: support for Remote capture, no support for DAG cards, release version
+- Wpcap debug REMOTE DAG: support for both DAG cards and Remote capture, debug version
+- Wpcap release REMOTE DAG: support for both DAG cards and Remote capture, release version
 
-Note 1: wpcap.dll contains the source code of libpcap from www.tcpdump.org, with some modifications for remote capture. You will be able to include and build a different libpcap version simply copying it in the directory winpcap\wpcap\prj of the WinPcap source code distribution, but you must use the WPCAP_test_only.dsw project file.
+ Both wpcap.lib and wpcap.dll will be put in the output folder related to a build configuration:
+- Wpcap debug: 			winpcap\wpcap\prj\Debug 
+- Wpcap release: 		winpcap\wpcap\prj\Release 
+- Wpcap debug REMOTE: 		winpcap\wpcap\prj\Debug_REMOTE
+- Wpcap release REMOTE: 	winpcap\wpcap\prj\Release_REMOTE
+- Wpcap debug REMOTE DAG: 	winpcap\wpcap\prj\Debug_REMOTE_DAG
+- Wpcap release REMOTE DAG: 	winpcap\wpcap\prj\Release_REMOTE_DAG
 
-Note 2: the default project does not contain support for Endace Dag cards because, in order to compile wpcap.dll with Dag support, some include files from Dag software distribution are needed. These files are not public and must be requested to Endace (http://www.endace.com), which provides a source code tree with all the Dag source code. This tree must be put in a subfolder called dag of the winpcap folder. At this point, HAVE_DAG_API must be added to the preprocessor definitions and the project can be built.
+Note 1: wpcap.dll contains the source code of libpcap from www.tcpdump.org, with some modifications for remote capture. You will be able to include and build a different libpcap version simply copying it in the directory winpcap\wpcap\prj of the WinPcap source code distribution, but you must use the Debug/Release build configurations.
+
+Note 2: the default project does not contain support for Endace Dag cards because, in order to compile wpcap.dll with Dag support, some include files from Dag software distribution are needed. These files are not public and must be requested to Endace (http://www.endace.com), which provides a source code tree with all the Dag source code. This tree must be put in a subfolder called dag of the winpcap folder. At this point, you can compile wpcap.dll with Dag support using the build configurations "Debug REMOTE DAG" and "Release REMOTE DAG".
