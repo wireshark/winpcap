@@ -73,16 +73,20 @@
 #define PCAP_BUF_SIZE 1024
 
 
+/*! \addtogroup remote_source_ID
+	\{
+*/
+
 
 /*!
-	\brief Internal representation of the type of source in use (null, file, 
+	\brief Internal representation of the type of source in use (file, 
 	remote/local interface).
 
 	This indicates a file, i.e. the user want to open a capture from a local file.
 */
 #define PCAP_SRC_FILE 2
 /*!
-	\brief Internal representation of the type of source in use (null, file, 
+	\brief Internal representation of the type of source in use (file, 
 	remote/local interface).
 
 	This indicates a local interface, i.e. the user want to open a capture from 
@@ -90,7 +94,7 @@
 */
 #define PCAP_SRC_IFLOCAL 3
 /*!
-	\brief Internal representation of the type of source in use (null, file, 
+	\brief Internal representation of the type of source in use (file, 
 	remote/local interface).
 
 	This indicates a remote interface, i.e. the user want to open a capture from 
@@ -98,11 +102,52 @@
 */
 #define PCAP_SRC_IFREMOTE 4
 
+/*!
+	\}
+*/
 
+
+
+/*! \addtogroup remote_source_string
+
+	The formats allowed by the pcap_open() are the following:
+	- file://path_and_filename [opens a local file]
+	- rpcap://devicename [opens the selected device devices available on the local host, without using the RPCAP protocol]
+	- rpcap://host/devicename [opens the selected device available on a remote host]
+	- rpcap://host:port/devicename [opens the selected device available on a remote host, using a non-standard port for RPCAP]
+	- adaptername [to open a local adapter; kept for compability, but it is strongly discouraged]
+	- (NULL) [to open the first local adapter; kept for compability, but it is strongly discouraged]
+
+	The formats allowed by the pcap_findalldevs_ex() are the following:
+	- file://folder/ [lists all the files in the given folder]
+	- rpcap:// [lists all local adapters]
+	- rpcap://host:port/ [lists the devices available on a remote host]
+
+	Referring to the 'host' and 'port' paramters, they can be either numeric or literal. Since
+	IPv6 is fully supported, these are the allowed formats:
+
+	- host (literal): e.g. host.foo.bar
+	- host (numeric IPv4): e.g. 10.11.12.13
+	- host (numeric IPv4, IPv6 style): e.g. [10.11.12.13]
+	- host (numeric IPv6): e.g. [1:2:3::4]
+	- port: can be either numeric (e.g. '80') or literal (e.g. 'http')
+
+	Here you find some allowed examples:
+	- rpcap://host.foo.bar/devicename [everything literal, no port number]
+	- rpcap://host.foo.bar:1234/devicename [everything literal, with port number]
+	- rpcap://10.11.12.13/devicename [IPv4 numeric, no port number]
+	- rpcap://10.11.12.13:1234/devicename [IPv4 numeric, with port number]
+	- rpcap://[10.11.12.13]:1234/devicename [IPv4 numeric with IPv6 format, with port number]
+	- rpcap://[1:2:3::4]/devicename [IPv6 numeric, no port number]
+	- rpcap://[1:2:3::4]:1234/devicename [IPv6 numeric, with port number]
+	- rpcap://[1:2:3::4]:http/devicename [IPv6 numeric, with literal port number]
+	
+	\{
+*/
 
 
 /*!
-	\brief String that will be used to determine the type of source in use (null, file,
+	\brief String that will be used to determine the type of source in use (file,
 	remote/local interface).
 
 	This string will be prepended to the interface name in order to create a string
@@ -112,7 +157,7 @@
 */
 #define PCAP_SRC_FILE_STRING "file://"
 /*!
-	\brief String that will be used to determine the type of source in use (null, file,
+	\brief String that will be used to determine the type of source in use (file,
 	remote/local interface).
 
 	This string will be prepended to the interface name in order to create a string
@@ -125,19 +170,71 @@
 */
 #define PCAP_SRC_IF_STRING "rpcap://"
 
+/*!
+	\}
+*/
 
 
 
 
 
-// Definitions needed by the new pcap_open()
+/*!
+	\addtogroup remote_open_flags
+	\{
+*/
 
-	//! pcap_open(): selects promiscuous mode
+/*!
+	\brief It defines if the adapter has to go in promiscuous mode.
+
+	It is '1' if you have to open the adapter in promiscuous mode, '0' otherwise.
+	Note that even if this parameter is false, the interface could well be in promiscuous
+	mode for some other reason (for example because another capture process with 
+	promiscuous mode enabled is currently using that interface).
+	On on Linux systems with 2.2 or later kernels (that have the "any" device), this
+	flag does not work on the "any" device; if an argument of "any" is supplied,
+	the 'promisc' flag is ignored.
+*/
 #define PCAP_OPENFLAG_PROMISCUOUS		1
-	//! pcap_open(): selects who has to open the data connection(remote capture)
+
+/*!
+	\brief It defines who is responsible for opening the data connection in case
+	of a remote capture (it means 'server open data path').
+
+	If it is '1', it specifies if the data connection has to be intitiated 
+	by the capturing device (which becomes like 'active'). If '0', the connection 
+	will be initiated by the client workstation.
+	This flag is used to overcome the problem of firewalls, which allow
+	only outgoing connections. In that case, the capturing device can open
+	a connection toward the client workstation in order to allow the
+	data trasfer.
+	In fact, the data connection is opened using a random port (while the
+	control connection uses a standard port), so it is hard to configure
+	a firewall to permit traffic on the data path.
+	This flag is meaningless if the source is not a remote interface.
+	Addictionally, it is meaningless if the data connection is done using
+	the UDP protocol, since in this case the connection wil always be opened
+	by the server.
+	In these cases, it is simply ignored.
+*/
 #define PCAP_OPENFLAG_SERVEROPEN_DP		2
-	//! pcap_open(): selects if the data connection has to be on top of UDP
+
+/*!
+	\brief It defines if the data trasfer (in case of a remote
+	capture) has to be done with UDP protocol.
+
+	If it is '1' if you want a UDP data connection, '0' if you want
+	a TCP data connection; control connection is always TCP-based.
+	A UDP connection is much lighter, but it does not guarantee that all
+	the captured packets arrive to the client workstation. Moreover, 
+	it could be harmful in case of network congestion.
+	This flag is meaningless if the source is not a remote interface.
+	In that case, it is simply ignored.
+*/
 #define PCAP_OPENFLAG_UDP_DP			4
+
+/*!
+	\}
+*/
 
 
 

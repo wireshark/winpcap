@@ -86,3 +86,20 @@
 	\ingroup remote
 	\defgroup remote_pri_struct Internal Structures and Definitions
 */
+
+
+/*!
+	\ingroup remote_struct
+	\defgroup remote_source_string Strings related to the new source syntax
+*/
+
+/*!
+	\ingroup remote_struct
+	\defgroup remote_source_ID Identifiers related to the new source syntax
+*/
+
+/*!
+	\ingroup remote_struct
+	\defgroup remote_open_flags Flags defined in the pcap_open() function
+*/
+

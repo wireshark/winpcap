@@ -99,7 +99,9 @@ int pcap_pack_bpffilter(pcap_t *fp, char *sendbuf, int *sendbufidx, struct bpf_p
  *                                                  *
  ****************************************************/
 
-/*!	\ingroup remote_pri_func
+/*!
+	\ingroup remote_pri_func
+
 	\brief 	It traslates (i.e. de-serializes) a 'sockaddr_storage' structure from 
 	the network byte order to the host byte order.
 

@@ -98,9 +98,7 @@ SOCKET sockmain;
 	the connection is not dropped and the existing socket is used.
 
 	The 'source' is a parameter that tells the function where the lookup has to be done and
-	it uses the same syntax of the pcap_open(). For instance, 'rpcap://host:port/ will list
-	the devices available on a remote adapter, 'file://folder/' lists all the files in
-	the given folder, 'rpcap://' lists all local adapters.
+	it uses the same syntax of the pcap_open().
 
 	Differently from the pcap_findalldevs(), the interface names (pointed by the alldevs->name
 	and the other ones in the linked list) are already ready to be used in the pcap_open() call.
@@ -109,7 +107,10 @@ SOCKET sockmain;
 
 	\param source: a char* buffer that keeps the 'source', according to the new WinPcap
 	syntax. This source will be examined looking for adapters (local or remote) or pcap
-	files.
+	files.<br>
+	The strings that must be prepended to the 'source' in order to define if we want
+	local/remote adapters or files is defined in the new \link remote_source_string Source 
+	Specification Syntax \endlink.
 
 	\param auth: a pointer to a pcap_rmtauth structure. This pointer keeps the information
 	required to authenticate the RPCAP connection to the remote host.
@@ -719,14 +720,14 @@ error:
 	source string before passing it to the pcap_open() function.
 
 	\param source: a user-allocated buffer that will contain the complete source string
-	wen the function returns.
+	wen the function returns.<br>
+	The source will start with an identifier according to the new \link remote_source_string 
+	Source Specification Syntax	\endlink.<br>
 	This function assumes that the allocated buffer is at least PCAP_BUF_SIZE bytes.
 
 	\param type: its value tells the type of the source we want to create. It can assume 
-	the following values:
-	- PCAP_SRC_FILE: if we want a local file
-	- PCAP_SRC_IFLOCAL: if we want a local interface
-	- PCAP_SRC_IFREMOTE: if we want a remote interface
+	the values defined in the \link remote_source_ID Source identification
+	Codes \endlink.<br>
 
 	\param host: an user-allocated buffer that keeps the host (e.g. "foo.bar.com") we 
 	want to connect to.
@@ -841,18 +842,17 @@ int pcap_createsrcstr(char *source, int type, const char *host, const char *port
 
 	The user can omit some parameters in case it is not interested in them.
 
-	\param source: a null-terminated string containing the WinPcap source
+	\param source: a null-terminated string containing the WinPcap source. This source starts
+	with an identifier according to the new \link remote_source_string Source Specification Syntax
+	\endlink.
 
 	\param type: pointer to an integer, which is used to return the code corrisponding to the 
-	selected source. The code will be one of the following:
-		- PCAP_SRC_FILE
-		- PCAP_SRC_IFLOCAL
-		- PCAP_SRC_IFREMOTE
+	selected source. The code will be one defined in the \link remote_source_ID Source identification
+	Codes \endlink.<br>
 	In case the source string does not exists (i.e. 'source == NULL') or it is empty
 	('*source == NULL'), it returns PCAP_SRC_IF_LOCAL (i.e. you are ready to 
 	call pcap_open_live() ). This behavior is kept only for compatibility with older 
-	applications (e.g. tcpdump); therefore we suggest to move to the new syntax for sources.
-
+	applications (e.g. tcpdump); therefore we suggest to move to the new syntax for sources.<br>
 	This parameter can be NULL in case the user is not interested in that.
 
 	\param host: user-allocated buffer (of size PCAP_BUF_SIZE) that is used to return 
@@ -1048,24 +1048,15 @@ int tmptype;
 	other way round.
 
 	\param source: zero-terminated string containing the source name to open.
-	The source name has to include the format prefix according to the 
-	syntax proposed by WinPcap. It cannot be NULL.
+	The source name has to include the format prefix according to the new
+	\link remote_source_string Source Specification Syntax\endlink and it cannot be NULL.<br>
 	On on Linux systems with 2.2 or later kernels, a device argument of "any"
-	 (i.e. rpcap://any) can be used to capture packets from all interfaces.
-	 <br>
-	In case the pcap_createsrcstr() is not used, remember that the new source 
-	syntax allows for these formats to be used in the pcap_open():
-	- file://filename [we want to open a local file]
-	- rpcap://host.foo.bar/adaptername [everything literal, no port number]
-	- rpcap://host.foo.bar:1234/adaptername [everything literal, with port number]
-	- rpcap://10.11.12.13/adaptername [IPv4 numeric, no port number]
-	- rpcap://10.11.12.13:1234/adaptername [IPv4 numeric, with port number]
-	- rpcap://[10.11.12.13]:1234/adaptername [IPv4 numeric with IPv6 format, with port number]
-	- rpcap://[1:2:3::4]/adaptername [IPv6 numeric, no port number]
-	- rpcap://[1:2:3::4]:1234/adaptername [IPv6 numeric, with port number]
-	- rpcap://adaptername [local adapter, opened without using the RPCAP protocol]
-	- adaptername [to open a local adapter; kept for compability, but it is strongly discouraged]
-	- (NULL) [to open the first local adapter; kept for compability, but it is strongly discouraged]
+	(i.e. rpcap://any) can be used to capture packets from all interfaces.
+	<br>
+	In order to makes the source syntax easier, please remember that:
+	- the adapters returned by the pcap_findalldevs_ex() can be used immediately by the pcap_open()
+	- in case the user wants to pass its own source string to the pcap_open(), the 
+	pcap_createsrcstr() helps in creating the correct source identifier.
 	
 	\param snaplen: length of the packet that has to be retained.	
 	For each packet received by the filter, only the first 'snaplen' bytes are stored 
@@ -1073,41 +1064,7 @@ int tmptype;
 	100 means that only the first 100 bytes of each packet are stored.
 
   	\param flags: keeps several flags that can be needed for capturing packets.
-	The allowed flags are the following:
-	- PCAP_OPENFLAG_PROMISCUOUS: if the adapter has to go in promiscuous mode.		
-	It is '1' if you have to open the adapter in promiscuous mode, '0' otherwise.
-	Note that even if this parameter is false, the interface could well be in promiscuous
-	mode for some other reason (for example because another capture process with 
-	promiscuous mode enabled is currently using that interface).
-	On on Linux systems with 2.2 or later kernels (that have the "any" device), this
-	flag does not work on the "any" device; if an argument of "any" is supplied,
-	the 'promisc' flag is ignored.
-	- PCAP_OPENFLAG_SERVEROPEN_DP: it specifies who is responsible for opening the data
-	connection in case of a remote capture (it means 'server open data path').
-	If it is '1', it specifies if the data connection has to be intitiated 
-	by the capturing device (which becomes like 'active'). If '0', the connection 
-	will be initiated by the client workstation.
-	This flag is used to overcome the problem of firewalls, which allow
-	only outgoing connections. In that case, the capturing device can open
-	a connection toward the client workstation in order to allow the
-	data trasfer.
-	In fact, the data connection is opened using a random port (while the
-	control connection uses a standard port), so it is hard to configure
-	a firewall to permit traffic on the data path.
-	This flag is meaningless if the source is not a remote interface.
-	Addictionally, it is meaningless if the data connection is done using
-	the UDP protocol, since in this case the connection wil always be opened
-	by the server.
-	In these cases, it is simply ignored.
-	- PCAP_OPENFLAG_UDP_DP: it specifies if the data trasfer (in case of a remote
-	capture) has to be done with UDP protocol.
-	If it is '1' if you want a UDP data connection, '0' if you want
-	a TCP data connection; control connection is always TCP-based.
-	A UDP connection is much lighter, but it does not guarantee that all
-	the captured packets arrive to the client workstation. Moreover, 
-	it could be harmful in case of network congestion.
-	This flag is meaningless if the source is not a remote interface.
-	In that case, it is simply ignored.
+	The allowed flags are defined in the \link remote_open_flags pcap_open() flags \endlink.
 
 	\param read_timeout: read timeout in milliseconds.
 	The read timeout is used to arrange that the read not necessarily return
@@ -1197,7 +1154,7 @@ pcap_t *fp;
 
 
 /*!
-	\ingroup remotefunc wpcapfunc
+	\ingroup wpcapfunc
 
 	\brief It blocks until a network connection is accepted (active mode only).
 
@@ -1395,7 +1352,7 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 
 
 /*!
-	\ingroup remotefunc wpcapfunc
+	\ingroup wpcapfunc
 
 	\brief It drops an active connection (active mode only).
 
@@ -1491,7 +1448,7 @@ int retval;
 
 
 /*!
-	\ingroup remotefunc wpcapfunc
+	\ingroup wpcapfunc
 
 	\brief Cleans the socket that is currently used in waiting active connections.
 
@@ -1526,7 +1483,7 @@ void pcap_remoteact_cleanup()
 
 
 /*!
-	\ingroup remotefunc wpcapfunc
+	\ingroup wpcapfunc
 
 	\brief Returns the hostname of the host that have an active connection with us (active mode only).
 
