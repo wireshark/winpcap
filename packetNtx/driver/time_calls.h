@@ -1,33 +1,22 @@
 /*
- * Copyright (c) 2001 - 2003
- * NetGroup, Politecnico di Torino (Italy)
- * All rights reserved.
+ * Copyright (c) 2001
+ *	Politecnico di Torino.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- * notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the Politecnico di Torino nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * modification, are permitted provided that: (1) source code distributions
+ * retain the above copyright notice and this paragraph in its entirety, (2)
+ * distributions including binary code include the above copyright notice and
+ * this paragraph in its entirety in the documentation or other materials
+ * provided with the distribution, and (3) all advertising materials mentioning
+ * features or use of this software display the following acknowledgement:
+ * ``This product includes software developed by the Politecnico
+ * di Torino, and its contributors.'' Neither the name of
+ * the University nor the names of its contributors may be used to endorse
+ * or promote products derived from this software without specific prior
+ * written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef _time_calls
@@ -36,6 +25,20 @@
 #ifdef WIN_NT_DRIVER
 
 #include "debug.h"
+#include "ndis.h"
+
+#define	DEFAULT_TIMESTAMPMODE	0
+
+#define TIMESTAMPMODE_SINGLE_SYNCHRONIZATION		0
+#define TIMESTAMPMODE_SYNCHRONIZATION_ON_CPU_WITH_FIXUP	1
+#define TIMESTAMPMODE_QUERYSYSTEMTIME			2
+#define TIMESTAMPMODE_RDTSC				3
+
+#define TIMESTAMPMODE_SYNCHRONIZATION_ON_CPU_NO_FIXUP	99
+
+#define TIMESTAMPMODE_REGKEY L"TimestampMode"
+
+extern ULONG TimestampMode;
 
 /*!
   \brief A microsecond precise timestamp.
@@ -53,7 +56,7 @@ struct timeval {
 struct time_conv
 {
 	ULONGLONG reference;
-	struct timeval start;
+	struct timeval start[32];
 };
 
 #ifdef WIN_NT_DRIVER
@@ -61,84 +64,85 @@ struct time_conv
 __inline void TIME_DESYNCHRONIZE(struct time_conv *data)
 {
 	data->reference = 0;
-	data->start.tv_sec = 0;
-	data->start.tv_usec = 0;
+//	data->start.tv_sec = 0;
+//	data->start.tv_usec = 0;
 }
 
-#ifdef KQPC_TS
 
-/* KeQueryPerformanceCounter TimeStamps */
+__inline void ReadTimeStampModeFromRegistry(PUNICODE_STRING RegistryPath)
+{
+	ULONG NewLength;
+	PWSTR NullTerminatedString;
+	RTL_QUERY_REGISTRY_TABLE Queries[2];
+	ULONG DefaultTimestampMode = DEFAULT_TIMESTAMPMODE;
+
+	NewLength = RegistryPath->Length/2;
+	
+	NullTerminatedString = ExAllocatePool(PagedPool, (NewLength+1) *sizeof(WCHAR));
+	
+	if (NullTerminatedString != NULL)
+	{
+		RtlCopyMemory(NullTerminatedString, RegistryPath->Buffer, RegistryPath->Length);
+				
+		NullTerminatedString[NewLength]=0;
+
+		RtlZeroMemory(Queries, sizeof(Queries));
+		
+		Queries[0].Flags = RTL_QUERY_REGISTRY_DIRECT;
+		Queries[0].Name = TIMESTAMPMODE_REGKEY;
+		Queries[0].EntryContext = &TimestampMode;
+		Queries[0].DefaultType = REG_DWORD;
+		Queries[0].DefaultData = &DefaultTimestampMode;
+		Queries[0].DefaultLength = sizeof(ULONG);
+
+		if (RtlQueryRegistryValues(RTL_REGISTRY_ABSOLUTE, NullTerminatedString, Queries, NULL, NULL) != STATUS_SUCCESS)
+		{
+			TimestampMode = DEFAULT_TIMESTAMPMODE;
+		}
+
+		RtlWriteRegistryValue(	RTL_REGISTRY_ABSOLUTE, NullTerminatedString, TIMESTAMPMODE_REGKEY,  REG_DWORD, &TimestampMode,sizeof(ULONG));	
+		ExFreePool(NullTerminatedString);
+	}	
+	else
+		TimestampMode = DEFAULT_TIMESTAMPMODE;
+}
 
 #pragma optimize ("g",off)  //Due to some weird behaviour of the optimizer of DDK build 2600 
 
-__inline VOID TIME_SYNCHRONIZE(struct time_conv *data)
+/* KeQueryPerformanceCounter TimeStamps */
+__inline void SynchronizeOnCpu(struct timeval *start)
 {
+//	struct timeval *start = (struct timeval*)Data;
+
 	struct timeval tmp;
 	LARGE_INTEGER SystemTime;
 	LARGE_INTEGER i;
 	ULONG tmp2;
 	LARGE_INTEGER TimeFreq,PTime;
 
-	if (data->reference!=0)
-		return;
-	
 	// get the absolute value of the system boot time.   
 	
-	PTime=KeQueryPerformanceCounter(&TimeFreq);
+	PTime = KeQueryPerformanceCounter(&TimeFreq);
 	KeQuerySystemTime(&SystemTime);
 	
-	tmp.tv_sec=(LONG)(SystemTime.QuadPart/10000000-11644473600);
+	start->tv_sec = (LONG)(SystemTime.QuadPart/10000000-11644473600);
 
-	tmp.tv_usec=(LONG)((SystemTime.QuadPart%10000000)/10);
+	start->tv_usec = (LONG)((SystemTime.QuadPart%10000000)/10);
 
-	tmp.tv_sec-=(ULONG)(PTime.QuadPart/TimeFreq.QuadPart);
+	start->tv_sec -= (ULONG)(PTime.QuadPart/TimeFreq.QuadPart);
 
-	tmp.tv_usec-=(LONG)((PTime.QuadPart%TimeFreq.QuadPart)*1000000/TimeFreq.QuadPart);
+	start->tv_usec -= (LONG)((PTime.QuadPart%TimeFreq.QuadPart)*1000000/TimeFreq.QuadPart);
 
-	if (tmp.tv_usec<0)
+	if (start->tv_usec < 0)
 	{
-		tmp.tv_sec--;
-		tmp.tv_usec+=1000000;
+		start->tv_sec --;
+		start->tv_usec += 1000000;
 	}
-	
-	data->start=tmp;
-	data->reference=1;
-}
+}	
 
-__inline void GET_TIME(struct timeval *dst, struct time_conv *data)
-{
-	LARGE_INTEGER PTime, TimeFreq;
-	LONG tmp;
-
-	PTime=KeQueryPerformanceCounter(&TimeFreq);
-	tmp=(LONG)(PTime.QuadPart/TimeFreq.QuadPart);
-	dst->tv_sec=data->start.tv_sec+tmp;
-	dst->tv_usec=data->start.tv_usec+(LONG)((PTime.QuadPart%TimeFreq.QuadPart)*1000000/TimeFreq.QuadPart);
-	
-	if (dst->tv_usec>=1000000)
-	{
-		dst->tv_sec++;
-		dst->tv_usec-=1000000;
-	}
-
-}
-
-#pragma optimize ("g",on)  //Due to some weird behaviour of the optimizer of DDK build 2600 
-
-__inline void FORCE_TIME(struct timeval *src, struct time_conv *dest)
-{
-	dest->start=*src;
-}
-
-
-#else
-
-/*RDTSC timestamps*/
-
-/* callers must be at IRQL=PASSIVE_LEVEL */
-#pragma optimize ("g",off)  //Due to some weird behaviour of the optimizer of DDK build 2600 
-
-__inline VOID TIME_SYNCHRONIZE(struct time_conv *data)
+/*RDTSC timestamps			*/
+/* callers must be at IRQL=PASSIVE_LEVEL*/
+__inline VOID TimeSynchronizeRDTSC(struct time_conv *data)
 {
 	struct timeval tmp;
 	LARGE_INTEGER system_time;
@@ -176,7 +180,7 @@ __inline VOID TIME_SYNCHRONIZE(struct time_conv *data)
 
 	KeLowerIrql(old);
 	
-    KeWaitForSingleObject(&event,UserRequest,KernelMode,TRUE ,&i);
+    	KeWaitForSingleObject(&event,UserRequest,KernelMode,TRUE ,&i);
 
 	KeRaiseIrql(HIGH_LEVEL,&old);
 	stop_kqpc=KeQueryPerformanceCounter(&stop_freq);
@@ -245,18 +249,105 @@ __inline VOID TIME_SYNCHRONIZE(struct time_conv *data)
 		tmp.tv_usec+=1000000;
 	}
 
-	data->start=tmp;
+	data->start[0] = tmp;
 
 	IF_LOUD(DbgPrint("Frequency %I64u MHz\n",data->reference);)
 }
+
 #pragma optimize ("g",on)  //Due to some weird behaviour of the optimizer of DDK build 2600 
 
-__inline void FORCE_TIME(struct timeval *src, struct time_conv *dest)
+__inline VOID TIME_SYNCHRONIZE(struct time_conv *data)
 {
-	dest->start=*src;
+	ULONG NumberOfCpus, i;
+	KAFFINITY AffinityMask;
+
+	if (data->reference != 0)
+		return;
+		
+	NumberOfCpus = NdisSystemProcessorCount();
+
+	if ( TimestampMode ==  TIMESTAMPMODE_SYNCHRONIZATION_ON_CPU_WITH_FIXUP || TimestampMode == TIMESTAMPMODE_SYNCHRONIZATION_ON_CPU_NO_FIXUP)
+	{
+		for (i = 0 ;  i < NumberOfCpus ; i++ )
+		{
+			AffinityMask = (1 << i);
+			ZwSetInformationThread(NtCurrentThread(), ThreadAffinityMask, &AffinityMask, sizeof(KAFFINITY));
+			SynchronizeOnCpu(&(data->start[i]));		
+		}
+		AffinityMask = 0xFFFFFFFF;
+		ZwSetInformationThread(NtCurrentThread(), ThreadAffinityMask, &AffinityMask, sizeof(KAFFINITY));
+		data->reference = 1;
+ 	}
+	else
+	if ( TimestampMode == TIMESTAMPMODE_QUERYSYSTEMTIME )
+	{
+		//do nothing
+		data->reference = 1;
+	}
+	else
+	if ( TimestampMode == TIMESTAMPMODE_RDTSC )
+	{
+		TimeSynchronizeRDTSC(data);
+	}
+	else
+	{	//it should be only the normal case i.e. TIMESTAMPMODE_SINGLESYNCHRONIZATION
+		SynchronizeOnCpu(data->start);
+		data->reference = 1;
+	}
+	return;
 }
 
-__inline void GET_TIME(struct timeval *dst, struct time_conv *data)
+
+#pragma optimize ("g",off)  //Due to some weird behaviour of the optimizer of DDK build 2600 
+
+__inline void GetTimeKQPC(struct timeval *dst, struct time_conv *data)
+{
+	LARGE_INTEGER PTime, TimeFreq;
+	LONG tmp;
+	ULONG CurrentCpu;
+	static struct timeval old_ts={0,0};
+
+
+	PTime = KeQueryPerformanceCounter(&TimeFreq);
+	tmp = (LONG)(PTime.QuadPart/TimeFreq.QuadPart);
+
+	if (TimestampMode ==  TIMESTAMPMODE_SYNCHRONIZATION_ON_CPU_WITH_FIXUP || TimestampMode == TIMESTAMPMODE_SYNCHRONIZATION_ON_CPU_NO_FIXUP)
+	{
+		//actually this code is ok only if we are guaranteed that no thread scheduling will take place. 
+		CurrentCpu = KeGetCurrentProcessorNumber();	
+
+		dst->tv_sec = data->start[CurrentCpu].tv_sec + tmp;
+		dst->tv_usec = data->start[CurrentCpu].tv_usec + (LONG)((PTime.QuadPart%TimeFreq.QuadPart)*1000000/TimeFreq.QuadPart);
+	
+		if (dst->tv_usec >= 1000000)
+		{
+			dst->tv_sec ++;
+			dst->tv_usec -= 1000000;
+		}
+
+		if (TimestampMode ==  TIMESTAMPMODE_SYNCHRONIZATION_ON_CPU_WITH_FIXUP)
+		{
+			if (old_ts.tv_sec > dst->tv_sec || (old_ts.tv_sec == dst->tv_sec &&  old_ts.tv_usec > dst->tv_usec) )
+				*dst = old_ts;
+	
+			else
+				old_ts = *dst;
+		}
+	}
+	else
+	{	//it should be only the normal case i.e. TIMESTAMPMODE_SINGLESYNCHRONIZATION
+		dst->tv_sec = data->start[0].tv_sec + tmp;
+		dst->tv_usec = data->start[0].tv_usec + (LONG)((PTime.QuadPart%TimeFreq.QuadPart)*1000000/TimeFreq.QuadPart);
+	
+		if (dst->tv_usec >= 1000000)
+		{
+			dst->tv_sec ++;
+			dst->tv_usec -= 1000000;
+		}
+	}
+}
+
+__inline void GetTimeRDTSC(struct timeval *dst, struct time_conv *data)
 {
 
 	ULONGLONG tmp;
@@ -282,9 +373,9 @@ __inline void GET_TIME(struct timeval *dst, struct time_conv *data)
 
 	dst->tv_usec=(LONG)((tmp-dst->tv_sec*data->reference)*1000000/data->reference);
 	
-	dst->tv_sec+=data->start.tv_sec;
+	dst->tv_sec+=data->start[0].tv_sec;
 
-	dst->tv_usec+=data->start.tv_usec;
+	dst->tv_usec+=data->start[0].tv_usec;
 
 	if (dst->tv_usec>=1000000)
 	{
@@ -295,20 +386,50 @@ __inline void GET_TIME(struct timeval *dst, struct time_conv *data)
 
 }
 
-#endif /*KQPC_TS*/
+__inline void GetTimeQST(struct timeval *dst, struct time_conv *data)
+{
+	LARGE_INTEGER SystemTime;
+
+	KeQuerySystemTime(&SystemTime);
+	
+	dst->tv_sec = (LONG)(SystemTime.QuadPart/10000000-11644473600);
+	dst->tv_usec = (LONG)((SystemTime.QuadPart%10000000)/10);
+
+}
+
+#pragma optimize ("g",on)  //Due to some weird behaviour of the optimizer of DDK build 2600 
+
+
+__inline void GET_TIME(struct timeval *dst, struct time_conv *data)
+{
+
+	if ( TimestampMode == TIMESTAMPMODE_RDTSC )
+	{
+		GetTimeRDTSC(dst,data);
+	}
+	else
+	if ( TimestampMode == TIMESTAMPMODE_QUERYSYSTEMTIME )
+	{
+		GetTimeQST(dst,data);
+	}
+	else
+	{
+		GetTimeKQPC(dst,data);
+	}
+}
+
 
 #else /*WIN_NT_DRIVER*/
 
 __inline void FORCE_TIME(struct timeval *src, struct time_conv *dest)
 {
-	dest->start=*src;
+	dest->start[0]=*src;
 }
 
 __inline void GET_TIME(struct timeval *dst, struct time_conv *data)
 {
-	*dst=data->start;
+	*dst=data->start[0];
 }
-
 
 #endif /*WIN_NT_DRIVER*/
 
