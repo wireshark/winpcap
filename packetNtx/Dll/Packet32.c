@@ -801,7 +801,9 @@ LPADAPTER PacketOpenAdapterDAG(PCHAR AdapterName, BOOLEAN IsAFile)
 
 	lpAdapter->DagFastProcess = FALSE;
 
-	tsn = SChar2WChar(strstr(strlwr((char*)AdapterName), "dag"));
+	tsn = (strstr(strlwr((char*)AdapterName), "dag") != NULL)?
+		SChar2WChar(strstr(strlwr((char*)AdapterName), "dag")):
+		L"";
 
 	_snwprintf(keyname, sizeof(keyname), L"%s\\CardParams\\%ws", 
 		L"SYSTEM\\CurrentControlSet\\Services\\DAG",
@@ -2031,18 +2033,21 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	for(TAdInfo = AdaptersInfoList; TAdInfo != NULL; TAdInfo = TAdInfo->Next)
 	{
 		// Update the size variables
-		SizeNeeded += strlen(TAdInfo->Name) + strlen(TAdInfo->Description) + 1;
-		SizeNames += strlen(TAdInfo->Name) + 1;
-		
-		// Check not to overflow the buffer
-		if(SizeNeeded >= *BufferSize)
-		{
-			*BufferSize = SizeNeeded;
-			ODS("PacketGetAdapterNames: input buffer too small\n");
-			ReleaseMutex(AdaptersInfoMutex);
-			return FALSE;
-		}
+		SizeNeeded += strlen(TAdInfo->Name) + strlen(TAdInfo->Description) + 2;
+		SizeNames += strlen(TAdInfo->Name) + 1;		
 	}
+
+	// Chack that we don't overflow the buffer.
+	// Note: 2 is the number of additional separators needed inside the list
+	if(SizeNeeded + 2 >= *BufferSize)
+	{
+		ReleaseMutex(AdaptersInfoMutex);
+
+		ODS("PacketGetAdapterNames: input buffer too small\n");
+		*BufferSize = SizeNeeded + 4;  // Report the required size
+		return FALSE;
+	}
+
 
 	OffDescriptions = SizeNames;
 
@@ -2062,6 +2067,10 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 
 	// Separate the two lists
 	((PCHAR)pStr)[SizeNames] = 0;
+
+	// End the list with a further \0
+	((PCHAR)pStr)[SizeNeeded] = 0;
+
 
 	ReleaseMutex(AdaptersInfoMutex);
 	return TRUE;
