@@ -1,14 +1,14 @@
 # Makefile for cygwin gcc
 # Nate Lawson <nate@rootlabs.com>
 
-# OPTFLAGS = -g -DDBG
-OPTFLAGS = -O
+# OPTFLAGS = -g -DDBG 
+OPTFLAGS = -O -D_WINNT4
 # I am suspicious of -O2 since it hosed wpcap.dll. To be safe, use -O only
 
-CFLAGS = -I ../../../common -shared -mno-cygwin ${OPTFLAGS}
+CFLAGS = -I ../../../common -shared -mno-cygwin ${OPTFLAGS} 
 LDFLAGS = -Wl,--out-implib,libpacket.a
-OBJS = ../Packet32.o
-LIBS = -lwsock32
+OBJS = ../Packet32.o ../AdInfo.o
+LIBS = -lwsock32 -lversion
 
 Packet.dll: ${OBJS}
 	${CC} ${CFLAGS} ${LDFLAGS} -o Packet.dll ../Packet.def ${OBJS} ${LIBS}
