@@ -146,6 +146,53 @@ DWORD WINAPI WanPacketReceiverCallback(UPDATE_EVENT Event)
 }
 
 /*! 
+  \brief Tries to open the wan (dialup, vpn...) adapter, and immediately closes it.
+  \return TRUE on success.
+*/
+BOOLEAN WanPacketTestAdapter()
+{
+	PBLOB_TABLE pBlobTable = NULL;
+	HBLOB hFilterBlob = NULL;
+	BOOLEAN retVal;
+	DWORD i;
+
+	if ( CreateBlob(&hFilterBlob) != NMERR_SUCCESS )
+		return FALSE;
+	
+	if ( SetBoolInBlob(hFilterBlob, OWNER_NPP, CATEGORY_CONFIG, TAG_INTERFACE_REALTIME_CAPTURE, TRUE) != NMERR_SUCCESS )
+	{
+		DestroyBlob( hFilterBlob);
+		return FALSE;
+	}
+
+	if ( SetBoolInBlob(hFilterBlob, OWNER_NPP, CATEGORY_LOCATION, TAG_RAS, TRUE) != NMERR_SUCCESS )
+	{
+		DestroyBlob( hFilterBlob);
+		return FALSE;
+	}
+
+	if ( GetNPPBlobTable(hFilterBlob, &pBlobTable) != NMERR_SUCCESS )
+	{
+		DestroyBlob( hFilterBlob);
+		return FALSE;
+	}
+
+	DestroyBlob (hFilterBlob);
+
+	if (pBlobTable->dwNumBlobs == 1)
+		retVal = TRUE;
+	else
+		retVal = FALSE;
+
+	for ( i = 0 ; i < pBlobTable->dwNumBlobs ; i++ )
+		DestroyBlob(pBlobTable->hBlobs[i]);
+		
+	GlobalFree(pBlobTable);
+	return retVal;
+}
+
+
+/*! 
   \brief Opens the wan (dialup, vpn...) adapter.
   \return If the function succeeds, the return value is the pointer to a properly initialized WAN_ADAPTER structure,
    otherwise the return value is NULL.

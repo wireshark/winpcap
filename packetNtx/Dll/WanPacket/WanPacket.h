@@ -46,6 +46,7 @@ BOOLEAN WanPacketGetStats(PWAN_ADAPTER pWanAdapter, struct bpf_stat *s);
 BOOLEAN WanPacketSetReadTimeout(PWAN_ADAPTER pWanAdapter, DWORD ReadTimeout);
 BOOLEAN WanPacketSetMode(PWAN_ADAPTER pWanAdapter, DWORD Mode);
 HANDLE WanPacketGetReadEvent(PWAN_ADAPTER pWanAdapter);
+BOOLEAN WanPacketTestAdapter();
 
 #ifdef __cplusplus
 }

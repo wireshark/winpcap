@@ -10,4 +10,4 @@ EXPORTS
 	WanPacketGetStats
 	WanPacketGetReadEvent
 	WanPacketSetMode
-	
+	WanPacketTestAdapter	
