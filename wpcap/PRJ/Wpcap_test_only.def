@@ -62,7 +62,6 @@ EXPORTS
 		pcap_stats_ex
 		install_bpf_program
 		pcap_next_ex
-		pcap_setsampling
 		pcap_offline_filter
 		pcap_breakloop
 		pcap_list_datalinks
