@@ -1252,6 +1252,8 @@ int daemon_updatefilter(pcap_t *fp, uint32 plen)
 struct rpcap_header header;			// keeps the answer to the updatefilter command
 unsigned int nread;
 
+	nread= 0;
+
 	if ( daemon_unpackapplyfilter(fp, &nread, &plen, fp->errbuf) )
 		goto error;
 

@@ -1198,12 +1198,15 @@ int sockbufsize= 0;
 		if (pcap_createfilter_norpcappkt(fp, &fcode) == -1)
 			goto error;
 
-		if (pcap_setfilter_remote(fp, &fcode) == -1)
+		// We cannot use 'pcap_setfilter_remote' because formally the capture has not been started yet
+		// (the 'fp->rmt_capstarted' variable will be updated some lines below)
+		if (pcap_updatefilter_remote(fp, &fcode) == -1)
 			goto error;
 
 		pcap_freecode(&fcode);
 	}
 
+	fp->rmt_capstarted= 1;
 	return 0;
 
 error:
@@ -1443,7 +1446,6 @@ int RetVal= 0;
 	char mydataport[128];
 	char peeraddress[128];
 	char peerctrlport[128];
-//	char peerdataport[128];
 	char *newfilter;
 	const int newstringsize= 1024;
 	int currentfiltersize;
@@ -1464,19 +1466,6 @@ int RetVal= 0;
 		}
 
 		// We cannot check the data port, because this is available only in case of TCP sockets
-/*		if (getpeername(fp->rmt_sockdata, (struct sockaddr *) &saddr, &saddrlen) == -1)
-		{
-			sock_geterror("getpeername(): ", fp->errbuf, PCAP_ERRBUF_SIZE);
-			return -1;
-		}
-
-
-		if (getnameinfo( (struct sockaddr *) &saddr, saddrlen, NULL, 0, peerdataport, sizeof(peerdataport), NI_NUMERICSERV) )
-		{
-			sock_geterror("getnameinfo(): ", fp->errbuf, PCAP_ERRBUF_SIZE);
-			return -1;
-		}
-*/
 
 		// Get the name/port of the current host
 		if (getsockname(fp->rmt_sockctrl, (struct sockaddr *) &saddr, &saddrlen) == -1)
@@ -1512,27 +1501,28 @@ int RetVal= 0;
 		newfilter= (char *) malloc (currentfiltersize + newstringsize + 1);
 
 		if (currentfiltersize)
-//			snprintf(newfilter, currentfiltersize + newstringsize, 
-//				"(%s) and not (host %s and host %s and port %s and port %s) and not (host %s and host %s and port %s and port %s)", 
-//				fp->currentfilter, myaddress, peeraddress, myctrlport, peerctrlport, myaddress, peeraddress, mydataport, peerdataport);
+		{
 			snprintf(newfilter, currentfiltersize + newstringsize, 
 				"(%s) and not (host %s and host %s and port %s and port %s) and not (host %s and host %s and port %s)", 
 				fp->currentfilter, myaddress, peeraddress, myctrlport, peerctrlport, myaddress, peeraddress, mydataport);
+		}
 		else
+		{
 			snprintf(newfilter, currentfiltersize + newstringsize, 
 				"not (host %s and host %s and port %s and port %s) and not (host %s and host %s and port %s)", 
 				myaddress, peeraddress, myctrlport, peerctrlport, myaddress, peeraddress, mydataport);
+		}
 
 		newfilter[currentfiltersize + newstringsize]= 0;
 
-		// This is only an hack to make the pcap_compile() working
-//		fp->rmt_clientside= 0;
+		// This is only an hack to make the pcap_compile() working properly
+		fp->rmt_clientside= 0;
 
 		if (pcap_compile(fp, prog, newfilter, 1, 0) == -1)
 			RetVal= -1;
 
-		// This is only an hack to make the pcap_compile() working
-//		fp->rmt_clientside= 1;
+		// This is only an hack to make the pcap_compile() working properly
+		fp->rmt_clientside= 1;
 
 		free(newfilter);
 	}
