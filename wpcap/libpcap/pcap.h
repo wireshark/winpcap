@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/winpcap/wpcap/libpcap/pcap.h,v 1.2 2002/05/28 07:37:02 degioanni Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/wpcap/libpcap/pcap.h,v 1.4 2002/07/09 07:57:56 degioanni Exp $ (LBL)
  */
 
 #ifndef lib_pcap_h
@@ -222,6 +222,7 @@ int pcap_setmintocopy(pcap_t *p, int size);
 
 #define MODE_CAPT 0
 #define MODE_STAT 1
+#define MODE_MON  2
 
 #endif /* WIN32 */
 
