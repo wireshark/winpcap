@@ -1050,11 +1050,14 @@ NPF_RequestComplete(
 
 		// Put the request in the list of the free ones
 		ExInterlockedInsertTailList(&Open->RequestList, &pRequest->ListElement, &Open->RequestSpinLock);
-		
-		Irp->IoStatus.Status = Status;
+
+	    if(Status != NDIS_STATUS_SUCCESS)
+			Open->MaxFrameSize = 1514;	// Assume Ethernet
+
+		// We always return success, because the adapter has been already opened
+		Irp->IoStatus.Status = NDIS_STATUS_SUCCESS;
 		Irp->IoStatus.Information = 0;
 		IoCompleteRequest(Irp, IO_NO_INCREMENT);
-
 		return;
 	}
 
