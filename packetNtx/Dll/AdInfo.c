@@ -742,8 +742,8 @@ BOOLEAN AddAdapter(PCHAR AdName)
 	TmpAdInfo->NNetworkAddresses = MAX_NETWORK_ADDRESSES;
 	if(!PacketGetAddressesFromRegistry((LPTSTR)TmpAdInfo->Name, TmpAdInfo->NetworkAddresses, &TmpAdInfo->NNetworkAddresses))
 	{
-	// Now Add IPv6 Addresses
 #ifndef _WINNT4
+		// Try to see if the interface has some IPv6 addresses
 		TmpAdInfo->NNetworkAddresses = 0; // We have no addresses because PacketGetAddressesFromRegistry() failed
 
 		if(!PacketAddIP6Addresses(TmpAdInfo))
@@ -756,6 +756,9 @@ BOOLEAN AddAdapter(PCHAR AdName)
 		}
 #endif // _WINNT4
 	}
+
+	// Now Add IPv6 Addresses
+	PacketAddIP6Addresses(TmpAdInfo);
 
 	TmpAdInfo->Flags = INFO_FLAG_NDIS_ADAPTER;	// NdisWan adapters are not exported by the NPF driver,
 									// therefore it's impossible to see them here
