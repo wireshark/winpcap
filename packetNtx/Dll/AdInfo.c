@@ -416,6 +416,7 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 	if(GetAdaptersAddressesPointer(AF_UNSPEC, 0, NULL, AdBuffer, &BufLen) != ERROR_SUCCESS)
 	{
 		ODS("PacketGetIP6AddressesIPH: GetAdaptersAddresses Failed\n");
+		GlobalFreePtr(AdBuffer);
 		return FALSE;
 	}
 
@@ -600,11 +601,12 @@ BOOLEAN PacketGetAdaptersIPH()
 	PIP_ADAPTER_INFO TmpAd;
 	ULONG OutBufLen=0;
 
-
 	ODS("PacketGetAdaptersIPH\n");
 
 	// Find the size of the buffer filled by GetAdaptersInfo
 
+	//NOTE: this function seems to be leaky, at least on 
+	//Windows XP Pro SP1.
 	if(GetAdaptersInfo(AdList, &OutBufLen) == ERROR_NOT_SUPPORTED)
 	{
 		ODS("IP Helper API not supported on this system!\n");
@@ -958,6 +960,9 @@ nt4:
 
 			i += k + 1;
 		}
+	
+ 		GlobalFreePtr(BpStr);
+
 	}
 	
 	else{
@@ -1156,7 +1161,7 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 				PrevAdInfo->Next = TAdInfo->Next;
 			}
 
-			if (TAdInfo->NNetworkAddresses > 0)
+			if (TAdInfo->NetworkAddresses != NULL)
 				GlobalFreePtr(TAdInfo->NetworkAddresses);
 			GlobalFreePtr(TAdInfo);
 
