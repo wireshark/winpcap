@@ -20,12 +20,16 @@
  */
 
 #include <stdarg.h>
-#include <ntddk.h>
+#include "ntddk.h"
 #include <ntiologc.h>
 #include <ndis.h>
 #include "debug.h"
 #include "packet.h"
 #include "win_bpf.h"
+
+#include "tme.h"
+#include "time_calls.h"
+
 
 //-------------------------------------------------------------------
 
@@ -92,7 +96,9 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	LARGE_INTEGER		TimeFreq;
 	struct bpf_hdr		*header;
 	KIRQL				Irql;
-	
+	PUCHAR				UserPointer;
+	ULONG				bytecopy;
+
 	IF_LOUD(DbgPrint("NPF: Read\n");)
 		
 	IrpSp = IoGetCurrentIrpStackLocation(Irp);
@@ -125,13 +131,14 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			CurrBuff=(PUCHAR)MmGetSystemAddressForMdl(Irp->MdlAddress);
 			
 			//get the timestamp
-			CapTime=KeQueryPerformanceCounter(&TimeFreq); 
+//OLD		CapTime=KeQueryPerformanceCounter(&TimeFreq); 
 
 			//fill the bpf header for this packet
-			CapTime.QuadPart+=Open->StartTime.QuadPart;
+//OLD		CapTime.QuadPart+=Open->StartTime.QuadPart;
 			header=(struct bpf_hdr*)CurrBuff;
-			header->bh_tstamp.tv_usec=(long)((CapTime.QuadPart%TimeFreq.QuadPart*1000000)/TimeFreq.QuadPart);
-			header->bh_tstamp.tv_sec=(long)(CapTime.QuadPart/TimeFreq.QuadPart);
+//OLD		header->bh_tstamp.tv_usec=(long)((CapTime.QuadPart%TimeFreq.QuadPart*1000000)/TimeFreq.QuadPart);
+//OLD		header->bh_tstamp.tv_sec=(long)(CapTime.QuadPart/TimeFreq.QuadPart);
+			GET_TIME(&header->bh_tstamp,&Open->start_time);
 
 			if(Open->mode & MODE_DUMP){
 				*(LONGLONG*)(CurrBuff+sizeof(struct bpf_hdr)+16)=Open->DumpOffset.QuadPart;
@@ -161,6 +168,67 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			return STATUS_SUCCESS;
 		}
 		
+		if(Open->mode==MODE_MON)   //this capture instance is in monitor mode
+		{   
+			PTME_DATA data;
+			ULONG cnt;
+			ULONG block_size;
+			PUCHAR tmp;
+
+			UserPointer=MmGetSystemAddressForMdl(Irp->MdlAddress);
+			
+			if ((!IS_VALIDATED(Open->tme.validated_blocks,Open->tme.active_read))||(IrpSp->Parameters.Read.Length<sizeof(struct bpf_hdr)))
+			{	
+				EXIT_FAILURE(0);
+			}
+			
+			header=(struct bpf_hdr*)UserPointer;
+	
+			GET_TIME(&header->bh_tstamp,&Open->start_time);
+
+			
+			header->bh_hdrlen=sizeof(struct bpf_hdr);
+			
+
+			//moves user memory pointer
+			UserPointer+=sizeof(struct bpf_hdr);
+			
+			//calculus of data to be copied
+			//if the user buffer is smaller than data to be copied,
+			//only some data will be copied
+			data=&Open->tme.block_data[Open->tme.active_read];
+
+			if (data->last_read.tv_sec!=0)
+				data->last_read=header->bh_tstamp;
+			
+
+			bytecopy=data->block_size*data->filled_blocks;
+			
+			if ((IrpSp->Parameters.Read.Length-sizeof(struct bpf_hdr))<bytecopy)
+				bytecopy=(IrpSp->Parameters.Read.Length-sizeof(struct bpf_hdr))/ data->block_size;
+			else 
+				bytecopy=data->filled_blocks;
+
+			tmp=data->shared_memory_base_address;
+			block_size=data->block_size;
+			
+			for (cnt=0;cnt<bytecopy;cnt++)
+			{
+				NdisAcquireSpinLock(&Open->machine_lock);
+				RtlCopyMemory(UserPointer,tmp,block_size);
+				NdisReleaseSpinLock(&Open->machine_lock);
+				tmp+=block_size;
+				UserPointer+=block_size;
+			}
+						
+			bytecopy*=block_size;
+
+			header->bh_caplen=bytecopy;
+			header->bh_datalen=header->bh_caplen;
+
+			EXIT_SUCCESS(bytecopy+sizeof(struct bpf_hdr));
+		}
+
 		if (Open->Bhead == Open->Btail || Open->mode & MODE_DUMP)
 			// The timeout has expired, but the buffer is still empty (or the packets must be written to file).
 			// We must awake the application, returning an empty buffer.
@@ -287,6 +355,8 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 
 	Open->Received++;		//number of packets received by filter ++
 
+	NdisAcquireSpinLock(&Open->machine_lock);
+	
 	//
 	//Check if the lookahead buffer follows the mac header.
 	//If the data follow the header (i.e. there is only a buffer) a normal bpf_filter() is
@@ -300,25 +370,52 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 									   LookAheadBuffer,
 									   HeaderBufferSize,
 									   PacketSize+HeaderBufferSize,
-									   LookaheadBufferSize+HeaderBufferSize);
-	else if(Open->bpfprogram != NULL)
-	{
-		fres=Open->Filter->Function(HeaderBuffer,
+									   LookaheadBufferSize+HeaderBufferSize,
+									   &Open->mem_ex,
+									   &Open->tme,
+									   &Open->start_time);
+	
+	
+	else 
+		if(Open->Filter != NULL)
+		{
+			if (Open->bpfprogram!=NULL)
+			{
+				fres=Open->Filter->Function(HeaderBuffer,
 									PacketSize+HeaderBufferSize,
 									LookaheadBufferSize+HeaderBufferSize);
 		
-		  // Restore the stack. 
-		  // I ignore the reason, but this instruction is needed only at kernel level
-		  _asm add esp,12		
+				// Restore the stack. 
+				// I ignore the reason, but this instruction is needed only at kernel level
+				_asm add esp,12		
+			}
+			else
+				fres = -1;
+		}
+		else
+ 			fres=bpf_filter((struct bpf_insn*)(Open->bpfprogram),
+ 		                HeaderBuffer,
+ 						PacketSize+HeaderBufferSize,
+						LookaheadBufferSize+HeaderBufferSize,
+						&Open->mem_ex,
+						&Open->tme,
+						&Open->start_time);
+
+	NdisReleaseSpinLock(&Open->machine_lock);
+	
+	if(Open->mode==MODE_MON)
+	// we are in monitor mode
+	{
+		if (fres==1) 
+			KeSetEvent(Open->ReadEvent,0,FALSE);
+		return NDIS_STATUS_NOT_ACCEPTED;
+
 	}
-	else
-		fres = -1;
 
 	if(fres==0)return NDIS_STATUS_NOT_ACCEPTED; //packet not accepted by the filter
 
 	//if the filter returns -1 the whole packet must be accepted
 	if(fres==-1 || fres > PacketSize+HeaderBufferSize)fres=PacketSize+HeaderBufferSize; 
-
 
 	if(Open->mode & MODE_STAT){
 	// we are in statistics mode
