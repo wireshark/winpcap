@@ -2,7 +2,7 @@
 
 <variables>
    <var name="AppID" value="WinPcapInst"/>
-   <var name="AppName" value="WinPcap 3.1"/>
+   <var name="AppName" value="WinPcap 3.1 beta2"/>
    <var name="InstallPath" value="%ProgramFiles%\WinPcap"/>
    <var name="Uninstall" value="1"/>
    <var name="CompanyName" value="Politecnico di Torino"/>
@@ -15,6 +15,7 @@
    <var name="SplashBitmap" value="distribution\winpcap.bmp"/>
    <var name="ServicePresent" regkey="HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NPF" regparam="Type" type="reg" defvalue="0" />
    <var name="Reboot" value="%ServicePresent%" />
+   <var name="AdminRights" value="1" />
 </variables>
 
 <packages>
