@@ -8,10 +8,10 @@ echo Creating \Lib folder
 mkdir %WPDPACKDESTDIR% >nul 2>nul
 mkdir %WPDPACKDESTDIR%\Lib >nul 2>nul
 
-xcopy /s/e/v /Y %WINPCAPSOURCEDIR%\wpcap\PRJ\Release_REMOTE\wpcap.lib						%WPDPACKDESTDIR%\Lib\
-xcopy /s/e/v /Y %WINPCAPSOURCEDIR%\packetNtx\Dll\Project\Release\packet.lib		 	%WPDPACKDESTDIR%\Lib\
-xcopy /s/e/v /Y %WINPCAPSOURCEDIR%\packetNtx\Dll\Project\libpacket.a			 	%WPDPACKDESTDIR%\Lib\
-xcopy /s/e/v /Y %WINPCAPSOURCEDIR%\wpcap\LIB\libwpcap.a						%WPDPACKDESTDIR%\Lib\
+xcopy /v /Y %WINPCAPSOURCEDIR%\wpcap\PRJ\Release_REMOTE\wpcap.lib			%WPDPACKDESTDIR%\Lib\
+xcopy /v /Y %WINPCAPSOURCEDIR%\packetNtx\Dll\Project\Release\packet.lib		 	%WPDPACKDESTDIR%\Lib\
+xcopy /v /Y %WINPCAPSOURCEDIR%\packetNtx\Dll\Project\libpacket.a			%WPDPACKDESTDIR%\Lib\
+xcopy /v /Y %WINPCAPSOURCEDIR%\wpcap\LIB\libwpcap.a					%WPDPACKDESTDIR%\Lib\
 
 echo Folder \Lib created successfully
 
