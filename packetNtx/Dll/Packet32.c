@@ -849,7 +849,6 @@ INT PacketSendPackets(LPADAPTER AdapterObject, PVOID PacketBuff, ULONG Size, BOO
 	struct timeval	BufStartTime;
 	LARGE_INTEGER	StartTicks, CurTicks, TargetTicks, TimeFreq;
 
-
 	ODS("PacketSendPackets");
 
 	// Obtain starting timestamp of the buffer
@@ -875,21 +874,24 @@ INT PacketSendPackets(LPADAPTER AdapterObject, PVOID PacketBuff, ULONG Size, BOO
 
 		TotBytesTransfered += BytesTransfered;
 
-		// calculate the time interval to wait before sending the next packet
-		TargetTicks.QuadPart = StartTicks.QuadPart +
-		(LONGLONG)
-		((((struct timeval*)((PCHAR)PacketBuff + TotBytesTransfered))->tv_sec - BufStartTime.tv_sec) * 1000000 +
-		(((struct timeval*)((PCHAR)PacketBuff + TotBytesTransfered))->tv_usec - BufStartTime.tv_usec)) *
-		(TimeFreq.QuadPart) / 1000000;
-
 		// Exit from the loop on termination or error
 		if(TotBytesTransfered >= Size || Res != TRUE)
 			break;
 		
-		// Wait until the time interval has elapsed
-		while( CurTicks.QuadPart <= TargetTicks.QuadPart )
-			QueryPerformanceCounter(&CurTicks);
+		if(Sync){
 
+			// calculate the time interval to wait before sending the next packet
+			TargetTicks.QuadPart = StartTicks.QuadPart +
+				(LONGLONG)
+				((((struct timeval*)((PCHAR)PacketBuff + TotBytesTransfered))->tv_sec - BufStartTime.tv_sec) * 1000000 +
+				(((struct timeval*)((PCHAR)PacketBuff + TotBytesTransfered))->tv_usec - BufStartTime.tv_usec)) *
+				(TimeFreq.QuadPart) / 1000000;
+
+			// Wait until the time interval has elapsed
+			while( CurTicks.QuadPart <= TargetTicks.QuadPart ){
+				QueryPerformanceCounter(&CurTicks);
+			}
+		}
 	}
 	while(TRUE);
 
