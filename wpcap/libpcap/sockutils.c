@@ -1057,7 +1057,7 @@ int sock_cmpaddr(struct sockaddr_storage *first, struct sockaddr_storage *second
 	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
 	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
-	\return It returns '-1' if this function succeed, '0' otherwise.
+	\return It returns '-1' if this function succeedes, '0' otherwise.
 	The address and port corresponding to the given SockAddr is returned back in the buffers 'Addr'
 	and 'Port'.
 	In any case, the returned strings are '0' terminated.
