@@ -86,6 +86,7 @@ BOOL APIENTRY DllMain (HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 {
     BOOLEAN Status=TRUE;
 	HMODULE IPHMod;
+	PADAPTER_INFO NewAdInfo;
 #ifdef HAVE_DAG_API
 	HMODULE DagcLib;
 #endif // HAVE_DAG_API
@@ -158,6 +159,20 @@ BOOL APIENTRY DllMain (HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
         case DLL_PROCESS_DETACH:
 
 			CloseHandle(AdaptersInfoMutex);
+
+ 			AdaptersInfoList;
+ 			
+ 			while(AdaptersInfoList != NULL)
+ 			{
+ 					
+ 				NewAdInfo = AdaptersInfoList->Next;
+ 				if (AdaptersInfoList->NetworkAddresses != NULL)
+ 					GlobalFreePtr(AdaptersInfoList->NetworkAddresses);
+ 				GlobalFreePtr(AdaptersInfoList);
+ 					
+ 				AdaptersInfoList = NewAdInfo;
+ 			}
+
 
 			break;
 
@@ -486,6 +501,7 @@ BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLe
 
 		strcpy(VersionBuff, TmpStr);
 
+        GlobalFreePtr(lpstrVffInfo);
         GlobalFreePtr(TmpStr);
 		
 	  } 
