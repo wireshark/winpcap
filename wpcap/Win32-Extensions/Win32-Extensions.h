@@ -21,6 +21,10 @@
 
 /* Definitions */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*!
   \brief A queue of raw packets that will be sent to the network with pcap_sendqueue_transmit().
 */
@@ -75,3 +79,9 @@ int pcap_setuserbuffer(pcap_t *p, int size);
 int pcap_live_dump(pcap_t *p, char *filename, int maxsize, int maxpacks);
 
 int pcap_live_dump_ended(pcap_t *p, int sync);
+
+
+
+#ifdef __cplusplus
+}
+#endif
