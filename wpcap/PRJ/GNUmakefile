@@ -30,7 +30,8 @@ CFLAGS = -I ../libpcap -I ../libpcap/bpf -I ../libpcap/lbl \
 	-I ../../common -I ../Win32-Extensions \
 	-DLIBPCAP_EXPORTS -DYY_NEVER_INTERACTIVE -Dyylval=pcap_lval \
 	-DHAVE_STRERROR -DNEED_ADDRINFO_H -DINET6 -DWIN32 \
-	-DSIZEOF_CHAR=1 -DSIZEOF_SHORT=2 -DSIZEOF_INT=4 -DWPCAP \
+	-DSIZEOF_CHAR=1 -DSIZEOF_SHORT=2 -DSIZEOF_INT=4 -DWPCAP -D'_U_=' \
+	-DHAVE_SNPRINTF -DHAVE_VSNPRINTF \
 	-mno-cygwin -shared ${OPTFLAGS}
 LDFLAGS = -Wl,--out-implib,../lib/libwpcap.a
 LIBS = -L ../../${PACKET_DIR}/DLL/Project -lPacket -lwsock32
