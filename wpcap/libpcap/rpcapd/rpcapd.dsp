@@ -115,6 +115,10 @@ SOURCE=.\utils.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\version.rc
+# End Source File
+# Begin Source File
+
 SOURCE=".\win32-svc.c"
 # End Source File
 # End Group
