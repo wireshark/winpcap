@@ -325,6 +325,7 @@ int i;
 		/* GV otherwise, the thread handle is not destroyed  */
 		pthread_attr_init(&detachedAttribute); 
 		pthread_attr_setdetachstate(&detachedAttribute, PTHREAD_CREATE_DETACHED);
+
 		if ( pthread_create( &threadId, &detachedAttribute, (void *) &main_active, (void *) &activelist[i]) )
 		{
 			SOCK_ASSERT("Error creating the active child thread", 1);
@@ -369,6 +370,8 @@ int i;
 
 		while (tempaddrinfo)
 		{
+		SOCKET *socktemp;
+
 			if ( (sockmain= sock_open(tempaddrinfo, SOCKOPEN_SERVER, SOCKET_MAXCONN, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 			{
 				SOCK_ASSERT(errbuf, 1);
@@ -376,32 +379,37 @@ int i;
 				continue;
 			}
 
+			// This trick is needed in order to allow the child thread to save the 'sockmain' variable
+			// withouth getting it overwritten by the sock_open, in case we want to open more than one waiting sockets
+			// For instance, the pthread_create() will accept the socktemp variable, and it will deallocate immediately that variable
+			socktemp= (SOCKET *) malloc (sizeof (SOCKET));
+			if (socktemp == NULL)
+				exit(0);
+
+			*socktemp= sockmain;
+
 #ifdef WIN32
 			/* GV we need this to create the thread as detached. */
 			/* GV otherwise, the thread handle is not destroyed  */
 			pthread_attr_init(&detachedAttribute); 
 			pthread_attr_setdetachstate(&detachedAttribute, PTHREAD_CREATE_DETACHED);
-			if ( pthread_create( &threadId, &detachedAttribute, (void *) &main_passive, (void *) &sockmain ) )
+
+			if ( pthread_create( &threadId, &detachedAttribute, (void *) &main_passive, (void *) socktemp ) )
 			{
 				SOCK_ASSERT("Error creating the passive child thread", 1);
 				pthread_attr_destroy(&detachedAttribute);
 				continue;
 			}
+
 			pthread_attr_destroy(&detachedAttribute);
 #else
 			if ( (pid= fork() ) == 0)	// I am the child
 			{
-				main_passive( (void *) &sockmain);
+				main_passive( (void *) socktemp);
 				return;
 			}
 #endif
 			tempaddrinfo= tempaddrinfo->ai_next;
-
-			// FULVIO (bug)
-			// Waits for 100 ms in order to allow the child thread to save the 'sockmain' variable
-			// before it gets overwritten by the sock_open, in case we want to open more than one waiting sockets
-			// It's a really dirty way to create a mutex
-			pthread_suspend(100);
 		}
 
 		freeaddrinfo(addrinfo);
@@ -515,6 +523,10 @@ SOCKET sockmain;
 #endif
 
 	sockmain= *((SOCKET *) ptr);
+
+	// Delete the pointer (which has been allocated in the main)
+	free(ptr);
+
 	// Initialize errbuf
 	memset(errbuf, 0, sizeof(errbuf) );
 
