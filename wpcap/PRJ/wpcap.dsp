@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib ../libpcap/win32/prj/release/libpcap.lib /nologo /dll /machine:I386 /nodefaultlib:"libcmtd.lib" /def:".\wpcap.def" /implib:"../lib/wpcap.lib" /FORCE:MULTIPLE /WARN:0
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib ../libpcap/win32/prj/release/libpcap.lib ../../Common/pthreadVC.lib /nologo /dll /machine:I386 /nodefaultlib:"libcmtd.lib" /def:".\wpcap.def" /implib:"../lib/wpcap.lib" /FORCE:MULTIPLE /WARN:0
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "wpcap - Win32 Debug"
@@ -80,7 +80,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib ../libpcap/win32/prj/debug/libpcap.lib /nologo /dll /debug /machine:I386 /def:".\wpcap.def" /implib:"../lib/wpcap.lib" /pdbtype:sept /FORCE:MULTIPLE /WARN:0
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib ../libpcap/win32/prj/debug/libpcap.lib ../../Common/pthreadVC.lib /nologo /dll /debug /machine:I386 /def:".\wpcap.def" /implib:"../lib/wpcap.lib" /pdbtype:sept /FORCE:MULTIPLE /WARN:0
 # SUBTRACT LINK32 /pdb:none /incremental:no
 
 !ENDIF 
@@ -105,6 +105,18 @@ SOURCE="..\Win32-Extensions\Win32-Extensions.c"
 SOURCE=..\..\common\Packet.lib
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE="..\libpcap\pcap-new.c"
+# End Source File
+# Begin Source File
+
+SOURCE="..\libpcap\pcap-remote.c"
+# End Source File
+# Begin Source File
+
+SOURCE=..\libpcap\sockutils.c
+# End Source File
 # Begin Source File
 
 SOURCE="..\Win32-Extensions\version.rc"
