@@ -38,8 +38,6 @@
 #include "packet.h"
 #include "win_bpf.h"
 
-emit_func emitm;
-
 //
 // emit routine to update the jump table
 //
@@ -88,6 +86,9 @@ BPF_filter_function BPFtoX86(struct bpf_insn *prog, UINT nins, INT *mem)
 	struct bpf_insn *ins;
 	UINT i, pass;
 	binary_stream stream;
+	
+	//NOTE: do not modify the name of this variable, as it's used by the macros to emit code.
+	emit_func emitm;  
 
 
 	// Allocate the reference table for the jumps
