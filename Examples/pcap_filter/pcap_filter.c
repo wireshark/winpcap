@@ -92,7 +92,7 @@ u_char *pkt_data;
 	// open a capture from the network
 	if (source != NULL)
 	{
-		if ( (fp= pcap_open(argv[2],
+		if ( (fp= pcap_open(source,
 							1514 /*snaplen*/,
 							PCAP_OPENFLAG_PROMISCUOUS /*flags*/,
 							20 /*read timeout*/,
@@ -145,7 +145,7 @@ u_char *pkt_data;
 	else usage();
 
 	//start the capture
-	while((res = pcap_next_ex( fp, &header, &pkt_data)) >= 0)
+ 	while((res = pcap_next_ex( fp, &header, &pkt_data)) >= 0)
 	{
 
 		if(res == 0)
@@ -163,6 +163,6 @@ void usage()
 {
 
 	printf("\npf - Generic Packet Filter.\n");
-	printf("\nUsage:\npf [-s source] -o output_file_name -f filter_string\n\n");
+	printf("\nUsage:\npf -s source -o output_file_name [-f filter_string]\n\n");
 	exit(0);
 }
