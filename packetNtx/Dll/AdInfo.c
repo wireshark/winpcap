@@ -475,6 +475,8 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	struct sockaddr_in *TmpAddr;
 	CHAR TName[256];
 	LPADAPTER adapter;
+	PWCHAR UAdName;
+
 	
 	// Create the NPF device name from the original device name
 	strcpy(TName, "\\Device\\NPF_");
@@ -498,7 +500,16 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	}
 	else
 	{
-		adapter = PacketOpenAdapterNPF(TName);
+		//convert the string to unicode, as OpenAdapterNPF accepts unicode strings, only. 
+		UAdName = SChar2WChar(TName);
+		if (UAdName == NULL)
+		{
+			ODS("AddAdapterIPH: unable to convert an ASCII string to UNICODE\n");
+			goto SkipAd;
+		}
+		adapter = PacketOpenAdapterNPF((PCHAR)UAdName);
+		GlobalFreePtr(UAdName);
+
 		if(adapter == NULL)
 		{
 			// We are not able to open this adapter. Skip to the next one.
