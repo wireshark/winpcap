@@ -349,7 +349,6 @@ typedef struct _OPEN_INSTANCE
 											///< reached.
 	MEM_TYPE			mem_ex;				///< Memory used by the TME virtual co-processor
 	TME_CORE			tme;				///< Data structure containing the virtualization of the TME co-processor
-//	struct time_conv	start_time;			///< Data structure used to timestamp packets, and stats
 	NDIS_SPIN_LOCK		machine_lock;		///< SpinLock that protects the mem_ex buffer
 
 }

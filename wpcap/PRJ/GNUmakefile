@@ -19,10 +19,10 @@ YACC = bison -y -p pcap_
 
 ifeq (${SYSTYPE}, "NT")
 	PACKET_DIR = packetNTx
-	INSTALL_DIR = c:/winnt/system32
+	INSTALL_DIR = ${SYSTEMROOT}\system32
 else
 	PACKET_DIR = packet9x
-	INSTALL_DIR = c:/windows/system32
+	INSTALL_DIR = ${SYSTEMROOT}\system
 endif
 
 CFLAGS = -I ../libpcap -I ../libpcap/bpf -I ../libpcap/lbl \

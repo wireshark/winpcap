@@ -356,7 +356,7 @@ NPF_Close(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 		//free the buffer
 		Open->BufSize=0;
-		if(Open->Buffer!=NULL)ExFreePool(Open->Buffer);
+		if(Open->Buffer != NULL)ExFreePool(Open->Buffer);
 		
 		//free mem_ex
 		Open->mem_ex.size = 0;

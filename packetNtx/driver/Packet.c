@@ -755,11 +755,11 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		}
 
 		//return
-		Open->Bhead=0;
-		Open->Btail=0;
-		Open->BLastByte=0;
-		Open->Received=0;		
-		Open->Dropped=0;
+		Open->Bhead = 0;
+		Open->Btail = 0;
+		Open->BLastByte = 0;
+		Open->Received = 0;		
+		Open->Dropped = 0;
 
 		EXIT_SUCCESS(IrpSp->Parameters.DeviceIoControl.InputBufferLength);
 		
@@ -875,30 +875,36 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 	case BIOCSETBUFFERSIZE:
 		
-		//get the number of buffers to allocate
+		// Get the number of bytes to allocate
 		dim = *((PULONG)Irp->AssociatedIrp.SystemBuffer);
-		//free the old buffer
-		if(Open->Buffer!=NULL) ExFreePool(Open->Buffer);
-		//allocate the new buffer
+
+		// Free the old buffer
+		tpointer = Open->Buffer;
+		if(tpointer != NULL){
+			Open->BufSize = 0;
+			Open->Buffer = NULL;
+			ExFreePool(tpointer);
+		}
+		// Allocate the new buffer
 		if(dim!=0){
-			tpointer=ExAllocatePoolWithTag(NonPagedPool, dim, '6PWA');
+			tpointer = ExAllocatePoolWithTag(NonPagedPool, dim, '6PWA');
 			if (tpointer==NULL)
 			{
 				// no memory
-				Open->BufSize=0;
-				Open->Buffer=NULL;
+				Open->BufSize = 0;
+				Open->Buffer = NULL;
 				EXIT_FAILURE(0);
 			}
 		}
 		else
-			tpointer=NULL;
+			tpointer = NULL;
 
-		Open->Buffer=tpointer;
-		Open->Bhead=0;
-		Open->Btail=0;
-		Open->BLastByte=0;
+		Open->Buffer = tpointer;
+		Open->Bhead = 0;
+		Open->Btail = 0;
+		Open->BLastByte = 0;
 		
-		Open->BufSize=(UINT)dim;
+		Open->BufSize = (UINT)dim;
 		EXIT_SUCCESS(dim);
 		
 		break;

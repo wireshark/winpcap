@@ -238,9 +238,9 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	//
 	NdisAcquireSpinLock( &Open->BufLock );
 	
-	Thead=Open->Bhead;
-	Ttail=Open->Btail;
-	TLastByte=Open->BLastByte;
+	Thead = Open->Bhead;
+	Ttail = Open->Btail;
+	TLastByte = Open->BLastByte;
 
 	//get the address of the buffer
 	CurrBuff=Open->Buffer;
@@ -254,7 +254,7 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	//
 	//fill the application buffer
 	//
-	if(Ttail>Thead){ 	//first of all see if it we can copy all the buffer in one time
+	if(Ttail > Thead){ 	//first of all see if it we can copy all the buffer in one time
 		if((Ttail-Thead)<Input_Buffer_Length){
 			KeResetEvent(Open->ReadEvent);
 
@@ -262,13 +262,13 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			EXIT_SUCCESS(Ttail-Thead);
 		}
 	}
-	else if((TLastByte-Thead)<Input_Buffer_Length){
-		PacketMoveMem(packp,CurrBuff+Thead,TLastByte-Thead,&(Open->Bhead));
+	else if((TLastByte - Thead) < Input_Buffer_Length){
+		PacketMoveMem(packp, CurrBuff+Thead, TLastByte - Thead, &(Open->Bhead));
 
 		NdisAcquireSpinLock( &Open->BufLock );
 		
-		Open->BLastByte=Open->Btail;
-		Open->Bhead=0;
+		Open->BLastByte = Open->Btail;
+		Open->Bhead = 0;
 
 		NdisReleaseSpinLock( &Open->BufLock );
 		
@@ -288,8 +288,8 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 			NdisAcquireSpinLock( &Open->BufLock );
 			
-			Open->BLastByte=Open->Btail;
- 			Open->Bhead=0;
+			Open->BLastByte = Open->Btail;
+ 			Open->Bhead = 0;
 			
 			NdisReleaseSpinLock( &Open->BufLock );
 
@@ -383,7 +383,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	else 
 		if(Open->Filter != NULL)
 		{
-			if (Open->bpfprogram!=NULL)
+			if (Open->bpfprogram != NULL)
 			{
 				fres=Open->Filter->Function(HeaderBuffer,
 									PacketSize+HeaderBufferSize,
@@ -471,16 +471,8 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	
 	maxbufspace=Packet_WORDALIGN(fres+NPFHdrSize);
 
-/*	
-	if(Open->BufSize <= BufOccupation + maxbufspace)
-	{
-		//the buffer is full: the packet must be dropped
-		Open->Dropped++;
-		return NDIS_STATUS_NOT_ACCEPTED;
-	}
-*/
 	if(Ttail+maxbufspace >= Open->BufSize){
-		if(Thead<=maxbufspace)
+		if(Thead <= maxbufspace)
 		{
 			Open->Dropped++;
 			return NDIS_STATUS_NOT_ACCEPTED;
@@ -594,7 +586,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 			Ttail+=fres+NPFHdrSize;
 		
 		//update the buffer	
-		if(Ttail>Thead)TLastByte=Ttail;
+		if(Ttail > Thead)TLastByte = Ttail;
 
 		NdisAcquireSpinLock( &Open->BufLock );
 		
