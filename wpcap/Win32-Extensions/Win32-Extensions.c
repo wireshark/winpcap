@@ -41,7 +41,6 @@ pcap_getevent(pcap_t *p)
 
 
 
-#ifdef REMOTE
 /*
 This way is definitely safer than passing the pcap_stat * from the userland. In fact, there could
 happen than the user allocates a variable which is not big enough for the new structure, and the
@@ -64,21 +63,6 @@ pcap_stats_ex(pcap_t *p)
 	}
 	return (&p->md.stat);
 }
-
-
-/*	FULVIO - TEMP
-int
-pcap_stats_ex(pcap_t *p, struct pcap_stat *ps)
-{
-
-	if(PacketGetStatsEx(p->adapter, (struct bpf_stat*)ps) != TRUE){
-		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "PacketGetStatsEx error: %s", pcap_win32strerror());
-		return -1;
-	}
-
-	return 0;
-}
-*/
 
 
 pcap_send_queue* 
