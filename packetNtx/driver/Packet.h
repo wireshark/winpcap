@@ -255,11 +255,9 @@ typedef struct _PACKET_RESERVED {
   Structure containing some data relative to every adapter on which NPF is bound.
 */
 typedef struct _DEVICE_EXTENSION {
-    PDEVICE_OBJECT DeviceObject;		///< Adapter's device.
     NDIS_HANDLE    NdisProtocolHandle;	///< NDIS handle of NPF.
     NDIS_STRING    AdapterName;			///< Name of the adapter.
-    PWSTR          BindString;			///< Original  device name of the adapter.
-    PWSTR          ExportString;		///< Name of the exported device, i.e. name that the applications will use 
+	PWSTR		   ExportString;		///< Name of the exported device, i.e. name that the applications will use 
 										///< to open this adapter through WinPcap.
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
@@ -350,6 +348,8 @@ typedef struct _OPEN_INSTANCE
 	MEM_TYPE			mem_ex;				///< Memory used by the TME virtual co-processor
 	TME_CORE			tme;				///< Data structure containing the virtualization of the TME co-processor
 	NDIS_SPIN_LOCK		machine_lock;		///< SpinLock that protects the mem_ex buffer
+	UINT				MaxFrameSize;		///< Maximum frame size that the underlying MAC acceptes. Used to perform a check on the 
+											///< size of the frames sent with NPF_Write() or NPF_BufferedWrite().
 }
 OPEN_INSTANCE, *POPEN_INSTANCE;
 
