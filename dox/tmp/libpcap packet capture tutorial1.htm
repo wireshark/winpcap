@@ -1,0 +1,528 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- saved from url=(0058)http://www.cse.nau.edu/~mc8/Socket/Tutorials/section3.html -->
+<HTML><HEAD><TITLE>libpcap packet capture tutorial</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252">
+<META content="MSHTML 5.50.4807.2300" name=GENERATOR></HEAD>
+<BODY bgColor=white>
+<CENTER>
+<H2>Writing a Basic Packet Capture Engine</H2></CENTER>
+<HR noShade>
+
+<P>Hi :-), this section consists of a discussion on how to write a simple packet 
+capture engine. The goal is to demonstrate methods of capturing and filtering 
+multiple packets to aid in packet analysis. All the juicy info on disecting IP 
+packets and forging new ones are reserved for later sections.. Yes I can see 
+your dissapointment, but you must admit that a program that captures a single 
+packet at a time is pretty much useless. </P>
+<P>Consider the following pcap method: 
+<UL>
+  <LI><B>int pcap_loop(pcap_t *p, int cnt, pcap_handler callback, u_char 
+  *user)</B> </LI></UL>We will use this to provide the core functionality of our 
+engine. When <B>pcap_loop(..)</B> is called it will grab cnt packets (it will 
+loop infinitely when cnt is -1) and pass them to the callback function which is 
+of type <B>pcap_handler</B>.. and what is pcap handler?? well lets go to the 
+handy dandy header file..<BR><PRE><B>
+typedef void (*pcap_handler)(u_char *, const struct pcap_pkthdr *, const u_char *);
+</B></PRE>We are interested in arguments 2 and 3, the pcap packet header and a 
+const u_char consisting of the packet. 
+<P></P>
+<P>So for just a primer, lets write a q&amp;d program that will loop and get 
+<I>n</I> packets, then exit. </P>Download testpcap2.c <A 
+href="http://www.cse.nau.edu/~mc8/Socket/Tutorials/testpcap2.c">Here</A> or just 
+cut and paste from below <PRE>/**********************************************************************
+* file:   testpcap2.c
+* date:   2001-Mar-14 12:14:19 AM 
+* Author: Martin Casado
+* Last Modified:2001-Mar-14 12:14:11 AM
+*
+* Description: Q&amp;D proggy to demonstrate the use of pcap_loop
+*
+**********************************************************************/
+
+#include &lt;pcap.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;netinet/in.h&gt;
+#include &lt;arpa/inet.h&gt;
+#include &lt;netinet/if_ether.h&gt;
+
+/* callback function that is passed to pcap_loop(..) and called each time 
+ * a packet is recieved                                                    */
+void my_callback(u_char *useless,const struct pcap_pkthdr* pkthdr,const u_char*
+        packet)
+{
+    static int count = 1;
+    fprintf(stdout,"%d, ",count);
+    if(count == 4)
+        fprintf(stdout,"Come on baby sayyy you love me!!! ");
+    if(count == 7)
+        fprintf(stdout,"Tiiimmmeesss!! ");
+    fflush(stdout);
+    count++;
+}
+
+int main(int argc,char **argv)
+{ 
+    int i;
+    char *dev; 
+    char errbuf[PCAP_ERRBUF_SIZE];
+    pcap_t* descr;
+    const u_char *packet;
+    struct pcap_pkthdr hdr;     /* pcap.h */
+    struct ether_header *eptr;  /* net/ethernet.h */
+
+    if(argc != 2){ fprintf(stdout,"Usage: %s numpackets\n",argv[0]);return 0;}
+
+    /* grab a device to peak into... */
+    dev = pcap_lookupdev(errbuf);
+    if(dev == NULL)
+    { printf("%s\n",errbuf); exit(1); }
+    /* open device for reading */
+    descr = pcap_open_live(dev,BUFSIZ,0,-1,errbuf);
+    if(descr == NULL)
+    { printf("pcap_open_live(): %s\n",errbuf); exit(1); }
+
+    /* allright here we call pcap_loop(..) and pass in our callback function */
+    /* int pcap_loop(pcap_t *p, int cnt, pcap_handler callback, u_char *user)*/
+    /* If you are wondering what the user argument is all about, so am I!!   */
+    pcap_loop(descr,atoi(argv[1]),my_callback,NULL);
+
+    fprintf(stdout,"\nDone processing packets... wheew!\n");
+    return 0;
+}
+</PRE>
+<P>Allright then, lets give her a whirl! <PRE>[root@pepe libpcap]# gcc testpcap2.c -lpcap
+[root@pepe libpcap]# ./a.out 7
+<FONT color=red> 1, 2, 3, 4, Come on baby sayyy you love me!!! 5, 6, 7, Tiiimmmeesss!!  </FONT>
+Done processing packets... wheew!
+[root@pepe libpcap]# 
+</PRE>So as you can see, <B>my_callback(...)</B> was actually called 7 times 
+before exiting. If you are testing your program by pinging an external machine 
+the packets come slow enough to see them arrive in real time.. cooolll! Ohh THE 
+RAWWW POWER!!!! So at the most primitive level we could certainly put all of our 
+packet analysis code in my_callback(..) and call it is done deal. But as good 
+little coders we certainly aren't satisfied with such an easy and 
+straightforward solution! The first problem is that pcap_loop(..) blocks 
+indefinatly if no packet can be read. While this may be the desired behaviour it 
+would be nice to timeout on the reads. Remember way back when we talked about 
+<B>pcap_open_live(..)</B>? One of the arguments you can specify is a timeout 
+value in miliseconds. <B>pcap_loop</B> actually ignores this argument, but 
+<B>pcap_dispatch(..)</B> doesn't! So if we want our main looping mechanism to 
+time-out replace pcap_loop() with pcap_dispatch(). Here is a description of 
+pcap_dispatch(..) shamelessly stripped from the man page 
+<P></P>
+<P><BR>************<BR>pcap_dispatch() is used to collect and process packets. 
+cnt specifies the maximum number of packets to process before returning. A cnt 
+of -1 processes all the packets received in one buffer. A cnt of 0 processes all 
+packets until an error occurs, EOF is reached, or the read times out (when doing 
+live reads and a non-zero read timeout is specified). callback specifies a 
+routine to be called with three arguments: a u_char pointer which is passed in 
+from pcap_dispatch(), a pointer to the pcap_pkthdr struct (which precede the 
+actual network headers and data), and a u_char pointer to the packet data. The 
+number of packets read is returned. Zero is returned when EOF is reached in a 
+``savefile.'' A return of -1 indicates an error in which case pcap_perror() or 
+pcap_geterr() may be used to display the error text. <BR>************<BR></P>
+<P>In many applications using packet capture, you are not going to be interested 
+in every packet on your network. Take the following scenario. Little Johny just 
+bought the coolest new internet game to hit the markets. Little Johny wants to 
+be the first kid to hack up a bot for the game, but unlike all other little 
+kiddies, Johny is going to write his own packet capture engine instead of using 
+something canned. Little Johnny notices that when the game starts up and he 
+connects to the server.. it is connecting to 216.148.0.87 on port 26112. What 
+should little Johnny do to only capture packets with destination of 216.148.0.87 
+port 26112? Enter... <B>pcap_compile(..)</B> and <B>pcap_setfilter(...)</B> !!! 
+</P>
+<P>Now in all actuality we could certainly read in all packets and sort threw 
+them one by one to pick out the subset we are interested in. However, given 
+heavy traffic this could be expensive!! luckily libpcap provides an interface 
+where you can specify exactly which packets you are interested in. In brief, to 
+do this you need to pass a filter program as a string to pcap_compile() and then 
+set it as a filter.... the problem is that the pcap man page doesn't provide any 
+detail of what the filter program should look like (at least mine doesn't). Is 
+all lost!? No! because we have the handy dandy program <B>tcpdump</B> and its 
+man page. You should have tcpdump already installed on your machine (which 
+tcpdump) but if you don't I highly suggest you put it on. Tcpdump is pretty much 
+a program wrapper of libpcap, in fact it is so similar¸ it accepts filter 
+programs from the command line! Aha! a reference. The tcpdump man page 
+explicitly describes the syntax and semantics of the filter language, which is 
+(of course) pretty straight forward. Here are the pertinent sections from my man 
+pages... note that when referring to "the expression" it is talking about the 
+progrm </P><PRE>              The expression consists of one or more primitives.  Primitives usu&shy;
+              ally  consist  of  an  id  (name or number) preceded by one or more
+              qualifiers.  There are three different kinds of qualifier:
+
+              type   qualifiers say what kind of thing  the  id  name  or  number
+                     refers  to.   Possible  types are host, net and port.  E.g.,
+                     `host foo', `net 128.3', `port 20'.  If  there  is  no  type
+                     qualifier, host is assumed.
+
+              dir    qualifiers specify a particular transfer direction to and/or
+                     from id.  Possible directions are src, dst, src or  dst  and
+                     src  and dst.  E.g., `src foo', `dst net 128.3', `src or dst
+                     port ftp-data'.  If there is no dir qualifier, src or dst is
+                     assumed.  For `null' link layers (i.e. point to point proto&shy;
+                     cols such as slip) the inbound and outbound  qualifiers  can
+                     be used to specify a desired direction.
+
+              proto  qualifiers  restrict  the  match  to  a particular protocol.
+                     Possible protos are: ether, fddi,  ip,  arp,  rarp,  decnet,
+                     lat, sca, moprc, mopdl, tcp and udp.  E.g., `ether src foo',
+                     `arp net 128.3', `tcp port 21'.  If there is no proto quali&shy;
+                     fier,  all  protocols  consistent with the type are assumed.
+                     E.g., `src foo' means `(ip or arp or rarp) src foo'  (except
+                     the latter is not legal syntax), `net bar' means `(ip or arp
+                     or rarp) net bar' and `port 53' means  `(tcp  or  udp)  port
+                     53'.
+
+              In  addition  to the above, there are some special `primitive' key&shy;
+              words that don't follow  the  pattern:  gateway,  broadcast,  less,
+              greater  and  arithmetic  expressions.   All of these are described
+              below.
+
+              More complex filter expressions are built up  by  using  the  words
+              and,  or  and  not  to combine primitives.  E.g., `host foo and not
+              port ftp and not port ftp-data'.  To save typing, identical  quali&shy;
+              fier  lists can be omitted.  E.g., `tcp dst port ftp or ftp-data or
+              domain' is exactly the same as `tcp dst port ftp or  tcp  dst  port
+              ftp-data or tcp dst port domain'.
+
+              Allowable primitives are:
+
+              dst host host
+                     True  if  the  IP  destination  field of the packet is host,
+                     which may be either an address or a name.
+
+              src host host
+                     True if the IP source field of the packet is host.
+
+              host host
+                     True if either the IP source or destination of the packet is
+                     host.   Any  of  the above host expressions can be prepended
+                     with the keywords, ip, arp, or rarp as in:
+                          ip host host
+                     which is equivalent to:
+                          ether proto \ip and host host
+                     If host is a name with multiple IP addresses,  each  address
+                     will be checked for a match.
+
+              ether dst ehost
+                     True  if  the  ethernet destination address is ehost.  Ehost
+                     may be either a name  from  /etc/ethers  or  a  number  (see
+                     ethers(3N) for numeric format).
+
+              ether src ehost
+                     True if the ethernet source address is ehost.
+
+              ether host ehost
+                     True if either the ethernet source or destination address is
+                     ehost.
+
+              gateway host
+                     True if the packet used host as a gateway.  I.e., the ether&shy;
+                     net  source  or destination address was host but neither the
+                     IP source nor the IP destination was host.  Host must  be  a
+                     name  and  must be found in both /etc/hosts and /etc/ethers.
+                     (An equivalent expression is
+                          ether host ehost and not host host
+                     which can be used with either names or numbers  for  host  /
+                     ehost.)
+
+              dst net net
+                     True  if the IP destination address of the packet has a net&shy;
+                     work number of net. Net may be either a name from  /etc/net&shy;
+                     works or a network number (see networks(4) for details).
+
+              src net net
+                     True  if  the  IP source address of the packet has a network
+                     number of net.
+
+              net net
+                     True if either the IP source or destination address  of  the
+                     packet has a network number of net.
+
+              net net mask mask
+                     True  if  the  IP address matches net with the specific net&shy;
+                     mask.  May be qualified with src or dst.
+
+              net net/len
+                     True if the IP address matches net a netmask len bits  wide.
+                     May be qualified with src or dst.
+
+              dst port port
+                     True if the packet is ip/tcp or ip/udp and has a destination
+                     port value of port.  The port can be a number or a name used
+                     in  /etc/services  (see  tcp(4P) and udp(4P)).  If a name is
+                     used, both the port number and protocol are checked.   If  a
+                     number  or  ambiguous  name is used, only the port number is
+                     checked (e.g., dst port 513 will print both tcp/login  traf&shy;
+                     fic  and  udp/who  traffic,  and port domain will print both
+                     tcp/domain and udp/domain traffic).
+
+              src port port
+                     True if the packet has a source port value of port.
+
+              port port
+                     True if either the source or destination port of the  packet
+                     is port.  Any of the above port expressions can be prepended
+                     with the keywords, tcp or udp, as in:
+                          tcp src port port
+                     which matches only tcp packets whose source port is port.
+
+              less length
+                     True if the packet has  a  length  less  than  or  equal  to
+                     length.  This is equivalent to:
+                          len &lt;= length.
+
+              greater length
+                     True  if  the  packet  has a length greater than or equal to
+                     length.  This is equivalent to:
+                          len &gt;= length.
+
+              ip proto protocol
+                     True if the packet is an ip packet (see ip(4P)) of  protocol
+                     type protocol.  Protocol can be a number or one of the names
+                     icmp, igrp, udp, nd, or tcp.  Note that the identifiers tcp,
+                     udp,  and  icmp  are  also  keywords and must be escaped via
+                     backslash (\), which is \\ in the C-shell.
+
+              ether broadcast
+                     True if the packet is an  ethernet  broadcast  packet.   The
+                     ether keyword is optional.
+
+              ip broadcast
+                     True if the packet is an IP broadcast packet.  It checks for
+                     both the all-zeroes and all-ones broadcast conventions,  and
+                     looks up the local subnet mask.
+
+              ether multicast
+                     True  if  the  packet  is an ethernet multicast packet.  The
+                     ether keyword is optional.  This is shorthand for  `ether[0]
+                     &amp; 1 != 0'.
+
+              ip multicast
+                     True if the packet is an IP multicast packet.
+
+              ether proto protocol
+                     True  if the packet is of ether type protocol.  Protocol can
+                     be a number or a name like ip, arp,  or  rarp.   Note  these
+                     identifiers  are also keywords and must be escaped via back&shy;
+                     slash (\).  [In the  case  of  FDDI  (e.g.,  `fddi  protocol
+                     arp'), the protocol identification comes from the 802.2 Log&shy;
+                     ical Link Control (LLC) header, which is usually layered  on
+                     top  of the FDDI header.  Tcpdump assumes, when filtering on
+                     the protocol identifier, that all FDDI  packets  include  an
+                     LLC  header,  and  that  the LLC header is in so-called SNAP
+                     format.]
+
+              ip, arp, rarp, decnet
+                     Abbreviations for:
+                          ether proto p where p is one of the above protocols.
+
+              tcp, udp, icmp
+                     Abbreviations for:
+                          ip proto p
+                     where p is one of the above protocols.
+
+              expr relop expr
+                     True  if the relation holds, where relop is one of &gt;,
+                     &lt;, &gt;=, &lt;=, =, !=, and expr is an arithmetic
+                     expression composed  of integer constants (expressed in
+                     standard C syntax), the nor&shy; mal binary operators [+, -,
+                     *, /, &amp;, |], a length  operator, and  special  packet
+                     data accessors.  To access data inside the packet, use the
+                     following syntax: proto [ expr : size ] Proto is one of
+                     ether, fddi, ip, arp,  rarp,  tcp,  udp,  or icmp,  and
+                     indicates the protocol layer for the index opera&shy; tion.
+                     The byte offset, relative to the  indicated  protocol
+                     layer, is given by expr.  Size is optional and indicates
+                     the number of bytes in the field of interest; it can  be
+                     either one,  two,  or four, and defaults to one.  The
+                     length opera&shy; tor, indicated by the keyword len, gives the
+                     length  of  the packet.
+
+                     For example, `ether[0] &amp; 1 != 0' catches all multicast traf&shy;
+                     fic.  The expression `ip[0] &amp; 0xf != 5' catches all IP pack&shy;
+                     ets  with  options.  The  expression  `ip[6:2] &amp; 0x1fff = 0'
+                     catches only unfragmented datagrams and frag zero  of  frag&shy;
+                     mented  datagrams.   This check is implicitly applied to the
+                     tcp and udp index operations.  For instance,  tcp[0]  always
+                     means  the first byte of the TCP header, and never means the
+                     first byte of an intervening fragment.
+
+   Primitives may be combined using:
+
+                     A parenthesized group of primitives and operators (parenthe&shy;
+                     ses are special to the Shell and must be escaped).
+
+                     Negation (`!' or `not').
+
+                     Concatenation (`&amp;&amp;' or `and').
+
+                     Alternation (`||' or `or').
+
+              Negation  has  highest  precedence.   Alternation and concatenation
+              have equal precedence and  associate  left  to  right.   Note  that
+              explicit  and  tokens, not juxtaposition, are now required for con&shy;
+              catenation.
+
+              If an identifier is given without a keyword, the most  recent  key&shy;
+              word is assumed.  For example,
+                   not host vs and ace
+              is short for
+                   not host vs and host ace
+              which should not be confused with
+                   not ( host vs or ace )
+
+              Expression  arguments  can  be passed to tcpdump as either a single
+              argument or as multiple arguments, whichever  is  more  convenient.
+              Generally,  if  the expression contains Shell metacharacters, it is
+              easier to pass it as a single, quoted argument.  Multiple arguments
+              are concatenated with spaces before being parsed.
+
+EXAMPLES
+       To print all packets arriving at or departing from sundown:
+              tcpdump host sundown
+
+       To print traffic between helios and either hot or ace:
+              tcpdump host helios and \( hot or ace \)
+
+       To print all IP packets between ace and any host except helios:
+              tcpdump ip host ace and not helios
+
+       To print all traffic between local hosts and hosts at Berkeley:
+              tcpdump net ucb-ether
+
+       To  print  all  ftp  traffic through internet gateway snup: (note that the
+       expression is quoted to prevent  the  shell  from  (mis-)interpreting  the
+       parentheses):
+              tcpdump 'gateway snup and (port ftp or ftp-data)'
+
+       To print traffic neither sourced from nor destined for local hosts (if you
+       gateway to one other net, this stuff should never make it onto your  local
+       net).
+              tcpdump ip and not net localnet
+
+       To  print  the start and end packets (the SYN and FIN packets) of each TCP
+       conversation that involves a non-local host.
+              tcpdump 'tcp[13] &amp; 3 != 0 and not src and dst net localnet'
+
+       To print IP packets longer than 576 bytes sent through gateway snup:
+              tcpdump 'gateway snup and ip[2:2] &gt; 576'
+
+       To print IP broadcast or multicast packets that were not sent via ethernet
+       broadcast or multicast:
+              tcpdump 'ether[0] &amp; 1 = 0 and ip[16] &gt;= 224'
+
+       To  print  all  ICMP packets that are not echo requests/replies (i.e., not
+       ping packets):
+              tcpdump 'icmp[0] != 8 and icmp[0] != 0"
+
+</PRE>
+<P>Ok, so that is a lot of info (and probably more than we need) but it gives us 
+a starting point. So lets give this a shot... on my network I have a linux box 
+and a windoze machine connected to a non switched hub. Therefore, if I place my 
+ethernet card in promiscuous mode on my linux machine I should be able to see 
+all traffic going to (and coming from) my windows machine. So lets see if the 
+examples from the man page will work if directly fed to pcap_compile.. 
+</P>Consider the following program... (download <A 
+href="http://www.cse.nau.edu/~mc8/Socket/Tutorials/testpcap3.c">here</A>) <PRE>/**********************************************************************
+* file:   testpcap3.c
+* date:   Sat Apr 07 23:23:02 PDT 2001  
+* Author: Martin Casado
+* Last Modified:2001-Apr-07 11:23:05 PM
+*
+* Investigate using filter programs with pcap_compile() and
+* pcap_setfilter()
+*
+**********************************************************************/
+
+#include &lt;pcap.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;errno.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;netinet/in.h&gt;
+#include &lt;arpa/inet.h&gt;
+#include &lt;netinet/if_ether.h&gt; 
+
+/* just print a count every time we have a packet...                        */
+void my_callback(u_char *useless,const struct pcap_pkthdr* pkthdr,const u_char*
+        packet)
+{
+    static int count = 1;
+    fprintf(stdout,"%d, ",count);
+    fflush(stdout);
+    count++;
+}
+
+int main(int argc,char **argv)
+{ 
+    int i;
+    char *dev; 
+    char errbuf[PCAP_ERRBUF_SIZE];
+    pcap_t* descr;
+    const u_char *packet;
+    struct pcap_pkthdr hdr;     /* pcap.h                    */
+    struct ether_header *eptr;  /* net/ethernet.h            */
+    struct bpf_program fp;      /* hold compiled program     */
+    bpf_u_int32 maskp;          /* subnet mask               */
+    bpf_u_int32 netp;           /* ip                        */
+
+
+    if(argc != 2){ fprintf(stdout,"Usage: %s \"filter program\"\n"
+            ,argv[0]);return 0;}
+
+    /* grab a device to peak into... */
+    dev = pcap_lookupdev(errbuf);
+    if(dev == NULL)
+    { fprintf(stderr,"%s\n",errbuf); exit(1); }
+
+    /* ask pcap for the network address and mask of the device */
+    pcap_lookupnet(dev,&amp;netp,&amp;maskp,errbuf);
+
+    /* open device for reading this time lets set it in promiscuous
+     * mode so we can monitor traffic to another machine             */
+    descr = pcap_open_live(dev,BUFSIZ,1,-1,errbuf);
+    if(descr == NULL)
+    { printf("pcap_open_live(): %s\n",errbuf); exit(1); }
+
+    /* Lets try and compile the program.. non-optimized */
+    if(pcap_compile(descr,&amp;fp,argv[1],0,netp) == -1)
+    { fprintf(stderr,"Error calling pcap_compile\n"); exit(1); }
+
+    /* set the compiled program as the filter */
+    if(pcap_setfilter(descr,&amp;fp) == -1)
+    { fprintf(stderr,"Error setting filter\n"); exit(1); }
+
+    /* ... and loop */ 
+    pcap_loop(descr,-1,my_callback,NULL);
+
+    return 0;
+}
+</PRE>
+<P>So, this program accepts a string from the user, (similar to tcpdump) 
+compiles it and sets it as a filter. Lets go ahead and try it with an example 
+similar to the one in the tcpdump examples.. </P><PRE>[root@localhost libpcap]# gcc testpcap3.c -lpcap
+[root@localhost libpcap]# ./a.out "host www.google.com"
+(** try and ping www.slashdot.org ... nothing **)
+(** try and ping www.google.com **)
+1, 2, 3, 4, 5, 6, 
+(** hurray! **)
+</PRE>
+<P>It looks like our filter program worked!!! Lets try to see if we can capture 
+packets from a different machine on the same network.... how about my windows 
+machine when it connects to battle.net.. </P><PRE>[root@localhost libpcap]# ./a.out "src 192.168.1.104"
+1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+</PRE>Yes yes!!! we are getting very close to actually having some power, but 
+first we need to find out how to look inside the packets and pull out 
+information. At last! the next section will delve into disecting packets so we 
+can really analyze what is going on in our networks!! 
+<HR noShade>
+
+<CENTER>[<A 
+href="http://www.cse.nau.edu/~mc8/Socket/Tutorials/section2.html">prev</A>] [<A 
+href="http://www.cse.nau.edu/~mc8/Socket/Contents.html">socket home </A>] [<A 
+href="http://www.cse.nau.edu/~mc8/Socket/Tutorials/section4.html">next</A>] 
+</CENTER></BODY></HTML>
