@@ -48,8 +48,7 @@ main()
 		printf("%d. %s", ++i, d->name);
 		if (d->description)
 			printf(" (%s)\n", d->description);
-		else
-			printf(" (No description available)\n");
+		else			printf(" (No description available)\n");
 	}
 	
 	if(i==0)
@@ -65,13 +64,12 @@ main()
 
 Some comments about this code.
 
-First of all, pcap_findalldevs(), like the great part of the libpcap functions, has an \e errbuf parameter. This parameter points to a string filled by libpcap with a description of the error if something goes wrong.
-Second, note that not all the OSes supported by libpcap provide a description of the network interfaces, therefore we must consider the case in which \e description is null: we print the string "No description available" in that situation.
+First of all, pcap_findalldevs(), like the great part of the libpcap functions, has an \e errbuf parameter. This parameter points to a string filled by libpcap with a description of the error if something goes wrong.Second, note that not all the OSes supported by libpcap provide a description of the network interfaces, therefore we must consider the case in which \e description is null: we print the string "No description available" in that situation.
 Note also that we free the list with pcap_freealldevs() once when we have finished with it.
 
 Let's try to compile and run the code of this first sample. In order to compile it, under Unix you simply issue a:
 
-gcc -o samp samp.c -lpcap
+gcc -o udpdump udpdump.c -lpcap
 
 On Windows, you will need to create a project, following the instruction in the \ref wpcapsamps section of this manual. However, I suggest you to use the WinPcap developer's pack (available in the WinPcap website), that provides some properly configured sample projects plus all the includes and libraries needed by the application. 
 
@@ -93,7 +91,6 @@ The function that opens a capture device is pcap_open_live(). Among its paramete
 \e snaplen specifies the portion of the packet to capture. On some OSes (like xBSD and Win32), the packet driver gives the possibility to capture only a part of the packets: this decreases the data to copy and therefore improves the efficiency of the capture process. In this case we use a value (65536) higher than the greatest MTU that we could encounter, in this way we are sure that the application will always receive the whole packet.
 
 \e promisc specifies if the adapter will be put in promiscuous mode. Normally, an adapter extracts from the network only the traffic to or from it. The traffic among other hosts is ignored, also if the adapter is on a shared medium. On the other hand, when the adapter is in promiscuous mode it accepts the whole traffic: this means that on shared media (like non-switched Ethernet) the sniffer will be able to capture the packets of other hosts.
-
 
 \code
 include "pcap.h"

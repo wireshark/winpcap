@@ -55,17 +55,19 @@
 
 #define	 pBIOCSETBUFFERSIZE 9592		///< IOCTL code: set kernel buffer size.
 #define	 pBIOCSETF 9030					///< IOCTL code: set packet filtering program.
-#define  pBIOCGSTATS 9031				///< IOCTL code: get the capture stats
-#define	 pBIOCSRTIMEOUT 7416			///< IOCTL code: set the read timeout
-#define	 pBIOCSMODE 7412				///< IOCTL code: set working mode
-#define	 pBIOCSWRITEREP 7413			///< IOCTL code: set number of physical repetions of every packet written by the app
-#define	 pBIOCSMINTOCOPY 7414			///< IOCTL code: set minimum amount of data in the kernel buffer that unlocks a read call
-#define	 pBIOCSETOID 2147483648			///< IOCTL code: set an OID value
-#define	 pBIOCQUERYOID 2147483652		///< IOCTL code: get an OID value
+#define  pBIOCGSTATS 9031				///< IOCTL code: get the capture stats.
+#define	 pBIOCSRTIMEOUT 7416			///< IOCTL code: set the read timeout.
+#define	 pBIOCSMODE 7412				///< IOCTL code: set working mode.
+#define	 pBIOCSWRITEREP 7413			///< IOCTL code: set number of physical repetions of every packet written by the app.
+#define	 pBIOCSMINTOCOPY 7414			///< IOCTL code: set minimum amount of data in the kernel buffer that unlocks a read call.
+#define	 pBIOCSETOID 2147483648			///< IOCTL code: set an OID value.
+#define	 pBIOCQUERYOID 2147483652		///< IOCTL code: get an OID value.
 #define	 pATTACHPROCESS 7117			///< IOCTL code: attach a process to the driver. Used in Win9x only.
 #define	 pDETACHPROCESS 7118			///< IOCTL code: detach a process from the driver. Used in Win9x only.
-#define  pBIOCSETDUMPFILENAME 9029		///< IOCTL code: set the name of a the file used by kernel dump mode
-#define  pBIOCEVNAME 7415				///< IOCTL code: get the name of the event that the driver signals when some data is present in the buffer
+#define  pBIOCSETDUMPFILENAME 9029		///< IOCTL code: set the name of a the file used by kernel dump mode.
+#define  pBIOCEVNAME 7415				///< IOCTL code: get the name of the event that the driver signals when some data is present in the buffer.
+#define  pBIOCSENDPACKETSNOSYNC 9032	///< IOCTL code: Send a buffer containing multiple packets to the network, ignoring the timestamps associated with the packets.
+#define  pBIOCSENDPACKETSSYNC 9033		///< IOCTL code: Send a buffer containing multiple packets to the network, respecting the timestamps associated with the packets.
 
 #define  pBIOCSTIMEZONE 7471			///< IOCTL code: set time zone. Used in Win9x only.
 
@@ -144,6 +146,22 @@ struct bpf_hdr {
 								///< data for performance reasons. This filed can be used to retrieve the actual data 
 								///< of the packet.
 };
+
+/*!
+  \brief Dump packet header.
+
+  This structure defines the header associated with the packets in a buffer to be used with PacketSendPackets().
+  It is simpler than the bpf_hdr, because it corresponds to the header associated by WinPcap and libpcap to a
+  packet in a dump file. This makes straightforward sending WinPcap dump files to the network.
+*/
+struct dump_bpf_hdr{
+    struct timeval	ts;			///< Time stamp of the packet
+    UINT			caplen;		///< Length of captured portion. The captured portion can smaller than the 
+								///< the original packet, because it is possible (with a proper filter) to 
+								///< instruct the driver to capture only a portion of the packets. 
+    UINT			len;		///< Length of the original packet (off wire).
+};
+
 
 #endif
 
@@ -241,6 +259,7 @@ BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim);
 BOOLEAN PacketGetNetType (LPADAPTER AdapterObject,NetType *type);
 LPADAPTER PacketOpenAdapter(LPTSTR AdapterName);
 BOOLEAN PacketSendPacket(LPADAPTER AdapterObject,LPPACKET pPacket,BOOLEAN Sync);
+INT PacketSendPackets(LPADAPTER AdapterObject,PVOID PacketBuff,ULONG Size, BOOLEAN Sync);
 LPPACKET PacketAllocatePacket(void);
 VOID PacketInitPacket(LPPACKET lpPacket,PVOID  Buffer,UINT  Length);
 VOID PacketFreePacket(LPPACKET lpPacket);
