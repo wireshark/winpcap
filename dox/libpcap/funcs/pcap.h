@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.6 2002/07/12 13:58:57 degioanni Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.7 2002/08/01 10:20:25 degioanni Exp $ (LBL)
  */
 
 /** @defgroup wpcap_fn Exported functions
@@ -583,6 +583,7 @@ will be used to send the packet, buf contains the data of the packet to send (in
 protocol headers), size is the dimension of the buffer pointed by buf, i.e. the size of the packet to send. 
 The MAC CRC doesn't need to be included, because it is transparently calculated and added by the network 
 interface driver.
+The return value is 0 if the packet is succesfully sent, -1 otherwise.
 
 \sa pcap_open_live()
 */
