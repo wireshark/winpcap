@@ -16,19 +16,18 @@
   <li><a href="#StartCap">Starting a capture on a remote machine</a></li>
   <li><a href="#UNIX">Installing the Remote Capture Daemon in UNIX</a></li>
 </ul>
-
 <hr>
 <p>WinPcap 3.0 comes with Remote Capture capabilities. This is an highly
 experimental feature that allows to interact to a remote machine and capture
 packets that are being transmitted on the remote network.</p>
-<p>This requires a <b>remote daemon </b>(called <code>rpcapd</code>) which performs the
-capture and sends data back and a <b>local client </b>that sends the appropriate
-commands and receives the captured data.</p>
+<p>This requires a <b>remote daemon </b>(called <code>rpcapd</code>) which
+performs the capture and sends data back and a <b>local client </b>that sends
+the appropriate commands and receives the captured data.</p>
 <p>WinPcap 3.0 extends the standard WinPcap code in such a way that all
 WinPcap-based tools can expoit remote capture capabilities. For instance, the
-capabillity to interact with a remote daemon are added to the client software without any explicit
-modification to it. Vice versa, the remote daemon must be explicitely installed
-(and configured) on the remote machine.</p>
+capabillity to interact with a remote daemon are added to the client software
+without any explicit modification to it. Vice versa, the remote daemon must be
+explicitely installed (and configured) on the remote machine.</p>
 <h2><a name="RunningModes"></a>Remote Capture Running Modes</h2>
 <p>The Remote Capture Protocol (RPCAP) can work in two modes:</p>
 <ul>
@@ -45,8 +44,8 @@ modification to it. Vice versa, the remote daemon must be explicitely installed
 it cannot receive connections from the external world. In this case, the daemon
 can be configured to establish the connection to a given host, which will have
 been configured in order to <i>wait</i> for that connection. After establishing
-the connection, the protocol continues its job in almost the same way in both Active
-and Passive Mode.</p>
+the connection, the protocol continues its job in almost the same way in both
+Active and Passive Mode.</p>
 <p>Analyzer (<a href="http://analyzer.polito.it/30alpha/">http://analyzer.polito.it/30alpha/</a>)
 has a set of commands (in the <b>Capture</b> menu) that allows you to accept a
 remote connection and then start the capture on the remote device. Currently,
@@ -101,8 +100,8 @@ folder and it has the following syntax:</p>
         <pre>-n</pre>
       </td>
       <td>It permits NULL authentication (usually used with '-l', that
-        guarantees that only the allowed hosts can connect to the daemon). Default: the
-        username/password authentication mechanism is required.</td>
+        guarantees that only the allowed hosts can connect to the daemon).
+        Default: the username/password authentication mechanism is required.</td>
     </tr>
     <tr>
       <td>
@@ -116,17 +115,18 @@ folder and it has the following syntax:</p>
       <td>
         <pre>-v</pre>
       </td>
-      <td>It forces the daemon to run in active mode only (default: the daemon always
-        accepts active connections, even if the '-a' switch is specified).</td>
+      <td>It forces the daemon to run in active mode only (default: the daemon
+        always accepts active connections, even if the '-a' switch is
+        specified).</td>
     </tr>
     <tr>
       <td>
         <pre>-d</pre>
       </td>
       <td>Forces the daemon to run in background, i.e. as a daemon (UNIX only)
-        or as a service (Win32 only). <b>Warning</b> (Win32): this switch is provided automatically when WinPcap
-        installs this daemon into the Win32 services (control panel - administrative
-        tools      - services).</td>
+        or as a service (Win32 only). <b>Warning</b> (Win32): this switch is
+        provided automatically when WinPcap installs this daemon into the Win32
+        services (control panel - administrative tools - services).</td>
     </tr>
     <tr>
       <td>
@@ -155,18 +155,21 @@ folder and it has the following syntax:</p>
 installation process places the <code>rpcapd</code> file into the <code>WinPcap</code>
 folder. This file can be executed either from the command line, or as a service.
 For instance, the installation process updates the list of available services
-list and it creates a new item (<b>Remote Packet Capture Protocol v.0 (experimental)</b> ). To avoid security problems, the service is inactive and it has to be
-started manually (control panel - administrative tools      - services - start).</p>
+list and it creates a new item (<b>Remote Packet Capture Protocol v.0
+(experimental)</b> ). To avoid security problems, the service is inactive and it
+has to be started manually (control panel - administrative tools - services -
+start).</p>
 <p>The service has a set of &quot;standard&quot; parameters, i.e. it it launched
 with the &quot;<code>-d</code>&quot; flag (in orde to make it running as a
 service) and the &quot;<code>-f rpcapd.ini</code>&quot; flag. The user can
 create a file called <code>rpcapd.ini</code> in the same folder of the
-executable, and put the configuration commands in there. In order for the service to execute
-the commands, you have to stop and restart it again (i.e. the initialization
-file is parsed only at the beginning). Viceversa, the UNIX version of <code>rpcapd</code>
-is able to read the configuration file when sending a kill -HUP signal to it. In
-that case, all the existing connections remain in place, while the new
-connections will be created according to the new parameters.</p>
+executable, and put the configuration commands in there. In order for the
+service to execute the commands, you have to stop and restart it again (i.e. the
+initialization file is parsed only at the beginning). Viceversa, the UNIX
+version of <code>rpcapd</code> is able to read the configuration file when
+sending a kill -HUP signal to it. In that case, all the existing connections
+remain in place, while the new connections will be created according to the new
+parameters.</p>
 <p>In case the user does not want to create the configuration file manually, it
 can launch <code>rpcapd</code> with the requested parameters plus the &quot;<code>-s
 filename</code>&quot; one. The daemon will parse all the parameters and save
@@ -242,7 +245,7 @@ machine you want to contact. The following forms are allowed:</p>
       <td>It opens a remote adapter, but the host is specified by means of an
         IPv6 numeric address, without port number (i.e. it uses the RPCAP
         default port). In case of IPv6 addresses you MUST use the square
-        brackets. </td>
+        brackets.</td>
     </tr>
     <tr>
       <td>
@@ -298,21 +301,29 @@ capture has been tested on Linux and BSD. What you have to do is:</p>
   <li>download the WinPcap sources</li>
   <li>unpack the sources
     <ul>
-      <li>we suggest using the <code>unzip -a</code> tool in order o convert DOS
-        files to UNIX ones</li>
+      <li>we suggest to use the <code>unzip -a</code> command in order to
+        convert DOS files to UNIX ones</li>
     </ul>
   </li>
   <li>move to the <code>libpcap</code> folder</li>
   <li>type:
     <ul>
-      <li><code>autoconf</code></li>
-      <li> <code>./configure</code></li>
-      <li> <code>make</code></li>
+      <li><code>./configure</code></li>
+      <li><b>Warning</b>: in case the previous step reports an error, please
+        regenerate the <code>configure</code> file using <code>automake</code>
+        (version 2.50 or higher required)</li>
+      <li><code>make</code></li>
     </ul>
   </li>
   <li>move to the <code>rpcapd</code> folder</li>
   <li>type <code>make</code></li>
 </ul>
+<p>The remote capture capabilities are turned on by default on Linux and
+FreeBSD. In case you do not want remote capture capabilities in libpcap, you can
+type</p>
+<pre>    ./configure --disable-remote</pre>
+<p>at the &quot;<code>configure</code>&quot; step. All the possible flags are
+listed when typing <code>./configure --help</code>.</p>
 <p>What you obtained right now, is:</p>
 <ul>
   <li>a library file (<code>libpcap.a</code>), which can be linked to other
@@ -320,20 +331,18 @@ capture has been tested on Linux and BSD. What you have to do is:</p>
     capture for them.</li>
   <li>an executable (<code>rpcapd</code>) that is the remote daemon</li>
 </ul>
-<p><b>Warning</b>: in order to run the <code>rpcapd</code> daemon, the program must
-either</p>
+<p><b>Warning</b>: in order to run the <code>rpcapd</code> daemon, the program
+must either</p>
 <ul>
-  <li> run as root (or)</li>
-  <li>run as user, but it
-must be owned by root and must be SUID root (<code>chmod u+s rpcapd</code>)</li>
+  <li>run as root (or)</li>
+  <li>run as user, but it must be owned by root and must be SUID root (<code>chmod
+    u+s rpcapd</code>)</li>
 </ul>
 <h3>Known bugs</h3>
-
 <p><b>FreeBSD</b>: the first time you call the <code>pcap_stat()</code>, the
 function takes several seconds to return. Therefore, programs like Analyzer seem
 to hang up for 20-30 seconds at the beginning of the capture (if this is done
-with BSD as a remote probe). We're investigating how to solve this issue.</p>
-
+with BSD as a remote probe). We're investigating to solve this issue.</p>
 <p><i>For any question, please refer to the WinPcap help page.</i></p>
 
 </body>
