@@ -70,18 +70,18 @@ void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_cha
 
 main()
 {
-	pcap_if_t *alldevs;
-	pcap_if_t *d;
-	int inum;
-	int i=0;
-	pcap_t *adhandle;
-	char errbuf[PCAP_ERRBUF_SIZE];
-	u_int netmask;
-	char packet_filter[] = "ip and udp";
-	struct bpf_program fcode;
-  
+pcap_if_t *alldevs;
+pcap_if_t *d;
+int inum;
+int i=0;
+pcap_t *adhandle;
+char errbuf[PCAP_ERRBUF_SIZE];
+u_int netmask;
+char packet_filter[] = "ip and udp";
+struct bpf_program fcode;
+
 	/* Retrieve the device list */
-	if (pcap_findalldevs(&alldevs, errbuf) == -1)
+	if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf) == -1)
 	{
 		fprintf(stderr,"Error in pcap_findalldevs: %s\n", errbuf);
 		exit(1);
@@ -118,11 +118,12 @@ main()
 	for(d=alldevs, i=0; i< inum-1 ;d=d->next, i++);
 	
 	/* Open the adapter */
-	if ( (adhandle= pcap_open_live(d->name,	// name of the device
+	if ( (adhandle= pcap_open(d->name,	// name of the device
 							 65536,		// portion of the packet to capture. 
 										// 65536 grants that the whole packet will be captured on all the MACs.
-							 1,			// promiscuous mode
+							 PCAP_OPENFLAG_PROMISCUOUS,			// promiscuous mode
 							 1000,		// read timeout
+							 NULL,		// remote authentication
 							 errbuf		// error buffer
 							 ) ) == NULL)
 	{
@@ -150,7 +151,8 @@ main()
 
 
 	//compile the filter
-	if(pcap_compile(adhandle, &fcode, packet_filter, 1, netmask) <0 ){
+	if (pcap_compile(adhandle, &fcode, packet_filter, 1, netmask) <0 )
+	{
 		fprintf(stderr,"\nUnable to compile the packet filter. Check the syntax.\n");
 		/* Free the device list */
 		pcap_freealldevs(alldevs);
@@ -158,7 +160,8 @@ main()
 	}
 	
 	//set the filter
-	if(pcap_setfilter(adhandle, &fcode)<0){
+	if (pcap_setfilter(adhandle, &fcode)<0)
+	{
 		fprintf(stderr,"\nError setting the filter.\n");
 		/* Free the device list */
 		pcap_freealldevs(alldevs);

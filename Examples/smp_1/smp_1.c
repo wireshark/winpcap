@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002 - 2003
+ * Copyright (c) 1999 - 2003
  * NetGroup, Politecnico di Torino (Italy)
  * All rights reserved.
  * 
@@ -36,20 +36,19 @@
 
 #include <pcap.h>
 
-//#define LINE_LEN 16
 
-main(int argc, char **argv) {
-	
-	pcap_if_t *alldevs, *d;
-	pcap_t *fp;
-	u_int inum, i=0;
-	char errbuf[PCAP_ERRBUF_SIZE];
-	int res;
-	struct pcap_pkthdr *header;
-	u_char *pkt_data;
-	struct pcap_pkthdr old;
+main(int argc, char **argv)
+{	
+pcap_if_t *alldevs, *d;
+pcap_t *fp;
+u_int inum, i=0;
+char errbuf[PCAP_ERRBUF_SIZE];
+int res;
+struct pcap_pkthdr *header;
+u_char *pkt_data;
+struct pcap_pkthdr old;
 
-	char a[11];
+char a[11];
 
 	printf("SMP_1. (Copyright 2003 Gianluca Varenni - NetGroup, Politecnico di Torino)\n");
 	printf("\nThis program tests the WinPcap kernel driver on SMP machines.\n");
@@ -57,7 +56,7 @@ main(int argc, char **argv) {
 	printf("and that the caplen is equal to the packet length.\n");
 	printf("If there is an error, it will print out a message saying \"Inconsistent XXX\"\n");
 
-	if (pcap_findalldevs(&alldevs, errbuf) == -1)
+	if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf) == -1)
 	{
 		fprintf(stderr,"Error in pcap_findalldevs: %s\n", errbuf);
 		exit(1);
@@ -94,12 +93,13 @@ main(int argc, char **argv) {
 	for(d=alldevs, i=0; i< inum-1 ;d=d->next, i++);
 	
 	/* Open the device */
-	if ( (fp= pcap_open_live(d->name, 65535, 1, 1000, errbuf) ) == NULL)
+	if ( (fp= pcap_open(d->name, 65536, PCAP_OPENFLAG_PROMISCUOUS, 1000, NULL, errbuf) ) == NULL)
 	{
-		fprintf(stderr,"\nError opening adapter\n");
+		fprintf(stderr,"\nUnable to open the adapter. %s is not supported by WinPcap\n", d->name);
+		/* Free the device list */
+		pcap_freealldevs(alldevs);
 		return -1;
 	}
-
 
 	old.ts.tv_sec=0;
 	old.ts.tv_usec=0;

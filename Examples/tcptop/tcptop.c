@@ -30,7 +30,6 @@
  * 
  */
 
-
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -38,16 +37,16 @@
 
 void usage();
 
-void dispatcher_handler(u_char *, 
-	const struct pcap_pkthdr *, const u_char *);
+void dispatcher_handler(u_char *, const struct pcap_pkthdr *, const u_char *);
 
 
-void main(int argc, char **argv) {
-	pcap_t *fp;
-	char error[PCAP_ERRBUF_SIZE];
-	struct timeval st_ts;
-	u_int netmask;
-	struct bpf_program fcode;
+void main(int argc, char **argv)
+{
+pcap_t *fp;
+char errbuf[PCAP_ERRBUF_SIZE];
+struct timeval st_ts;
+u_int netmask;
+struct bpf_program fcode;
   
 	/* Check the validity of the command line */
 	if (argc != 2)
@@ -57,9 +56,9 @@ void main(int argc, char **argv) {
 	}
 		
 	/* Open the output adapter */
-	if((fp = pcap_open_live(argv[1], 100, 1, 1000, error) ) == NULL)
+	if ( (fp= pcap_open(argv[1], 100, PCAP_OPENFLAG_PROMISCUOUS, 1000, NULL, errbuf) ) == NULL)
 	{
-		fprintf(stderr,"\nError opening adapter: %s\n", error);
+		fprintf(stderr,"\nUnable to open adapter %s.\n", errbuf);
 		return;
 	}
 
@@ -67,14 +66,16 @@ void main(int argc, char **argv) {
     netmask=0xffffff; 
 
     //compile the filter
-    if(pcap_compile(fp, &fcode, "tcp", 1, netmask) <0 ){
+    if (pcap_compile(fp, &fcode, "tcp", 1, netmask) <0 )
+	{
         fprintf(stderr,"\nUnable to compile the packet filter. Check the syntax.\n");
         /* Free the device list */
         return;
     }
     
     //set the filter
-    if(pcap_setfilter(fp, &fcode)<0){
+    if (pcap_setfilter(fp, &fcode)<0)
+	{
         fprintf(stderr,"\nError setting the filter.\n");
         /* Free the device list */
         return;

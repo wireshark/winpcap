@@ -30,7 +30,6 @@
  * 
  */
 
-
 #include "stdafx.h"
 #include "CapDll.h"
 #include "SelectAdapter.h"
@@ -82,93 +81,34 @@ END_MESSAGE_MAP()
 
 BOOL CSelectAdapter::OnInitDialog() 
 {
-	char ebuf[PCAP_ERRBUF_SIZE];
-	int i,n;
+char ebuf[PCAP_ERRBUF_SIZE];
+char devicelist[65000];
+pcap_if_t *alldevs, *d;
+char *devicelistptr;
+
 
 	CDialog::OnInitDialog();
-	
-	DWORD dwVersion=GetVersion();		//get the OS version
-	DWORD dwWindowsMajorVersion =  (DWORD)(LOBYTE(LOWORD(dwVersion)));
 
-	if (dwVersion >= 0x80000000 && dwWindowsMajorVersion >= 4)// Windows '95
+	/* Retrieve the device list on the local machine */
+	/* Don't check for errors */
+	pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, ebuf);
+
+	devicelistptr= devicelist;
+	devicelist[0]= 0;
+
+	for(d=alldevs; d; d=d->next)
 	{
-		char *device,*device1;
 
-		//parse the string with the adapters - ASCII version
+		strcat(devicelistptr, d->name);
+		devicelistptr+= strlen(d->name);
 
-		device=(char*)pcap_lookupdev(ebuf);
-
-		i=0;
-		n=0;
-		while(device[i]!=0||device[i+1]!=0)
-		{
-			if(device[i]==0)n++;
-			i++;
-		}
-
-		n++;
-
-		device1=new char[i+n+2];
-
-		i=0;
-		n=0;
-		while(device[i]!=0||device[i+1]!=0)
-		{
-			device1[n]=device[i];
-			if(device[i]==0){
-				device1[n]=13;
-				device1[n+1]=10;
-				n++;
-			}
-			i++;
-			n++;
-		}
-		device1[n]=13;
-		device1[n+1]=10;
-		device1[n+2]=0;
-		m_Cmd=device1;
-		delete [] device1;
+		strcat(devicelistptr, "\r\n");
+		devicelistptr+= strlen("\r\n");
 	}
-	else
-	{
-		WCHAR *device,*device1;
 
-		//parse the string with the adapters - UNICODE version
+	m_Cmd= devicelist;
 
-		device=(WCHAR*)pcap_lookupdev(ebuf);
-
-		i=0;
-		n=0;
-		while(device[i]!=0||device[i+1]!=0)
-		{
-			if(device[i]==0)n++;
-			i++;
-		}
-
-		n++;
-
-		device1=new WCHAR[i+n+2];
-
-		i=0;
-		n=0;
-		while(device[i]!=0||device[i+1]!=0)
-		{
-			device1[n]=device[i];
-			if(device[i]==0){
-				device1[n]=13;
-				device1[n+1]=10;
-				n++;
-			}
-			i++;
-			n++;
-		}
-		device1[n]=13;
-		device1[n+1]=10;
-		device1[n+2]=0;
-		m_Cmd=device1;
-		delete [] device1;
-
-	}
+	pcap_freealldevs(alldevs);
 
 	LineCollection lc(&m_Cmd);	
     m_ListCtrl.InsertColumn(0,SA_ADS /*Adapters*/, LVCFMT_LEFT,200);

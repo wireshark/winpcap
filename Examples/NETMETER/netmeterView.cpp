@@ -30,7 +30,6 @@
  * 
  */
 
-
 #include <sys/types.h>
 #include <sys/timeb.h>
 #include <time.h>
@@ -109,8 +108,9 @@ BOOL CNetmeterView::PreCreateWindow(CREATESTRUCT& cs)
 
 CString CNetmeterView::StartCapture()
 {
-	char *ebuf;
-	char *myAdapter;
+char *ebuf;
+char *myAdapter;
+pcap_if_t *alldevs;
 
 
 	CCapPars *pars=new CCapPars;
@@ -119,16 +119,15 @@ CString CNetmeterView::StartCapture()
 
 	ebuf=(char*)malloc(PCAP_ERRBUF_SIZE);
 
-	if (Adapter==""){
+	if (Adapter=="")
+	{
 		//If no adapter is defined choose the first
-		myAdapter=(char*)pcap_lookupdev(ebuf);
 
-		DWORD dwVersion=GetVersion();		//get the OS version
-		DWORD dwWindowsMajorVersion =  (DWORD)(LOBYTE(LOWORD(dwVersion)));
-		if (dwVersion >= 0x80000000 && dwWindowsMajorVersion >= 4)// Windows '95
-			Adapter=myAdapter;
-		else //winNT
-			Adapter=(WCHAR *)myAdapter;
+		/* Retrieve the device list on the local machine */
+		/* Don't check for errors */
+		pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, ebuf);
+
+		myAdapter= alldevs->name;
 
 		//open the adapter
 		//note: the snaplen is 1 byte because we don't need the data
@@ -137,21 +136,26 @@ CString CNetmeterView::StartCapture()
 		//drops all the packet without copying them. Snaplen=0 can be 
 		//used to count the packets with the minimun overhead on the system.
 
-		if ( (fp= pcap_open_live((char*)myAdapter, 1, 1, 1000, ebuf) ) == NULL)
+		if ( (fp= pcap_open((char*)myAdapter, 1, PCAP_OPENFLAG_PROMISCUOUS, 1000, NULL, ebuf) ) == NULL)
+		{
+			return "PCAP error: Error opening the adapter";
+		}
+
+		pcap_freealldevs(alldevs);
+	}
+	else
+	{
+		if ( (fp= pcap_open(Adapter.GetBuffer(0), 1, PCAP_OPENFLAG_PROMISCUOUS, 1000, NULL, ebuf) ) == NULL)
 		{
 			return "PCAP error: Error opening the adapter";
 		}
 	}
-	else{
-		if ( (fp= pcap_open_live(Adapter.GetBuffer(0), 1, 1, 1000, ebuf) ) == NULL)
-		{
-			return "PCAP error: Error opening the adapter";
-		}
-	}
+
 
 
 	//this example shows a correct diagram only on 10Mbit Ethernets
-	if(pcap_datalink(fp)!=1/*Ether10*/){
+	if(pcap_datalink(fp)!=1/*Ether10*/)
+	{
 			AfxMessageBox("Warning: the nework adapter '"+Adapter+"' is not supported correctly by netmeter.\nNetmeter works correcly only with 10Mbit ethernet adapters.");
 	}
 
@@ -358,38 +362,6 @@ CNetmeterDoc* CNetmeterView::GetDocument() // non-debug version is inline
 }
 #endif //_DEBUG
 
-/////////////////////////////////////////////////////////////////////////////
-// Timer callback
-/*
-void CNetmeterView::OnTimer(UINT nIDEvent) 
-{
-struct _timeb CurrTime;
-int DeltaTime;
-int valuetoprint;
-
-	_ftime( &CurrTime );
-	DeltaTime=(CurrTime.time-OldTime.time)*1000+CurrTime.millitm-OldTime.millitm;
-	if (DeltaTime==0)return;
-	OldTime.time=CurrTime.time;
-	OldTime.millitm=CurrTime.millitm;
-
-	valuetoprint=((BytesCaptured*1000/DeltaTime)*100)/1250000;
-	if(valuetoprint<0)valuetoprint=0;
-	if(valuetoprint>100)valuetoprint=100;
-
-	DrawBoard(&DrawBuffer,wrett, valuetoprint);
-
-	EnterCriticalSection(&Crit);
-	BytesCaptured=0;
-	LeaveCriticalSection(&Crit);
-
-	Invalidate( FALSE );
-	UpdateWindow();
-	CView::OnTimer(nIDEvent);
-}
-*/
-/////////////////////////////////////////////////////////////////////////////
-// "select the adapter" menu command
 
 
 void CNetmeterView::OnSelAdapter() 

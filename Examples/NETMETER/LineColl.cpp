@@ -30,7 +30,6 @@
  * 
  */
 
-
 #include "LineColl.h"
 
 #ifdef _DEBUG

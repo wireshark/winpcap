@@ -70,13 +70,22 @@ u_char *pkt_data;
 		switch (argv[i] [1])
 		{
 			case 's':
-				source=argv[i+1]; break;
+			{
+				source=argv[i+1];
+			};
+			break;
 
 			case 'o':
-				ofilename=argv[i+1]; break;
+			{
+				ofilename=argv[i+1];
+			};
+			break;
 
 			case 'f':
-				filter=argv[i+1]; break;
+			{
+				filter=argv[i+1];
+			};
+			break;
 		}
 	}
 
@@ -107,14 +116,14 @@ u_char *pkt_data;
 		NetMask=0xffffff;
 
 		//compile the filter
-		if (pcap_compile(fp, &fcode, filter, 1, NetMask) < 0)
+		if(pcap_compile(fp, &fcode, filter, 1, NetMask) < 0)
 		{
 			fprintf(stderr,"\nError compiling filter: wrong syntax.\n");
 			return;
 		}
 
 		//set the filter
-		if (pcap_setfilter(fp, &fcode) < 0)
+		if(pcap_setfilter(fp, &fcode)<0)
 		{
 			fprintf(stderr,"\nError setting the filter\n");
 			return;
@@ -136,14 +145,16 @@ u_char *pkt_data;
 	else usage();
 
 	//start the capture
-	while ((res = pcap_next_ex( fp, &header, &pkt_data)) >= 0)
+	while((res = pcap_next_ex( fp, &header, &pkt_data)) >= 0)
 	{
+
 		if(res == 0)
 		/* Timeout elapsed */
 		continue;
 
 		//save the packet on the dump file
 		pcap_dump((unsigned char *) dumpfile, header, pkt_data);
+
 	}
 }
 

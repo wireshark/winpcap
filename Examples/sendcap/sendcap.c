@@ -1,35 +1,23 @@
 /*
- * Copyright (c) 1999 - 2003
- * NetGroup, Politecnico di Torino (Italy)
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
- * are met:
- * 
- * 1. Redistributions of source code must retain the above copyright 
- * notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright 
- * notice, this list of conditions and the following disclaimer in the 
- * documentation and/or other materials provided with the distribution. 
- * 3. Neither the name of the Politecnico di Torino nor the names of its 
- * contributors may be used to endorse or promote products derived from 
- * this software without specific prior written permission. 
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ * Copyright (c) 1999 - 2002
+ *	Politecnico di Torino.  All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that: (1) source code distributions
+ * retain the above copyright notice and this paragraph in its entirety, (2)
+ * distributions including binary code include the above copyright notice and
+ * this paragraph in its entirety in the documentation or other materials
+ * provided with the distribution, and (3) all advertising materials mentioning
+ * features or use of this software display the following acknowledgement:
+ * ``This product includes software developed by the Politecnico
+ * di Torino, and its contributors.'' Neither the name of
+ * the University nor the names of its contributors may be used to endorse
+ * or promote products derived from this software without specific prior
+ * written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
-
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -38,16 +26,17 @@
 
 void usage();
 
-void main(int argc, char **argv) {
-	pcap_t *indesc,*outdesc;
-	char error[PCAP_ERRBUF_SIZE];
-	FILE *capfile;
-	int caplen,
-		sync;
-	u_int res;
-	pcap_send_queue *squeue;
-	struct pcap_pkthdr *pktheader;
-	u_char *pktdata;
+void main(int argc, char **argv)
+{
+pcap_t *indesc,*outdesc;
+char errbuf[PCAP_ERRBUF_SIZE];
+char source[PCAP_BUF_SIZE];
+FILE *capfile;
+int caplen, sync;
+u_int res;
+pcap_send_queue *squeue;
+struct pcap_pkthdr *pktheader;
+u_char *pktdata;
 
 	/* Check the validity of the command line */
 	if (argc <= 2 || argc >= 5)
@@ -74,20 +63,36 @@ void main(int argc, char **argv) {
 		sync = FALSE;
 
 	/* Open the capture */
-	if((indesc = pcap_open_offline(argv[1], error)) == NULL){
-		fprintf(stderr,"\nError opening the input file: %s\n", error);
-		return;	
+	/* Create the source string according to the new WinPcap syntax */
+	if ( pcap_createsrcstr(	source,			// variable that will keep the source string
+							PCAP_SRC_FILE,	// we want to open a file
+							NULL,			// remote host
+							NULL,			// port on the remote host
+							argv[1],		// name of the file we want to open
+							errbuf			// error buffer
+							) != 0)
+	{
+		fprintf(stderr,"\nError creating a source string\n");
+		return;
+	}
+	
+	/* Open the capture file */
+	if ( (indesc= pcap_open(source, 65536, PCAP_OPENFLAG_PROMISCUOUS, 1000, NULL, errbuf) ) == NULL)
+	{
+		fprintf(stderr,"\nUnable to open the file %s.\n", source);
+		return;
 	}
 
 	/* Open the output adapter */
-	if((outdesc = pcap_open_live(argv[2], 100, 1, 1000, error) ) == NULL)
+	if ( (outdesc= pcap_open(argv[2], 100, PCAP_OPENFLAG_PROMISCUOUS, 1000, NULL, errbuf) ) == NULL)
 	{
-		fprintf(stderr,"\nError opening adapter: %s\n", error);
+		fprintf(stderr,"\nUnable to open adapter %s.\n", source);
 		return;
 	}
 
 	/* Check the MAC type */
-	if(pcap_datalink(indesc) != pcap_datalink(outdesc)){
+	if (pcap_datalink(indesc) != pcap_datalink(outdesc))
+	{
 		printf("Warning: the datalink of the capture differs from the one of the selected interface.\n");
 		printf("Press a key to continue, or CTRL+C to stop.\n");
 		getchar();
@@ -97,14 +102,17 @@ void main(int argc, char **argv) {
 	squeue = pcap_sendqueue_alloc(caplen);
 
 	/* Fill the queue with the packets from the file */
-	while((res = pcap_next_ex( indesc, &pktheader, &pktdata)) == 1){
-		if(pcap_sendqueue_queue(squeue, pktheader, pktdata) == -1){
+	while ((res = pcap_next_ex( indesc, &pktheader, &pktdata)) == 1)
+	{
+		if (pcap_sendqueue_queue(squeue, pktheader, pktdata) == -1)
+		{
 			printf("Warning: packet buffer too small, not all the packets will be sent.\n");
 			break;
 		}
 	}
 
-	if(res == -1){
+	if (res == -1)
+	{
 		printf("Corrupted input file.\n");
 		pcap_sendqueue_destroy(squeue);
 		return;
@@ -112,9 +120,9 @@ void main(int argc, char **argv) {
 
 	/* Transmit the queue */
 	
-	if((res = pcap_sendqueue_transmit(outdesc, squeue, sync)) < squeue->len)
+	if ((res = pcap_sendqueue_transmit(outdesc, squeue, sync)) < squeue->len)
 	{
-		printf("An error occurred sending the packets: %s. Only %d bytes were sent\n", error, res);
+		printf("An error occurred sending the packets: %s. Only %d bytes were sent\n", pcap_geterr(outdesc), res);
 	}
 	
 	/* free the send queue */
