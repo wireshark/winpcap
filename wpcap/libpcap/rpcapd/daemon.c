@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002
+ * Copyright (c) 2002 - 2003
  * NetGroup, Politecnico di Torino (Italy)
  * All rights reserved.
  * 

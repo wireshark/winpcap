@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002
+ * Copyright (c) 2002 - 2003
  * NetGroup, Politecnico di Torino (Italy)
  * All rights reserved.
  * 
@@ -100,8 +100,11 @@ void printusage()
 	"                  problems with different address families\n"
 	"  -n: permit NULL authentication (usually used with '-l')\n"
 	"  -a <host, port>: run in active mode when connecting to 'host' on port 'port'\n"
-	"  -v: does not run in passive mode \n"
-	"  -d: run in daemon mode (UNIX only)\n"
+	"  -v: run in active mode only (default: if '-a' is specified, it accepts passive\n"
+	"      connections as well\n"
+	"  -d: run in daemon mode (UNIX only) or as a service (Win32 only)\n"
+	"      Warning (Win32): this switch is provided automatically when the service\n"
+	"      is started from the control panel\n"
 	"  -s <file>: save the current configuration to file\n"
  	"  -f <file>: load the current configuration from file; all the switches\n"
   	"             specified from the command line are ignored\n"
@@ -222,6 +225,7 @@ char errbuf[PCAP_ERRBUF_SIZE + 1];	// keeps the error string, prior to be printe
 			SOCK_ASSERT("Error when saving the configuration to file", 1);
 	}
 
+	// If the file does not exist, it keeps the settings provided by the command line
 	if (loadfile[0])
 		fileconf_read(0);
 
