@@ -237,6 +237,72 @@
 */
 
 
+/*!
+	\addtogroup remote_samp_methods
+	\{
+*/
+
+/*!
+	\brief It defines that the sampling is disabled.
+
+	In this case, no sampling algorithms are applied to the current capture.
+*/
+#define PCAP_SAMP_NOSAMP	0
+
+/*!
+	\brief It defines that only 1 out of N packets must be returned to the user.
+
+	In this case, the 'value' field of the 'pcap_samp' structure indicates the
+	number of packets (minus 1) that must be discarded before one packet got accepted.
+	In other words, if 'value = 10', the first packet is returned to the caller, while
+	the following 9 are discarded.
+*/
+#define PCAP_SAMP_1_EVERY_N	1
+
+/*!
+	\brief It defines that we have to return 1 packet every N milliseconds.
+
+	In this case, the 'value' field of the 'pcap_samp' structure indicates the 'waiting
+	time' in milliseconds before one packet got accepted.
+	In other words, if 'value = 10', the first packet is returned to the caller; the next 
+	returned one will be the first packet that arrives when 10ms have elapsed. 
+*/
+#define PCAP_SAMP_FIRST_AFTER_N_MS 2
+
+/*!
+	\}
+*/
+
+
+/*!
+	\addtogroup remote_auth_methods
+	\{
+*/
+
+/*!
+	\brief It defines the NULL authentication.
+
+	This value has to be used within the 'type' member of the pcap_rmtauth structure.
+	The 'NULL' authentication has to be equal to 'zero', so that old applications
+	can just put every field of struct pcap_rmtauth to zero, and it does work.
+*/
+#define RPCAP_RMTAUTH_NULL 0
+/*!
+	\brief It defines the username/password authentication.
+
+	With this type of authentication, the RPCAP protocol will use the username/
+	password provided to authenticate the user on the remote machine. If the
+	authentication is successful (and the user has the right to open network devices)
+	the RPCAP connection will continue; otherwise it will be dropped.
+
+	This value has to be used within the 'type' member of the pcap_rmtauth structure.
+*/
+#define RPCAP_RMTAUTH_PWD 1
+
+/*!
+	\}
+*/
+
 
 
 
@@ -261,13 +327,8 @@ struct pcap_rmtauth
 
 		In order to provide maximum flexibility, we can support different types
 		of authentication based on the value of this 'type' variable. The currently 
-		supported authentication mathods are:
-		- RPCAP_RMTAUTH_NULL: if the user does not provide an authentication method
-		(this could enough if, for example, the RPCAP daemon allows connections 
-		from trusted hosts only)
-		- RPCAP_RMTAUTH_PWD: if the user is willing to provide a valid 
-		username/password to authenticate itself on the remote machine. Username/
-		password must be valid on the remote machine.
+		supported authentication methods are defined into the
+		\link remote_auth_methods Remote Authentication Methods Section\endlink.
 
 	*/
 	int type;
@@ -290,26 +351,34 @@ struct pcap_rmtauth
 };
 
 
-
 /*!
-	\brief It defines the NULL authentication.
+	\brief This structure defines the information related to sampling.
 
-	This value has to be used within the 'type' member of the pcap_rmtauth structure.
-	The 'NULL' authentication has to be equal to 'zero', so that old applications
-	can just put every field of struct pcap_rmtauth to zero, and it does work.
+	In case the sampling is requested, the capturing device should read
+	only a subset of the packets coming from the source. The returned packets depend
+	on the sampling parameters.
+
+	\warning The sampling process is appllied <strong>after</strong> the filtering process.
+	In other words, pacekts are filtered first, then the sampling process selects only a
+	subset of them and it returns them to the called.
 */
-#define RPCAP_RMTAUTH_NULL 0
-/*!
-	\brief It defines the username/password authentication.
+struct pcap_samp
+{
+	/*!
+		Method used for sampling. Currently, the supported methods are listed in the
+		\link remote_samp_methods Sampling Methods Section\endlink.
+	*/
+	int method;
 
-	With this type of authentication, the RPCAP protocol will use the username/
-	password provided to authenticate the user on the remote machine. If the
-	authentication is successful (and the user has the right to open network devices)
-	the RPCAP connection will continue; otherwise it will be dropped.
+	/*!
+		This value depends on the sampling method defined. For its meaning, please check
+		at the \link remote_samp_methods Sampling Methods Section\endlink.
+	*/
+	int value;
+};
 
-	This value has to be used within the 'type' member of the pcap_rmtauth structure.
-*/
-#define RPCAP_RMTAUTH_PWD 1
+
+
 
 //! Maximum lenght of an host name (needed for the RPCAP active mode)
 #define RPCAP_HOSTLIST_SIZE 1024
@@ -325,6 +394,7 @@ pcap_t *pcap_open(const char *source, int snaplen, int flags, int read_timeout, 
 int pcap_createsrcstr(char *source, int type, const char *host, const char *port, const char *name, char *errbuf);
 int pcap_parsesrcstr(const char *source, int *type, char *host, char *port, char *name, char *errbuf);
 int pcap_findalldevs_ex(char *source, struct pcap_rmtauth *auth, pcap_if_t **alldevs, char *errbuf);
+struct pcap_samp *pcap_setsampling(pcap_t *p);
 SOCKET pcap_remoteact_accept(const char *address, const char *port, const char *hostlist, char *connectinghost, struct pcap_rmtauth *auth, char *errbuf);
 int pcap_remoteact_list(char *hostlist, char sep, int size, char *errbuf);
 int pcap_remoteact_close(const char *host, char *errbuf);

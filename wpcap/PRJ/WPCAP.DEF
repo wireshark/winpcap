@@ -71,4 +71,5 @@ EXPORTS
 		install_bpf_program
 		pcap_next_ex
 		pcap_offline_filter
+		pcap_setsampling
 

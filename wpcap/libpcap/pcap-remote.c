@@ -884,6 +884,12 @@ int res, itemp;
 int sockbufsize= 0;
 
 
+	// Let's check if sampling has been required.
+	// If so, let's set it first
+	if (pcap_setsampling_remote(fp) != 0)
+		return -1;
+
+
 	// detect if we're in active mode
 	temp= activeHosts;
 	while (temp)
@@ -1345,7 +1351,8 @@ struct rpcap_header header;		// To keep the reply message
 
 
 
-/*!	\ingroup remote_pri_func
+/*!
+	\ingroup remote_pri_func
 
 	\brief Send a filter to a remote host.
 
@@ -1370,6 +1377,91 @@ int pcap_setfilter_remote(pcap_t *fp, struct bpf_program *prog)
 		return -1;
 
 	return 0;
+}
+
+
+
+/*!
+	\ingroup remote_pri_func
+
+	\brief Set sampling parameters in the remote host.
+
+	This function is called when the user wants to set activate sampling on the remote host.
+
+	Sampling parameters are defined into the 'pcap_t' structure.
+
+	\param fp: the pcap_t descriptor of the device currently opened.
+
+	\return '0' if everything is OK, '-1' is something goes wrong. The error message is returned
+	in the 'errbuf' member of the pcap_t structure.
+*/
+int pcap_setsampling_remote(pcap_t *p)
+{
+int retval;						// general variable used to keep the return value of other functions
+char sendbuf[RPCAP_NETBUF_SIZE];// temporary buffer in which data to be sent is buffered
+int sendbufidx= 0;				// index which keeps the number of bytes currently buffered
+struct rpcap_header header;		// To keep the reply message
+struct rpcap_sampling *sampling_pars;	// Structure that is needed to send sampling parameters to the remote host
+
+	// If no samping is requested, return 'ok'
+	if (p->rmt_samp.method == PCAP_SAMP_NOSAMP)
+		return 0;
+
+	if ( sock_bufferize(NULL, sizeof(struct rpcap_header), NULL, 
+		&sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, p->errbuf, PCAP_ERRBUF_SIZE) )
+		return -1;
+
+	rpcap_createhdr( (struct rpcap_header *) sendbuf, RPCAP_MSG_SETSAMPLING_REQ, 0, sizeof(struct rpcap_sampling) );
+
+	// Fill the structure needed to open an adapter remotely
+	sampling_pars= (struct rpcap_sampling *) &sendbuf[sendbufidx];
+
+	if ( sock_bufferize(NULL, sizeof(struct rpcap_sampling), NULL, 
+		&sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, p->errbuf, PCAP_ERRBUF_SIZE) )
+		return -1;
+
+	memset(sampling_pars, 0, sizeof(struct rpcap_sampling) );
+
+	sampling_pars->method= p->rmt_samp.method;
+	sampling_pars->value= htonl(p->rmt_samp.value);
+
+	if ( sock_send(p->rmt_sockctrl, sendbuf, sendbufidx, p->errbuf, PCAP_ERRBUF_SIZE) )
+		return -1;
+
+	// Waits for the answer
+	if (sock_recv(p->rmt_sockctrl, (char *) &header, sizeof(struct rpcap_header), SOCK_RECEIVEALL_YES, p->errbuf, PCAP_ERRBUF_SIZE) == -1)
+		return -1;
+
+	// Checks if the message is correct
+	retval= rpcap_checkmsg(p->errbuf, p->rmt_sockctrl, &header, RPCAP_MSG_SETSAMPLING_REPLY, 0);
+
+	if (retval != RPCAP_MSG_SETSAMPLING_REPLY)		// the message is not the one expected
+	{
+		switch (retval)
+		{
+			case -3:		// Unrecoverable network error
+			case -2:		// The other endpoint sent a message that is not allowed here
+			case -1:	// The other endpoint has a version number that is not compatible with our
+			case RPCAP_MSG_ERROR:
+				// Do nothing; just exit from here; the error code is already into the errbuf
+				return -1;
+
+			default:
+			{
+				SOCK_ASSERT("Internal error", 0);
+				return -1;
+			};
+		}
+	}
+
+	if (ntohl(header.plen) != 0)	// the message has an unexpected size
+	{
+		if (sock_discard(p->rmt_sockctrl, ntohl(header.plen), p->errbuf, PCAP_ERRBUF_SIZE) == -1)
+			return -1;
+	}
+
+	return 0;
+
 }
 
 
@@ -1644,7 +1736,7 @@ void rpcap_createhdr(struct rpcap_header *header, uint8 type, uint16 value, uint
 	- (-2) if the code is not among the one listed into the parameters list
 	- (-3) if a network error (connection reset, ...)
 	- RPCAP_MSG_ERROR if the message is an error message (it follow that the RPCAP_MSG_ERROR
-	could not be present in the allowed message-types list, beucase this function checks
+	could not be present in the allowed message-types list, becuase this function checks
 	for errors anyway)
 
 	In case either the version is incompatible or nothing matches (i.e. it returns '-1' or '-2'),

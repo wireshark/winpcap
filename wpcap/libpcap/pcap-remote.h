@@ -264,6 +264,16 @@ struct rpcap_stats
 };
 
 
+//! Structure that is needed to set sampling parameters
+struct rpcap_sampling
+{
+	uint8 method;		//!< Sampling method
+	uint8 dummy1;		//!< Must be zero
+	uint16 dummy2;		//!< Must be zero
+	uint32 value;		//!< Parameter related to the sampling method
+};
+
+
 
 // Messages field coding
 #define RPCAP_MSG_ERROR 1				/*!< Message that keeps an error notification */
@@ -276,6 +286,7 @@ struct rpcap_stats
 #define RPCAP_MSG_AUTH_REQ 8			/*!< Message that keeps the authentication parameters */
 #define RPCAP_MSG_STATS_REQ 9			/*!< It requires to have network statistics */
 #define RPCAP_MSG_ENDCAP_REQ 10			/*!< Stops the current capture, keeping the device open */
+#define RPCAP_MSG_SETSAMPLING_REQ 11	/*!< Sset sampling parameters */
 
 #define RPCAP_MSG_FINDALLIF_REPLY	(128+RPCAP_MSG_FINDALLIF_REQ)		/*!< Keeps the list of all the remote interfaces */
 #define RPCAP_MSG_OPEN_REPLY		(128+RPCAP_MSG_OPEN_REQ)			/*!< The remote device has been opened correctly */
@@ -284,6 +295,7 @@ struct rpcap_stats
 #define RPCAP_MSG_AUTH_REPLY		(128+RPCAP_MSG_AUTH_REQ)			/*!< Sends a message that says 'ok, authorization successful' */
 #define RPCAP_MSG_STATS_REPLY		(128+RPCAP_MSG_STATS_REQ)			/*!< Message that keeps the network statistics */
 #define RPCAP_MSG_ENDCAP_REPLY		(128+RPCAP_MSG_ENDCAP_REQ)			/*!< Confirms that the capture stopped succesfully */
+#define RPCAP_MSG_SETSAMPLING_REPLY	(128+RPCAP_MSG_SETSAMPLING_REQ)		/*!< Confirms that the capture stopped succesfully */
 
 #define RPCAP_STARTCAPREQ_FLAG_PROMISC 1	/*!< Enables promiscuous mode (default: disabled) */
 #define RPCAP_STARTCAPREQ_FLAG_DGRAM 2		/*!< Use a datagram (i.e. UDP) connection for the data stream (default: use TCP)*/
@@ -310,6 +322,8 @@ struct rpcap_stats
 #define PCAP_ERR_STARTCAPTURE 12		/*!< Generic pcap_startcapture error */
 #define PCAP_ERR_ENDCAPTURE 13			/*!< Generic pcap_endcapture error */
 #define PCAP_ERR_RUNTIMETIMEOUT	14		/*!< The RPCAP run-time timeout has expired */
+#define PCAP_ERR_WRONGMSG 15			/*!< The other end endpoint sent a message which has not been recognized */
+#define PCAP_ERR_WRONGVER 16			/*!< The other end endpoint ahs a version number that is not compatible with our */
 /*!
 	\}
 */ // end of private documentation
@@ -332,6 +346,7 @@ int pcap_read_remote(pcap_t *p, int cnt, pcap_handler callback, u_char *user);
 int pcap_updatefilter_remote(pcap_t *fp, struct bpf_program *prog);
 int pcap_setfilter_remote(pcap_t *fp, struct bpf_program *prog);
 int pcap_stats_remote(pcap_t *p, struct pcap_stat *ps);
+int pcap_setsampling_remote(pcap_t *p);
 struct pcap_stat *pcap_stats_ex_remote(pcap_t *p);
 void pcap_close_remote(pcap_t *p);
 

@@ -1152,6 +1152,25 @@ pcap_t *fp;
 }
 
 
+/*!
+	\ingroup wpcapfunc
+
+	\brief It defines a sampling method for packet capture.
+
+	This function allows applying a sampling method to the packet capture process.
+	The currently sampling methods (and the way to set them) are described into the
+	struct pcap_samp. In other words, the user must set the appropriate parameters
+	into it; these will be applied as soon as the capture starts.
+
+	\warning Sampling parameters <strong>cannot</strong> be changed when a capture is 
+	active. These parameters must be applied <strong>before</strong> starting the capture.
+	If they are applied when the capture is in progress, the new settings are ignored.
+*/
+struct pcap_samp *pcap_setsampling(pcap_t *p)
+{
+	return &(p->rmt_samp);
+}
+
 
 /*!
 	\ingroup wpcapfunc
