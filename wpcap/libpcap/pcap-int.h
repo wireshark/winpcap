@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /tcpdump/master/libpcap/pcap-int.h,v 1.33 2001/08/24 07:46:52 guy Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/wpcap/libpcap/pcap-int.h,v 1.2 2002/05/28 07:37:01 degioanni Exp $ (LBL)
  */
 
 #ifndef pcap_int_h
@@ -86,7 +86,7 @@ struct pcap {
 	int nonblock;
 #else
 	int fd;
-#endif
+#endif /* WIN32 */
 	int snapshot;
 	int linktype;
 	int tzoff;		/* timezone offset */
@@ -115,6 +115,10 @@ struct pcap {
 	struct bpf_program fcode;
 
 	char errbuf[PCAP_ERRBUF_SIZE];
+#ifdef REMOTE
+	SOCKET datasock;
+	SOCKET ctrlsock;
+#endif /* REMOTE */
 };
 
 /*

@@ -18,7 +18,7 @@
  * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * @(#) $Header: /tcpdump/master/libpcap/win32/include/ip6_misc.h,v 1.0 2000/08/31 13:27:10 mcr Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/wpcap/libpcap/Win32/Include/IP6_misc.h,v 1.2 2002/05/28 07:37:04 degioanni Exp $ (LBL)
  */
 
 /*
@@ -168,11 +168,3 @@ struct addrinfo {
 };
 #endif
 #endif /* HAVE_ADDRINFO */
-
-
-
-#define IN6_IS_ADDR_UNSPECIFIED(a) \
-	(((u_int32_t *) (a))[0] == 0 && ((u_int32_t *) (a))[1] == 0 && \
-	 ((u_int32_t *) (a))[2] == 0 && ((u_int32_t *) (a))[3] == 0)	
-
-

@@ -1767,7 +1767,7 @@ char *yytext;
 
 #ifndef lint
 static const char rcsid[] =
-    "@(#) $Header: /tcpdump/master/libpcap/scanner.l,v 1.81 2001/09/14 01:40:57 fenner Exp $ (LBL)";
+    "@(#) $Header: /usr/cvsroot/winpcap/wpcap/libpcap/scanner.l,v 1.2 2002/05/28 07:37:03 degioanni Exp $ (LBL)";
 #endif
 
 #ifdef HAVE_CONFIG_H

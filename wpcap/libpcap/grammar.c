@@ -99,7 +99,7 @@
  */
 #ifndef lint
 static const char rcsid[] =
-    "@(#) $Header: /tcpdump/master/libpcap/grammar.y,v 1.71 2001/07/03 19:15:48 guy Exp $ (LBL)";
+    "@(#) $Header: /usr/cvsroot/winpcap/wpcap/libpcap/grammar.y,v 1.2 2002/05/28 07:36:59 degioanni Exp $ (LBL)";
 #endif
 
 #ifdef HAVE_CONFIG_H
