@@ -78,6 +78,6 @@ clean:
 	mv y.tab.h ../libpcap/tokdefs.h
 .l.c:
 	@rm -f $@
-	$(LEX) --nounistd -t $< >$*.c
+	$(LEX) -t $< >$*.c
 .c.o:
 	${CC} ${CFLAGS} -o $*.o -c $<
