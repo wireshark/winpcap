@@ -107,8 +107,12 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		KeClearEvent(Open->ReadEvent);
 		
 		if(Open->mode & MODE_STAT){   //this capture instance is in statistics mode
+#ifdef NDIS50
+			CurrBuff=(PUCHAR)MmGetSystemAddressForMdlSafe(Irp->MdlAddress, NormalPagePriority);
+#else
 			CurrBuff=(PUCHAR)MmGetSystemAddressForMdl(Irp->MdlAddress);
-			
+#endif
+
 			//fill the bpf header for this packet
 			header=(struct bpf_hdr*)CurrBuff;
 			GET_TIME(&header->bh_tstamp,&G_Start_Time);
@@ -148,8 +152,12 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			ULONG block_size;
 			PUCHAR tmp;
 
+#ifdef NDIS50
+			UserPointer=MmGetSystemAddressForMdlSafe(Irp->MdlAddress, NormalPagePriority);
+#else
 			UserPointer=MmGetSystemAddressForMdl(Irp->MdlAddress);
-			
+#endif
+
 			if ((!IS_VALIDATED(Open->tme.validated_blocks,Open->tme.active_read))||(IrpSp->Parameters.Read.Length<sizeof(struct bpf_hdr)))
 			{	
 				EXIT_FAILURE(0);
@@ -225,7 +233,12 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	count=0;
 	current_cpu=0;
 	available = IrpSp->Parameters.Read.Length;
+#ifdef NDIS50
+	packp=(PUCHAR)MmGetSystemAddressForMdlSafe(Irp->MdlAddress, NormalPagePriority);
+#else
 	packp=(PUCHAR)MmGetSystemAddressForMdl(Irp->MdlAddress);
+#endif
+
 
 	KeClearEvent(Open->ReadEvent);
 
