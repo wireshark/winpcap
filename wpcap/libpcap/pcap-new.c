@@ -1069,14 +1069,11 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 	}
 
 	// checks if the connecting host is among the ones allowed
-	if ( (hostlist) && (hostlist[0]) )
+	if (sock_check_hostlist((char *) hostlist, RPCAP_HOSTLIST_SEP, &from, errbuf, PCAP_ERRBUF_SIZE) < 0)
 	{
-		if (sock_check_hostlist((char *) hostlist, RPCAP_HOSTLIST_SEP, &from, errbuf, PCAP_ERRBUF_SIZE) )
-		{
-			rpcap_senderror(sockctrl, errbuf, PCAP_ERR_REMOTEACCEPT, fakeerrbuf);
-			sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
-			return -1;
-		}
+		rpcap_senderror(sockctrl, errbuf, PCAP_ERR_REMOTEACCEPT, fakeerrbuf);
+		sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
+		return -1;
 	}
 
 	// Send authentication to the remote machine

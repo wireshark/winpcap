@@ -35,7 +35,7 @@
 /*!
 	\file sockutils.c
 
-	The goal of this file it to privide a common set of primitives for socket manipulation.
+	The goal of this file is to provide a common set of primitives for socket manipulation.
 	Although the socket interface defined in the RFC 2553 (and its updates) is excellent, several
 	minor issues are still hidden in supporting several operating systems.
 
@@ -473,7 +473,7 @@ int retval;
 				errbuf[errbuflen - 1]= 0;
 			}
 #endif
-		return 0;
+		return -1;
 	}
 /*!
 	\warning SOCKET: I should check all the accept() in order to bind to all addresses in case
@@ -488,7 +488,7 @@ int retval;
 			snprintf(errbuf, errbuflen, "getaddrinfo(): socket type not supported");
 			errbuf[errbuflen - 1]= 0;
 		}
-		return 0;
+		return -1;
 	}
 
 	if ( ( (*addrinfo)->ai_socktype == SOCK_STREAM) && (sock_ismcastaddr( (*addrinfo)->ai_addr) == 0) )
@@ -499,10 +499,10 @@ int retval;
 			errbuf[errbuflen - 1]= 0;
 		}
 
-		return 0;
+		return -1;
 	}
 
-	return -1;
+	return 0;
 }
 
 
@@ -860,7 +860,7 @@ char buffer[TEMP_BUF_SIZE];		// network buffer, to be used when the message is d
 	allowed host; this function checks the sockaddr_storage structure of the connecting host 
 	against this host list, and it returns '0' is the host is included in this list.
 
-	\param hostlist: a string that contains the list of the allowed host.
+	\param hostlist: pointer to a string that contains the list of the allowed host.
 
 	\param sep: a string that keeps the separators used between the hosts (for example the 
 	space character) in the host list.
@@ -874,13 +874,16 @@ char buffer[TEMP_BUF_SIZE];		// network buffer, to be used when the message is d
 	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
 	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
-	\return '0' if everything is fine, '-1' if some errors occurred.
-	The error message is returned in the 'errbuf' variable.
+	\return It returns:
+	- '1' if the host list is empty
+	- '0' if the host belongs to the host list (and therefore it is allowed to connect)
+	- '-1' in case the host does not belong to the host list (and therefore it is not allowed to connect
+	- '-2' in case or error. The error message is returned in the 'errbuf' variable.
 */
 int sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage *from, char *errbuf, int errbuflen)
 {
 	// checks if the connecting host is among the ones allowed
-	if (hostlist[0])
+	if ( (hostlist) && (hostlist[0]) )
 	{
 	char *token;					// temp, needed to separate items into the hostlist
 	struct addrinfo *addrinfo, *ai_next;
@@ -890,7 +893,7 @@ int sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage
 		if (temphostlist == NULL)
 		{
 			sock_geterror("sock_check_hostlist(), malloc() failed", errbuf, errbuflen);
-			return -1;
+			return -2;
 		}
 		
 		// The problem is that strtok modifies the original variable by putting '0' at the end of each token
@@ -963,8 +966,8 @@ int sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage
 		return -1;
 	}
 
-	// No hostlist, so we have to return failure
-	return -1;
+	// No hostlist, so we have to return 'empty list'
+	return 1;
 }
 
 
