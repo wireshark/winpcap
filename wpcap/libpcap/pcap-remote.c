@@ -369,7 +369,7 @@ int n = 0;
 
 	while ( (++n <= cnt) || (cnt < 0) )
 	{
-		if (pcap_read_nocb_remote(p, &pkt_header, &pkt_data) )
+		if (pcap_read_nocb_remote(p, &pkt_header, &pkt_data) == 1)
 			(*callback)(user, pkt_header, pkt_data);
 		else
 			return n;
