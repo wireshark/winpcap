@@ -306,6 +306,7 @@ VOID NPF_OpenAdapterComplete(
 		NdisAcquireSpinLock(&Opened_Instances_Lock);
 		n_Opened_Instances++;
 		NdisReleaseSpinLock(&Opened_Instances_Lock);
+		
 		IF_LOUD(DbgPrint("Opened Instances:%d", n_Opened_Instances);)
 
 		// Get the absolute value of the system boot time.
@@ -346,10 +347,12 @@ NPF_Close(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		NdisWaitEvent(&Open->IOEvent,10000);
 
 		// Free the filter if it's present
-		if(Open->bpfprogram != NULL){
-			BPF_Destroy_JIT_Filter(Open->Filter);
+		if(Open->bpfprogram != NULL)
 			ExFreePool(Open->bpfprogram);
-		}
+
+		// Free the jitted filter if it's present
+		if(Open->Filter != NULL)
+			BPF_Destroy_JIT_Filter(Open->Filter);
 
 		//free the buffer
 		Open->BufSize=0;
@@ -444,10 +447,12 @@ NPF_CloseAdapterComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  
 	if(Open->Bound == TRUE){
 		
 		// Free the filter if it's present
-		if(Open->bpfprogram != NULL){
-			BPF_Destroy_JIT_Filter(Open->Filter);
+		if(Open->bpfprogram != NULL)
 			ExFreePool(Open->bpfprogram);
-		}
+
+		// Free the jitted filter if it's present
+		if(Open->Filter != NULL)
+			BPF_Destroy_JIT_Filter(Open->Filter);
 		
 		//free the buffer
 		Open->BufSize = 0;
