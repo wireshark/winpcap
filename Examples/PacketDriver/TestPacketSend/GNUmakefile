@@ -1,7 +1,7 @@
 # Makefile for cygwin gcc
 # Nate Lawson <nate@rootlabs.com>
 
-PCAP_PATH = ../../lib
+PCAP_PATH = ../../../lib
 CFLAGS = -g -O -mno-cygwin -I ../../include
 
 OBJS = TestPacketSend.o
