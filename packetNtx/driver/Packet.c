@@ -939,6 +939,9 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			EXIT_FAILURE(0);
 		}
 
+		if (Open->CpuData[0].Buffer != NULL)
+			ExFreePool(Open->CpuData[0].Buffer);
+
 		for (i=0;i<NCpu;i++)
 		{
 			Open->CpuData[i].Buffer=(PUCHAR)tpointer + (dim/NCpu)*i;
