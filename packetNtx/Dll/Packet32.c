@@ -58,6 +58,8 @@ TCHAR   szWindowTitle[] = TEXT("PACKET.DLL");
 	fclose(f); \
 }
 
+
+
 LONG PacketDumpRegistryKey(PCHAR KeyName, PCHAR FileName);
 #else
 #define ODS(_x)		
@@ -70,9 +72,8 @@ SC_HANDLE scmHandle = NULL;
 SC_HANDLE srvHandle = NULL;
 LPCTSTR NPFServiceName = TEXT("NPF");
 LPCTSTR NPFServiceDesc = TEXT("Netgroup Packet Filter");
-LPCTSTR NPFDriverName = TEXT("\\npf.sys");
 LPCTSTR NPFRegistryLocation = TEXT("SYSTEM\\CurrentControlSet\\Services\\NPF");
-
+LPCTSTR NPFDriverPath = TEXT("system32\\drivers\\npf.sys");
 
 //---------------------------------------------------------------------------
 
@@ -215,39 +216,39 @@ BOOLEAN PacketSetReadEvt(LPADAPTER AdapterObject)
   \brief Installs the NPF device driver.
   \param ascmHandle Handle to the service control manager.
   \param ascmHandle A pointer to a handle that will receive the pointer to the driver's service.
-  \param driverPath The full path of the .sys file to load.
   \return If the function succeeds, the return value is nonzero.
 
   This function installs the driver's service in the system using the CreateService function.
 */
 
-BOOL PacketInstallDriver(SC_HANDLE ascmHandle,SC_HANDLE *srvHandle,TCHAR *driverPath)
+BOOL PacketInstallDriver(SC_HANDLE ascmHandle,SC_HANDLE *srvHandle)
 {
 	BOOL result = FALSE;
 	ULONG err;
 	
 	ODS("installdriver\n");
 	
-	if (GetFileAttributes(driverPath) != 0xffffffff) {
-		*srvHandle = CreateService(ascmHandle, 
-			NPFServiceName,
-			NPFServiceDesc,
-			SERVICE_ALL_ACCESS,
-			SERVICE_KERNEL_DRIVER,
-			SERVICE_DEMAND_START,
-			SERVICE_ERROR_NORMAL,
-			driverPath,
-			NULL, NULL, NULL, NULL, NULL);
-		if (*srvHandle == NULL) {
-			if (GetLastError() == ERROR_SERVICE_EXISTS) {
-				//npf.sys already existed
-				result = TRUE;
-			}
-		}
-		else {
-			//Created service for npf.sys
+	*srvHandle = CreateService(ascmHandle, 
+		NPFServiceName,
+		NPFServiceDesc,
+		SERVICE_ALL_ACCESS,
+		SERVICE_KERNEL_DRIVER,
+		SERVICE_DEMAND_START,
+		SERVICE_ERROR_NORMAL,
+		NPFDriverPath,
+		NULL, NULL, NULL, NULL, NULL);
+	if (*srvHandle == NULL) 
+	{
+		if (GetLastError() == ERROR_SERVICE_EXISTS) 
+		{
+			//npf.sys already existed
 			result = TRUE;
 		}
+	}
+	else 
+	{
+		//Created service for npf.sys
+		result = TRUE;
 	}
 	if (result == TRUE) 
 		if (*srvHandle != NULL)
@@ -472,8 +473,6 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 	WCHAR *AdapterNameU;
 	DWORD error;
 	SC_HANDLE svcHandle = NULL;
-	TCHAR driverPath[512];
-	TCHAR WinPath[256];
 	LONG KeyRes;
 	HKEY PathKey;
 	SERVICE_STATUS SStat;
@@ -489,11 +488,6 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 		ODSEx("OpenSCManager failed! Error=%d\n", error);
 	}
 	else{
-		*driverPath = 0;
-		GetCurrentDirectory(512, driverPath);
-		wsprintf(driverPath + wcslen(driverPath), 
-			NPFDriverName);
-		
 		// check if the NPF registry key is already present
 		// this means that the driver is already installed and that we don't need to call PacketInstallDriver
 		KeyRes=RegOpenKeyEx(HKEY_LOCAL_MACHINE,
@@ -502,49 +496,57 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 			KEY_READ,
 			&PathKey);
 		
-		if(KeyRes != ERROR_SUCCESS){
-			Result = PacketInstallDriver(scmHandle,&svcHandle,driverPath);
+		if(KeyRes != ERROR_SUCCESS)
+		{
+			Result = PacketInstallDriver(scmHandle,&svcHandle);
 		}
-		else{
+		else
+		{
 			Result = TRUE;
 			RegCloseKey(PathKey);
 		}
 		
-		if (Result) {
+		if (Result) 
+		{
 			
 			srvHandle = OpenService(scmHandle, NPFServiceName, SERVICE_START | SERVICE_QUERY_STATUS );
-			if (srvHandle != NULL){
-				
+			if (srvHandle != NULL)
+			{
 				QuerySStat = QueryServiceStatus(srvHandle, &SStat);
 				ODSEx("The status of the driver is:%d\n",SStat.dwCurrentState);
 				
-				if(!QuerySStat || SStat.dwCurrentState != SERVICE_RUNNING){
+				if(!QuerySStat || SStat.dwCurrentState != SERVICE_RUNNING)
+				{
 					ODS("Calling startservice\n");
-					if (StartService(srvHandle, 0, NULL)==0){ 
+					if (StartService(srvHandle, 0, NULL)==0)
+					{ 
 						error = GetLastError();
-						if(error!=ERROR_SERVICE_ALREADY_RUNNING && error!=ERROR_ALREADY_EXISTS){
+						if(error!=ERROR_SERVICE_ALREADY_RUNNING && error!=ERROR_ALREADY_EXISTS)
+						{
 							SetLastError(error);
-							if (scmHandle != NULL) CloseServiceHandle(scmHandle);
+							if (scmHandle != NULL) 
+								CloseServiceHandle(scmHandle);
 							error = GetLastError();
 							ODSEx("PacketOpenAdapter: StartService failed, Error=%d\n",error);
 							return NULL;
 						}
 					}				
 				}
+
+				CloseServiceHandle( srvHandle );
+       			srvHandle = NULL;
+
 			}
-			else{
+			else
+			{
 				error = GetLastError();
 				ODSEx("OpenService failed! Error=%d", error);
 			}
 		}
-		else{
-			if( GetSystemDirectory(WinPath, sizeof(WinPath)/sizeof(TCHAR)) == 0) return FALSE;
-			wsprintf(driverPath,
-				TEXT("%s\\drivers%s"), 
-				WinPath,NPFDriverName);
-			
+		else
+		{
 			if(KeyRes != ERROR_SUCCESS)
-				Result = PacketInstallDriver(scmHandle,&svcHandle,driverPath);
+				Result = PacketInstallDriver(scmHandle,&svcHandle);
 			else
 				Result = TRUE;
 			
@@ -570,6 +572,10 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 							}
 						}
 					}
+				    
+					CloseServiceHandle( srvHandle );
+					srvHandle = NULL;
+
 				}
 				else{
 					error = GetLastError();
@@ -602,7 +608,7 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 	}
 	lpAdapter->NumWrites=1;
 
-	wsprintf(SymbolicLink,TEXT("\\\\.\\%s%s"),DOSNAMEPREFIX,&AdapterName[8]);
+	wsprintf(SymbolicLink,TEXT("\\\\.\\%s"),&AdapterName[8]);
 	
 	// Copy  only the bytes that fit in the adapter structure.
 	// Note that lpAdapter->SymbolicLink is present for backward compatibility but will
@@ -613,7 +619,8 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 	lpAdapter->hFile=CreateFile(SymbolicLink,GENERIC_WRITE | GENERIC_READ,
 		0,NULL,OPEN_EXISTING,0,0);
 	
-	if (lpAdapter->hFile != INVALID_HANDLE_VALUE) {
+	if (lpAdapter->hFile != INVALID_HANDLE_VALUE) 
+	{
 
 		if(PacketSetReadEvt(lpAdapter)==FALSE){
 			error=GetLastError();
@@ -632,37 +639,7 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 		    free(AdapterNameU);
 		return lpAdapter;
 	}
-	//this is probably the first request on the packet driver. 
-	//We must create the dos device and set the access rights on it
-	else{
-		Result=DefineDosDevice(DDD_RAW_TARGET_PATH,&SymbolicLink[4],AdapterName);
-		if (Result)
-		{
 
-			lpAdapter->hFile=CreateFile(SymbolicLink,GENERIC_WRITE | GENERIC_READ,
-				0,NULL,OPEN_EXISTING,0,0);
-			if (lpAdapter->hFile != INVALID_HANDLE_VALUE)
-			{		
-				
-				if(PacketSetReadEvt(lpAdapter)==FALSE){
-					error=GetLastError();
-					ODS("PacketOpenAdapter: Unable to open the read event\n");
-					if (AdapterNameU != NULL)
-						free(AdapterNameU);
-					GlobalFreePtr(lpAdapter);
-					//set the error to the one on which we failed
-					SetLastError(error);
-				    ODSEx("PacketOpenAdapter: PacketSetReadEvt failed, Error=1,%d\n",error);
-					return NULL;					
-				}
-
-				PacketSetMaxLookaheadsize(lpAdapter);
-				if (AdapterNameU != NULL)
-				    free(AdapterNameU);
-				return lpAdapter;
-			}
-		}
-	}
 
 	error=GetLastError();
 	if (AdapterNameU != NULL)
@@ -1291,7 +1268,7 @@ BOOLEAN PacketRequest(LPADAPTER  AdapterObject,BOOLEAN Set,PPACKET_OID_DATA  Oid
     DWORD		BytesReturned;
     BOOLEAN		Result;
 
-    Result=DeviceIoControl(AdapterObject->hFile,(DWORD) Set ? pBIOCSETOID : pBIOCQUERYOID,
+    Result=DeviceIoControl(AdapterObject->hFile,(DWORD) Set ? (DWORD)pBIOCSETOID : (DWORD)pBIOCQUERYOID,
                            OidData,sizeof(PACKET_OID_DATA)-1+OidData->Length,OidData,
                            sizeof(PACKET_OID_DATA)-1+OidData->Length,&BytesReturned,NULL);
     
@@ -1370,42 +1347,63 @@ BOOLEAN PacketSetHwFilter(LPADAPTER  AdapterObject,ULONG Filter)
 
 BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 {
-    HKEY		LinkageKey,AdapKey;
+  HKEY		LinkageKey,AdapKey, OneAdapKey;
 	DWORD		RegKeySize=0;
-    LONG		Status;
+  LONG		Status;
 	ULONG		Result;
 	PTSTR		BpStr;
 	char		*TTpStr,*DpStr,*DescBuf;
 	LPADAPTER	adapter;
-    PPACKET_OID_DATA  OidData;
+  PPACKET_OID_DATA  OidData;
 	int			i=0,k,rewind;
 	DWORD		dim;
 	TCHAR		AdapName[256];
 
-    ODSEx("PacketGetAdapterNames: BufferSize=%d\n",*BufferSize);
+  ODSEx("PacketGetAdapterNames: BufferSize=%d\n",*BufferSize);
 
-    OidData = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,512);
-    if (OidData == NULL) {
-        ODS("PacketGetAdapterNames: GlobalAlloc Failed\n");
-        return FALSE;
-    }
+  OidData = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,512);
+  if (OidData == NULL) {
+      ODS("PacketGetAdapterNames: GlobalAlloc Failed\n");
+      return FALSE;
+  }
 
-    Status=RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-		                TEXT("SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}"),
+  Status=RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+		              TEXT("SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}"),
 						0,
 						KEY_READ,
 						&AdapKey);
+  if ( Status != ERROR_SUCCESS ){
+    ODS("PacketGetAdapterNames: RegOpenKeyEx ( Class\{networkclassguid} ) Failed\n");
+    return FALSE;
+  }
 
 	// Get the size to allocate for the original device names
 	while((Result=RegEnumKey(AdapKey,i,AdapName,sizeof(AdapName)/2))==ERROR_SUCCESS)
 	{
-		Status=RegOpenKeyEx(AdapKey,AdapName,0,KEY_READ,&LinkageKey);
-		Status=RegOpenKeyEx(LinkageKey,L"Linkage",0,KEY_READ,&LinkageKey);
-        Status=RegQueryValueEx(LinkageKey,L"Export",NULL,NULL,NULL,&dim);
+		Status=RegOpenKeyEx(AdapKey,AdapName,0,KEY_READ,&OneAdapKey);
+    if ( Status != ERROR_SUCCESS ){
+    	RegCloseKey(AdapKey);
+      ODS("PacketGetAdapterNames: RegOpenKeyEx ( OneAdapKey ) Failed\n");
+      return FALSE;
+    }
+    
+		Status=RegOpenKeyEx(OneAdapKey,L"Linkage",0,KEY_READ,&LinkageKey);
+    if ( Status != ERROR_SUCCESS ){
+      RegCloseKey( OneAdapKey );
+    	RegCloseKey(AdapKey);
+      ODS("PacketGetAdapterNames: RegOpenKeyEx ( LinkageKey ) Failed\n");
+      return FALSE;
+    }
+
+    Status=RegQueryValueEx(LinkageKey,L"Export",NULL,NULL,NULL,&dim);
+
+    RegCloseKey( OneAdapKey );
+    RegCloseKey( LinkageKey );
+
 		i++;
 		if(Status!=ERROR_SUCCESS) continue;
 		RegKeySize+=dim;
-	}
+  } // while enum reg key still find keys
 	
 	// Allocate the memory for the original device names
 	ODSEx("Need %d bytes for the names\n", RegKeySize+2);
@@ -1419,7 +1417,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	k=0;
 	i=0;
 
-    ODS("PacketGetAdapterNames: Cycling through the adapters:\n");
+  ODS("PacketGetAdapterNames: Cycling through the adapters:\n");
 
 	// Copy the names to the buffer
 	while((Result=RegEnumKey(AdapKey,i,AdapName,sizeof(AdapName)/2))==ERROR_SUCCESS)
@@ -1429,32 +1427,42 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 		i++;
 		ODSEx(" %d) ", i);
 
-		Status=RegOpenKeyEx(AdapKey,AdapName,0,KEY_READ,&LinkageKey);
-		Status=RegOpenKeyEx(LinkageKey,L"Linkage",0,KEY_READ,&LinkageKey);
+		Status=RegOpenKeyEx(AdapKey,AdapName,0,KEY_READ,&OneAdapKey);
+    if ( Status != ERROR_SUCCESS ){
+    	RegCloseKey(AdapKey);
+      ODS("PacketGetAdapterNames: RegOpenKeyEx ( OneAdapKey ) Failed\n");
+      return FALSE;
+    }
+		Status=RegOpenKeyEx(OneAdapKey,L"Linkage",0,KEY_READ,&LinkageKey);
+    if ( Status != ERROR_SUCCESS ){
+      RegCloseKey( OneAdapKey );
+    	RegCloseKey(AdapKey);
+      ODS("PacketGetAdapterNames: RegOpenKeyEx ( LinkageKey ) Failed\n");
+      return FALSE;
+    }
 
 		dim=sizeof(UpperBindStr);
         Status=RegQueryValueEx(LinkageKey,L"UpperBind",NULL,NULL,(PUCHAR)UpperBindStr,&dim);
 		
 		ODSEx("UpperBind=%S ", UpperBindStr);
 
-		if( Status!=ERROR_SUCCESS || _wcsicmp(UpperBindStr,L"NdisWan")==0 ){
-			ODS("Name = SKIPPED\n");
-			continue;
-		}
-
 		dim=RegKeySize-k;
         Status=RegQueryValueEx(LinkageKey,L"Export",NULL,NULL,(LPBYTE)BpStr+k,&dim);
 		if(Status!=ERROR_SUCCESS){
+      RegCloseKey( OneAdapKey );
+      RegCloseKey( LinkageKey );
 			ODS("Name = SKIPPED (error reading the key)\n");
 			continue;
 		}
 
+    RegCloseKey( OneAdapKey );
+    RegCloseKey( LinkageKey );
 		ODSEx("Name = %S\n", (LPBYTE)BpStr+k);
 
 		k+=dim-2;
-	}
+  } // while enum reg keys
 
-	CloseHandle(AdapKey);
+	RegCloseKey(AdapKey);
 
 #ifdef _DEBUG_TO_FILE
 	//dump BpStr for debug purposes
@@ -1472,17 +1480,19 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 #endif
 
 	
-	if (k != 0){
-		
-		DescBuf=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, 4096);
+	if (k != 0)
+  {
+  	DescBuf=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, 4096);
+
 		if (DescBuf == NULL) {
 			GlobalFreePtr (BpStr);
-		    GlobalFreePtr(OidData);
+		  GlobalFreePtr(OidData);
 			return FALSE;
 		}
 		DpStr=DescBuf;
 				
-		for(i=0,k=0;BpStr[i]!=0 || BpStr[i+1]!=0;){
+		for(i=0,k=0;BpStr[i]!=0 || BpStr[i+1]!=0;)
+    {
 			
 			if(k+wcslen(BpStr+i)+30 > *BufferSize){
 				// Input buffer too small
@@ -1532,7 +1542,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 			// Close the adapter
 			PacketCloseAdapter(adapter);
 			
-		}
+    } // for end - parse through string
 		*DpStr=0;
 
 		pStr[k++]=0;
@@ -1541,21 +1551,21 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 		if((ULONG)(DpStr-DescBuf+k) < *BufferSize)
 			memcpy(pStr+k,DescBuf,DpStr-DescBuf);
 		else{
-		    GlobalFreePtr(OidData);
+		  GlobalFreePtr(OidData);
 			GlobalFreePtr (BpStr);
 			GlobalFreePtr (DescBuf);
 			ODS("\nPacketGetAdapterNames: ended with failure\n");
 			return FALSE;
 		}
 
-	    GlobalFreePtr(OidData);
+	  GlobalFreePtr(OidData);
 		GlobalFreePtr (BpStr);
 		GlobalFreePtr (DescBuf);
 		ODS("\nPacketGetAdapterNames: ended correctly\n");
 		return TRUE;
-	}
+  } // if k != 0
 	else{
-	    DWORD      RegType;
+	  DWORD      RegType;
 
 		ODS("Adapters not found under SYSTEM\\CurrentControlSet\\Control\\Class. Using the TCP/IP bindings.\n");
 
@@ -1632,7 +1642,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 				// Close the adapter
 				PacketCloseAdapter(adapter);
 				
-			}
+      } // for end - parse string
 			*DpStr=0;
 			
 			pStr[k++]=0;
@@ -1651,16 +1661,14 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 			GlobalFreePtr (BpStr);
 			GlobalFreePtr (DescBuf);
 			return TRUE;
-		}
+    } // if key 'bind' was successfully opened
 		else{
 			MessageBox(NULL,TEXT("Can not find TCP/IP bindings.\nIn order to run the packet capture driver you must install TCP/IP."),szWindowTitle,MB_OK);
 			ODS("Cannot find the TCP/IP bindings");
 			return FALSE;
 		}
 	}
-}
-
-/*!
+}/*!
   \brief Returns comprehensive information the addresses of an adapter.
   \param AdapterName String that contain _ADAPTER structure.
   \param buffer A user allocated array of npf_if_addr that will be filled by the function.
@@ -2050,5 +2058,6 @@ fail:
 		free(AdapterNameU);
     return FALSE;
 }
+
 
 /* @} */
