@@ -160,13 +160,22 @@ char tmpstring[PCAP_BUF_SIZE + 1];		// Needed to convert names and descriptions 
 		return -1;
 	}
 
-	// determine the type of the source (file, local, remote)
-	if (pcap_parsesrcstr(source, &type, host, port, name, errbuf) == -1)
+	// Determine the type of the source (file, local, remote)
+	// There are some differences if pcap_findalldevs_ex() is called to list files and remote adapters.
+	// In the first case, the name of the directory we have to look into must be present (therefore
+	// the 'name' parameter of the pcap_parsesrcstr() is present).
+	// In the second case, the name of the adapter is not required (we need just the host). So, we have 
+	// to use a first time this function to get the source type, and a second time to get the appropriate
+	// info, which depends on the source type.
+	if (pcap_parsesrcstr(source, &type, NULL, NULL, NULL, errbuf) == -1)
 		return -1;
 
 	if (type == PCAP_SRC_IFLOCAL)
 	{
 	pcap_if_t *dev;		// Previous device into the pcap_if_t chain
+
+		if (pcap_parsesrcstr(source, &type, host, NULL, NULL, errbuf) == -1)
+			return -1;
 
 		// Initialize temporary string
 		tmpstring[PCAP_BUF_SIZE]= 0;
@@ -239,14 +248,17 @@ char tmpstring[PCAP_BUF_SIZE + 1];		// Needed to convert names and descriptions 
 
 	if (type == PCAP_SRC_FILE)
 	{
-		int stringlen;
+	int stringlen;
 #ifdef WIN32
-		WIN32_FIND_DATA filedata; 
-		HANDLE filehandle; 
+	WIN32_FIND_DATA filedata; 
+	HANDLE filehandle; 
 #else
-		struct dirent *filedata;
-		DIR *unixdir;
+	struct dirent *filedata;
+	DIR *unixdir;
 #endif
+
+		if (pcap_parsesrcstr(source, &type, host, port, name, errbuf) == -1)
+			return -1;
 
 		// Check that the filename is correct
 		stringlen= strlen(name);
@@ -390,6 +402,10 @@ char tmpstring[PCAP_BUF_SIZE + 1];		// Needed to convert names and descriptions 
 
 	// If we come here, it is a remote host
 
+	// Retrieve the needed data for getting adapter list
+	if (pcap_parsesrcstr(source, &type, host, port, NULL, errbuf) == -1)
+		return -1;
+
 	// Warning: this call can be the first one called by the user.
 	// For this reason, we have to initialize the WinSock support.
 	if (sock_init(errbuf, PCAP_ERRBUF_SIZE) == -1)
@@ -424,7 +440,7 @@ char tmpstring[PCAP_BUF_SIZE + 1];		// Needed to convert names and descriptions 
 				return -1;
 		}
 
-		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == 0)
+		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 			goto error;
 
 		// addrinfo is no longer used
@@ -970,7 +986,7 @@ int tmptype;
 			else
 			{
 				if (errbuf)
-					snprintf(errbuf, PCAP_ERRBUF_SIZE, "The interface name has not been specified.");
+					snprintf(errbuf, PCAP_ERRBUF_SIZE, "The interface name has not been specified in the source string.");
 
 				return -1;
 			}
@@ -996,7 +1012,7 @@ int tmptype;
 		else
 		{
 			if (errbuf)
-				snprintf(errbuf, PCAP_ERRBUF_SIZE, "The file name has not been specified.");
+				snprintf(errbuf, PCAP_ERRBUF_SIZE, "The file name has not been specified in the source string.");
 
 			return -1;
 		}
@@ -1017,7 +1033,7 @@ int tmptype;
 	else
 	{
 		if (errbuf)
-			snprintf(errbuf, PCAP_ERRBUF_SIZE, "The interface name has not been specified.");
+			snprintf(errbuf, PCAP_ERRBUF_SIZE, "The interface name has not been specified in the source string.");
 
 		return -1;
 	}
@@ -1274,7 +1290,7 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 	}
 
 
-	if ( (sockmain= sock_open(addrinfo, SOCKOPEN_SERVER, 1, errbuf, PCAP_ERRBUF_SIZE)) == 0)
+	if ( (sockmain= sock_open(addrinfo, SOCKOPEN_SERVER, 1, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 	{
 		SOCK_ASSERT(errbuf, 1);
 		return -2;

@@ -76,8 +76,6 @@ struct activehosts *activeHosts;
  * Locally defined functions                        *
  *                                                  *
  ****************************************************/
-void rpcap_thrdatamain_stream(void *ptr);
-void rpcap_thrdatamain_dgram(void *ptr);
 int rpcap_checkver(SOCKET sock, struct rpcap_header *header, char *errbuf);
 struct pcap_stat *rpcap_stats_remote(pcap_t *p, struct pcap_stat *ps, int mode);
 int pcap_pack_bpffilter(pcap_t *fp, char *sendbuf, int *sendbufidx, struct bpf_program *prog);
@@ -311,7 +309,7 @@ struct timeval tv;						// maximum time the select() can block waiting for data
 			// Another option should bne to declare 'netbuf' as 'static'; however this prevents
 			// using several pcap instances within the same process (because the static buffer is shared among
 			// all processes)
-			strncpy(*pkt_data, netbuf + sizeof(struct rpcap_header) + sizeof(struct pcap_pkthdr), (*pkt_header)->caplen);
+			memcpy(*pkt_data, netbuf + sizeof(struct rpcap_header) + sizeof(struct rpcap_pkthdr), (*pkt_header)->caplen);
 
 			// We're using UDP, so we need to update the counter of the packets dropped by the network
 			npkt= ntohl(net_pkt_header->npkt);
@@ -709,7 +707,7 @@ struct rpcap_openreply openreply;	// open reply message
 				return NULL;
 		}
 
-		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == 0)
+		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 			goto error;
 
 		freeaddrinfo(addrinfo);
@@ -938,7 +936,7 @@ int sockbufsize= 0;
 			goto error;
 
 		if ( (sockdata= sock_open(addrinfo, SOCKOPEN_SERVER, 
-			1 /* max 1 connection in queue */, fp->errbuf, PCAP_ERRBUF_SIZE)) == 0)
+			1 /* max 1 connection in queue */, fp->errbuf, PCAP_ERRBUF_SIZE)) == -1)
 			goto error;
 
 		// addrinfo is no longer used
@@ -1074,7 +1072,7 @@ int sockbufsize= 0;
 			if (sock_initaddress(host, portdata, &hints, &addrinfo, fp->errbuf, PCAP_ERRBUF_SIZE) == -1)
 				goto error;
 
-			if ( (sockdata= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, fp->errbuf, PCAP_ERRBUF_SIZE)) == 0)
+			if ( (sockdata= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, fp->errbuf, PCAP_ERRBUF_SIZE)) == -1)
 				goto error;
 
 			// addrinfo is no longer used
