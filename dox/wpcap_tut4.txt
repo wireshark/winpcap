@@ -2,7 +2,7 @@
  */
 
 
-/** @defgroup wpcap_tut4 Capturing the packets without the loopback
+/** @defgroup wpcap_tut4 Capturing the packets without the callback
  *  @{
 
 The sample showed in this lesson behaves exacltly like the one of the previous one (\ref wpcap_tut2), but it uses pcap_next_ex() instead of pcap_loop().

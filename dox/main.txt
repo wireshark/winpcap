@@ -21,11 +21,9 @@
 
 - \ref wpcap
  - \ref wpcap_def
- - \ref wpcap_fn
+ - \ref wpcapfunc
  - \ref language
  - \ref wpcapsamps
-  - \ref wpcapsamp1
-  - \ref wpcapsamp2
  - \ref wpcap_tut
   - \ref wpcap_tut1
   - \ref wpcap_tut2
@@ -47,11 +45,11 @@
  - \ref compilation
 - \ref remote
  - \ref remote_struct
- - \ref remote_func
+ - \ref remotefunc
  - \ref remote_pri_struct
  - \ref remote_pri_struct
 
-\htminclude intro.htm
+\htmlinclude intro.htm
 
 
 */

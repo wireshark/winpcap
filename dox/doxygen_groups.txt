@@ -1,16 +1,11 @@
 /*!
 	\defgroup internals WinPcap internals
-
 	\htmlinclude internals.htm
 */
-
-
-
 
 /*!
 	\ingroup internals
 	\defgroup NPF NPF driver internals manual 
-
 	\htmlinclude npf.htm
 */ 
 
@@ -19,7 +14,6 @@
 /*!
 	\ingroup internals
 	\defgroup compilation How to compile WinPcap 
-
 	\htmlinclude compile.htm
 */ 
 
@@ -28,7 +22,6 @@
 /*!
 	\ingroup internals
 	\defgroup packetapi Packet Driver API developer's manual
-
 	\htmlinclude packet.htm
 */
 
@@ -36,7 +29,6 @@
 /*!
 	\ingroup packetapi
 	\defgroup packetsamps Packet.dll samples
-
 	\htmlinclude packet_samp.htm
 */
 
@@ -44,16 +36,29 @@
 
 /*!
 	\defgroup wpcap WinPcap user's manual
-
 	\htmlinclude wpcap.htm
 */
 
 /*!
 	\ingroup wpcap
 	\defgroup language Filtering expression syntax
-
 	\htmlinclude language.htm
 */
+
+
+/*!
+	\ingroup wpcap
+	\defgroup wpcapsamps Using WinPcap in your programs
+	\htmlinclude wpcap_samp.htm
+
+	\htmlinclude wpcap_samp1.htm
+	\include pktdump_ex\pktdump_ex.c
+
+	\htmlinclude wpcap_samp2.htm
+	\include pcap_filter/pcap_filter.c
+*/
+
+
 
 
 
@@ -62,7 +67,6 @@
 	\htmlinclude wpcap_remote.htm
 */
 
-
 /*!
 	\ingroup remote
 	\defgroup remote_struct Exported Structures and Definitions
@@ -70,7 +74,7 @@
 
 /*!
 	\ingroup remote
-	\defgroup remote_func Exported Functions
+	\defgroup remotefunc Exported Functions
 */
 
 /*!
