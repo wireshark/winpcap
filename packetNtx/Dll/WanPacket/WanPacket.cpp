@@ -1,6 +1,8 @@
 // WanPacket.cpp : Defines the entry point for the DLL application.
 //
 
+#define _WIN32_DCOM 
+
 #include <tchar.h>
 #include <winsock2.h>
 #include <windows.h>
@@ -269,6 +271,18 @@ PWAN_ADAPTER WanPacketOpenAdapter()
 	pWanAdapter->Tme.active = TME_NONE_ACTIVE;
 
 	hResult = CoInitialize(NULL);
+
+	//
+	// if  the calling thread has already initialized COM with a 
+	// different threading model, we have this error
+	// however, we are able to support another threading model,
+	// so we try to initialize COM with another threading model.
+	// This new call should succeed with S_FALSE.
+	//
+	if (hResult == RPC_E_CHANGED_MODE)
+	{
+		hResult = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+	}
 
 	if (hResult != S_OK && hResult != S_FALSE)
 		goto error;
