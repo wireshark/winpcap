@@ -12,7 +12,7 @@ Software requirements:
 - Microsoft Visual C++ 6.0
 
 If your system satisfies these requirements, follow these steps:
-1. From the Window NT Start menu, select the folder Programs and then Development Kits, then Windows XXX DDK, where XXX is the target system. From here select the voice Checked Build Environment if you want to build a debug version, or Free Build Environment if you want to build a release version.
+1. From the Window NT Start menu, select the folder Programs and then Development Kits, then Windows DDK XXX, where XXX is the DDK version, then Build Environments. From here select the voice Checked Build Environment if you want to build a debug version, or Free Build Environment if you want to build a release version.
 2. A command prompt will be opened. Move to the directory PacketNTx inside the WinPcap source folder and type the command
 
 CompileNT4, to build the driver for Windows NT 4
