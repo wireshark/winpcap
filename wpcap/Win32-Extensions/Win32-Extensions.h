@@ -71,3 +71,5 @@ int pcap_setuserbuffer(pcap_t *p, int size);
 int pcap_live_dump(pcap_t *p, char *filename, int maxsize, int maxpacks);
 
 int pcap_live_dump_ended(pcap_t *p, int sync);
+
+int pcap_offline_filter(struct bpf_program *prog, const struct pcap_pkthdr *header, const u_char *pkt_data);

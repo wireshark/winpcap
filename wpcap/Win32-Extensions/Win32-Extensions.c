@@ -339,3 +339,14 @@ pcap_live_dump_ended(pcap_t *p, int sync){
 	return PacketIsDumpEnded(p->adapter, (BOOLEAN)sync);
 
 }
+
+
+int pcap_offline_filter(struct bpf_program *prog, const struct pcap_pkthdr *header, const u_char *pkt_data)
+{
+	struct bpf_insn *fcode = prog->bf_insns;
+
+	if (fcode != NULL) 
+		return (bpf_filter(fcode, (u_char *) pkt_data, header->len, header->caplen));
+	else
+		return 0;
+}

@@ -69,4 +69,5 @@ EXPORTS
 		pcap_remoteact_cleanup
 		install_bpf_program
 		pcap_next_ex
+		pcap_offline_filter
 

@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.12 2003/04/17 14:36:31 fulvio Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.13 2003/04/17 15:06:57 fulvio Exp $ (LBL)
  */
 
 
@@ -800,5 +800,25 @@ points to the data of the packet, including the protocol headers.
 */
 typedef void (*pcap_handler)(u_char *user, const struct pcap_pkthdr *pkt_header,
 			     const u_char *pkt_data);
+
+
+/*!	\brief<b> Win32 Specific.</b> It returns if a given filter applies to an offline packet.
+	
+This function is used to apply a filter to a packet that is currently in memory.
+This process does not need to open an adapter; we need just to create the proper filter (by settings
+parameters like the snapshot length, or the link-layer type) by means of the pcap_compile_nopcap().
+
+The current API of libpcap does not allow to receive a packet and to filter the packet after it has been
+received. However, this can be useful in case you want to filter packets in the application, instead of into 
+the receiving process. This function allows you to do the job.
+	
+\param prog: bpf program (created with the pcap_compile_nopcap() )
+\param header: header of the packet that has to be filtered
+\param pkt_data: buffer containing the packet, in network-byte order.
+
+\return the length of the bytes that are currently available into the packet if the packet satisfies the filter,
+0 otherwise.
+*/
+bool pcap_offline_filter(struct bpf_program *prog, const struct pcap_pkthdr *header, const u_char *pkt_data);
 
 /*@}*/
