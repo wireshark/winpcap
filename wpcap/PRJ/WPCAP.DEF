@@ -13,7 +13,6 @@ EXPORTS
 		pcap_loop
 		pcap_dispatch
 		pcap_read
-		pcap_read_ex
 		pcap_setuserbuffer
 		pcap_offline_read
 		pcap_next
@@ -69,3 +68,5 @@ EXPORTS
 		pcap_remoteact_close
 		pcap_remoteact_cleanup
 		install_bpf_program
+		pcap_next_ex
+

@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.8 2003/01/20 08:47:49 degioanni Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.9 2003/02/28 08:13:37 fulvio Exp $ (LBL)
  */
 
 
@@ -219,7 +219,7 @@ char *pcap_lookupdev(char *errbuf);
 */
 int pcap_lookupnet(char *device, bpf_u_int32 *netp, bpf_u_int32 *maskp, char *errbuf);
 
-/*! \brief <b>Deprecated: use the pcap_read_ex() instead.</b> Collects a group of packets. Returns when \b cnt packets have been received 
+/*! \brief <b>Deprecated: use the pcap_next_ex() instead.</b> Collects a group of packets. Returns when \b cnt packets have been received 
 or when the timeout set with pcap_open_live() expires.
 
        pcap_dispatch()  is  used  to collect and process packets.
@@ -260,7 +260,7 @@ or when the timeout set with pcap_open_live() expires.
 */
 int pcap_dispatch(pcap_t *p, int cnt, pcap_handler callback, u_char *user);
 
-/*! \brief <b>Deprecated: use the pcap_read_ex() instead.</b> Collects a group of packets. Returns when \b cnt packets have
+/*! \brief <b>Deprecated: use the pcap_next_ex() instead.</b> Collects a group of packets. Returns when \b cnt packets have
 been received, but doesn't respect the timeout set with pcap_open_live(), 
 therefore it can block forever.
 
@@ -352,7 +352,7 @@ int pcap_setfilter(pcap_t *p, struct bpf_program *fp);
 */
 void pcap_freecode(struct bpf_program *fp);
 
-/*! \brief <b>Discouraged, use pcap_read_ex() instead</b>.\n Returns the next available packet.
+/*! \brief <b>Discouraged, use pcap_next_ex() instead</b>.\n Returns the next available packet.
 
        pcap_next()  reads  the  next packet (by calling pcap_dispatch() 
 	   with a cnt of 1) and returns a u_char  pointer  to
@@ -713,7 +713,7 @@ u_int pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue* queue, int sync);
 This function is used to retrieve the next available packet, bypassing the callback method traditionally 
 provided by libpcap.
 
-pcap_read_ex fills the pkt_header and pkt_data parameters (see pcap_handler()) with the pointers to the 
+pcap_next_ex fills the pkt_header and pkt_data parameters (see pcap_handler()) with the pointers to the 
 header and to the data of the next captured packet.
 
 The return value can be:
@@ -724,7 +724,7 @@ The return value can be:
 
 \sa pcap_open_live(), pcap_loop(), pcap_dispatch(), pcap_handler()
 */
-int pcap_read_ex(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data);
+int pcap_next_ex(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data);
 
 /*! \brief <b>Win32 Specific.</b> Saves a capture to file.
 

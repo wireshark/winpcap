@@ -179,7 +179,8 @@ int rpcap_deseraddr(struct sockaddr_storage *sockaddrin, struct sockaddr_storage
 
 /*!	\ingroup remote_pri_func
 
-	\brief It reads a packet from the network socket.
+	\brief It reads a packet from the network socket. This does not make used of 
+	callback (hence the "nocb" string into its name).
 
 	This function is called by the several pcap_read_ex() when they detect that 
 	we have a remote capture and they are the client side. In that case, they need
@@ -199,7 +200,7 @@ int rpcap_deseraddr(struct sockaddr_storage *sockaddrin, struct sockaddr_storage
 	timeout/2 and then it checks again. If packets are still missing, it returns,
 	otherwise it reads packets.
 */
-int pcap_read_ex_remote(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data)
+int pcap_read_nocb_remote(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data)
 {
 int cc;
 register u_char *ep, *bp;
@@ -260,7 +261,7 @@ again:
 	we have a remote capture and they are the client side. In that case, they need
 	to read packets from the socket.
 
-	This function relies on the pcap_read_ex_remote to deliver packets. The
+	This function relies on the pcap_read_nocb_remote to deliver packets. The
 	difference, here, is that as soon as a packet is read, it is delivered
 	to the application by means of a callback function.
 
@@ -274,7 +275,7 @@ int n = 0;
 
 	while ( (++n <= cnt) || (cnt < 0) )
 	{
-		if (pcap_read_ex_remote(p, &pkt_header, &pkt_data) )
+		if (pcap_read_nocb_remote(p, &pkt_header, &pkt_data) )
 			(*callback)(user, pkt_header, pkt_data);
 		else
 			return n;

@@ -325,7 +325,7 @@ struct rpcap_stats
 pcap_t *pcap_opensource_remote(const char *source, struct pcap_rmtauth *auth, char *errbuf);
 int pcap_startcapture_remote(pcap_t *fp);
 
-int pcap_read_ex_remote(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data);
+int pcap_read_nocb_remote(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data);
 int pcap_read_remote(pcap_t *p, int cnt, pcap_handler callback, u_char *user);
 int pcap_updatefilter_remote(pcap_t *fp, struct bpf_program *prog);
 int pcap_setfilter_remote(pcap_t *fp, struct bpf_program *prog);

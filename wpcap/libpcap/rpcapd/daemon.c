@@ -1346,7 +1346,7 @@ int sendbufidx;						// index which keeps the number of bytes currently buffered
 		goto error;
 
 	// Retrieve the packets
-	while ((retval = pcap_read_ex(fp, &pkt_header, &pkt_data)) >= 0)
+	while ((retval = pcap_next_ex(fp, &pkt_header, &pkt_data)) >= 0)
 	{
 		if (retval == 0)	// Read timeout elapsed
 			continue;

@@ -153,6 +153,7 @@ pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue* queue, int sync){
 }
 
 
+#ifdef WE_HAVE_TO_DELETE_IT_ASAP
 int 
 pcap_read_ex(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data)
 {
@@ -253,6 +254,7 @@ pcap_read_ex(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data)
 		}
 	}
 }
+#endif
 
 
 int
