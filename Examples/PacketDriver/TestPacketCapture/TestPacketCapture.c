@@ -231,7 +231,7 @@ void PrintPackets(LPPACKET lpPacket)
 			pChar = pLine;
 
 			for ( j=0; j<ulen; j++, pChar++ )
-				printf( "%c", isprint( *pChar ) ? *pChar : '.' );
+				printf( "%c", isprint( (unsigned char)*pChar ) ? *pChar : '.' );
 
 			printf( "\n" );
 		} 
