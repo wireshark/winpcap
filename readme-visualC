@@ -72,12 +72,12 @@ Software requirements:
 - Microsoft Visual C++ 6.0
 
 To compile the PACKET.DLL, load the project contained in the directory PacketNTx\dll\project (or Packet9x\dll\project) in the Visual C++ IDE.There are four project configurations:
-PackeNT - Win32 Release: standard release configuration
-PackeNT - Win32 Debug: standard debug configuration
-PackeNT - Win32 NT4 Release: release configuration able to run on NT4 does not include Wan and IP helper API support.
-PackeNT - Win32 NT4 Debug: debug configuration able to run on NT4 does not include Wan and IP helper API support.
-WanPacket - Win32 Release: release version of the WanPacket library, used to inerface with NetMon API for Wan capture
-WanPacket - Win32 Debug: debug version of the WanPacket library, used to inerface with NetMon API for Wan capture
+PacketNT - Win32 Release: standard release configuration
+PacketNT - Win32 Debug: standard debug configuration
+PacketNT - Win32 NT4 Release: release configuration able to run on NT4 does not include Wan and IP helper API support.
+PacketNT - Win32 NT4 Debug: debug configuration able to run on NT4 does not include Wan and IP helper API support.
+WanPacket - Win32 Release: release version of the WanPacket library, used to interface with NetMon API for Wan capture
+WanPacket - Win32 Debug: debug version of the WanPacket library, used to interface with NetMon API for Wan capture
 
 Choose the desired configuration and build the project to obtain the binary files.
 
