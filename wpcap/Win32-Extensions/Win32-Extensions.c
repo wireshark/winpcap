@@ -33,7 +33,7 @@
 #include "pcap-int.h"
 #include <packet32.h>
 
-#ifdef REMOTE
+#ifdef HAVE_REMOTE
 #include <pcap-remote.h>
 #endif
 
@@ -63,7 +63,7 @@ pcap_stats_ex(pcap_t *p, int *pcap_stat_size)
 {
 	*pcap_stat_size= sizeof (struct pcap_stat);
 
-#ifdef REMOTE
+#ifdef HAVE_REMOTE
 	if (p->rmt_clientside)
 	{
 		/* We are on an remote capture */
@@ -172,7 +172,7 @@ pcap_next_ex(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data)
 {
 	/* Check the capture type */
 
-#ifdef REMOTE
+#ifdef HAVE_REMOTE
 	if (p->rmt_clientside)
 	{
 		/* We are on an remote capture */
