@@ -74,7 +74,7 @@ int daemon_getstatsnopcap(SOCKET sockctrl, unsigned int ifdrops, unsigned int if
 int daemon_setsampling(SOCKET sockctrl, struct rpcap_sampling *samp_param, int plen, char *errbuf);
 
 void daemon_seraddr(struct sockaddr_storage *sockaddrin, struct sockaddr_storage *sockaddrout);
-void daemon_thrdatamain(void *ptr);
+void *daemon_thrdatamain(void *ptr);
 
 
 
@@ -307,7 +307,7 @@ auth_again:
 				if (fp)
 				{
 					if (daemon_updatefilter(fp, ntohl(header.plen)) )
-					SOCK_ASSERT(fp->errbuf, 1);
+						SOCK_ASSERT(fp->errbuf, 1);
 				}
 				else
 				{
@@ -660,7 +660,9 @@ int daemon_AuthUserPwd(char *username, char *password, char *errbuf)
 */
 
 	struct passwd *user;
+#ifdef linux
 	struct spwd *usersp;
+#endif
 
 	// This call is needed to get the uid
 	if ((user= getpwnam(username)) == NULL)
@@ -1083,7 +1085,7 @@ int serveropen_dp;							// keeps who is going to open the data connection
 
 	if (!serveropen_dp)
 	{
-		sscanf(portdata, "%d", &(startcapreply->portdata) );
+		sscanf(portdata, "%d", (int *) &(startcapreply->portdata) );
 		startcapreply->portdata= htons(startcapreply->portdata);
 	}
 
@@ -1113,7 +1115,7 @@ int serveropen_dp;							// keeps who is going to open the data connection
 	fp->rmt_sockdata= sockdata;
 
 	// Now we have to create a new thread to receive packets
-	if ( pthread_create(threaddata, NULL, (void *) &daemon_thrdatamain, (void *) fp) )
+	if ( pthread_create(threaddata, NULL, (void *) daemon_thrdatamain, (void *) fp) )
 	{
 		snprintf(errbuf, PCAP_ERRBUF_SIZE, "Error creating the data thread");
 		goto error;
@@ -1408,7 +1410,7 @@ error:
 
 
 
-void daemon_thrdatamain(void *ptr)
+void *daemon_thrdatamain(void *ptr)
 {
 char errbuf[PCAP_ERRBUF_SIZE + 1];	// error buffer
 pcap_t *fp;							// pointer to a 'pcap' structure
@@ -1416,7 +1418,7 @@ int retval;							// general variable used to keep the return value of other fun
 struct rpcap_pkthdr *net_pkt_header;// header of the packet
 struct pcap_pkthdr *pkt_header;		// pointer to the buffer that contains the header of the current packet
 u_char *pkt_data;					// pointer to the buffer that contains the current packet
-char sendbuf[RPCAP_NETBUF_SIZE];	// temporary buffer in which data to be sent is buffered
+char *sendbuf;						// temporary buffer in which data to be sent is buffered
 int sendbufidx;						// index which keeps the number of bytes currently buffered
 
 	fp= (pcap_t *) ptr;
@@ -1426,6 +1428,15 @@ int sendbufidx;						// index which keeps the number of bytes currently buffered
 	// Initialize errbuf
 	memset(errbuf, 0, sizeof(errbuf) );
 
+	// Some platforms (e.g. Win32) allow creating a static variable with this size
+	// However, others (e.g. BSD) do not, so we're forced to allocate this buffer dynamically
+	sendbuf= (char *) malloc (sizeof(char) * RPCAP_NETBUF_SIZE);
+	if (sendbuf == NULL)
+	{
+		snprintf(errbuf, sizeof(errbuf) - 1, "Unable to create the buffer for this child thread");
+		goto error;
+	}
+
 	// Modify thread params so that it can be killed at any time
 	if (pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL) )
 		goto error;
@@ -1433,7 +1444,7 @@ int sendbufidx;						// index which keeps the number of bytes currently buffered
 		goto error;
 
 	// Retrieve the packets
-	while ((retval = pcap_next_ex(fp, &pkt_header, &pkt_data)) >= 0)
+	while ((retval = pcap_next_ex(fp, &pkt_header, (const u_char **) &pkt_data)) >= 0)	// cast to avoid a compiler warning
 	{
 		if (retval == 0)	// Read timeout elapsed
 			continue;
@@ -1485,7 +1496,9 @@ error:
  	closesocket(fp->rmt_sockdata);
 	fp->rmt_sockdata= 0;
 
-	return;
+	free(sendbuf);
+
+	return NULL;
 }
 
 

@@ -197,7 +197,7 @@ int pcap_read_nocb_remote(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **p
 {
 struct rpcap_header *header;			// general header according to the RPCAP format
 struct rpcap_pkthdr *net_pkt_header;	// header of the packet
-char netbuf[RPCAP_NETBUF_SIZE];	// size of the network buffer in which the packet is copied, just for UDP
+char netbuf[RPCAP_NETBUF_SIZE];			// size of the network buffer in which the packet is copied, just for UDP
 unsigned int nread;						// number of bytes (of payload) currently read from the network (referred to the current pkt)
 int retval;								// generic return value
 
@@ -530,6 +530,29 @@ struct rpcap_header header;			// header of the RPCAP packet
 struct rpcap_stats netstats;		// statistics sent on the network
 unsigned int nread= 0;				// number of bytes of the payload read from the socket
 int retval;							// temp variable which stores functions return value
+
+	// If the capture has still to start, we cannot ask statistics to the other peer
+	// So, we return a fake number
+	if (!p->rmt_capstarted) 
+	{
+		if (mode == PCAP_STATS_STANDARD)
+		{
+			ps->ps_drop= 0;
+			ps->ps_ifdrop= 0;
+			ps->ps_recv= 0;
+		}
+		else
+		{
+			ps->ps_capt= 0;
+			ps->ps_drop= 0;
+			ps->ps_ifdrop= 0;
+			ps->ps_netdrop= 0;
+			ps->ps_recv= 0;
+			ps->ps_sent= 0;
+		}
+
+		return ps;
+	}
 
 	rpcap_createhdr(&header, RPCAP_MSG_STATS_REQ, 0, 0);
 
@@ -1005,7 +1028,7 @@ int sockbufsize= 0;
 	// portdata on the openreq is meaningful only if we're in active mode
 	if ( (active) || (fp->rmt_flags & PCAP_OPENFLAG_DATATX_UDP) )
 	{
-		sscanf(portdata, "%d", &(startcapreq->portdata));
+		sscanf(portdata, "%d", (int *) &(startcapreq->portdata));	// cast to avoid a compiler warning
 		startcapreq->portdata= htons(startcapreq->portdata);
 	}
 
@@ -1225,11 +1248,13 @@ error:
 	if (!active)
 		sock_close(fp->rmt_sockctrl, NULL, 0);
 
-	if (fp)
-	{
-		pcap_close(fp);
-		fp= NULL;
-	}
+	// We do not have to call pcap_close() here, because this function is always called 
+	// by the user in case something bad happens
+//	if (fp)
+//	{
+//		pcap_close(fp);
+//		fp= NULL;
+//	}
 
 	return -1;
 }

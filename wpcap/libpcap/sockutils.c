@@ -46,9 +46,10 @@
 
 
 #include "sockutils.h"
-#include <string.h>	// for strerror
+#include <string.h>	// for strerror()
 #include <errno.h>	// for the errno variable
 #include <stdio.h>	// for the stderr file
+#include <stdlib.h>	// for malloc() and free()
 
 
 
@@ -801,14 +802,16 @@ again:
 */
 int sock_discard(SOCKET sock, int size, char *errbuf, int errbuflen)
 {
-#define TEMP_BUF_SIZE 65536
+#define TEMP_BUF_SIZE 32768
 
 char buffer[TEMP_BUF_SIZE];		// network buffer, to be used when the message is discarded
 
 	// A static allocation avoids the need of a 'malloc()' each time we want to discard a message
-	// Our feeling is that a buffer if 65536 is enough for mot of the application;
+	// Our feeling is that a buffer if 32KB is enough for most of the application;
 	// in case this is not enough, the "while" loop discards the message by calling the 
 	// sockrecv() several times.
+	// We do not want to create a bigger variable because this causes the program to exit on
+	// some platforms (e.g. BSD)
 
 	while (size > TEMP_BUF_SIZE)
 	{

@@ -499,7 +499,9 @@ SOCKET sockmain;
 	// main thread loop
 	while (1)
 	{
+#ifdef WIN32
 	pthread_t threadId;					// Pthread variable that keeps the thread structures
+#endif
 	struct daemon_slpars *pars;			// parameters needed by the daemon_serviceloop()
 
 		// Connection creation
