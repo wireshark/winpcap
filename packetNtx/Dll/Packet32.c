@@ -2017,8 +2017,6 @@ BOOLEAN PacketGetNetInfo(LPTSTR AdapterName, PULONG netp, PULONG maskp)
 		for(i=0;i<4;i++){
 			*((char*)maskp+i) = *((char*)&TAddr+3-i);
 		}
-		
-		
 	}
 	else{
 
@@ -2048,11 +2046,7 @@ BOOLEAN PacketGetNetInfo(LPTSTR AdapterName, PULONG netp, PULONG maskp)
 
 	}
 	
-	if (status != ERROR_SUCCESS) {
-		RegCloseKey(TcpIpKey);
-		goto fail;
-	}
-	
+	RegCloseKey(TcpIpKey);	
 		
 	if (AdapterNameU != NULL)
 		free(AdapterNameU);
