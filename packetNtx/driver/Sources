@@ -1,25 +1,29 @@
 TARGETNAME=npf
-TARGETPATH=$(WORINGKDIR)
+
+TARGETPATH=$(WORKINGDIR)
+
 TARGETTYPE=DRIVER
 
-TARGETLIBS=$(DDK_LIB_PATH)\ndis.lib
+TARGETLIBS=$(DDK_LIB_PATH)\ndis.lib 
+
 C_DEFINES=$(C_DEFINES) -D$(NDISVERSION) -DWIN_NT_DRIVER -DWIN32_EXT -D$(TS_TYPE)
 
-INCLUDES=..\..\inc;..\..\common
+
+INCLUDES=..\..\common
 
 SOURCES=packet.c    \
-        openclos.c  \
-        read.c      \
-        write.c     \
-        dump.c      \
-        jitter.c      \
-		win_bpf_filter.c \
-		tme.c \
-		count_packets.c \
-		win_bpf_filter_init.c \
-		tcp_session.c \
-		functions.c \
-		bucket_lookup.c \
-		normal_lookup.c \
-		NPF.rc
+	openclos.c  \
+	read.c      \
+	write.c     \
+	dump.c      \
+	jitter.c      \
+	win_bpf_filter.c \
+	tme.c \
+	count_packets.c \
+	win_bpf_filter_init.c \
+	tcp_session.c \
+	functions.c \
+	bucket_lookup.c \
+	normal_lookup.c \
+	NPF.rc
 
