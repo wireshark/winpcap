@@ -23,6 +23,7 @@
 #include <stdio.h>
 
 #include <pcap.h>
+#include <remote-ext.h>
 
 void usage();
 
