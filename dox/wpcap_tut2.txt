@@ -12,10 +12,6 @@ Lesson 1 (\ref wpcap_tut1) showed how to get basic information (i.e. device name
 
 The following sample provides an ifprint() function that prints the whole content of a pcap_if structure. It is invoked by the program for every entry returned by pcap_findalldevs().
 
-After this, the program calls pcap_lookupdev(). This functions returns the first among the available interfaces and can be used to get a valid device when the user doesn't make an explicit choice. Note however that the output of pcap_lookupdev() depends on the OS where it's used: under Unix and Win9x, it returns an ASCII string while under WinNTx (Windows NT, 2000, XP, etc.) it returns an UNICODE string. This is the reason why a check with GetVersion() is done before calling it.
-
-Finally, the address and netmask of the first interface are obtained with pcap_lookupnet(). This function is very simple to use, but has some non negligible limitations. First, it return a single couple address/mask, so it doesn't work properly on interfaces with more than one address. Second, it supports only Ipv4 (32 bit) addresses. pcap_findalldevs() doesn't show any of these problems, so whenever possible use it instead than pcap_lookupnet().
-
 \include iflist/iflist.c
 
 @}*/
