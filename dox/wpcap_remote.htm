@@ -309,14 +309,19 @@ capture has been tested on Linux and BSD. What you have to do is:</p>
     capture for them.</li>
   <li>an executable (<code>rpcapd</code>) that is the remote daemon</li>
 </ul>
-<p>Warning: in order to run the <code>rpcapd</code> daemon, the program must
+<p><b>Warning</b>: in order to run the <code>rpcapd</code> daemon, the program must
 either</p>
 <ul>
   <li> run as root (or)</li>
   <li>run as user, but it
 must be owned by root and must be SUID root (<code>chmod u+s rpcapd</code>)</li>
 </ul>
-<p>&nbsp;</p>
+<h3>Known bugs</h3>
+
+<p><b>FreeBSD</b>: the first time you call the <code>pcap_stat()</code>, the
+function takes several seconds to return. Therefore, programs like Analyzer seem
+to hang up for 20-30 seconds at the beginning of the capture (if this is done
+with BSD as a remote probe). We're investigating how to solve this issue.</p>
 
 <p><i>For any question, please refer to the WinPcap help page.</i></p>
 
