@@ -1132,6 +1132,11 @@ int retval;					// Variable that keeps the return value;
 	\param sockaddr: a user-allocated sockaddr_storage structure which will contains the
 	'network' form of the requested address.
 
+	\param addr_family: a constant which can assume the following values:
+		- 'AF_INET' if we want to ping an IPv4 host
+		- 'AF_INET6' if we want to ping an IPv6 host
+		- 'AF_UNSPEC' if we do not have preferences about the protocol used to ping the host 
+
 	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
 	error message. This buffer has to be at least 'errbuflen' in length.
 	It can be NULL; in this case the error cannot be printed.
@@ -1147,13 +1152,18 @@ int retval;					// Variable that keeps the return value;
 
 	\warning The sockaddr_storage structure MUST be allocated by the user.
 */
-int sock_present2network(const char *address, struct sockaddr_storage *sockaddr, char *errbuf, int errbuflen)
+int sock_present2network(const char *address, struct sockaddr_storage *sockaddr, int addr_family, char *errbuf, int errbuflen)
 {
 int retval;
 struct addrinfo *addrinfo;
+struct addrinfo hints;
 
-	if ( (retval= sock_initaddress(address, "22222" /* fake port */, NULL, &addrinfo, errbuf, errbuflen)) == -1 )
-		return retval;
+	memset(&hints, 0, sizeof(hints) );
+
+	hints.ai_family= addr_family;
+
+	if ( (retval= sock_initaddress(address, "22222" /* fake port */, &hints, &addrinfo, errbuf, errbuflen)) == -1 )
+		return 0;
 
 	if (addrinfo->ai_family == PF_INET)
 		memcpy(sockaddr, addrinfo->ai_addr, sizeof(struct sockaddr_in) );

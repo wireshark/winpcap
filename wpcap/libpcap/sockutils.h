@@ -202,7 +202,7 @@ int	sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage
 int sock_cmpaddr(struct sockaddr_storage *first, struct sockaddr_storage *second);
 
 int sock_getascii_addrport(const struct sockaddr_storage *sockaddr, char *address, int addrlen, char *port, int portlen, int flags, char *errbuf, int errbuflen);
-int sock_present2network(const char *address, struct sockaddr_storage *sockaddr, char *errbuf, int errbuflen);
+int sock_present2network(const char *address, struct sockaddr_storage *sockaddr, int addr_family, char *errbuf, int errbuflen);
 
 
 #ifdef __cplusplus
