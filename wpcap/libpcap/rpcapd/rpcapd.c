@@ -383,6 +383,12 @@ int i;
 			}
 #endif
 			tempaddrinfo= tempaddrinfo->ai_next;
+
+			// FULVIO (bug)
+			// Waits for 100 ms in order to allow the child thread to save the 'sockmain' variable
+			// before it gets overwritten by the sock_open, in case we want to open more than one waiting sockets
+			// It's a really dirty way to create a mutex
+			pthread_suspend(100);
 		}
 
 		freeaddrinfo(addrinfo);
@@ -420,6 +426,9 @@ void main_cleanup(int sign)
 
 	SOCK_ASSERT(PROGRAM_NAME " is closing.\n", 1);
 
+	// FULVIO (bug)
+	// Here we close only the latest 'sockmain' created; if we opened more than one waiting sockets, 
+	// only the latest one is closed correctly.
 	if (sockmain)
 		closesocket(sockmain);
 	sock_cleanup();
