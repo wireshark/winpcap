@@ -33,7 +33,7 @@
 #ifndef __DAEMON_H__
 #define __DAEMON_H__
 
-//! Structure that keeps the parameters neede by the daemon_serviceloop() function
+//! Structure that keeps the parameters needed by the daemon_serviceloop() function
 struct daemon_slpars
 {
 	SOCKET sockctrl;			//!< SOCKET ID of the control connection
@@ -44,6 +44,8 @@ struct daemon_slpars
 
 
 void daemon_serviceloop( void *ptr );
+
+void pthread_suspend(int msec);
 
 #endif
 

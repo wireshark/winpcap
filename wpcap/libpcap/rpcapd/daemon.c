@@ -60,8 +60,8 @@ int daemon_AuthUserPwd(char *username, char *password, char *errbuf);
 int daemon_findalldevs(SOCKET sockctrl, char *errbuf);
 
 int daemon_opensource(SOCKET sockctrl, char *source, int srclen, uint32 plen, char *errbuf);
-pcap_t *daemon_startcapture(SOCKET sockctrl, char *source, int active, uint32 plen, char *errbuf);
-int daemon_endcapture(pcap_t *fp, char *errbuf);
+pcap_t *daemon_startcapture(SOCKET sockctrl, pthread_t *threaddata, char *source, int active, uint32 plen, char *errbuf);
+int daemon_endcapture(pcap_t *fp, pthread_t *threaddata, char *errbuf);
 
 int daemon_updatefilter(pcap_t *fp, uint32 plen);
 int daemon_unpackapplyfilter(pcap_t *fp, unsigned int *nread, int *plen, char *errbuf);
@@ -111,6 +111,8 @@ struct rpcap_header header;				// RPCAP message general header
 pcap_t *fp= NULL;						// pcap_t main variable
 struct daemon_slpars *pars;				// parameters related to the present daemon loop
 
+pthread_t threaddata= 0;				// handle to the 'read from daemon and send to client' thread
+
 unsigned int ifdrops, ifrecv, krnldrop, svrcapt;	// needed to save the values of the statistics
 
 // Structures needed for the select() call
@@ -118,8 +120,8 @@ fd_set rfds;						// set of socket descriptors we have to check
 struct timeval tv;					// maximum time the select() can block waiting for data
 int retval;							// select() return value
 
-	pars= (struct daemon_slpars *) ptr;
 
+	pars= (struct daemon_slpars *) ptr;
 	
 	*errbuf= 0;	// Initialize errbuf
 
@@ -282,7 +284,7 @@ auth_again:
 
 			case RPCAP_MSG_STARTCAP_REQ:
 			{
-				fp= daemon_startcapture(pars->sockctrl, source, pars->isactive, ntohl(header.plen), errbuf);
+				fp= daemon_startcapture(pars->sockctrl, &threaddata, source, pars->isactive, ntohl(header.plen), errbuf);
 
 				if (fp == NULL)
 					SOCK_ASSERT(errbuf, 1);
@@ -347,7 +349,7 @@ auth_again:
 					else
 						ifdrops= ifrecv= krnldrop= svrcapt= 0;
 
-					if ( daemon_endcapture(fp, errbuf) )
+					if ( daemon_endcapture(fp, &threaddata, errbuf) )
 						SOCK_ASSERT(errbuf, 1);
 					fp= NULL;
 				}
@@ -389,10 +391,10 @@ end:
 	// perform pcap_t cleanup, in case it has not been done
 	if (fp)
 	{
-		if (fp->rmt_threaddata)
+		if (threaddata)
 		{
-			pthread_cancel(fp->rmt_threaddata);
-			fp->rmt_threaddata= 0;
+			pthread_cancel(threaddata);
+			threaddata= 0;
 		}
 		if (fp->rmt_sockdata)
 		{
@@ -922,9 +924,8 @@ error:
 	\param plen: the length of the current message (needed in order to be able
 	to discard excess data in the message, if present)
 */
-pcap_t *daemon_startcapture(SOCKET sockctrl, char *source, int active, uint32 plen, char *errbuf)
+pcap_t *daemon_startcapture(SOCKET sockctrl, pthread_t *threaddata, char *source, int active, uint32 plen, char *errbuf)
 {
-pthread_t threaddata= 0;			// handle to the receiving thread
 char portdata[PCAP_BUF_SIZE];		// temp variable needed to derive the data port
 char peerhost[PCAP_BUF_SIZE];		// temp variable needed to derive the host name of our peer
 pcap_t *fp= NULL;					// pcap_t main variable
@@ -1096,13 +1097,11 @@ int serveropen_dp;							// keeps who is going to open the data connection
 	fp->rmt_sockdata= sockdata;
 
 	// Now we have to create a new thread to receive packets
-	if ( pthread_create( &threaddata, NULL, (void *) &daemon_thrdatamain, (void *) fp) )
+	if ( pthread_create(threaddata, NULL, (void *) &daemon_thrdatamain, (void *) fp) )
 	{
 		snprintf(errbuf, PCAP_ERRBUF_SIZE, "Error creating the data thread");
 		goto error;
 	}
-
-	fp->rmt_threaddata= threaddata;
 
 	// Check if all the data has been read; if not, discard the data in excess
 	if (nread != plen)
@@ -1117,7 +1116,7 @@ error:
 		freeaddrinfo(addrinfo);
 
 	if (threaddata)
-		pthread_cancel(threaddata);
+		pthread_cancel(*threaddata);
 
 	if (sockdata)
 		sock_close(sockdata, fakeerrbuf, PCAP_ERRBUF_SIZE);
@@ -1137,15 +1136,15 @@ error:
 
 
 
-int daemon_endcapture(pcap_t *fp, char *errbuf)
+int daemon_endcapture(pcap_t *fp, pthread_t *threaddata, char *errbuf)
 {
 struct rpcap_header header;
 SOCKET sockctrl;
 
-	if (fp->rmt_threaddata)
+	if (threaddata)
 	{
-		pthread_cancel(fp->rmt_threaddata);
-		fp->rmt_threaddata= 0;
+		pthread_cancel(*threaddata);
+		threaddata= 0;
 	}
 	if (fp->rmt_sockdata)
 	{
@@ -1185,6 +1184,9 @@ unsigned int i;
 	}
 
 	bf_prog.bf_len= ntohl(filter.nitems);
+
+	if (bf_prog.bf_len == 0)	// No filters have been specified; so, let's return back.
+		return 0;
 
 	if (ntohs(filter.filtertype) != RPCAP_UPDATEFILTER_BPF)
 	{
@@ -1426,7 +1428,6 @@ error:
 	SOCK_ASSERT(errbuf, 1);
  	closesocket(fp->rmt_sockdata);
 	fp->rmt_sockdata= 0;
-	fp->rmt_threaddata= 0;
 
 	return;
 }
@@ -1479,4 +1480,45 @@ void daemon_seraddr(struct sockaddr_storage *sockaddrin, struct sockaddr_storage
 		memcpy(sockaddrout, sockaddr, sizeof(struct sockaddr_in6) );
 	}
 }
+
+
+
+
+
+/*!
+	\brief Suspends a pthread for msec milliseconds.
+
+	This function is provided since pthreads do not have a suspend() call.
+*/
+void pthread_suspend(int msec)
+{
+#ifdef WIN32
+	Sleep(msec);
+#else
+struct timespec abstime;
+struct timeval now;
+
+	pthread_cond_t cond;
+	pthread_mutex_t mutex;
+	pthread_mutexattr_t attr;
+
+	pthread_mutexattr_init(&attr);
+	pthread_mutex_init(&mutex, &attr);
+	pthread_mutex_lock(&mutex);
+
+	pthread_cond_init(&cond, NULL);
+
+	gettimeofday(&now, NULL);
+	
+	abstime.tv_sec = now.tv_sec + msec/1000;
+	abstime.tv_nsec = now.tv_usec * 1000 + (msec%1000) * 1000 * 1000;
+
+	pthread_cond_timedwait(&cond, &mutex, &abstime);
+
+	pthread_mutex_destroy(&mutex);
+	pthread_cond_destroy(&cond);
+#endif
+}
+
+
 

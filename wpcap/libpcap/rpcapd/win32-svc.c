@@ -81,7 +81,7 @@ int val;
 
 	snprintf(message, PCAP_ERRBUF_SIZE, "%s failed with error %d: %s", str, val, string);
 
-	SOCK_ASSERT(1, message);
+	SOCK_ASSERT(message, 1);
 }
 
 

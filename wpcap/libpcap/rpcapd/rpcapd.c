@@ -621,7 +621,8 @@ struct daemon_slpars *pars;			// parameters needed by the daemon_serviceloop()
 	hints.ai_family= activepars->ai_family;
 
 	snprintf(errbuf, PCAP_ERRBUF_SIZE, "Connecting to host %s, port %s, using protocol %s",
-			activepars->address, activepars->port, (hints.ai_family == AF_INET) ? "IPv4": "IPv6" );
+			activepars->address, activepars->port, (hints.ai_family == AF_INET) ? "IPv4": 
+			(hints.ai_family == AF_INET6) ? "IPv6" : "Unspecified");
 	SOCK_ASSERT(errbuf, 1);
 
 	// Initialize errbuf
@@ -643,7 +644,8 @@ struct daemon_slpars *pars;			// parameters needed by the daemon_serviceloop()
 			SOCK_ASSERT(errbuf, 1);
 
 			snprintf(errbuf, PCAP_ERRBUF_SIZE, "Error connecting to host %s, port %s, using protocol %s",
-					activepars->address, activepars->port, (hints.ai_family == AF_INET) ? "IPv4": "IPv6" );
+					activepars->address, activepars->port, (hints.ai_family == AF_INET) ? "IPv4": 
+					(hints.ai_family == AF_INET6) ? "IPv6" : "Unspecified" );
 
 			SOCK_ASSERT(errbuf, 1);
 
