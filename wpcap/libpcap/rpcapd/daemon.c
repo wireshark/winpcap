@@ -60,7 +60,8 @@ int daemon_AuthUserPwd(char *username, char *password, char *errbuf);
 int daemon_findalldevs(SOCKET sockctrl, char *errbuf);
 
 int daemon_opensource(SOCKET sockctrl, char *source, int srclen, uint32 plen, char *errbuf);
-pcap_t *daemon_startcapture(SOCKET sockctrl, pthread_t *threaddata, char *source, int active, uint32 plen, char *errbuf);
+pcap_t *daemon_startcapture(SOCKET sockctrl, pthread_t *threaddata, char *source, int active, 
+							struct rpcap_sampling *samp_param, uint32 plen, char *errbuf);
 int daemon_endcapture(pcap_t *fp, pthread_t *threaddata, char *errbuf);
 
 int daemon_updatefilter(pcap_t *fp, uint32 plen);
@@ -69,6 +70,8 @@ int daemon_unpackapplyfilter(pcap_t *fp, unsigned int *nread, int *plen, char *e
 int daemon_getstats(pcap_t *fp);
 int daemon_getstatsnopcap(SOCKET sockctrl, unsigned int ifdrops, unsigned int ifrecv, 
 						  unsigned int krnldrop, unsigned int svrcapt, char *errbuf);
+
+int daemon_setsampling(SOCKET sockctrl, struct rpcap_sampling *samp_param, int plen, char *errbuf);
 
 void daemon_seraddr(struct sockaddr_storage *sockaddrin, struct sockaddr_storage *sockaddrout);
 void daemon_thrdatamain(void *ptr);
@@ -114,6 +117,8 @@ struct daemon_slpars *pars;				// parameters related to the present daemon loop
 pthread_t threaddata= 0;				// handle to the 'read from daemon and send to client' thread
 
 unsigned int ifdrops, ifrecv, krnldrop, svrcapt;	// needed to save the values of the statistics
+
+struct rpcap_sampling samp_param;		// in case sampling has been requested
 
 // Structures needed for the select() call
 fd_set rfds;						// set of socket descriptors we have to check
@@ -239,7 +244,7 @@ auth_again:
 			goto end;
 
 		// Checks if the message is correct
-		// It if is wrong, it discard the data
+		// In case it is wrong, it discard the data
 		retval= rpcap_checkmsg(errbuf, pars->sockctrl, &header,
 			RPCAP_MSG_FINDALLIF_REQ,
 			RPCAP_MSG_OPEN_REQ,
@@ -247,6 +252,7 @@ auth_again:
 			RPCAP_MSG_UPDATEFILTER_REQ,
 			RPCAP_MSG_STATS_REQ,
 			RPCAP_MSG_ENDCAP_REQ,
+			RPCAP_MSG_SETSAMPLING_REQ,
 			RPCAP_MSG_CLOSE,
 			RPCAP_MSG_ERROR,
 			0);
@@ -288,9 +294,19 @@ auth_again:
 				break;
 			};
 
+			case RPCAP_MSG_SETSAMPLING_REQ:
+			{
+				retval= daemon_setsampling(pars->sockctrl, &samp_param, ntohl(header.plen), errbuf);
+
+				if (retval == -1)
+					SOCK_ASSERT(errbuf, 1);
+
+				break;
+			};
+
 			case RPCAP_MSG_STARTCAP_REQ:
 			{
-				fp= daemon_startcapture(pars->sockctrl, &threaddata, source, pars->isactive, ntohl(header.plen), errbuf);
+				fp= daemon_startcapture(pars->sockctrl, &threaddata, source, pars->isactive, &samp_param, ntohl(header.plen), errbuf);
 
 				if (fp == NULL)
 					SOCK_ASSERT(errbuf, 1);
@@ -327,6 +343,7 @@ auth_again:
 				else
 				{
 					SOCK_ASSERT("GetStats: this call should't be allowed here", 1);
+
 					if (daemon_getstatsnopcap(pars->sockctrl, ifdrops, ifrecv, krnldrop, svrcapt, errbuf) )
 						SOCK_ASSERT(errbuf, 1);
 					// we have to keep compatibility with old applications, which ask for statistics
@@ -906,7 +923,7 @@ struct rpcap_openreply *openreply;	// open reply message
 	if ( sock_send(sockctrl, sendbuf, sendbufidx, errbuf, PCAP_ERRBUF_SIZE) == -1)
 		goto error;
 
-	// I have to close the device again, since if has been opened with wrong parameters
+	// I have to close the device again, since it has been opened with wrong parameters
 	pcap_close(fp);
 	fp= NULL;
 
@@ -930,7 +947,7 @@ error:
 	\param plen: the length of the current message (needed in order to be able
 	to discard excess data in the message, if present)
 */
-pcap_t *daemon_startcapture(SOCKET sockctrl, pthread_t *threaddata, char *source, int active, uint32 plen, char *errbuf)
+pcap_t *daemon_startcapture(SOCKET sockctrl, pthread_t *threaddata, char *source, int active, struct rpcap_sampling *samp_param, uint32 plen, char *errbuf)
 {
 char portdata[PCAP_BUF_SIZE];		// temp variable needed to derive the data port
 char peerhost[PCAP_BUF_SIZE];		// temp variable needed to derive the host name of our peer
@@ -969,6 +986,10 @@ int serveropen_dp;							// keeps who is going to open the data connection
 		rpcap_senderror(sockctrl, errbuf, PCAP_ERR_OPEN, fakeerrbuf);
 		return NULL;
 	}
+
+	// Apply sampling parameters
+	fp->rmt_samp.method= samp_param->method;
+	fp->rmt_samp.value= samp_param->value;
 
 	/*
 	We're in active mode if:
@@ -1283,6 +1304,48 @@ error:
 
 
 
+/*!
+	\brief Received the sampling parameters from remote host and it stores in the pcap_t structure.
+*/
+int daemon_setsampling(SOCKET sockctrl, struct rpcap_sampling *samp_param, int plen, char *errbuf)
+{
+struct rpcap_header header;
+struct rpcap_sampling rpcap_samp;
+int nread;					// number of bytes of the payload read from the socket
+
+
+	if ( ( nread= sock_recv(sockctrl, (char *) &rpcap_samp, sizeof(struct rpcap_sampling), 
+			SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE)) == -1)
+		goto error;
+
+
+	// Save these settings in the pcap_t 
+	samp_param->method= rpcap_samp.method;
+	samp_param->value= ntohl(rpcap_samp.value);
+
+
+	// A response is needed, otherwise the other host does not know that everything went well
+	rpcap_createhdr( &header, RPCAP_MSG_SETSAMPLING_REPLY, 0, 0);
+
+	if ( sock_send(sockctrl, (char *) &header, sizeof (struct rpcap_header), errbuf, PCAP_ERRBUF_SIZE) )
+		goto error;
+
+	if (nread != plen)
+		sock_discard(sockctrl, plen - nread, fakeerrbuf, PCAP_ERRBUF_SIZE);
+
+	return 0;
+
+error:
+	if (nread != plen)
+		sock_discard(sockctrl, plen - nread, fakeerrbuf, PCAP_ERRBUF_SIZE);
+
+	rpcap_senderror(sockctrl, errbuf, PCAP_ERR_SETSAMPLING, fakeerrbuf);
+
+	return -1;
+}
+
+
+
 int daemon_getstats(pcap_t *fp)
 {
 char sendbuf[RPCAP_NETBUF_SIZE];	// temporary buffer in which data to be sent is buffered
@@ -1372,9 +1435,12 @@ struct pcap_pkthdr *pkt_header;		// pointer to the buffer that contains the head
 u_char *pkt_data;					// pointer to the buffer that contains the current packet
 char sendbuf[RPCAP_NETBUF_SIZE];	// temporary buffer in which data to be sent is buffered
 int sendbufidx;						// index which keeps the number of bytes currently buffered
-
+int samp_npkt= 0;					// parameter needed for sampling, whtn '1 out of N' method has been requested
+struct timeval samp_time;			// parameter needed for sampling, whtn '1 every N ms' method has been requested
 
 	fp= (pcap_t *) ptr;
+
+	memset(&samp_time, 0, sizeof (struct timeval) );
 
 	fp->md.TotCapt= 0;			// counter which is incremented each time a packet is received
 
@@ -1392,6 +1458,33 @@ int sendbufidx;						// index which keeps the number of bytes currently buffered
 	{
 		if (retval == 0)	// Read timeout elapsed
 			continue;
+
+		if (fp->rmt_samp.method == PCAP_SAMP_1_EVERY_N)
+		{
+			samp_npkt= (samp_npkt + 1) % fp->rmt_samp.value;
+
+			// Discard all packets that are not '1 out of N'
+			if (samp_npkt != 0)
+				continue;
+		}
+
+		if (fp->rmt_samp.method == PCAP_SAMP_FIRST_AFTER_N_MS)
+		{
+			// Check if the timestamp of the arrived packet is smaller than our target time
+			if ( (pkt_header->ts.tv_sec < samp_time.tv_sec) ||
+					( (pkt_header->ts.tv_sec == samp_time.tv_sec) && (pkt_header->ts.tv_usec < samp_time.tv_usec) ) )
+				continue;
+
+			// The arrived packet is suitable for being sent to the remote host
+			// So, let's update the target time
+			samp_time.tv_usec= pkt_header->ts.tv_usec + fp->rmt_samp.value * 1000;
+			if (samp_time.tv_usec > 1000000)
+			{
+				samp_time.tv_sec= pkt_header->ts.tv_sec + samp_time.tv_usec / 1000000;
+				samp_time.tv_usec= samp_time.tv_usec % 1000000;
+			}
+
+		}
 
 		sendbufidx= 0;
 

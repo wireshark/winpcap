@@ -322,8 +322,9 @@ struct rpcap_sampling
 #define PCAP_ERR_STARTCAPTURE 12		/*!< Generic pcap_startcapture error */
 #define PCAP_ERR_ENDCAPTURE 13			/*!< Generic pcap_endcapture error */
 #define PCAP_ERR_RUNTIMETIMEOUT	14		/*!< The RPCAP run-time timeout has expired */
-#define PCAP_ERR_WRONGMSG 15			/*!< The other end endpoint sent a message which has not been recognized */
-#define PCAP_ERR_WRONGVER 16			/*!< The other end endpoint ahs a version number that is not compatible with our */
+#define PCAP_ERR_SETSAMPLING 15			/*!< Error diring the settings of sampling parameters */
+#define PCAP_ERR_WRONGMSG 16			/*!< The other end endpoint sent a message which has not been recognized */
+#define PCAP_ERR_WRONGVER 17			/*!< The other end endpoint ahs a version number that is not compatible with our */
 /*!
 	\}
 */ // end of private documentation
