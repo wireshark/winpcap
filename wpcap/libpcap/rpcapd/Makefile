@@ -1,5 +1,9 @@
+################################
+# Makefile for the remote daemon
+################################
+
 CC      = gcc
-CFLAGS  = -pthread -D_DEBUG -DREMOTE -DHAVE_PCAPREADEX -g
+CFLAGS  = -pthread -D_DEBUG -DREMOTE -g
 #flags for debugging: -D_DEBUG -g -Wall
 
 INCLUDE = -I../
