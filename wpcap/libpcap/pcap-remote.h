@@ -75,7 +75,7 @@
  *********************************************************/
 
 // All the following structures and typedef belongs to the Private Documentation
-/*! \addtogroup PriGroup
+/*! \addtogroup remote_pri_struct
 	\{
 */
 

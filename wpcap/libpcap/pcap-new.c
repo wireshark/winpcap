@@ -71,7 +71,7 @@ SOCKET sockmain;
  ****************************************************/
 
 
-/*! \ingroup PubGroup
+/*! \ingroup remote_func
 	\brief It creates a list of network devices that can be opened with pcap_open().
 	
 	This function is a superset of the old 'pcap_findalldevs()', which is obsolete, and which
@@ -86,6 +86,10 @@ SOCKET sockmain;
 	the connection is not dropped (see the 'sockctrl' parameters for more details).
 	In the same way, if we're in active mode and the connection is already opened, it
 	uses the existing socket.
+
+	This function can rely on the pcap_createsrcstr() to create the string that keeps
+	the capture device according to	the new syntax, and the pcap_parsesrcstr() for the
+	other way round.
 
 	\param host: a char* buffer that keeps the address of the remote host on which 
 	we want to see the interface list.
@@ -446,7 +450,7 @@ error:
 
 
 
-/*! \ingroup PubGroup
+/*! \ingroup remote_func
 	\brief Accepts a set of strings (host name, port, ...), and it returns the complete 
 	source string according to the new format (e.g. 'rpcap://1.2.3.4/eth0').
 
@@ -572,7 +576,7 @@ int pcap_createsrcstr(char *source, int type, const char *host, const char *port
 
 
 
-/*! \ingroup PubGroup
+/*! \ingroup remote_func
 	\brief Parses the source string and returns the pieces in which the source can be split.
 
 	This call is the other way round of pcap_createsrcstr().
@@ -759,7 +763,7 @@ int tmptype;
 
 
 
-/*!	\ingroup PubGroup
+/*!	\ingroup remote_func
 
 	\brief It opens a generic source in order to capture / send (WinPcap only) traffic.
 	
@@ -769,6 +773,10 @@ int tmptype;
 	so that the programmer does not have to manage different opening function.
 	In this way, the 'true' open function is decided according to the source type,
 	which is included into the source string (in the form of source prefix).
+
+	This function can rely on the pcap_createsrcstr() to create the string that keeps
+	the capture device according to	the new syntax, and the pcap_parsesrcstr() for the
+	other way round.
 
 	\param source: zero-terminated string containing the source name to open.
 	The source name has to include the format prefix according to the 
@@ -917,7 +925,7 @@ pcap_t *fp;
 
 
 
-/*!	\ingroup PubGroup
+/*!	\ingroup remote_func
 
 	\brief It blocks until a network connection is accepted (active mode only).
 
@@ -1112,7 +1120,7 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 
 
 
-/*!	\ingroup PubGroup
+/*!	\ingroup remote_func
 
 	\brief It drops an active connection (active mode only).
 
@@ -1194,7 +1202,7 @@ int retval;
 	return -1;
 }
 
-/*!	\ingroup PubGroup
+/*!	\ingroup remote_func
 	\brief Cleans the socket that is currently used in waiting active connections.
 
 	This function does a very dirty job. The fact is that is the waiting socket is not
@@ -1221,7 +1229,7 @@ void pcap_remoteact_cleanup()
 }
 
 
-/*!	\ingroup PubGroup
+/*!	\ingroup remote_func
 
 	\brief Returns the hostname of the host that have an active connection with us (active mode only).
 

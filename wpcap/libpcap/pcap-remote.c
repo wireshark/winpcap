@@ -55,7 +55,7 @@
 	the error description can return max PCAP_ERRBUF_SIZE characters.
 	However there is no guarantees that the string will be zero-terminated.
 	Best practice is to define the errbuf variable as a char of size 'PCAP_ERRBUF_SIZE+1'
-	and to insert manually a '\0' character at the end of the buffer. This will
+	and to insert manually a NULL character at the end of the buffer. This will
 	guarantee that no buffer overflows occur even if we use the printf() to show
 	the error on the screen.
 */
@@ -99,7 +99,7 @@ int pcap_pack_bpffilter(pcap_t *fp, char *sendbuf, int *sendbufidx, struct bpf_p
  *                                                  *
  ****************************************************/
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief 	It traslates (i.e. de-serializes) a 'sockaddr_storage' structure from 
 	the network byte order to the host byte order.
 
@@ -177,7 +177,7 @@ int rpcap_deseraddr(struct sockaddr_storage *sockaddrin, struct sockaddr_storage
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 
 	\brief It reads a packet from the network socket.
 
@@ -252,7 +252,7 @@ again:
 }
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 
 	\brief It reads a packet from the network socket.
 
@@ -283,7 +283,7 @@ int n = 0;
 }
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 
 	\brief It sends a CLOSE command to the capture server.
 
@@ -357,7 +357,7 @@ int active= 0;					// active mode or not?
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 
 	\brief It retrieves network statistics from the other peer.
 
@@ -380,7 +380,7 @@ struct pcap_stat *retval;
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 
 	\brief It retrieves network statistics from the other peer.
 
@@ -397,7 +397,7 @@ struct pcap_stat *pcap_stats_ex_remote(pcap_t *p)
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 
 	\brief It retrieves network statistics from the other peer.
 
@@ -509,7 +509,7 @@ error:
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 
 	\brief It opens a remote adapter by opening an RPCAP connection and so on.
 
@@ -520,7 +520,7 @@ error:
 	pcap_startcapture_remote() is called.
 
 	This is because, in remote capture, we cannot start capturing data as soon ad the
-	'open adapter' comamnd is sent. Suppose the remote adapter is already overloaded;
+	'open adapter' command is sent. Suppose the remote adapter is already overloaded;
 	if we start a capture (which, by default, has a NULL filter) the new traffic can
 	saturate the network.
 
@@ -727,7 +727,7 @@ error:
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 
 	\brief It starts a remote capture.
 
@@ -1130,7 +1130,7 @@ unsigned int i;
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 
 	\brief Update a filter on a remote host.
 
@@ -1206,7 +1206,7 @@ struct rpcap_header header;		// To keep the reply message
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 
 	\brief Send a filter to a remote host.
 
@@ -1235,7 +1235,7 @@ int pcap_setfilter_remote(pcap_t *fp, struct bpf_program *prog)
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief Suspends a pthread for msec milliseconds.
 
 	This fucntion is provided since pthreads do not have a suspend() call.
@@ -1272,7 +1272,7 @@ struct timeval now;
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief Main function of the thread which waits for data packets (i.e.
 	packets which carry a captured packet) in case of a TCP data connection.
 
@@ -1479,7 +1479,7 @@ error:
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief Main function of the thread which waits for data packets (i.e.
 	packets which carry a captured packet) in case of a UDP data connection.
 
@@ -1671,7 +1671,7 @@ error:
  *********************************************************/
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief It sends a RPCAP error to the other peer.
 
 	This function has to be called when the main program detects an error. This funcion
@@ -1722,7 +1722,7 @@ uint16 length;
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief Sends the authentication message.
 
 	It sends the authentication parameters on the control socket.
@@ -1857,7 +1857,7 @@ int retval;							// temp variable which stores functions return value
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief Creates a structure of type rpcap_header.
 
 	This function is provided just because the creation of an rpcap header is quite a common
@@ -1890,7 +1890,7 @@ void rpcap_createhdr(struct rpcap_header *header, uint8 type, uint16 value, uint
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief Checks if the header of the received message is correct.
 	
 	This function is a way to easily check if the message received, in a certain 
@@ -2008,7 +2008,7 @@ int32 len;
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief Checks if the version contained into the message is compatible with
 	the one handled by this implementation.
 
@@ -2054,7 +2054,7 @@ int rpcap_checkver(SOCKET sock, struct rpcap_header *header, char *errbuf)
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 
 	\brief It returns the socket currently used for this active connection (active mode only).
 

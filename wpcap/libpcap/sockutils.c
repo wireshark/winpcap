@@ -40,7 +40,7 @@
 /*!
 	\file sockutils.c
 
-	The goal of this file it to privide a common set of primitives for socket manipulation.
+	The goal of this file it to provide a common set of primitives for socket manipulation.
 	Although the socket interface defined in the RFC 2553 (and its updates) is excellent, several
 	minor issues are still hidden when we want to operate on several operating systems.
 
@@ -95,7 +95,7 @@ char fakeerrbuf[SOCK_ERRBUF_SIZE + 1];
  ****************************************************/
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief It retrieves the error message after an error occurred in the socket interface.
 
 	This function is defined because of the different way errors are returned in UNIX
@@ -145,7 +145,7 @@ void sock_geterror(const char *caller, char *string, int size)
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief It initializes sockets.
 
 	This function is pretty useless on UNIX, since socket initialization is not required.
@@ -181,7 +181,7 @@ int sock_init(char *errbuf)
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief It deallocates sockets.
 
 	This function is pretty useless on UNIX, since socket deallocation is not required.
@@ -200,7 +200,7 @@ void sock_cleanup()
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief It checks if the sockaddr variable contains a multicast address.
 
 	\return '0' if the address is multicast, '-1' if it is not. 
@@ -223,7 +223,7 @@ int sock_ismcastaddr(const struct sockaddr *saddr)
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief It initializes a network connection both from the client and the server side.
 
 	In case of a client socket, this function calls socket() and connect().
@@ -317,7 +317,7 @@ SOCKET sock;
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief Closes the present (TCP and UDP) socket connection.
 
 	This function sends a shutdown() on the socket in order to disable send() calls
@@ -353,7 +353,7 @@ int sock_close(SOCKET sock, char *errbuf)
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief Checks that the address, port and flags given are valids and it returns an 'addrinfo' stucture.
 
 	This function basically calls the getaddrinfo() calls, and it performs a set of sanity checks
@@ -419,7 +419,7 @@ int retval;
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief It sends the amount of data contained into 'buffer' on the given socket.
 
 	This function basically calls the send() socket function and it checks that all
@@ -475,7 +475,7 @@ send:
 }
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief It copies the amount of data contained into 'buffer' into 'tempbuf'.
 	and it checks for buffer overflows.
 
@@ -540,7 +540,7 @@ int sock_bufferize(const char *buffer, int size, char *tempbuf, int *offset, int
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief It waits on a connected socket and it manages to receive exactly 'size' bytes.
 
 	This function basically calls the recv() socket function and it checks that no
@@ -601,7 +601,7 @@ again:
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief It waits on a connected socket and it manages to receive one message.
 
 	There is a difference here between this function and the sock_recv(): the
@@ -648,7 +648,7 @@ int nread;
 }
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief It discards N bytes that are currently waiting to be read on the current socket.
 
 	This function is useful in case we receive a message we cannot undestand (e.g.
@@ -702,7 +702,7 @@ char buffer[TEMP_BUF_SIZE];		// network buffer, to be used when the message is d
 
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief Checks that one host (identified by the sockaddr_storage structure) belongs to an 'allowed list'.
 
 	This function is useful after an accept() call in order to check if the connecting
@@ -802,7 +802,7 @@ int	sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage
 }
 
 
-/*!	\ingroup PriGroup
+/*!	\ingroup remote_pri_func
 	\brief Compares two addresses contained into two sockaddr_storage structures.
 
 	This function is useful to compare two addresses, given their internal representation,

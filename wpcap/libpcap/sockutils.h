@@ -55,22 +55,22 @@
 
 // Some minor differences between UNIX and Win32
 #ifdef WIN32
-/*! \ingroup PubGroup
-	\brief In Win32, sockets use unsigned integers.
+/*! \ingroup remote_struct
+	\brief In Win32, sockets use unsigned integers; in UNIX, they use signed integer.
 	
 	So, we define a generic SOCKET in order to be cross-platform compatible.
 */
 	#define SOCKET unsigned int	
 #else
-/*! \ingroup PubGroup
-	\brief In UNIX, sockets use signed integers.
+/*! \ingroup remote_struct
+	\brief In Win32, sockets use unsigned integers; in UNIX, they use signed integer.
 	
 	So, we define a generic SOCKET in order to be cross-platform compatible.
 */
 
 	#define SOCKET int
 
-/*! \ingroup PubGroup
+/*! \ingroup remote_struct
 	\brief In Win32, the close() call cannot be used for socket.
 	
 	So, we define a generic closesocket() call in order to be cross-platform compatible.
@@ -80,7 +80,15 @@
 
 
 
-/*! \ingroup PriGroup
+
+
+// All this stuff is private
+/*! \addtogroup remote_pri_struct
+	\{
+*/
+
+
+/*!
 	\brief DEBUG facility: it prints an error message on the screen (stderr)
 	
 	This macro prints the error on the standard error stream (stderr);
@@ -126,6 +134,10 @@
 #define SOCKOPEN_SERVER 1		/*!< 'server' flag; it opens a server socket */
 
 #define SOCK_ERRBUF_SIZE 256	/*!< Size of the buffer that has to keep error messages */
+
+/*!
+	\}
+*/ // end of private documentation
 
 
 #ifdef __cplusplus
