@@ -250,6 +250,8 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 					EXIT_SUCCESS(copied);
 				}
 				
+//				FIX_TIMESTAMPS(&Header->header.bh_tstamp);
+
 				*((struct bpf_hdr*)(&packp[copied]))=Header->header;
 				
 				copied += sizeof(struct bpf_hdr);
@@ -499,10 +501,13 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 		return NDIS_STATUS_NOT_ACCEPTED;
 	}
 
+
 	if (LookaheadBufferSize + HeaderBufferSize >= fres)
 	{
 		//we do not need to call NdisTransferData, either because we need only the HeaderBuffer, or because the LookaheadBuffer
 		//contains what we need
+
+		
 
 		Header = (struct PacketHeader*)(LocalData->Buffer + LocalData->P);
 		LocalData->Accepted++;
