@@ -161,7 +161,7 @@ char tmpstring[PCAP_BUF_SIZE + 1];		// Needed to convert names and descriptions 
 	}
 
 	// determine the type of the source (file, local, remote)
-	if (pcap_parsesrcstr(source, &type, host, port, NULL /* we're not interested in interface name */, errbuf) == -1)
+	if (pcap_parsesrcstr(source, &type, host, port, name, errbuf) == -1)
 		return -1;
 
 	if (type == PCAP_SRC_IFLOCAL)
