@@ -72,8 +72,9 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	IrpSp = IoGetCurrentIrpStackLocation(Irp);
     Open=IrpSp->FileObject->FsContext;
 
-	if( Open->Bound == FALSE ){
-		// The Network adapter was removed.
+	if( Open->Bound == FALSE )
+	{
+		// The Network adapter has been removed or diasabled
 		EXIT_FAILURE(0);
 	}
 	
@@ -225,6 +226,8 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	current_cpu=0;
 	available = IrpSp->Parameters.Read.Length;
 	packp=(PUCHAR)MmGetSystemAddressForMdl(Irp->MdlAddress);
+
+	KeClearEvent(Open->ReadEvent);
 
 	while (count < NCpu) //round robin on the CPUs, if count = NCpu there are no packets left to be copied
 	{

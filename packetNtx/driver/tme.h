@@ -34,28 +34,14 @@
 #define __tme_include_
 
 #ifdef WIN_NT_DRIVER
-
-#include "ntddk.h"
-#include "memory_t.h"
-#include "time_calls.h"
+#include "ndis.h"
+#else
+#include <windows.h>
 #endif /*WIN_NT_DRIVER*/
 
-#ifdef WIN32
 #include "memory_t.h"
 #include "time_calls.h"
-#endif /*WIN32*/
 
-
-
-#ifdef __FreeBSD__
-
-#ifdef _KERNEL
-#include <net/tme/time_calls.h>
-#else
-#include <tme/time_calls.h>
-#endif
-
-#endif
 
 /* error codes */
 #define		TME_ERROR			0	

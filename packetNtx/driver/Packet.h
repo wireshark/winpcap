@@ -44,7 +44,6 @@
 #define NTKERNEL	///< Forces the compilation of the jitter with kernel calls 
 
 #include "jitter.h"
-#include "tme.h"
 #include "win_bpf.h"
 
 #define  MAX_REQUESTS   32 ///< Maximum number of simultaneous IOCTL requests.
@@ -350,8 +349,11 @@ typedef struct _OPEN_INSTANCE
 	NDIS_SPIN_LOCK		CountersLock;		///< SpinLock that protects the statistical mode counters.
 	UINT				Nwrites;			///< Number of times a single write must be physically repeated. See \ref NPF for an 
 											///< explanation
-	UINT				Multiple_Write_Counter;	///< Counts the number of times a single write has already physically repeated.
+	ULONG				Multiple_Write_Counter;	///< Counts the number of times a single write has already physically repeated.
 	NDIS_EVENT			WriteEvent;			///< Event used to synchronize the multiple write process.
+	BOOLEAN				WriteInProgress;	///< True if a write is currently in progress. NPF currently allows a single wite on 
+											///< the same open instance.
+	NDIS_SPIN_LOCK		WriteLock;			///< SpinLock that protects the WriteInProgress variable.
 	NDIS_EVENT			IOEvent;			///< Event used to synchronize I/O requests with the callback structure of NDIS.
 	NDIS_STATUS			IOStatus;			///< Maintains the status of and OID request call, that will be passed to the application.
 	BOOLEAN				Bound;				///< Specifies if NPF is still bound to the adapter used by this instance. Bound can be
@@ -695,6 +697,15 @@ INT NPF_BufferedWrite(IN PIRP Irp,
 						BOOLEAN sync);
 
 /*!
+  \brief Waits the completion of all the sends performed by NPF_BufferedWrite.
+
+  \param Open Pointer to open context structure
+
+  Used by NPF_BufferedWrite to wait the completion of all the sends before returning the control to the user.
+*/
+VOID NPF_WaitEndOfBufferedWrite(POPEN_INSTANCE Open);
+
+/*!
   \brief Ends a send operation.
   \param ProtocolBindingContext Context of the function. Contains a pointer to the OPEN_INSTANCE structure associated with the current instance.
   \param pRequest Pointer to the NDIS PACKET structure used by NPF_Write() to send the packet. 
@@ -838,70 +849,6 @@ NPF_UnbindAdapter(
     IN  NDIS_HANDLE         UnbindContext
     );
 
-/*!
-  \brief Validates a filtering program arriving from the user-level app.
-  \param f The filter.
-  \param len Its length, in pseudo instructions.
-  \param mem_ex_size The length of the extended memory, used to validate LD/ST to that memory
-  \return true if f is a valid filter program..
-  
-  The kernel needs to be able to verify an application's filter code. Otherwise, a bogus program could easily 
-  crash the system.
-  This function returns true if f is a valid filter program. The constraints are that each jump be forward and 
-  to a valid code.  The code must terminate with either an accept or reject. 
-*/
-int bpf_validate(struct bpf_insn *f,int len, uint32 mem_ex_size);
-
-/*!
-  \brief The filtering pseudo-machine interpreter.
-  \param pc The filter.
-  \param p Pointer to a memory buffer containing the packet on which the filter will be executed.
-  \param wirelen Original length of the packet.
-  \param buflen Current length of the packet. In some cases (for example when the transfer of the packet to the RAM
-  has not yet finished), bpf_filter can be executed on a portion of the packet.
-  \param mem_ex The extended memory.
-  \param tme The virtualization of the TME co-processor
-  \param time_ref Data structure needed by the TME co-processor to timestamp data
-  \return The portion of the packet to keep, in bytes. 0 means that the packet must be rejected, -1 means that
-   the whole packet must be kept.
-  
-  \note this function is not used in normal situations, because the jitter creates a native filtering function
-  that is faster than the interpreter.
-*/
-UINT bpf_filter(register struct bpf_insn *pc,
-				register UCHAR *p,
-				UINT wirelen,
-				register UINT buflen,
-				PMEM_TYPE mem_ex,
-				PTME_CORE tme,
-				struct time_conv *time_ref);
-
-/*!
-  \brief The filtering pseudo-machine interpreter with two buffers. This function is slower than bpf_filter(), 
-  but works correctly also if the MAC header and the data of the packet are in two different buffers.
-  \param pc The filter.
-  \param p Pointer to a memory buffer containing the MAC header of the packet.
-  \param pd Pointer to a memory buffer containing the data of the packet.
-  \param wirelen Original length of the packet.
-  \param buflen Current length of the packet. In some cases (for example when the transfer of the packet to the RAM
-  has not yet finished), bpf_filter can be executed on a portion of the packet.
-  \param mem_ex The extended memory.
-  \param tme The virtualization of the TME co-processor
-  \param time_ref Data structure needed by the TME co-processor to timestamp data
-  \return The portion of the packet to keep, in bytes. 0 means that the packet must be rejected, -1 means that
-   the whole packet must be kept.
-  
-  This function is used when NDIS passes the packet to NPF_tap() in two buffers instaed than in a single one.
-*/
-UINT bpf_filter_with_2_buffers(register struct bpf_insn *pc,
-							   register UCHAR *p,
-							   register UCHAR *pd,
-							   register int headersize,
-							   UINT wirelen,
-							   register UINT buflen,
-							   PMEM_TYPE mem_ex,
-				               PTME_CORE tme,
-							   struct time_conv *time_ref);
 
 /*!
   \brief Creates the file that will receive the packets when the driver is in dump mode.

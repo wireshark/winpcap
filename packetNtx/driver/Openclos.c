@@ -179,7 +179,8 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
  	NdisInitializeEvent(&Open->DumpEvent);
  	NdisInitializeEvent(&Open->IOEvent);
 	NdisAllocateSpinLock(&Open->MachineLock);
-
+	NdisAllocateSpinLock(&Open->WriteLock);
+	Open->WriteInProgress = FALSE;
 
     //  list to hold irp's want to reset the adapter
     InitializeListHead(&Open->ResetIrpList);

@@ -3,6 +3,7 @@ LIBRARY packet
 EXPORTS
 		PacketLibraryVersion
 		PacketGetVersion
+		PacketGetDriverVersion
 		PacketOpenAdapter
 		PacketSendPacket
 		PacketSendPackets
@@ -22,7 +23,6 @@ EXPORTS
 		PacketSetReadTimeout
 		PacketSetMode
 		PacketSetNumWrites
-		PacketGetNetInfo
 		PacketGetNetInfoEx
 		PacketSetMinToCopy
 		PacketGetReadEvent

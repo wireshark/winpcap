@@ -56,16 +56,29 @@ NPF_Write(
 
 	IF_LOUD(DbgPrint("NPF_Write\n");)
 
-    IrpSp = IoGetCurrentIrpStackLocation(Irp);
+	IrpSp = IoGetCurrentIrpStackLocation(Irp);
 
 
     Open=IrpSp->FileObject->FsContext;
 	
-	if( Open->Bound == FALSE ){ 
+	if( Open->Bound == FALSE )
+	{ 
 		// The Network adapter was removed. 
 		EXIT_FAILURE(0); 
 	} 
 	
+	NdisAcquireSpinLock(&Open->WriteLock);
+	if(Open->WriteInProgress)
+	{
+		// Another write operation is currently in progress
+		EXIT_FAILURE(0); 
+	}
+	else
+	{
+		Open->WriteInProgress = TRUE;
+	}
+	NdisReleaseSpinLock(&Open->WriteLock);
+
 	IF_LOUD(DbgPrint("Max frame size = %d\n", Open->MaxFrameSize);)
 
 
@@ -105,7 +118,7 @@ NPF_Write(
 			return STATUS_INSUFFICIENT_RESOURCES;
 		}
 		
-		// The packet has a buffer that needs not to be freed after every single write
+		// The packet hasn't a buffer that needs not to be freed after every single write
 		RESERVED(pPacket)->FreeBufAfterWrite = FALSE;
 
 		// Save the IRP associated with the packet
@@ -137,9 +150,7 @@ NPF_Write(
 	}
 	
     return(STATUS_PENDING);
-
 }
-
 
 //-------------------------------------------------------------------
 
@@ -188,7 +199,12 @@ NPF_BufferedWrite(
 		return 0;
 	}
 
+	// Reset the event used to synchronize packet allocation
+	NdisResetEvent(&Open->WriteEvent);
 	
+	// Reset the pending packets counter
+	Open->Multiple_Write_Counter = 0;
+
 	// Start from the first packet
 	winpcap_hdr = (struct sf_pkthdr*)UserBuff;
 	
@@ -208,8 +224,11 @@ NPF_BufferedWrite(
 	// Save the current time stamp counter
 	CurTicks = KeQueryPerformanceCounter(NULL);
 	
+	//
 	// Main loop: send the buffer to the wire
-	while( TRUE ){
+	//
+	while(TRUE)
+	{
 
 		if(winpcap_hdr->caplen ==0 || winpcap_hdr->caplen > Open->MaxFrameSize)
 		{
@@ -218,9 +237,9 @@ NPF_BufferedWrite(
 			
 			return -1;
 		}
-		
+
 		// Allocate an MDL to map the packet data
-		TmpMdl=IoAllocateMdl((PCHAR)winpcap_hdr + sizeof(struct sf_pkthdr),
+		TmpMdl = IoAllocateMdl((PCHAR)winpcap_hdr + sizeof(struct sf_pkthdr),
 			winpcap_hdr->caplen,
 			FALSE,
 			FALSE,
@@ -240,12 +259,26 @@ NPF_BufferedWrite(
 		NdisAllocatePacket( &Status, &pPacket, Open->PacketPool);
 		
 		if (Status != NDIS_STATUS_SUCCESS) {
-			//  No free packets
+			//  No more free packets
 			IF_LOUD(DbgPrint("NPF_BufferedWrite: no more free packets, returning.\n");)
-			IoFreeMdl(TmpMdl);
 
-			return (PCHAR)winpcap_hdr - UserBuff;
+			NdisResetEvent(&Open->WriteEvent);
+
+			NdisWaitEvent(&Open->WriteEvent, 1000);  
+
+			// Try again to allocate a packet
+			NdisAllocatePacket( &Status, &pPacket, Open->PacketPool);
+
+			if (Status != NDIS_STATUS_SUCCESS) {
+				// Second failure, report an error
+				IoFreeMdl(TmpMdl);
+				return -1;
+			}
+
+//			IoFreeMdl(TmpMdl);
+//			return (PCHAR)winpcap_hdr - UserBuff;
 		}
+
 		
 		// The packet has a buffer that needs to be freed after every single write
 		RESERVED(pPacket)->FreeBufAfterWrite = TRUE;
@@ -255,6 +288,9 @@ NPF_BufferedWrite(
 		// Attach the MDL to the packet
 		NdisChainBufferAtFront(pPacket, TmpMdl);
 		
+		// Increment the number of pending sends
+		InterlockedIncrement(&Open->Multiple_Write_Counter);
+
 		// Call the MAC
 		NdisSend( &Status, Open->AdapterHandle,	pPacket);
 
@@ -275,6 +311,9 @@ NPF_BufferedWrite(
 		{
 			IF_LOUD(DbgPrint("NPF_BufferedWrite: End of buffer.\n");)
 
+			// Wait the completion of pending sends
+			NPF_WaitEndOfBufferedWrite(Open);
+
 			return (PCHAR)winpcap_hdr - UserBuff;
 		}
 	
@@ -284,6 +323,9 @@ NPF_BufferedWrite(
 			if( winpcap_hdr->ts.tv_sec - BufStartTime.tv_sec > 1 )
 			{
 				IF_LOUD(DbgPrint("NPF_BufferedWrite: timestamp elapsed, returning.\n");)
+		
+				// Wait the completion of pending sends
+				NPF_WaitEndOfBufferedWrite(Open);
 					
 				return (PCHAR)winpcap_hdr - UserBuff;
 			}
@@ -302,9 +344,24 @@ NPF_BufferedWrite(
 	}
 
 	return (PCHAR)winpcap_hdr - UserBuff;
-		
 }
 
+//-------------------------------------------------------------------
+
+VOID NPF_WaitEndOfBufferedWrite(POPEN_INSTANCE Open)
+{
+	UINT i;
+
+	NdisResetEvent(&Open->WriteEvent);
+
+	for(i=0; Open->Multiple_Write_Counter > 0 && i < TRANSMIT_PACKETS; i++)
+	{
+		NdisWaitEvent(&Open->WriteEvent, 100);  
+		NdisResetEvent(&Open->WriteEvent);
+	}
+
+	return;
+}
 
 //-------------------------------------------------------------------
 
@@ -325,13 +382,36 @@ NPF_SendComplete(
 		
 	Open= (POPEN_INSTANCE)ProtocolBindingContext;
 
-	if( RESERVED(pPacket)->FreeBufAfterWrite ){
+	if( RESERVED(pPacket)->FreeBufAfterWrite )
+	{
+		//
+		// Packet sent by NPF_BufferedWrite()
+		//
+
 		
 		// Free the MDL associated with the packet
 		NdisUnchainBufferAtFront(pPacket, &TmpMdl);
+
 		IoFreeMdl(TmpMdl);
+		
+		//  recyle the packet
+		//	NdisReinitializePacket(pPacket);
+
+		NdisFreePacket(pPacket);
+
+		// Increment the number of pending sends
+		InterlockedDecrement(&Open->Multiple_Write_Counter);
+
+		NdisSetEvent(&Open->WriteEvent);
+		
+		return;
 	}
-	else{
+	else
+	{
+		//
+		// Packet sent by NPF_Write()
+		//
+
 		if((Open->Nwrites - Open->Multiple_Write_Counter) %100 == 99)
 			NdisSetEvent(&Open->WriteEvent);
 		
@@ -349,15 +429,15 @@ NPF_SendComplete(
 			Irp->IoStatus.Information = irpSp->Parameters.Write.Length;
 			IoCompleteRequest(Irp, IO_NO_INCREMENT);
 			
+			NdisAcquireSpinLock(&Open->WriteLock);
+			Open->WriteInProgress = FALSE;
+			NdisReleaseSpinLock(&Open->WriteLock);
 		}
+
+		//  Put the packet back on the free list
+		NdisFreePacket(pPacket);
+
+		return;
 	}
-		
-	//  recyle the packet
-	//	NdisReinitializePacket(pPacket);
 	
-	//  Put the packet back on the free list
-	NdisFreePacket(pPacket);
-
-
-	return;
 }

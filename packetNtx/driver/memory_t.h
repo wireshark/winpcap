@@ -112,7 +112,20 @@ __inline VOID SW_ULONG_ASSIGN(void *dst, uint32 src)
 #define ZERO_MEMORY(dest,amount) RtlZeroMemory(dest,amount);
 #define COPY_MEMORY(dest,src,amount) RtlCopyMemory(dest,src,amount);
 
+#else
+
+#define ALLOCATE_MEMORY(dest,type,amount) \
+	  (dest)=(type*)GlobalAlloc(GPTR, sizeof(type)*(amount));
+#define ALLOCATE_ZERO_MEMORY(dest,type,amount) \
+	  (dest)=(type*)GlobalAlloc(GPTR, sizeof(type)*(amount));
+
+#define FREE_MEMORY(dest) GlobalFree(dest);
+#define ZERO_MEMORY(dest,amount) RtlZeroMemory(dest,amount);
+#define COPY_MEMORY(dest,src,amount) RtlCopyMemory(dest,src,amount);
+
+
 #endif /*WIN_NT_DRIVER*/
+
 
 
 #endif 

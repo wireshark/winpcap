@@ -50,6 +50,7 @@
 // Working modes
 #define PACKET_MODE_CAPT 0x0 ///< Capture mode
 #define PACKET_MODE_STAT 0x1 ///< Statistical mode
+#define PACKET_MODE_MON 0x2 ///< Monitoring mode
 #define PACKET_MODE_DUMP 0x10 ///< Dump mode
 #define PACKET_MODE_STAT_DUMP MODE_DUMP | MODE_STAT ///< Statistical dump Mode
 
@@ -186,7 +187,48 @@ struct dump_bpf_hdr{
 #define        NMAX_PACKET 65535
 
 /*!
-  \brief Describes a network adapter.
+  \brief Addresses of a network adapter.
+
+  This structure is used by the PacketGetNetInfoEx() function to return the IP addresses associated with 
+  an adapter.
+*/
+typedef struct npf_if_addr {
+	struct sockaddr_storage IPAddress;	///< IP address.
+	struct sockaddr_storage SubnetMask;	///< Netmask for that address.
+	struct sockaddr_storage Broadcast;	///< Broadcast address.
+}npf_if_addr;
+
+
+#define ADAPTER_NAME_LENGTH 256 + 12	///<  Maximum length for the name of an adapter. The value is the same used by the IP Helper API.
+#define ADAPTER_DESC_LENGTH 128			///<  Maximum length for the description of an adapter. The value is the same used by the IP Helper API.
+#define MAX_MAC_ADDR_LENGTH 8			///<  Maximum length for the link layer address of an adapter. The value is the same used by the IP Helper API.
+#define MAX_NETWORK_ADDRESSES 16		///<  Maximum length for the link layer address of an adapter. The value is the same used by the IP Helper API.
+
+
+typedef struct WAN_ADAPTER_INT WAN_ADAPTER; ///< Describes an opened wan (dialup, VPN...) network adapter using the NetMon API
+typedef WAN_ADAPTER *PWAN_ADAPTER; ///< Describes an opened wan (dialup, VPN...) network adapter using the NetMon API
+
+/*!
+  \brief Contains comprehensive information about a network adapter.
+
+  This structure is filled with all the accessory information that the user can need about an adapter installed
+  on his system.
+*/
+typedef struct _ADAPTER_INFO  {
+	struct _ADAPTER_INFO *Next;		///< Pointer to the next adapter in the list.
+	CHAR Name[ADAPTER_NAME_LENGTH + 1];	///< Name of the device representing the adapter.
+	CHAR Description[ADAPTER_DESC_LENGTH + 1];	///< Human understandable description of the adapter
+	UINT MacAddressLen;				///< Length of the link layer address.
+	UCHAR MacAddress[MAX_MAC_ADDR_LENGTH];	///< Link layer address.
+	NetType LinkLayer;						///< Physical characteristics of this adapter. This NetType structure contains the link type and the speed of the adapter.
+	INT NNetworkAddresses;					///< Number of network layer addresses of this adapter.
+	npf_if_addr *NetworkAddresses;			///< Pointer to an array of npf_if_addr, each of which specifies a network address of this adapter.
+	UINT IsNdisWan;							///< True if this is a Wan adapter. Wan adapters must be treated in a different way, using the Netmon API to capture.
+}
+ADAPTER_INFO, *PADAPTER_INFO;
+
+/*!
+  \brief Describes an opened network adapter.
 
   This structure is the most important for the functioning of packet.dll, but the great part of its fields
   should be ignored by the user, since the library offers functions that avoid to cope with low-level parameters
@@ -206,6 +248,8 @@ typedef struct _ADAPTER  {
 	
 	UINT ReadTimeOut;			///< \internal The amount of time after which a read on the driver will be released and 
 								///< ReadEvent will be signaled, also if no packets were captured
+	CHAR Name[ADAPTER_NAME_LENGTH];
+	PWAN_ADAPTER pWanAdapter;
 }  ADAPTER, *LPADAPTER;
 
 /*!
@@ -240,17 +284,41 @@ struct _PACKET_OID_DATA {
 }; 
 typedef struct _PACKET_OID_DATA PACKET_OID_DATA, *PPACKET_OID_DATA;
 
-/*!
-  \brief Addresses of a network adapter.
 
-  This structure is used by the PacketGetNetInfoEx() function to return the IP addresses associated with 
-  an adapter.
+#if _DBG
+#define ODS(_x) OutputDebugString(TEXT(_x))
+#define ODSEx(_x, _y)
+#else
+#ifdef _DEBUG_TO_FILE
+/*! 
+  \brief Macro to print a debug string. The behavior differs depending on the debug level
 */
-typedef struct npf_if_addr {
-	struct sockaddr IPAddress;	///< IP address.
-	struct sockaddr SubnetMask;	///< Netmask for that address.
-	struct sockaddr Broadcast;	///< Broadcast address.
-}npf_if_addr;
+#define ODS(_x) { \
+	FILE *f; \
+	f = fopen("winpcap_debug.txt", "a"); \
+	fprintf(f, "%s", _x); \
+	fclose(f); \
+}
+/*! 
+  \brief Macro to print debug data with the printf convention. The behavior differs depending on 
+  the debug level
+*/
+#define ODSEx(_x, _y) { \
+	FILE *f; \
+	f = fopen("winpcap_debug.txt", "a"); \
+	fprintf(f, _x, _y); \
+	fclose(f); \
+}
+
+
+
+LONG PacketDumpRegistryKey(PCHAR KeyName, PCHAR FileName);
+#else
+#define ODS(_x)		
+#define ODSEx(_x, _y)
+#endif
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -260,11 +328,20 @@ extern "C" {
  *  @}
  */
 
+void PacketPopulateAdaptersInfoList();
+PWCHAR SChar2WChar(PCHAR string);
+PCHAR WChar2SChar(PWCHAR string);
+BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLen);
+PADAPTER_INFO PacketFindAdInfo(PCHAR AdapterName);
+BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName);
+
+
 //---------------------------------------------------------------------------
-// FUNCTIONS
+// EXPORTED FUNCTIONS
 //---------------------------------------------------------------------------
 
 PCHAR PacketGetVersion();
+PCHAR PacketGetDriverVersion();
 BOOLEAN PacketSetMinToCopy(LPADAPTER AdapterObject,int nbytes);
 BOOLEAN PacketSetNumWrites(LPADAPTER AdapterObject,int nwrites);
 BOOLEAN PacketSetMode(LPADAPTER AdapterObject,int mode);
@@ -274,7 +351,7 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s);
 BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s);
 BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim);
 BOOLEAN PacketGetNetType (LPADAPTER AdapterObject,NetType *type);
-LPADAPTER PacketOpenAdapter(LPTSTR AdapterName);
+LPADAPTER PacketOpenAdapter(PCHAR AdapterName);
 BOOLEAN PacketSendPacket(LPADAPTER AdapterObject,LPPACKET pPacket,BOOLEAN Sync);
 INT PacketSendPackets(LPADAPTER AdapterObject,PVOID PacketBuff,ULONG Size, BOOLEAN Sync);
 LPPACKET PacketAllocatePacket(void);
@@ -283,8 +360,7 @@ VOID PacketFreePacket(LPPACKET lpPacket);
 BOOLEAN PacketReceivePacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sync);
 BOOLEAN PacketSetHwFilter(LPADAPTER AdapterObject,ULONG Filter);
 BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize);
-BOOLEAN PacketGetNetInfo(LPTSTR AdapterName, PULONG netp, PULONG maskp);
-BOOLEAN PacketGetNetInfoEx(LPTSTR AdapterName, npf_if_addr* buffer, PLONG NEntries);
+BOOLEAN PacketGetNetInfoEx(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntries);
 BOOLEAN PacketRequest(LPADAPTER  AdapterObject,BOOLEAN Set,PPACKET_OID_DATA  OidData);
 HANDLE PacketGetReadEvent(LPADAPTER AdapterObject);
 BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len);

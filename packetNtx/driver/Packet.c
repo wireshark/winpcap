@@ -637,11 +637,27 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		SyncWrite = TRUE;
 
 	case BIOCSENDPACKETSNOSYNC:
-
+		
+		NdisAcquireSpinLock(&Open->WriteLock);
+		if(Open->WriteInProgress)
+		{
+			// Another write operation is currently in progress
+			EXIT_FAILURE(0);
+		}
+		else
+		{
+			Open->WriteInProgress = TRUE;
+		}
+		NdisReleaseSpinLock(&Open->WriteLock);
+		
 		WriteRes = NPF_BufferedWrite(Irp,
 			(PUCHAR)Irp->AssociatedIrp.SystemBuffer,
 			IrpSp->Parameters.DeviceIoControl.InputBufferLength,
 			SyncWrite);
+
+		NdisAcquireSpinLock(&Open->WriteLock);
+		Open->WriteInProgress = FALSE;
+		NdisReleaseSpinLock(&Open->WriteLock);
 
 		if( WriteRes != -1)
 		{

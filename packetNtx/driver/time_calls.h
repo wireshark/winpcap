@@ -297,6 +297,19 @@ __inline void GET_TIME(struct timeval *dst, struct time_conv *data)
 
 #endif /*KQPC_TS*/
 
+#else /*WIN_NT_DRIVER*/
+
+__inline void FORCE_TIME(struct timeval *src, struct time_conv *dest)
+{
+	dest->start=*src;
+}
+
+__inline void GET_TIME(struct timeval *dst, struct time_conv *data)
+{
+	*dst=data->start;
+}
+
+
 #endif /*WIN_NT_DRIVER*/
 
 

@@ -30,13 +30,7 @@
  *
  */
 
-#ifdef WIN32
 #include "tme.h"
-#endif
-
-#ifdef __FreeBSD__
-#include <net/tme/tme.h>
-#endif
 
 /* resizes extended memory */ 
 uint32 init_extended_memory(uint32 size, MEM_TYPE *mem_ex)

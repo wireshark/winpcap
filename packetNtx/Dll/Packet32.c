@@ -1,82 +1,46 @@
 /*
  * Copyright (c) 1999 - 2003
- * NetGroup, Politecnico di Torino (Italy)
- * All rights reserved.
+ *	Politecnico di Torino.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- * 1. Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- * notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the Politecnico di Torino nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * modification, are permitted provided that: (1) source code distributions
+ * retain the above copyright notice and this paragraph in its entirety, (2)
+ * distributions including binary code include the above copyright notice and
+ * this paragraph in its entirety in the documentation or other materials
+ * provided with the distribution, and (3) all advertising materials mentioning
+ * features or use of this software display the following acknowledgement:
+ * ``This product includes software developed by the Politecnico
+ * di Torino, and its contributors.'' Neither the name of
+ * the University nor the names of its contributors may be used to endorse
+ * or promote products derived from this software without specific prior
+ * written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #define UNICODE 1
 
+#include <stdio.h>
 #include <packet32.h>
+#include "wanpacket/wanpacket.h"
+
 
 #include <windows.h>
 #include <windowsx.h>
+#include <Iphlpapi.h>
+#include <IPIfCons.h>
 
 #include <ntddndis.h>
 
 
+/// Current packet.dll Version. It can be retrieved directly or through the PacketGetVersion() function.
+char PacketLibraryVersion[64]; 
+/// Current NPF.sys Version. It can be retrieved directly or through the PacketGetVersion() function.
+char PacketDriverVersion[64]; 
+
 /// Title of error windows
 TCHAR   szWindowTitle[] = TEXT("PACKET.DLL");
-
-#if _DBG
-#define ODS(_x) OutputDebugString(TEXT(_x))
-#define ODSEx(_x, _y)
-#else
-#ifdef _DEBUG_TO_FILE
-#include <stdio.h>
-/*! 
-  \brief Macro to print a debug string. The behavior differs depending on the debug level
-*/
-#define ODS(_x) { \
-	FILE *f; \
-	f = fopen("winpcap_debug.txt", "a"); \
-	fprintf(f, "%s", _x); \
-	fclose(f); \
-}
-/*! 
-  \brief Macro to print debug data with the printf convention. The behavior differs depending on 
-  the debug level
-*/
-#define ODSEx(_x, _y) { \
-	FILE *f; \
-	f = fopen("winpcap_debug.txt", "a"); \
-	fprintf(f, _x, _y); \
-	fclose(f); \
-}
-
-
-
-LONG PacketDumpRegistryKey(PCHAR KeyName, PCHAR FileName);
-#else
-#define ODS(_x)		
-#define ODSEx(_x, _y)
-#endif
-#endif
 
 //service handles
 SC_HANDLE scmHandle = NULL;
@@ -85,6 +49,16 @@ LPCTSTR NPFServiceName = TEXT("NPF");
 LPCTSTR NPFServiceDesc = TEXT("Netgroup Packet Filter");
 LPCTSTR NPFRegistryLocation = TEXT("SYSTEM\\CurrentControlSet\\Services\\NPF");
 LPCTSTR NPFDriverPath = TEXT("system32\\drivers\\npf.sys");
+
+extern PADAPTER_INFO AdaptersInfoList;
+extern HANDLE AdaptersInfoMutex;
+typedef VOID (*GAAHandler)(
+  ULONG,
+  DWORD,
+  PVOID,
+  PIP_ADAPTER_ADDRESSES,
+  PULONG);
+GAAHandler GetAdaptersAddressesPointer = NULL;
 
 //---------------------------------------------------------------------------
 
@@ -95,11 +69,12 @@ LPCTSTR NPFDriverPath = TEXT("system32\\drivers\\npf.sys");
 BOOL APIENTRY DllMain (HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 {
     BOOLEAN Status=TRUE;
+	HMODULE IPHMod;
 
-    switch ( Reason )
+    switch(Reason)
     {
 	case DLL_PROCESS_ATTACH:
-		
+
 		ODS("************Packet32: DllMain************\n");
 		
 #ifdef _DEBUG_TO_FILE
@@ -113,9 +88,34 @@ BOOL APIENTRY DllMain (HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 		PacketDumpRegistryKey("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services",
 			"services.reg");
 #endif
+
+		// Create the mutex that will protect the adapter information list
+		AdaptersInfoMutex = CreateMutex(NULL, TRUE, NULL);
+		ReleaseMutex(AdaptersInfoMutex);
+
+		//
+		// Retrieve packet.dll version information from the file
+		//
+		PacketGetFileVersion(TEXT("packet.dll"), PacketLibraryVersion, sizeof(PacketLibraryVersion));
+
+		//
+		// Retrieve NPF.sys version information from the file
+		//
+		PacketGetFileVersion(TEXT("drivers\\npf.sys"), PacketDriverVersion, sizeof(PacketDriverVersion));
+
+		//
+		// Locate GetAdaptersAddresses dinamically since it is not present in Win2k
+		//
+		IPHMod = GetModuleHandle(TEXT("Iphlpapi"));
+		
+		GetAdaptersAddressesPointer = (GAAHandler) GetProcAddress(IPHMod ,"GetAdaptersAddresses");
+
 		break;
 
         case DLL_PROCESS_DETACH:
+
+			CloseHandle(AdaptersInfoMutex);
+
 			break;
 
 		default:
@@ -126,17 +126,78 @@ BOOL APIENTRY DllMain (HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 }
 
 /*! 
+  \brief Convert a Unicode dotted-quad to a 32-bit IP address.
+  \param cp A string containing the address.
+  \return the converted 32-bit numeric address.
+
+   Doesn't check to make sure the address is valid.
+*/
+
+ULONG inet_addrU(const WCHAR *cp)
+{
+	ULONG val, part;
+	WCHAR c;
+	int i;
+
+	val = 0;
+	for (i = 0; i < 4; i++) {
+		part = 0;
+		while ((c = *cp++) != '\0' && c != '.') {
+			if (c < '0' || c > '9')
+				return -1;
+			part = part*10 + (c - '0');
+		}
+		if (part > 255)
+			return -1;	
+		val = val | (part << i*8);
+		if (i == 3) {
+			if (c != '\0')
+				return -1;	// extra gunk at end of string 
+		} else {
+			if (c == '\0')
+				return -1;	// string ends early 
+		}
+	}
+	return val;
+}
+
+/*! 
   \brief Converts an ASCII string to UNICODE. Uses the MultiByteToWideChar() system function.
   \param string The string to convert.
   \return The converted string.
 */
 
-WCHAR* SChar2WChar(char* string)
+PWCHAR SChar2WChar(PCHAR string)
 {
-	WCHAR* TmpStr;
-	TmpStr=(WCHAR*) malloc ((strlen(string)+2)*sizeof(WCHAR));
+	PWCHAR TmpStr;
+	TmpStr = (WCHAR*) GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, (strlen(string)+2)*sizeof(WCHAR));
 
 	MultiByteToWideChar(CP_ACP, 0, string, -1, TmpStr, (strlen(string)+2));
+
+	return TmpStr;
+}
+
+/*! 
+  \brief Converts an UNICODE string to ASCII. Uses the WideCharToMultiByte() system function.
+  \param string The string to convert.
+  \return The converted string.
+*/
+
+PCHAR WChar2SChar(PWCHAR string)
+{
+	PCHAR TmpStr;
+	TmpStr = (CHAR*) GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, (wcslen(string)+2));
+
+	// Conver to ASCII
+	WideCharToMultiByte(
+		CP_ACP,
+		0,
+		string,
+		-1,
+		TmpStr,
+		(wcslen(string)+2),          // size of buffer
+		NULL,
+		NULL);
 
 	return TmpStr;
 }
@@ -156,7 +217,7 @@ BOOLEAN PacketSetMaxLookaheadsize (LPADAPTER AdapterObject)
     ULONG      IoCtlBufferLength=(sizeof(PACKET_OID_DATA)+sizeof(ULONG)-1);
     PPACKET_OID_DATA  OidData;
 
-    OidData=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,IoCtlBufferLength);
+    OidData = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,IoCtlBufferLength);
     if (OidData == NULL) {
         ODS("PacketSetMaxLookaheadsize failed\n");
         return FALSE;
@@ -275,43 +336,6 @@ BOOL PacketInstallDriver(SC_HANDLE ascmHandle,SC_HANDLE *srvHandle)
 }
 
 /*! 
-  \brief Convert a Unicode dotted-quad to a 32-bit IP address.
-  \param cp A string containing the address.
-  \return the converted 32-bit numeric address.
-
-   Doesn't check to make sure the address is valid.
-*/
-
-
-ULONG inet_addrU(const WCHAR *cp)
-{
-	ULONG val, part;
-	WCHAR c;
-	int i;
-
-	val = 0;
-	for (i = 0; i < 4; i++) {
-		part = 0;
-		while ((c = *cp++) != '\0' && c != '.') {
-			if (c < '0' || c > '9')
-				return -1;
-			part = part*10 + (c - '0');
-		}
-		if (part > 255)
-			return -1;	
-		val = val | (part << i*8);
-		if (i == 3) {
-			if (c != '\0')
-				return -1;	// extra gunk at end of string 
-		} else {
-			if (c == '\0')
-				return -1;	// string ends early 
-		}
-	}
-	return val;
-}
-
-/*! 
   \brief Dumps a registry key to disk in text format. Uses regedit.
   \param KeyName Name of the ket to dump. All its subkeys will be saved recursively.
   \param FileName Name of the file that will contain the dump.
@@ -338,150 +362,111 @@ LONG PacketDumpRegistryKey(PCHAR KeyName, PCHAR FileName)
 }
 #endif
 
-//---------------------------------------------------------------------------
-// PUBLIC API
-//---------------------------------------------------------------------------
-
-/** @ingroup packetapi
- *  @{
- */
-
-/** @defgroup packet32 Packet.dll exported functions and variables
- *  @{
- */
-
-/// Current packet.dll Version. It can be retrieved directly or through the PacketGetVersion() function.
-char PacketLibraryVersion[] = "3.0.1 alpha"; 
-
 /*! 
-  \brief Returns a string with the dll version.
-  \return A char pointer to the version of the library.
+  \brief Returns the version of a dll or exe file 
+  \param FileName Name of the file whose version has to be retrieved.
+  \param VersionBuff Buffer that will contain the string with the file version.
+  \param VersionBuffLen Length of the buffer poited by VersionBuff.
+  \return If the function succeeds, the return value is TRUE.
+
+  \note uses the GetFileVersionInfoSize() and GetFileVersionInfo() WIN32 API functions
 */
-PCHAR PacketGetVersion(){
-	return PacketLibraryVersion;
-}
-
-/*! 
-  \brief Returns information about the MAC type of an adapter.
-  \param AdapterObject The adapter on which information is needed.
-  \param type Pointer to a NetType structure that will be filled by the function.
-  \return If the function succeeds, the return value is nonzero, otherwise the return value is zero.
-
-  This function return the link layer technology and the speed (in bps) of an opened adapter.
-  The LinkType field of the type parameter can have one of the following values:
-
-  - NdisMedium802_3: Ethernet (802.3) 
-  - NdisMediumWan: WAN 
-  - NdisMedium802_5: Token Ring (802.5) 
-  - NdisMediumFddi: FDDI 
-  - NdisMediumAtm: ATM 
-  - NdisMediumArcnet878_2: ARCNET (878.2) 
-*/
-BOOLEAN PacketGetNetType (LPADAPTER AdapterObject,NetType *type)
+BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLen)
 {
-    BOOLEAN    Status;
-    ULONG      IoCtlBufferLength=(sizeof(PACKET_OID_DATA)+sizeof(ULONG)-1);
-    PPACKET_OID_DATA  OidData;
-
-    OidData=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,IoCtlBufferLength);
-    if (OidData == NULL) {
-        ODS("PacketGetNetType failed\n");
-        return FALSE;
-    }
-	//get the link-layer type
-    OidData->Oid = OID_GEN_MEDIA_IN_USE;
-    OidData->Length = sizeof (ULONG);
-    Status = PacketRequest(AdapterObject,FALSE,OidData);
-    type->LinkType=*((UINT*)OidData->Data);
-
-	//get the link-layer speed
-    OidData->Oid = OID_GEN_LINK_SPEED;
-    OidData->Length = sizeof (ULONG);
-    Status = PacketRequest(AdapterObject,FALSE,OidData);
-	type->LinkSpeed=*((UINT*)OidData->Data)*100;
-    GlobalFreePtr (OidData);
-
-	ODSEx("Media:%d ",type->LinkType);
-	ODSEx("Speed=%d\n",type->LinkSpeed);
-
-    return Status;
-}
-
-/*! 
-  \brief Stops and unloads the WinPcap device driver.
-  \return If the function succeeds, the return value is nonzero, otherwise it is zero.
-
-  This function can be used to unload the driver from memory when the application no more needs it.
-  Note that the driver is physically stopped and unloaded only when all the files on its devices 
-  are closed, i.e. when all the applications that use WinPcap close all their adapters.
-*/
-BOOL PacketStopDriver()
-{
-	SC_HANDLE		scmHandle;
-    SC_HANDLE       schService;
-    BOOL            ret;
-    SERVICE_STATUS  serviceStatus;
-
-	scmHandle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+    DWORD   dwVerInfoSize;  // Size of version information block
+    DWORD   dwVerHnd=0;   // An 'ignored' parameter, always '0'
+	LPSTR   lpstrVffInfo;
+	UINT	cbTranslate, dwBytes;
+	TCHAR	SubBlock[64];
+	PVOID	lpBuffer;
+	PCHAR	TmpStr;
 	
-	if(scmHandle != NULL){
-		
-		schService = OpenService (scmHandle,
-			NPFServiceName,
-			SERVICE_ALL_ACCESS
-			);
-		
-		if (schService != NULL)
+	// Structure used to store enumerated languages and code pages.
+	struct LANGANDCODEPAGE {
+	  WORD wLanguage;
+	  WORD wCodePage;
+	} *lpTranslate;
+
+	ODS("PacketGetFileVersion\n");
+
+	// Now lets dive in and pull out the version information:
+    dwVerInfoSize = GetFileVersionInfoSize(FileName, &dwVerHnd);
+    if (dwVerInfoSize) 
+	{
+        lpstrVffInfo = GlobalAllocPtr(GMEM_MOVEABLE, dwVerInfoSize);
+		if (lpstrVffInfo == NULL)
 		{
-			
-			ret = ControlService (schService,
-				SERVICE_CONTROL_STOP,
-				&serviceStatus
-				);
-			if (!ret)
-			{
-			}
-			
-			CloseServiceHandle (schService);
-			
-			CloseServiceHandle(scmHandle);
-			
-			return ret;
+			ODS("PacketGetFileVersion: failed to allocate memory\n");
+			return FALSE;
 		}
-	}
-	
-	return FALSE;
 
+		if(!GetFileVersionInfo(FileName, dwVerHnd, dwVerInfoSize, lpstrVffInfo)) 
+		{
+			ODS("PacketGetFileVersion: failed to call GetFileVersionInfo\n");
+            GlobalFreePtr(lpstrVffInfo);
+			return FALSE;
+		}
+
+		// Read the list of languages and code pages.
+		if(!VerQueryValue(lpstrVffInfo,	TEXT("\\VarFileInfo\\Translation"),	(LPVOID*)&lpTranslate, &cbTranslate))
+		{
+			ODS("PacketGetFileVersion: failed to call VerQueryValue\n");
+            GlobalFreePtr(lpstrVffInfo);
+			return FALSE;
+		}
+		
+		// Create the file version string for the first (i.e. the only one) language.
+		wsprintf( SubBlock, 
+			TEXT("\\StringFileInfo\\%04x%04x\\FileVersion"),
+			(*lpTranslate).wLanguage,
+			(*lpTranslate).wCodePage);
+		
+		// Retrieve the file version string for the language.
+		if(!VerQueryValue(lpstrVffInfo, SubBlock, &lpBuffer, &dwBytes))
+		{
+			ODS("PacketGetFileVersion: failed to call VerQueryValue\n");
+            GlobalFreePtr(lpstrVffInfo);
+			return FALSE;
+		}
+
+		// Convert to ASCII
+		TmpStr = WChar2SChar(lpBuffer);
+
+		if(strlen(TmpStr) >= VersionBuffLen)
+		{
+			ODS("PacketGetFileVersion: Input buffer too small\n");
+            GlobalFreePtr(lpstrVffInfo);
+            GlobalFreePtr(TmpStr);
+			return FALSE;
+		}
+
+		strcpy(VersionBuff, TmpStr);
+
+        GlobalFreePtr(TmpStr);
+		
+	  } 
+	else 
+	{
+		ODSEx("PacketGetFileVersion: failed to call GetFileVersionInfoSize, error = %d\n", GetLastError());
+		return FALSE;
+	
+	} 
+	
+	return TRUE;
 }
 
 /*! 
-  \brief Opens an adapter.
+  \brief Opens an adapter using the NPF device driver.
   \param AdapterName A string containing the name of the device to open. 
-   Use the PacketGetAdapterNames() function to retrieve the list of available devices.
   \return If the function succeeds, the return value is the pointer to a properly initialized ADAPTER object,
    otherwise the return value is NULL.
 
-  This function tries to load and start the packet driver at the first invocation. In this way, 
-  the management of the driver is transparent to the application, that simply needs to open an adapter to start
-  WinPcap.
-  
-  \note the Windows 95 version of the NPF driver works with the ASCII string format, while the Windows NT 
-  version works with UNICODE. Therefore, AdapterName \b should be an ASCII string in Windows 95, and a UNICODE 
-  string in Windows NT. This difference is not a problem if the string pointed by AdapterName was obtained 
-  through the PacketGetAdapterNames function, because it returns the names of the adapters in the proper format.
-  Problems can arise in Windows NT when the string is obtained from ANSI C functions like scanf, because they 
-  use the ASCII format. Since this could be a relevant problem during the porting of command-line applications 
-  from UNIX, we included in the Windows NT version of PacketOpenAdapter the ability to detect ASCII strings and
-  convert them to UNICODE before sending them to the device driver. Therefore PacketOpenAdapter in Windows NT 
-  accepts both the ASCII and the UNICODE format. If a ASCII string is received, it is converted to UNICODE 
-  by PACKET.DLL before being passed to the driver.
+  \note internal function used by PacketOpenAdapter() and AddAdapter()
 */
-LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
+LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 {
     LPADAPTER lpAdapter;
     BOOLEAN Result;
-	char *AdapterNameA;
-	WCHAR *AdapterNameU;
 	DWORD error;
 	SC_HANDLE svcHandle = NULL;
 	LONG KeyRes;
@@ -490,8 +475,8 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 	BOOLEAN QuerySStat;
 	WCHAR SymbolicLink[128];
 
-    ODSEx("PacketOpenAdapter: trying to open the adapter=%S\n",AdapterName)
-
+	ODS("PacketOpenAdapterNPF\n");
+	
 	scmHandle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 	
 	if(scmHandle == NULL){
@@ -598,20 +583,11 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 
     if (scmHandle != NULL) CloseServiceHandle(scmHandle);
 
-	AdapterNameA=(char*)AdapterName;
-	if(AdapterNameA[1]!=0){ //ASCII
-		AdapterNameU=SChar2WChar(AdapterNameA);
-		AdapterName=AdapterNameU;
-	} else {			//Unicode
-		AdapterNameU=NULL;
-	}
-	
-	lpAdapter=(LPADAPTER)GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,sizeof(ADAPTER));
+	lpAdapter=(LPADAPTER)GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER));
 	if (lpAdapter==NULL)
 	{
 		ODS("PacketOpenAdapter: GlobalAlloc Failed\n");
 		error=GetLastError();
-		if (AdapterNameU != NULL) free(AdapterNameU);
 		//set the error to the one on which we failed
 		SetLastError(error);
 	    ODS("PacketOpenAdapter: Failed to allocate the adapter structure\n");
@@ -619,12 +595,7 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 	}
 	lpAdapter->NumWrites=1;
 
-
-
-	if (LOWORD(GetVersion()) == 4)
-		wsprintf(SymbolicLink,TEXT("\\\\.\\%s"),&AdapterName[8]);
-	else
-		wsprintf(SymbolicLink,TEXT("\\\\.\\Global\\%s"),&AdapterName[8]);
+	wsprintf(SymbolicLink, TEXT("\\\\.\\%s"), &AdapterName[16]);
 	
 	// Copy  only the bytes that fit in the adapter structure.
 	// Note that lpAdapter->SymbolicLink is present for backward compatibility but will
@@ -641,8 +612,6 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 		if(PacketSetReadEvt(lpAdapter)==FALSE){
 			error=GetLastError();
 			ODS("PacketOpenAdapter: Unable to open the read event\n");
-			if (AdapterNameU != NULL)
-				free(AdapterNameU);
 			GlobalFreePtr(lpAdapter);
 			//set the error to the one on which we failed
 			SetLastError(error);
@@ -651,21 +620,178 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 		}		
 		
 		PacketSetMaxLookaheadsize(lpAdapter);
-		if (AdapterNameU != NULL)
-		    free(AdapterNameU);
+
+		_snprintf(lpAdapter->Name, ADAPTER_NAME_LENGTH, "%S", AdapterName);
+
 		return lpAdapter;
 	}
 
 
 	error=GetLastError();
-	if (AdapterNameU != NULL)
-	    free(AdapterNameU);
 	GlobalFreePtr(lpAdapter);
 	//set the error to the one on which we failed
 	SetLastError(error);
     ODSEx("PacketOpenAdapter: CreateFile failed, Error=2,%d\n",error);
 	return NULL;
+}
 
+//---------------------------------------------------------------------------
+// PUBLIC API
+//---------------------------------------------------------------------------
+
+/** @ingroup packetapi
+ *  @{
+ */
+
+/** @defgroup packet32 Packet.dll exported functions and variables
+ *  @{
+ */
+
+/*! 
+  \brief Return a string with the dll version.
+  \return A char pointer to the version of the library.
+*/
+PCHAR PacketGetVersion()
+{
+	return PacketLibraryVersion;
+}
+
+/*! 
+  \brief Return a string with the version of the NPF.sys device driver.
+  \return A char pointer to the version of the driver.
+*/
+PCHAR PacketGetDriverVersion()
+{
+	return PacketDriverVersion;
+}
+
+/*! 
+  \brief Stops and unloads the WinPcap device driver.
+  \return If the function succeeds, the return value is nonzero, otherwise it is zero.
+
+  This function can be used to unload the driver from memory when the application no more needs it.
+  Note that the driver is physically stopped and unloaded only when all the files on its devices 
+  are closed, i.e. when all the applications that use WinPcap close all their adapters.
+*/
+BOOL PacketStopDriver()
+{
+	SC_HANDLE		scmHandle;
+    SC_HANDLE       schService;
+    BOOL            ret;
+    SERVICE_STATUS  serviceStatus;
+
+	scmHandle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
+	
+	if(scmHandle != NULL){
+		
+		schService = OpenService (scmHandle,
+			NPFServiceName,
+			SERVICE_ALL_ACCESS
+			);
+		
+		if (schService != NULL)
+		{
+			
+			ret = ControlService (schService,
+				SERVICE_CONTROL_STOP,
+				&serviceStatus
+				);
+			if (!ret)
+			{
+			}
+			
+			CloseServiceHandle (schService);
+			
+			CloseServiceHandle(scmHandle);
+			
+			return ret;
+		}
+	}
+	
+	return FALSE;
+
+}
+
+/*! 
+  \brief Opens an adapter.
+  \param AdapterName A string containing the name of the device to open. 
+   Use the PacketGetAdapterNames() function to retrieve the list of available devices.
+  \return If the function succeeds, the return value is the pointer to a properly initialized ADAPTER object,
+   otherwise the return value is NULL.
+*/
+LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
+{
+    LPADAPTER lpAdapter;
+	WCHAR *AdapterNameU;
+	SC_HANDLE svcHandle = NULL;
+	PCHAR AdapterNameA = NULL;
+#ifndef _WINNT4
+	PADAPTER_INFO TAdInfo;
+#endif // _WINNT4
+
+    ODSEx("PacketOpenAdapter: trying to open the adapter=%S\n",AdapterName)
+
+	if(AdapterName[1]!=0){ //ASCII
+		AdapterNameU = SChar2WChar(AdapterName);
+		AdapterNameA = AdapterName;
+		AdapterName = (PCHAR)AdapterNameU;
+	} else {			//Unicode
+		AdapterNameU = NULL;
+		AdapterNameA = WChar2SChar((PWCHAR)AdapterName);
+	}
+
+#ifndef _WINNT4
+
+	// Find the PADAPTER_INFO structure associated with this adapter 
+	TAdInfo = PacketFindAdInfo(AdapterNameA);
+	if(TAdInfo == NULL)
+	{
+		PacketUpdateAdInfo(AdapterNameA);
+		TAdInfo = PacketFindAdInfo(AdapterNameA);
+		if(TAdInfo == NULL)	return NULL;
+	}
+
+	if (TAdInfo->IsNdisWan == TRUE)
+	{
+		//
+		// This is a wan adapter. Open it using the netmon API
+		//
+		lpAdapter = (LPADAPTER) GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,sizeof(ADAPTER));
+		if (lpAdapter == NULL)
+		{
+			if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
+			else GlobalFreePtr(AdapterNameA);
+			return NULL;
+		}
+		
+		lpAdapter->pWanAdapter = WanPacketOpenAdapter();
+		if (lpAdapter->pWanAdapter == NULL)
+		{
+			if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
+			else GlobalFreePtr(AdapterNameA);
+			
+			GlobalFreePtr(lpAdapter);
+			return NULL;
+		}
+		
+		_snprintf(lpAdapter->Name, ADAPTER_NAME_LENGTH, "%s", AdapterNameA);
+		
+		lpAdapter->ReadEvent = WanPacketGetReadEvent(lpAdapter->pWanAdapter);
+		
+		if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
+		else GlobalFreePtr(AdapterNameA);
+		
+		return lpAdapter;
+	}
+      
+#endif // _WINNT4
+   
+	lpAdapter = PacketOpenAdapterNPF(AdapterName);
+
+	if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
+	else GlobalFreePtr(AdapterNameA);
+
+	return lpAdapter;
 }
 
 /*! 
@@ -676,7 +802,17 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 */
 VOID PacketCloseAdapter(LPADAPTER lpAdapter)
 {
-    CloseHandle(lpAdapter->hFile);
+
+#ifndef _WINNT4
+	if (lpAdapter->pWanAdapter != NULL)
+	{
+		WanPacketCloseAdapter(lpAdapter->pWanAdapter);
+		GlobalFreePtr(lpAdapter);
+		return;
+	}
+#endif // _WINNT4
+	
+	CloseHandle(lpAdapter->hFile);
 	SetEvent(lpAdapter->ReadEvent);
     CloseHandle(lpAdapter->ReadEvent);
     GlobalFreePtr(lpAdapter);
@@ -779,12 +915,22 @@ VOID PacketInitPacket(LPPACKET lpPacket,PVOID Buffer,UINT Length)
 BOOLEAN PacketReceivePacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sync)
 {
 	BOOLEAN res;
-
+	
+#ifndef _WINNT4
+	
+	if (AdapterObject->pWanAdapter != NULL)
+	{
+		lpPacket->ulBytesReceived = WanPacketReceivePacket(AdapterObject->pWanAdapter, lpPacket->Buffer, lpPacket->Length);
+		return TRUE;
+	}
+	
+#endif // _WINNT4
+	
 	if((int)AdapterObject->ReadTimeOut != -1)
 		WaitForSingleObject(AdapterObject->ReadEvent, (AdapterObject->ReadTimeOut==0)?INFINITE:AdapterObject->ReadTimeOut);
-
+	
     res = ReadFile(AdapterObject->hFile, lpPacket->Buffer, lpPacket->Length, &lpPacket->ulBytesReceived,NULL);
-
+	
 	return res;
 }
 
@@ -818,10 +964,18 @@ BOOLEAN PacketReceivePacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sy
   compared to the one of WindowsNTx.
 */
 BOOLEAN PacketSendPacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sync)
-
 {
     DWORD        BytesTransfered;
     
+
+#ifndef _WINNT4
+	if (AdapterObject->pWanAdapter != NULL)
+	{
+		ODS("PacketSendPacket: packet sending not allowed on wan adapters\n");
+		return FALSE;
+	}
+#endif // _WINNT4
+
     return WriteFile(AdapterObject->hFile,lpPacket->Buffer,lpPacket->Length,&BytesTransfered,NULL);
 }
 
@@ -860,7 +1014,16 @@ INT PacketSendPackets(LPADAPTER AdapterObject, PVOID PacketBuff, ULONG Size, BOO
 	struct timeval	BufStartTime;
 	LARGE_INTEGER	StartTicks, CurTicks, TargetTicks, TimeFreq;
 
+
 	ODS("PacketSendPackets");
+
+#ifndef _WINNT4
+	if (AdapterObject->pWanAdapter != NULL)
+	{
+		ODS("PacketSendPackets: packet sending not allowed on wan adapters\n");
+		return FALSE;
+	}
+#endif // _WINNT4
 
 	// Obtain starting timestamp of the buffer
 	BufStartTime.tv_sec = ((struct timeval*)(PacketBuff))->tv_sec;
@@ -885,24 +1048,21 @@ INT PacketSendPackets(LPADAPTER AdapterObject, PVOID PacketBuff, ULONG Size, BOO
 
 		TotBytesTransfered += BytesTransfered;
 
+		// calculate the time interval to wait before sending the next packet
+		TargetTicks.QuadPart = StartTicks.QuadPart +
+		(LONGLONG)
+		((((struct timeval*)((PCHAR)PacketBuff + TotBytesTransfered))->tv_sec - BufStartTime.tv_sec) * 1000000 +
+		(((struct timeval*)((PCHAR)PacketBuff + TotBytesTransfered))->tv_usec - BufStartTime.tv_usec)) *
+		(TimeFreq.QuadPart) / 1000000;
+
 		// Exit from the loop on termination or error
 		if(TotBytesTransfered >= Size || Res != TRUE)
 			break;
 		
-		if(Sync){
+		// Wait until the time interval has elapsed
+		while( CurTicks.QuadPart <= TargetTicks.QuadPart )
+			QueryPerformanceCounter(&CurTicks);
 
-			// calculate the time interval to wait before sending the next packet
-			TargetTicks.QuadPart = StartTicks.QuadPart +
-				(LONGLONG)
-				((((struct timeval*)((PCHAR)PacketBuff + TotBytesTransfered))->tv_sec - BufStartTime.tv_sec) * 1000000 +
-				(((struct timeval*)((PCHAR)PacketBuff + TotBytesTransfered))->tv_usec - BufStartTime.tv_usec)) *
-				(TimeFreq.QuadPart) / 1000000;
-
-			// Wait until the time interval has elapsed
-			while( CurTicks.QuadPart <= TargetTicks.QuadPart ){
-				QueryPerformanceCounter(&CurTicks);
-			}
-		}
 	}
 	while(TRUE);
 
@@ -930,7 +1090,13 @@ INT PacketSendPackets(LPADAPTER AdapterObject, PVOID PacketBuff, ULONG Size, BOO
 BOOLEAN PacketSetMinToCopy(LPADAPTER AdapterObject,int nbytes)
 {
 	DWORD BytesReturned;
-    return DeviceIoControl(AdapterObject->hFile,pBIOCSMINTOCOPY,&nbytes,4,NULL,0,&BytesReturned,NULL);
+
+#ifndef _WINNT4
+   if (AdapterObject->pWanAdapter != NULL)
+      return WanPacketSetMinToCopy(AdapterObject->pWanAdapter, nbytes);
+#endif // _WINNT4
+   
+   return DeviceIoControl(AdapterObject->hFile,pBIOCSMINTOCOPY,&nbytes,4,NULL,0,&BytesReturned,NULL);
 }
 
 /*!
@@ -973,6 +1139,11 @@ BOOLEAN PacketSetMode(LPADAPTER AdapterObject,int mode)
 {
 	DWORD BytesReturned;
 
+#ifndef _WINNT4
+   if (AdapterObject->pWanAdapter != NULL)
+      return WanPacketSetMode(AdapterObject->pWanAdapter, mode);
+#endif // _WINNT4
+
     return DeviceIoControl(AdapterObject->hFile,pBIOCSMODE,&mode,4,NULL,0,&BytesReturned,NULL);
 }
 
@@ -998,6 +1169,14 @@ BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len)
 	WCHAR	NameWithPath[1024];
 	int		TStrLen;
 	WCHAR	*NamePos;
+
+#ifndef _WINNT4
+	if (AdapterObject->pWanAdapter != NULL)
+	{
+		ODS("PacketSetDumpName: not allowed on wan adapters\n");
+		return FALSE;
+	}
+#endif // _WINNT4
 
 	if(((PUCHAR)name)[1]!=0 && len>1){ //ASCII
 		FileName=SChar2WChar(name);
@@ -1042,6 +1221,14 @@ BOOLEAN PacketSetDumpLimits(LPADAPTER AdapterObject, UINT maxfilesize, UINT maxn
 	DWORD		BytesReturned;
 	UINT valbuff[2];
 
+#ifndef _WINNT4
+	if (AdapterObject->pWanAdapter != NULL)
+	{
+		ODS("PacketSetDumpLimits: not allowed on wan adapters\n");
+		return FALSE;
+	}
+#endif // _WINNT4
+
 	valbuff[0] = maxfilesize;
 	valbuff[1] = maxnpacks;
 
@@ -1073,6 +1260,14 @@ BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync)
 	DWORD		BytesReturned;
 	int		IsDumpEnded;
 	BOOLEAN	res;
+
+#ifndef _WINNT4
+	if (AdapterObject->pWanAdapter != NULL)
+	{
+		ODS("PacketIsDumpEnded: not allowed on wan adapters\n");
+		return FALSE;
+	}
+#endif // _WINNT4
 
 	if(sync)
 		WaitForSingleObject(AdapterObject->ReadEvent, INFINITE);
@@ -1126,6 +1321,15 @@ HANDLE PacketGetReadEvent(LPADAPTER AdapterObject)
 BOOLEAN PacketSetNumWrites(LPADAPTER AdapterObject,int nwrites)
 {
 	DWORD BytesReturned;
+
+#ifndef _WINNT4
+	if (AdapterObject->pWanAdapter != NULL)
+	{
+		ODS("PacketSetNumWrites: not allowed on wan adapters\n");
+		return FALSE;
+	}
+#endif // _WINNT4
+
     return DeviceIoControl(AdapterObject->hFile,pBIOCSWRITEREP,&nwrites,4,NULL,0,&BytesReturned,NULL);
 }
 
@@ -1146,6 +1350,11 @@ BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
 	DWORD BytesReturned;
 	int DriverTimeOut=-1;
 
+#ifndef _WINNT4
+   if (AdapterObject->pWanAdapter != NULL)
+      return WanPacketSetReadTimeout(AdapterObject->pWanAdapter,timeout);
+#endif // _WINNT4
+
 	AdapterObject->ReadTimeOut=timeout;
 
     return DeviceIoControl(AdapterObject->hFile,pBIOCSRTIMEOUT,&DriverTimeOut,4,NULL,0,&BytesReturned,NULL);
@@ -1154,7 +1363,7 @@ BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
 /*!
   \brief Sets the size of the kernel-level buffer associated with a capture.
   \param AdapterObject Pointer to an _ADAPTER structure.
-  \param dim New size of the buffer, in \b bytes.
+  \param dim New size of the buffer, in \b kilobytes.
   \return The function returns TRUE if successfully completed, FALSE if there is not enough memory to 
    allocate the new buffer.
 
@@ -1170,6 +1379,11 @@ BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
 BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim)
 {
 	DWORD BytesReturned;
+
+#ifndef _WINNT4
+   if (AdapterObject->pWanAdapter != NULL)
+      return WanPacketSetBufferSize(AdapterObject->pWanAdapter, dim);
+#endif // _WINNT4
     return DeviceIoControl(AdapterObject->hFile,pBIOCSETBUFFERSIZE,&dim,4,NULL,0,&BytesReturned,NULL);
 }
 
@@ -1196,7 +1410,13 @@ BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim)
 BOOLEAN PacketSetBpf(LPADAPTER AdapterObject,struct bpf_program *fp)
 {
 	DWORD BytesReturned;
-    return DeviceIoControl(AdapterObject->hFile,pBIOCSETF,(char*)fp->bf_insns,fp->bf_len*sizeof(struct bpf_insn),NULL,0,&BytesReturned,NULL);
+
+#ifndef _WINNT4
+   if (AdapterObject->pWanAdapter != NULL)
+      return WanPacketSetBpfFilter(AdapterObject->pWanAdapter, (PUCHAR)fp->bf_insns, fp->bf_len * sizeof(struct bpf_insn));
+#endif // _WINNT4
+
+   return DeviceIoControl(AdapterObject->hFile,pBIOCSETF,(char*)fp->bf_insns,fp->bf_len*sizeof(struct bpf_insn),NULL,0,&BytesReturned,NULL);
 }
 
 /*!
@@ -1218,6 +1438,12 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
 	DWORD BytesReturned;
 	struct bpf_stat tmpstat;	// We use a support structure to avoid kernel-level inconsistencies with old or malicious applications
 
+#ifndef _WINNT4
+   if ( AdapterObject->pWanAdapter != NULL)
+		Res = WanPacketGetStats(AdapterObject->pWanAdapter, &tmpstat);
+	else
+#endif // _WINNT4
+
 	Res = DeviceIoControl(AdapterObject->hFile,
 		pBIOCGSTATS,
 		NULL,
@@ -1226,6 +1452,7 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
 		sizeof(struct bpf_stat),
 		&BytesReturned,
 		NULL);
+
 
 	// Copy only the first two values retrieved from the driver
 	s->bs_recv = tmpstat.bs_recv;
@@ -1251,6 +1478,12 @@ BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s)
 	BOOLEAN Res;
 	DWORD BytesReturned;
 	struct bpf_stat tmpstat;	// We use a support structure to avoid kernel-level inconsistencies with old or malicious applications
+
+#ifndef _WINNT4
+   if ( AdapterObject->pWanAdapter != NULL)
+		Res = WanPacketGetStats(AdapterObject->pWanAdapter, &tmpstat);
+	else
+#endif // _WINNT4
 
 	Res = DeviceIoControl(AdapterObject->hFile,
 		pBIOCGSTATS,
@@ -1286,7 +1519,12 @@ BOOLEAN PacketRequest(LPADAPTER  AdapterObject,BOOLEAN Set,PPACKET_OID_DATA  Oid
     DWORD		BytesReturned;
     BOOLEAN		Result;
 
-    Result=DeviceIoControl(AdapterObject->hFile,(DWORD) Set ? (DWORD)pBIOCSETOID : (DWORD)pBIOCQUERYOID,
+#ifndef _WINNT4
+	if (AdapterObject->pWanAdapter != NULL)
+		return FALSE;
+#endif // _WINNT4
+    
+	Result=DeviceIoControl(AdapterObject->hFile,(DWORD) Set ? (DWORD)pBIOCSETOID : (DWORD)pBIOCQUERYOID,
                            OidData,sizeof(PACKET_OID_DATA)-1+OidData->Length,OidData,
                            sizeof(PACKET_OID_DATA)-1+OidData->Length,&BytesReturned,NULL);
     
@@ -1321,7 +1559,12 @@ BOOLEAN PacketSetHwFilter(LPADAPTER  AdapterObject,ULONG Filter)
     ULONG      IoCtlBufferLength=(sizeof(PACKET_OID_DATA)+sizeof(ULONG)-1);
     PPACKET_OID_DATA  OidData;
 
-    OidData=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,IoCtlBufferLength);
+#ifndef _WINNT4
+	if (AdapterObject->pWanAdapter != NULL)
+		return TRUE;
+#endif // _WINNT4
+    
+	OidData=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,IoCtlBufferLength);
     if (OidData == NULL) {
         ODS("PacketSetHwFilter: GlobalAlloc Failed\n");
         return FALSE;
@@ -1337,362 +1580,87 @@ BOOLEAN PacketSetHwFilter(LPADAPTER  AdapterObject,ULONG Filter)
 /*!
   \brief Retrieve the list of available network adapters and their description.
   \param pStr User allocated string that will be filled with the names of the adapters.
-  \param BufferSize Length of the buffer pointed by pStr.
-  \return If the function succeeds, the return value is nonzero.
+  \param BufferSize Length of the buffer pointed by pStr. If the function fails, this variable contains the 
+         number of bytes that are needed to contain the adapter list.
+  \return If the function succeeds, the return value is nonzero. If the return value is zero, BufferSize contains 
+          the number of bytes that are needed to contain the adapter list.
 
   Usually, this is the first function that should be used to communicate with the driver.
   It returns the names of the adapters installed on the system <B>and supported by WinPcap</B>. 
   After the names of the adapters, pStr contains a string that describes each of them.
 
-  \b Warning: 
-  the result of this function is obtained querying the registry, therefore the format 
-  of the result in Windows NTx is different from the one in Windows 9x. Windows 9x uses the ASCII
-  encoding method to store a string, while Windows NTx uses UNICODE. After a call to PacketGetAdapterNames 
-  in Windows 95x, pStr contains, in succession:
+  After a call to PacketGetAdapterNames pStr contains, in succession:
   - a variable number of ASCII strings, each with the names of an adapter, separated by a "\0"
   - a double "\0"
   - a number of ASCII strings, each with the description of an adapter, separated by a "\0". The number 
    of descriptions is the same of the one of names. The fisrt description corresponds to the first name, and
    so on.
   - a double "\0". 
-
-  In Windows NTx, pStr contains: the names of the adapters, in UNICODE format, separated by a single UNICODE "\0" (i.e. 2 ASCII "\0"), a double UNICODE "\0", followed by the descriptions of the adapters, in ASCII format, separated by a single ASCII "\0" . The string is terminated by a double ASCII "\0".
-  - a variable number of UNICODE strings, each with the names of an adapter, separated by a UNICODE "\0"
-  - a double UNICODE "\0"
-  - a number of ASCII strings, each with the description of an adapter, separated by an ASCII "\0".
-  - a double ASCII "\0". 
 */
 
 BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 {
-  HKEY		LinkageKey,AdapKey, OneAdapKey;
-	DWORD		RegKeySize=0;
-  LONG		Status;
-	ULONG		Result;
-	PTSTR		BpStr;
-	char		*TTpStr,*DpStr,*DescBuf;
-	LPADAPTER	adapter;
-  PPACKET_OID_DATA  OidData;
-	int			i=0,k,rewind;
-	DWORD		dim;
-	TCHAR		AdapName[256];
+	PADAPTER_INFO	TAdInfo;
+	ULONG	SizeNeeded = 1;
+	ULONG	SizeNames = 1;
+	ULONG	SizeDesc;
+	ULONG	OffDescriptions;
 
-  ODSEx("PacketGetAdapterNames: BufferSize=%d\n",*BufferSize);
+	ODSEx("PacketGetAdapterNames: BufferSize=%d\n", *BufferSize);
 
-  OidData = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,512);
-  if (OidData == NULL) {
-      ODS("PacketGetAdapterNames: GlobalAlloc Failed\n");
-      return FALSE;
-  }
+	//
+	// Create the adapter information list
+	//
+	PacketPopulateAdaptersInfoList();
 
-  Status=RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-		              TEXT("SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}"),
-						0,
-						KEY_READ,
-						&AdapKey);
-  if ( Status != ERROR_SUCCESS ){
-    ODS("PacketGetAdapterNames: RegOpenKeyEx ( Class\{networkclassguid} ) Failed\n");
-    return FALSE;
-  }
-
-	// Get the size to allocate for the original device names
-	while((Result=RegEnumKey(AdapKey,i,AdapName,sizeof(AdapName)/2))==ERROR_SUCCESS)
-	{
-		Status=RegOpenKeyEx(AdapKey,AdapName,0,KEY_READ,&OneAdapKey);
-		if ( Status != ERROR_SUCCESS )
-		{
-    		RegCloseKey(AdapKey);
-			ODS("PacketGetAdapterNames: RegOpenKeyEx ( OneAdapKey ) Failed\n");
-			i++;
-			continue;
-		}
-    
-		Status=RegOpenKeyEx(OneAdapKey,L"Linkage",0,KEY_READ,&LinkageKey);
-		if ( Status != ERROR_SUCCESS )
-		{
-			RegCloseKey( OneAdapKey );
-    		RegCloseKey(AdapKey);
-			ODS("PacketGetAdapterNames: RegOpenKeyEx ( LinkageKey ) Failed\n");
-			i++;
-			continue;
-		}
-
-		Status=RegQueryValueEx(LinkageKey,L"Export",NULL,NULL,NULL,&dim);
-
-		RegCloseKey( OneAdapKey );
-		RegCloseKey( LinkageKey );
-
-		i++;
-		if(Status!=ERROR_SUCCESS) continue;
-		RegKeySize+=dim;
-	} // while enum reg key still find keys
-	
-	// Allocate the memory for the original device names
-	ODSEx("Need %d bytes for the names\n", RegKeySize+2);
-	BpStr=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,RegKeySize+2);
-	if (BpStr == NULL || RegKeySize > *BufferSize) {
-        ODS("PacketGetAdapterNames: GlobalAlloc Failed\n");
-		GlobalFreePtr(OidData);
-		return FALSE;
+	if(!AdaptersInfoList){
+		*BufferSize = 0;
+		return FALSE;		// No adapters to return
 	}
 
-	k=0;
-	i=0;
-
-  ODS("PacketGetAdapterNames: Cycling through the adapters:\n");
-
-	// Copy the names to the buffer
-	while((Result=RegEnumKey(AdapKey,i,AdapName,sizeof(AdapName)/2))==ERROR_SUCCESS)
+	// 
+	// First scan of the list to calculate the offsets and check the sizes
+	//
+	for(TAdInfo = AdaptersInfoList; TAdInfo != NULL; TAdInfo = TAdInfo->Next)
 	{
-		WCHAR UpperBindStr[64];
-
-		i++;
-		ODSEx(" %d) ", i);
-
-		Status=RegOpenKeyEx(AdapKey,AdapName,0,KEY_READ,&OneAdapKey);
-    if ( Status != ERROR_SUCCESS ){
-    	RegCloseKey(AdapKey);
-      ODS("PacketGetAdapterNames: RegOpenKeyEx ( OneAdapKey ) Failed\n");
-      return FALSE;
-    }
-		Status=RegOpenKeyEx(OneAdapKey,L"Linkage",0,KEY_READ,&LinkageKey);
-    if ( Status != ERROR_SUCCESS ){
-      RegCloseKey( OneAdapKey );
-    	RegCloseKey(AdapKey);
-      ODS("PacketGetAdapterNames: RegOpenKeyEx ( LinkageKey ) Failed\n");
-      return FALSE;
-    }
-
-		dim=sizeof(UpperBindStr);
-        Status=RegQueryValueEx(LinkageKey,L"UpperBind",NULL,NULL,(PUCHAR)UpperBindStr,&dim);
+		// Update the size variables
+		SizeNeeded += strlen(TAdInfo->Name) + strlen(TAdInfo->Description) + 1;
+		SizeNames += strlen(TAdInfo->Name) + 1;
 		
-		ODSEx("UpperBind=%S ", UpperBindStr);
-
-		dim=RegKeySize-k;
-        Status=RegQueryValueEx(LinkageKey,L"Export",NULL,NULL,(LPBYTE)BpStr+k,&dim);
-		if(Status!=ERROR_SUCCESS){
-      RegCloseKey( OneAdapKey );
-      RegCloseKey( LinkageKey );
-			ODS("Name = SKIPPED (error reading the key)\n");
-			continue;
-		}
-
-    RegCloseKey( OneAdapKey );
-    RegCloseKey( LinkageKey );
-		ODSEx("Name = %S\n", (LPBYTE)BpStr+k);
-
-		k+=dim-2;
-  } // while enum reg keys
-
-	RegCloseKey(AdapKey);
-
-#ifdef _DEBUG_TO_FILE
-	//dump BpStr for debug purposes
-	ODS("Dumping BpStr:");
-	{
-		FILE *f;
-		f = fopen("winpcap_debug.txt", "a");
-		for(i=0;i<k;i++){
-			if(!(i%32))fprintf(f, "\n ");
-			fprintf(f, "%c " , *((LPBYTE)BpStr+i));
-		}
-		fclose(f);
-	}
-	ODS("\n");
-#endif
-
-	
-	if (k != 0)
-  {
-  	DescBuf=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, 4096);
-
-		if (DescBuf == NULL) {
-			GlobalFreePtr (BpStr);
-		  GlobalFreePtr(OidData);
-			return FALSE;
-		}
-		DpStr=DescBuf;
-				
-		for(i=0,k=0;BpStr[i]!=0 || BpStr[i+1]!=0;)
-    {
-			
-			if(k+wcslen(BpStr+i)+30 > *BufferSize){
-				// Input buffer too small
-			    GlobalFreePtr(OidData);
-				GlobalFreePtr (BpStr);
-				GlobalFreePtr (DescBuf);
-				ODS("PacketGetAdapterNames: Input buffer too small!\n");
-				return FALSE;
-			}
-
-			// Create the device name
-			rewind=k;
-			memcpy(pStr+k,BpStr+i,16);
-			memcpy(pStr+k+8,TEXT("NPF_"),8);
-			i+=8;
-			k+=12;
-			while(BpStr[i-1]!=0){
-				pStr[k++]=BpStr[i++];
-			}
-
-			// Open the adapter
-			adapter=PacketOpenAdapter(pStr+rewind);
-			if(adapter==NULL){
-				k=rewind;
-				continue;
-			}
-
-			// Retrieve the description
-			OidData->Oid = OID_GEN_VENDOR_DESCRIPTION;
-			OidData->Length = 256;
-			ZeroMemory(OidData->Data,256);
-			Status = PacketRequest(adapter,FALSE,OidData);
-			if(Status==0 || ((char*)OidData->Data)[0]==0){
-				k=rewind;
-				continue;
-			}
-
-			ODSEx("Adapter Description=%s\n\n",OidData->Data);
-
-			// Copy the description
-			TTpStr=(char*)(OidData->Data);
-			while(*TTpStr!=0){
-				*DpStr++=*TTpStr++;
-			}
-			*DpStr++=*TTpStr++;
-			
-			// Close the adapter
-			PacketCloseAdapter(adapter);
-			
-    } // for end - parse through string
-		*DpStr=0;
-
-		pStr[k++]=0;
-		pStr[k]=0;
-
-		if((ULONG)(DpStr-DescBuf+k) < *BufferSize)
-			memcpy(pStr+k,DescBuf,DpStr-DescBuf);
-		else{
-		  GlobalFreePtr(OidData);
-			GlobalFreePtr (BpStr);
-			GlobalFreePtr (DescBuf);
-			ODS("\nPacketGetAdapterNames: ended with failure\n");
-			return FALSE;
-		}
-
-	  GlobalFreePtr(OidData);
-		GlobalFreePtr (BpStr);
-		GlobalFreePtr (DescBuf);
-		ODS("\nPacketGetAdapterNames: ended correctly\n");
-		return TRUE;
-  } // if k != 0
-	else{
-	  DWORD      RegType;
-
-		ODS("Adapters not found under SYSTEM\\CurrentControlSet\\Control\\Class. Using the TCP/IP bindings.\n");
-
-		GlobalFreePtr (BpStr);
-
-		Status=RegOpenKeyEx(HKEY_LOCAL_MACHINE,TEXT("SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Linkage"),0,KEY_READ,&LinkageKey);
-		if (Status == ERROR_SUCCESS)
+		// Check not to overflow the buffer
+		if(SizeNeeded >= *BufferSize)
 		{
-			// Retrieve the length of the key
-			Status=RegQueryValueEx(LinkageKey,TEXT("bind"),NULL,&RegType,NULL,&RegKeySize);
-			// Allocate the buffer
-			BpStr=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,RegKeySize+2);
-			if (BpStr == NULL || RegKeySize > *BufferSize) {
-				GlobalFreePtr(OidData);
-				return FALSE;
-			}
-			Status=RegQueryValueEx(LinkageKey,TEXT("bind"),NULL,&RegType,(LPBYTE)BpStr,&RegKeySize);
-			RegCloseKey(LinkageKey);
-		}
-		
-		if (Status==ERROR_SUCCESS){
-			
-			DescBuf=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, 4096);
-			if (DescBuf == NULL) {
-				GlobalFreePtr (BpStr);
-				GlobalFreePtr(OidData);
-				return FALSE;
-			}
-			DpStr=DescBuf;
-			
-			for(i=0,k=0;BpStr[i]!=0 || BpStr[i+1]!=0;){
-				
-				if(k+wcslen(BpStr+i)+30 > *BufferSize){
-					// Input buffer too small
-					GlobalFreePtr(OidData);
-					GlobalFreePtr (BpStr);
-					GlobalFreePtr (DescBuf);
-					return FALSE;
-				}
-				
-				// Create the device name
-				rewind=k;
-				memcpy(pStr+k,BpStr+i,16);
-				memcpy(pStr+k+8,TEXT("NPF_"),8);
-				i+=8;
-				k+=12;
-				while(BpStr[i-1]!=0){
-					pStr[k++]=BpStr[i++];
-				}
-				
-				// Open the adapter
-				adapter=PacketOpenAdapter(pStr+rewind);
-				if(adapter==NULL){
-					k=rewind;
-					continue;
-				}
-				
-				// Retrieve the description
-				OidData->Oid = OID_GEN_VENDOR_DESCRIPTION;
-				OidData->Length = 256;
-				Status = PacketRequest(adapter,FALSE,OidData);
-				if(Status==0 || ((char*)OidData->Data)[0]==0){
-					k=rewind;
-					continue;
-				}
-				
-				// Copy the description
-				TTpStr=(char*)(OidData->Data);
-				while(*TTpStr!=0){
-					*DpStr++=*TTpStr++;
-				}
-				*DpStr++=*TTpStr++;
-				
-				// Close the adapter
-				PacketCloseAdapter(adapter);
-				
-      } // for end - parse string
-			*DpStr=0;
-			
-			pStr[k++]=0;
-			pStr[k]=0;
-			
-			if((ULONG)(DpStr-DescBuf+k) < *BufferSize)
-				memcpy(pStr+k,DescBuf,DpStr-DescBuf);
-			else{
-				GlobalFreePtr(OidData);
-				GlobalFreePtr (BpStr);
-				GlobalFreePtr (DescBuf);
-				return FALSE;
-			}
-			
-			GlobalFreePtr(OidData);
-			GlobalFreePtr (BpStr);
-			GlobalFreePtr (DescBuf);
-			return TRUE;
-    } // if key 'bind' was successfully opened
-		else{
-			MessageBox(NULL,TEXT("Can not find TCP/IP bindings.\nIn order to run the packet capture driver you must install TCP/IP."),szWindowTitle,MB_OK);
-			ODS("Cannot find the TCP/IP bindings");
+			*BufferSize = SizeNeeded;
+			ODS("PacketGetAdapterNames: input buffer too small\n");
 			return FALSE;
 		}
 	}
-}/*!
+
+	OffDescriptions = SizeNames;
+
+	// 
+	// Second scan of the list to copy the information
+	//
+	for(TAdInfo = AdaptersInfoList, SizeNames = 0, SizeDesc = 0; TAdInfo != NULL; TAdInfo = TAdInfo->Next)
+	{
+		// Copy the data
+		strcpy(((PCHAR)pStr) + SizeNames, TAdInfo->Name);
+		strcpy(((PCHAR)pStr) + OffDescriptions + SizeDesc, TAdInfo->Description);
+
+		// Update the size variables
+		SizeNames += strlen(TAdInfo->Name) + 1;
+		SizeDesc += strlen(TAdInfo->Description) + 1;
+	}
+
+	// Separate the two lists
+	((PCHAR)pStr)[SizeNames] = 0;
+
+	return TRUE;
+}
+
+/*!
   \brief Returns comprehensive information the addresses of an adapter.
-  \param AdapterName String that contain _ADAPTER structure.
+  \param AdapterName String that contains the name of the adapter.
   \param buffer A user allocated array of npf_if_addr that will be filled by the function.
   \param NEntries Size of the array (in npf_if_addr).
   \return If the function succeeds, the return value is nonzero.
@@ -1703,377 +1671,93 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
   is full, the reaming addresses are dropeed, therefore set its dimension to sizeof(npf_if_addr)
   if you want only the first address.
 */
-
-BOOLEAN PacketGetNetInfoEx(LPTSTR AdapterName, npf_if_addr* buffer, PLONG NEntries)
+BOOLEAN PacketGetNetInfoEx(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntries)
 {
-	char	*AdapterNameA;
-	WCHAR	*AdapterNameU;
-	WCHAR	*ifname;
-	HKEY	SystemKey;
-	HKEY	InterfaceKey;
-	HKEY	ParametersKey;
-	HKEY	TcpIpKey;
-	HKEY	UnderTcpKey;
-	LONG	status;
-	WCHAR	String[1024+1];
-	DWORD	RegType;
-	ULONG	BufLen;
-	DWORD	DHCPEnabled;
-	struct	sockaddr_in *TmpAddr, *TmpBroad;
-	LONG	naddrs,nmasks,StringPos;
-	DWORD	ZeroBroadcast;
+	PADAPTER_INFO TAdInfo;
+	PCHAR Tname;
+	BOOLEAN Res, FreeBuff;
 
-	AdapterNameA = (char*)AdapterName;
-	if(AdapterNameA[1] != 0) {	//ASCII
-		AdapterNameU = SChar2WChar(AdapterNameA);
-		AdapterName = AdapterNameU;
-	} else {				//Unicode
-		AdapterNameU = NULL;
-	}
-	ifname = wcsrchr(AdapterName, '\\');
-	if (ifname == NULL)
-		ifname = AdapterName;
-	else
-		ifname++;
-	if (wcsncmp(ifname, L"NPF_", 4) == 0)
-		ifname += 4;
+	ODS("PacketGetNetInfo\n");
 
-	if(	RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT("SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces"), 0, KEY_READ, &UnderTcpKey) == ERROR_SUCCESS)
-	{
-		status = RegOpenKeyEx(UnderTcpKey,ifname,0,KEY_READ,&TcpIpKey);
-		if (status != ERROR_SUCCESS) {
-			RegCloseKey(UnderTcpKey);
-			goto fail;
-		}
+	// Provide conversion for backward compatibility
+	if(AdapterName[1] != 0)
+	{ //ASCII
+		Tname = AdapterName;
+		FreeBuff = FALSE;
 	}
 	else
 	{
-		
-		// Query the registry key with the interface's adresses
-		status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,TEXT("SYSTEM\\CurrentControlSet\\Services"),0,KEY_READ,&SystemKey);
-		if (status != ERROR_SUCCESS)
-			goto fail;
-		status = RegOpenKeyEx(SystemKey,ifname,0,KEY_READ,&InterfaceKey);
-		if (status != ERROR_SUCCESS) {
-			RegCloseKey(SystemKey);
-			goto fail;
-		}
-		RegCloseKey(SystemKey);
-		status = RegOpenKeyEx(InterfaceKey,TEXT("Parameters"),0,KEY_READ,&ParametersKey);
-		if (status != ERROR_SUCCESS) {
-			RegCloseKey(InterfaceKey);
-			goto fail;
-		}
-		RegCloseKey(InterfaceKey);
-		status = RegOpenKeyEx(ParametersKey,TEXT("TcpIp"),0,KEY_READ,&TcpIpKey);
-		if (status != ERROR_SUCCESS) {
-			RegCloseKey(ParametersKey);
-			goto fail;
-		}
-		RegCloseKey(ParametersKey);
-		BufLen = sizeof String;
+		Tname = WChar2SChar((PWCHAR)AdapterName);
+		FreeBuff = TRUE;
 	}
 
-	BufLen = 4;
-	/* Try to detect if the interface has a zero broadcast addr */
-	status=RegQueryValueEx(TcpIpKey,TEXT("UseZeroBroadcast"),NULL,&RegType,(LPBYTE)&ZeroBroadcast,&BufLen);
-	if (status != ERROR_SUCCESS)
-		ZeroBroadcast=0;
-	
-	BufLen = 4;
-	/* See if DHCP is used by this system */
-	status=RegQueryValueEx(TcpIpKey,TEXT("EnableDHCP"),NULL,&RegType,(LPBYTE)&DHCPEnabled,&BufLen);
-	if (status != ERROR_SUCCESS)
-		DHCPEnabled=0;
-	
-	
-	/* Retrieve the adrresses */
-	if(DHCPEnabled){
-		
-		BufLen = sizeof String;
-		// Open the key with the addresses
-		status = RegQueryValueEx(TcpIpKey,TEXT("DhcpIPAddress"),NULL,&RegType,(LPBYTE)String,&BufLen);
-		if (status != ERROR_SUCCESS) {
-			RegCloseKey(TcpIpKey);
-			goto fail;
-		}
-
-		// scan the key to obtain the addresses
-		StringPos = 0;
-		for(naddrs = 0;naddrs <* NEntries;naddrs++){
-			TmpAddr = (struct sockaddr_in *) &(buffer[naddrs].IPAddress);
-			
-			if((TmpAddr->sin_addr.S_un.S_addr = inet_addrU(String + StringPos))!= -1){
-				TmpAddr->sin_family = AF_INET;
-				
-				TmpBroad = (struct sockaddr_in *) &(buffer[naddrs].Broadcast);
-				TmpBroad->sin_family = AF_INET;
-				if(ZeroBroadcast==0)
-					TmpBroad->sin_addr.S_un.S_addr = 0xffffffff; // 255.255.255.255
-				else
-					TmpBroad->sin_addr.S_un.S_addr = 0; // 0.0.0.0
-
-				while(*(String + StringPos) != 0)StringPos++;
-				StringPos++;
-				
-				if(*(String + StringPos) == 0 || (StringPos * sizeof (WCHAR)) >= BufLen)
-					break;				
-			}
-			else break;
-		}		
-		
-		BufLen = sizeof String;
-		// Open the key with the netmasks
-		status = RegQueryValueEx(TcpIpKey,TEXT("DhcpSubnetMask"),NULL,&RegType,(LPBYTE)String,&BufLen);
-		if (status != ERROR_SUCCESS) {
-			RegCloseKey(TcpIpKey);
-			goto fail;
-		}
-		
-		// scan the key to obtain the masks
-		StringPos = 0;
-		for(nmasks = 0;nmasks < *NEntries;nmasks++){
-			TmpAddr = (struct sockaddr_in *) &(buffer[nmasks].SubnetMask);
-			
-			if((TmpAddr->sin_addr.S_un.S_addr = inet_addrU(String + StringPos))!= -1){
-				TmpAddr->sin_family = AF_INET;
-				
-				while(*(String + StringPos) != 0)StringPos++;
-				StringPos++;
-								
-				if(*(String + StringPos) == 0 || (StringPos * sizeof (WCHAR)) >= BufLen)
-					break;
-			}
-			else break;
-		}		
-		
-		// The number of masks MUST be equal to the number of adresses
-		if(nmasks != naddrs){
-			RegCloseKey(TcpIpKey);
-			goto fail;
-		}
-				
-	}
-	else{
-		
-		BufLen = sizeof String;
-		// Open the key with the addresses
-		status = RegQueryValueEx(TcpIpKey,TEXT("IPAddress"),NULL,&RegType,(LPBYTE)String,&BufLen);
-		if (status != ERROR_SUCCESS) {
-			RegCloseKey(TcpIpKey);
-			goto fail;
-		}
-		
-		// scan the key to obtain the addresses
-		StringPos = 0;
-		for(naddrs = 0;naddrs < *NEntries;naddrs++){
-			TmpAddr = (struct sockaddr_in *) &(buffer[naddrs].IPAddress);
-			
-			if((TmpAddr->sin_addr.S_un.S_addr = inet_addrU(String + StringPos))!= -1){
-				TmpAddr->sin_family = AF_INET;
-
-				TmpBroad = (struct sockaddr_in *) &(buffer[naddrs].Broadcast);
-				TmpBroad->sin_family = AF_INET;
-				if(ZeroBroadcast==0)
-					TmpBroad->sin_addr.S_un.S_addr = 0xffffffff; // 255.255.255.255
-				else
-					TmpBroad->sin_addr.S_un.S_addr = 0; // 0.0.0.0
-				
-				while(*(String + StringPos) != 0)StringPos++;
-				StringPos++;
-				
-				if(*(String + StringPos) == 0 || (StringPos * sizeof (WCHAR)) >= BufLen)
-					break;
-			}
-			else break;
-		}		
-		
-		BufLen = sizeof String;
-		// Open the key with the netmasks
-		status = RegQueryValueEx(TcpIpKey,TEXT("SubnetMask"),NULL,&RegType,(LPBYTE)String,&BufLen);
-		if (status != ERROR_SUCCESS) {
-			RegCloseKey(TcpIpKey);
-			goto fail;
-		}
-		
-		// scan the key to obtain the masks
-		StringPos = 0;
-		for(nmasks = 0;nmasks <* NEntries;nmasks++){
-			TmpAddr = (struct sockaddr_in *) &(buffer[nmasks].SubnetMask);
-			
-			if((TmpAddr->sin_addr.S_un.S_addr = inet_addrU(String + StringPos))!= -1){
-				TmpAddr->sin_family = AF_INET;
-				
-				while(*(String + StringPos) != 0)StringPos++;
-				StringPos++;
-				
-				if(*(String + StringPos) == 0 || (StringPos * sizeof (WCHAR)) >= BufLen)
-					break;
-			}
-			else break;
-		}		
-		
-		// The number of masks MUST be equal to the number of adresses
-		if(nmasks != naddrs){
-			RegCloseKey(TcpIpKey);
-			goto fail;
-		}
-				
+	//
+	// Update the information about this adapter
+	//
+	if(!PacketUpdateAdInfo(Tname))
+	{
+		ODS("PacketGetNetInfo: Adapter not found\n");
+		if(FreeBuff)GlobalFreePtr(Tname);
+		return FALSE;
 	}
 	
-	*NEntries = naddrs + 1;
+	// Find the PADAPTER_INFO structure associated with this adapter 
+	TAdInfo = PacketFindAdInfo(Tname);
 
-	RegCloseKey(TcpIpKey);
-	
-	if (status != ERROR_SUCCESS) {
-		goto fail;
+	if(TAdInfo != NULL)
+	{
+		*NEntries = (TAdInfo->NNetworkAddresses < *NEntries)? TAdInfo->NNetworkAddresses: *NEntries;
+		memcpy(buffer, TAdInfo->NetworkAddresses, *NEntries * sizeof(npf_if_addr));
+		Res = TRUE;
+	}
+	else
+	{
+		ODS("PacketGetNetInfo: Adapter not found\n");
+		Res = FALSE;
 	}
 	
+	if(FreeBuff)GlobalFreePtr(Tname);
 	
-	if (AdapterNameU != NULL)
-		free(AdapterNameU);
-	return TRUE;
-	
-fail:
-	if (AdapterNameU != NULL)
-		free(AdapterNameU);
-    return FALSE;
+	return Res;
 }
 
-/*!
-  \brief Returns the IP address and the netmask of an adapter.
-  \param AdapterName String that contain _ADAPTER structure.
-  \param netp Pointer to a variable that will receive the IP address of the adapter.
-  \param maskp Pointer to a variable that will receive the netmask of the adapter.
-  \return If the function succeeds, the return value is nonzero.
-  
-  \note this function is obsolete and is maintained for backward compatibility. Use PacketGetNetInfoEx() instead. 
+/*! 
+  \brief Returns information about the MAC type of an adapter.
+  \param AdapterObject The adapter on which information is needed.
+  \param type Pointer to a NetType structure that will be filled by the function.
+  \return If the function succeeds, the return value is nonzero, otherwise the return value is zero.
+
+  This function return the link layer and the speed (in bps) of an opened adapter.
+  The LinkType field of the type parameter can have one of the following values:
+
+  - NdisMedium802_3: Ethernet (802.3) 
+  - NdisMediumWan: WAN 
+  - NdisMedium802_5: Token Ring (802.5) 
+  - NdisMediumFddi: FDDI 
+  - NdisMediumAtm: ATM 
+  - NdisMediumArcnet878_2: ARCNET (878.2) 
 */
-
-BOOLEAN PacketGetNetInfo(LPTSTR AdapterName, PULONG netp, PULONG maskp)
+BOOLEAN PacketGetNetType (LPADAPTER AdapterObject, NetType *type)
 {
-	char	*AdapterNameA;
-	WCHAR	*AdapterNameU;
-	WCHAR	*ifname;
-	HKEY	SystemKey;
-	HKEY	InterfaceKey;
-	HKEY	ParametersKey;
-	HKEY	TcpIpKey;
-	LONG	status;
-	WCHAR	String[1024+1];
-	DWORD	RegType;
-	ULONG	BufLen;
-	DWORD	DHCPEnabled;
-	ULONG	TAddr,i;
+	PADAPTER_INFO TAdInfo;
+	
+	ODS("PacketGetNetType\n");
 
-	AdapterNameA = (char*)AdapterName;
-	if(AdapterNameA[1] != 0) {	//ASCII
-		AdapterNameU = SChar2WChar(AdapterNameA);
-		AdapterName = AdapterNameU;
-	} else {				//Unicode
-		AdapterNameU = NULL;
+	// Find the PADAPTER_INFO structure associated with this adapter 
+	TAdInfo = PacketFindAdInfo(AdapterObject->Name);
+
+	if(TAdInfo != NULL)
+	{
+		// Copy the data
+		memcpy(type, &(TAdInfo->LinkLayer), sizeof(struct NetType));
 	}
-	ifname = wcsrchr(AdapterName, '\\');
-	if (ifname == NULL)
-		ifname = AdapterName;
 	else
-		ifname++;
-	if (wcsncmp(ifname, L"NPF_", 4) == 0)
-		ifname += 4;
-	status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,TEXT("SYSTEM\\CurrentControlSet\\Services"),0,KEY_READ,&SystemKey);
-	if (status != ERROR_SUCCESS)
-		goto fail;
-	status = RegOpenKeyEx(SystemKey,ifname,0,KEY_READ,&InterfaceKey);
-	if (status != ERROR_SUCCESS) {
-		RegCloseKey(SystemKey);
-		goto fail;
+	{
+		ODS("PacketGetNetType: Adapter not found\n");
+		return FALSE;
 	}
-	RegCloseKey(SystemKey);
-	status = RegOpenKeyEx(InterfaceKey,TEXT("Parameters"),0,KEY_READ,&ParametersKey);
-	if (status != ERROR_SUCCESS) {
-		RegCloseKey(InterfaceKey);
-		goto fail;
-	}
-	RegCloseKey(InterfaceKey);
-	status = RegOpenKeyEx(ParametersKey,TEXT("TcpIp"),0,KEY_READ,&TcpIpKey);
-	if (status != ERROR_SUCCESS) {
-		RegCloseKey(ParametersKey);
-		goto fail;
-	}
-	RegCloseKey(ParametersKey);
-		
-	BufLen = 4;
-	/* See if DHCP is used by this system */
-	status=RegQueryValueEx(TcpIpKey,TEXT("EnableDHCP"),NULL,&RegType,(LPBYTE)&DHCPEnabled,&BufLen);
-	if (status != ERROR_SUCCESS)
-		DHCPEnabled=0;
 
-	
-	/* Retrieve the netmask */
-	if(DHCPEnabled){
-		
-		BufLen = sizeof String;
-		status = RegQueryValueEx(TcpIpKey,TEXT("DhcpIPAddress"),NULL,&RegType,(LPBYTE)String,&BufLen);
-		if (status != ERROR_SUCCESS) {
-			RegCloseKey(TcpIpKey);
-			goto fail;
-		}
-
-		TAddr = inet_addrU(String);
-		// swap bytes for backward compatibility
-		for(i=0;i<4;i++){
-			*((char*)netp+i) = *((char*)&TAddr+3-i);
-		}
-		
-		BufLen = sizeof String;
-		status=RegQueryValueEx(TcpIpKey,TEXT("DHCPSubnetMask"),NULL,&RegType,
-			(LPBYTE)String,&BufLen);
-		
-		TAddr = inet_addrU(String);
-		// swap bytes for backward compatibility
-		for(i=0;i<4;i++){
-			*((char*)maskp+i) = *((char*)&TAddr+3-i);
-		}
-	}
-	else{
-
-		BufLen = sizeof String;
-		status = RegQueryValueEx(TcpIpKey,TEXT("IPAddress"),NULL,&RegType,(LPBYTE)String,&BufLen);
-		if (status != ERROR_SUCCESS) {
-			RegCloseKey(TcpIpKey);
-			goto fail;
-		}
-
-		TAddr = inet_addrU(String);
-		// swap bytes for backward compatibility
-		for(i=0;i<4;i++){
-			*((char*)netp+i) = *((char*)&TAddr+3-i);
-		}
-		
-		BufLen = sizeof String;
-		status=RegQueryValueEx(TcpIpKey,TEXT("SubnetMask"),NULL,&RegType,
-			(LPBYTE)String,&BufLen);
-		
-		TAddr = inet_addrU(String);
-		// swap bytes for backward compatibility
-		for(i=0;i<4;i++){
-			*((char*)maskp+i) = *((char*)&TAddr+3-i);
-		}
-
-
-	}
-	
-	RegCloseKey(TcpIpKey);	
-		
-	if (AdapterNameU != NULL)
-		free(AdapterNameU);
 	return TRUE;
-	
-fail:
-	if (AdapterNameU != NULL)
-		free(AdapterNameU);
-    return FALSE;
 }
-
 
 /* @} */

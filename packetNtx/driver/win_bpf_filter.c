@@ -30,7 +30,12 @@
  *
  */
 
-#include "tme.h"
+#ifndef WIN_NT_DRIVER 
+#include <windows.h>
+#else
+#include <ndis.h>
+#endif
+
 #include "win_bpf.h"
 
 #include "debug.h"

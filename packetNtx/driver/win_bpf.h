@@ -37,7 +37,7 @@
  *
  *      @(#)bpf.h       7.1 (Berkeley) 5/7/91
  *
- * @(#) $Header: /usr/cvsroot/winpcap/Common/win_Bpf.h,v 1.1.1.1 2002/04/10 11:45:20 loris Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/packetNtx/driver/win_bpf.h,v 1.1 2002/05/18 10:31:10 varenni Exp $ (LBL)
  */
 
 #ifndef BPF_MAJOR_VERSION
@@ -45,9 +45,21 @@
 /* BSD style release date */
 #define BPF_RELEASE 199606
 
+#ifdef WIN_NT_DRIVER
+#include <ndis.h>
+#endif
+
+
+#include "tme.h"
+#include "time_calls.h"
+
 typedef	UCHAR u_char;
 typedef	USHORT u_short;
+
+#ifdef WIN_NT_DRIVER
 typedef	ULONG u_int;
+#endif
+
 typedef	LONG bpf_int32;
 typedef	ULONG bpf_u_int32;
 typedef	ULONG u_int32;
@@ -78,8 +90,15 @@ struct bpf_program {
  * Struct returned by BIOCGSTATS.
  */
 struct bpf_stat {
-	u_int bs_recv;		/* number of packets received */
-	u_int bs_drop;		/* number of packets dropped */
+	UINT bs_recv;		///< Number of packets that the driver received from the network adapter 
+						///< from the beginning of the current capture. This value includes the packets 
+						///< lost by the driver.
+	UINT bs_drop;		///< number of packets that the driver lost from the beginning of a capture. 
+						///< Basically, a packet is lost when the the buffer of the driver is full. 
+						///< In this situation the packet cannot be stored and the driver rejects it.
+	UINT ps_ifdrop;		///< drops by interface. XXX not yet supported
+	UINT bs_capt;		///< number of packets that pass the filter, find place in the kernel buffer and
+						///< thus reach the application.
 };
 
 /*
@@ -319,5 +338,80 @@ struct bpf_hdr {
  * Number of scratch memory words (for BPF_LD|BPF_MEM and BPF_ST).
  */
 #define BPF_MEMWORDS 16
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+/*!
+  \brief Validates a filtering program arriving from the user-level app.
+  \param f The filter.
+  \param len Its length, in pseudo instructions.
+  \param mem_ex_size The length of the extended memory, used to validate LD/ST to that memory
+  \return true if f is a valid filter program..
+  
+  The kernel needs to be able to verify an application's filter code. Otherwise, a bogus program could easily 
+  crash the system.
+  This function returns true if f is a valid filter program. The constraints are that each jump be forward and 
+  to a valid code.  The code must terminate with either an accept or reject. 
+*/
+int32 bpf_validate(struct bpf_insn *f,int32 len, uint32 mem_ex_size);
+
+/*!
+  \brief The filtering pseudo-machine interpreter.
+  \param pc The filter.
+  \param p Pointer to a memory buffer containing the packet on which the filter will be executed.
+  \param wirelen Original length of the packet.
+  \param buflen Current length of the packet. In some cases (for example when the transfer of the packet to the RAM
+  has not yet finished), bpf_filter can be executed on a portion of the packet.
+  \param mem_ex The extended memory.
+  \param tme The virtualization of the TME co-processor
+  \param time_ref Data structure needed by the TME co-processor to timestamp data
+  \return The portion of the packet to keep, in bytes. 0 means that the packet must be rejected, -1 means that
+   the whole packet must be kept.
+  
+  \note this function is not used in normal situations, because the jitter creates a native filtering function
+  that is faster than the interpreter.
+*/
+u_int bpf_filter(register struct bpf_insn *pc,
+				register UCHAR *p,
+				u_int wirelen,
+				register u_int buflen ,
+				PMEM_TYPE mem_ex,
+				PTME_CORE tme ,
+				struct time_conv *time_ref);
+
+/*!
+  \brief The filtering pseudo-machine interpreter with two buffers. This function is slower than bpf_filter(), 
+  but works correctly also if the MAC header and the data of the packet are in two different buffers.
+  \param pc The filter.
+  \param p Pointer to a memory buffer containing the MAC header of the packet.
+  \param pd Pointer to a memory buffer containing the data of the packet.
+  \param wirelen Original length of the packet.
+  \param buflen Current length of the packet. In some cases (for example when the transfer of the packet to the RAM
+  has not yet finished), bpf_filter can be executed on a portion of the packet.
+  \param mem_ex The extended memory.
+  \param tme The virtualization of the TME co-processor
+  \param time_ref Data structure needed by the TME co-processor to timestamp data
+  \return The portion of the packet to keep, in bytes. 0 means that the packet must be rejected, -1 means that
+   the whole packet must be kept.
+  
+  This function is used when NDIS passes the packet to NPF_tap() in two buffers instaed than in a single one.
+*/
+u_int bpf_filter_with_2_buffers(register struct bpf_insn *pc,
+							   register u_char *p,
+							   register u_char *pd,
+							   register int headersize,
+							   u_int wirelen,
+							   register u_int buflen,
+							   PMEM_TYPE mem_ex,
+				               PTME_CORE tme,
+							   struct time_conv *time_ref);
+
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif
