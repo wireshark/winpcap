@@ -124,8 +124,8 @@ DWORD PacketOpen(PNDIS_STRING AdapterName,DWORD dwDDB,DWORD hDevice,PDIOCPARAMET
 	ltime1=((__int64)SystemTime.HighPart*86400);
 	ltime1+=(__int64)(SystemTime.LowPart/1000);	//current time from 1980 in seconds
 	ltime1+=(__int64)315532800;	//current time from 1970 (Unix format) in seconds
-	ltime1*=1193046;
-	ltime1+=(SystemTime.LowPart%1000)*1193046/1000; //current time from 1970 in ticks
+	ltime1*=1193182;
+	ltime1+=(SystemTime.LowPart%1000)*1193182/1000; //current time from 1970 in ticks
 	ltime1-=QuerySystemTime();	//boot time from 1970 in ticks
 	oiNew->StartTime=ltime1;
 

@@ -538,7 +538,7 @@ DWORD _stdcall PacketIOControl( DWORD  			dwService,
 
 		timezone=((PSHORT)pDiocParms->lpvInBuffer)[0];
 
-		Open->StartTime+=((__int64)timezone)*(__int64)1193046*60;
+		Open->StartTime+=((__int64)timezone)*(__int64)1193182*60;
 
 		*(DWORD *)(pDiocParms->lpcbBytesReturned) = timezone;
 
