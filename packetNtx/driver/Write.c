@@ -49,7 +49,12 @@ NPF_Write(
 
 
     Open=IrpSp->FileObject->FsContext;
-
+	
+	if( Open->Bound == FALSE ){ 
+		// The Network adapter was removed. 
+		EXIT_FAILURE(0); 
+	} 
+	
 	IF_LOUD(DbgPrint("Max frame size = %d\n", Open->MaxFrameSize);)
 
 
@@ -153,7 +158,12 @@ NPF_BufferedWrite(
 	
     Open=IrpSp->FileObject->FsContext;
 	
-	// Security check on the length of the user buffer
+	if( Open->Bound == FALSE ){ 
+		// The Network adapter was removed. 
+		return 0; 
+	} 
+
+	// Sanity check on the user buffer
 	if(UserBuff==0)
 	{
 		return 0;
