@@ -412,7 +412,12 @@ pcap_open_offline(const char *fname, char *errbuf)
 	p->snapshot = hdr.snaplen;
 	p->linktype = linktype_to_dlt(hdr.linktype);
 	p->sf.rfile = fp;
+#ifndef WIN32
 	p->bufsize = hdr.snaplen;
+#else
+	/* Allocate the space for pcap_pkthdr as well. It will be used by pcap_read_ex */
+	p->bufsize = hdr.snaplen+sizeof(struct pcap_pkthdr);
+#endif
 
 	/* Align link header as required for proper data alignment */
 	/* XXX should handle all types */
@@ -458,7 +463,11 @@ pcap_open_offline(const char *fname, char *errbuf)
  * and the contents in buf.  Return 0 on success, SFERR_EOF if there were
  * no more packets, and SFERR_TRUNC if a partial packet was encountered.
  */
+#ifdef WIN32
+int
+#else
 static int
+#endif
 sf_next_packet(pcap_t *p, struct pcap_pkthdr *hdr, u_char *buf, int buflen)
 {
 	struct pcap_sf_patched_pkthdr sf_hdr;

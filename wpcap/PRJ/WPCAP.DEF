@@ -13,6 +13,7 @@ EXPORTS
 		pcap_loop
 		pcap_dispatch
 		pcap_read
+		pcap_read_ex
 		pcap_offline_read
 		pcap_next
 		pcap_stats
@@ -36,6 +37,10 @@ EXPORTS
 		pcap_setbuff
 		pcap_setmode
 		pcap_sendpacket
+		pcap_sendqueue_alloc
+		pcap_sendqueue_destroy
+		pcap_sendqueue_queue
+		pcap_sendqueue_transmit
 		pcap_next_etherent
 		pcap_getevent
 		pcap_setmintocopy

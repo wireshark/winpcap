@@ -34,18 +34,11 @@
  * @(#) $Header: /tcpdump/master/libpcap/pcap.h,v 1.34 2001/12/09 05:10:03 guy Exp $ (LBL)
  */
 
-/** @ingroup wpcap
- */
-
-/** @defgroup wpcap_def Definitions
- *  Definitions for wpcap.dll
- *  @{
- */
-
 #ifndef lib_pcap_h
 #define lib_pcap_h
 
 #include <pcap-stdinc.h>
+
 #include <net/bpf.h>
 
 #include <stdio.h>
@@ -54,12 +47,12 @@
 extern "C" {
 #endif
 
-#define PCAP_VERSION_MAJOR 2 ///< Major libpcap dump file version. 
-#define PCAP_VERSION_MINOR 4 ///< Minor libpcap dump file version. 
+#define PCAP_VERSION_MAJOR 2
+#define PCAP_VERSION_MINOR 4
 
-#define PCAP_ERRBUF_SIZE 256 ///< Size to use when allocating the buffer that contains the libpcap errors.
+#define PCAP_ERRBUF_SIZE 256
 
-/*!
+/*
  * Compatibility for systems that have a bpf.h that
  * predates the bpf typedefs for 64-bit support.
  */
@@ -73,8 +66,7 @@ typedef struct pcap_dumper pcap_dumper_t;
 typedef struct pcap_if pcap_if_t;
 typedef struct pcap_addr pcap_addr_t;
 
-/*! \brief Header of a libpcap dump file.
- *
+/*
  * The first record in the file contains saved values for some
  * of the flags used in the printout phases of tcpdump.
  * Many fields here are 32 bit ints so compilers won't insert unwanted
@@ -110,72 +102,63 @@ typedef struct pcap_addr pcap_addr_t;
  */
 struct pcap_file_header {
 	bpf_u_int32 magic;
-	u_short version_major; ///< Libpcap major version.  
-	u_short version_minor; ///< Libpcap minor version. 
-	bpf_int32 thiszone;	///< gmt to local correction
-	bpf_u_int32 sigfigs;	///< accuracy of timestamps
-	bpf_u_int32 snaplen;	///< max length saved portion of each pkt
-	bpf_u_int32 linktype;	///< data link type (LINKTYPE_*)
+	u_short version_major;
+	u_short version_minor;
+	bpf_int32 thiszone;	/* gmt to local correction */
+	bpf_u_int32 sigfigs;	/* accuracy of timestamps */
+	bpf_u_int32 snaplen;	/* max length saved portion of each pkt */
+	bpf_u_int32 linktype;	/* data link type (LINKTYPE_*) */
 };
 
-/*! \brief Header of a packet in the dump file.
- *
+/*
  * Each packet in the dump file is prepended with this generic header.
  * This gets around the problem of different headers for different
  * packet interfaces.
  */
 struct pcap_pkthdr {
-	struct timeval ts;	///< time stamp
-	bpf_u_int32 caplen;	///< length of portion present
-	bpf_u_int32 len;	///< length this packet (off wire)
+	struct timeval ts;	/* time stamp */
+	bpf_u_int32 caplen;	/* length of portion present */
+	bpf_u_int32 len;	/* length this packet (off wire) */
 };
 
-/*! \brief Structure that keeps statistical values on an interface.
- *
+/*
  * As returned by the pcap_stats()
  */
 struct pcap_stat {
-	u_int ps_recv;		///< number of packets received
-	u_int ps_drop;		///< number of packets dropped
-	u_int ps_ifdrop;	///< drops by interface, not yet supported
+	u_int ps_recv;		/* number of packets received */
+	u_int ps_drop;		/* number of packets dropped */
+	u_int ps_ifdrop;	/* drops by interface XXX not yet supported */
 };
 
-/*! \brief
- * Item in a list of interfaces, used by pcap_findalldevs().
+/*
+ * Item in a list of interfaces.
  */
 struct pcap_if {
-	struct pcap_if *next; ///< if not NULL, a pointer to the next element in the list; NULL for the last element of the list
-	char *name;		///< a pointer to a string giving a name for the device to pass to pcap_open_live()
-	char *description;	///< if not NULL, a pointer to a string giving a human-readable description of the device
-	struct pcap_addr *addresses; ///< a pointer to the first element of a list of addresses for the interface
-	u_int flags;		///< PCAP_IF_ interface flags. Currently the only possible flag is \b PCAP_IF_LOOPBACK, that is set if the interface is a loopback interface.
+	struct pcap_if *next;
+	char *name;		/* name to hand to "pcap_open_live()" */
+	char *description;	/* textual description of interface, or NULL */
+	struct pcap_addr *addresses;
+	u_int flags;		/* PCAP_IF_ interface flags */
 };
 
-#define PCAP_IF_LOOPBACK	0x00000001	///< interface is loopback
+#define PCAP_IF_LOOPBACK	0x00000001	/* interface is loopback */
 
-/*! \brief
- * Representation of an interface address, used by pcap_findalldevs().
+/*
+ * Representation of an interface address.
  */
 struct pcap_addr {
-	struct pcap_addr *next; ///<  if not NULL, a pointer to the next element in the list; NULL for the last element of the list
-	struct sockaddr *addr;		///< a pointer to a struct sockaddr containing an address
-	struct sockaddr *netmask;	///< if not NULL, a pointer to a struct sockaddr that contains the netmask corresponding to the address pointed to by addr.
-	struct sockaddr *broadaddr;	///< if not NULL, a pointer to a struct sockaddr that contains the broadcast address corre­ sponding to the address pointed to by addr; may be null if the interface doesn't support broadcasts
-	struct sockaddr *dstaddr;	///< if not NULL, a pointer to a struct sockaddr that contains the destination address corre­ sponding to the address pointed to by addr; may be null if the interface isn't a point- to-point interface
+	struct pcap_addr *next;
+	struct sockaddr *addr;		/* address */
+	struct sockaddr *netmask;	/* netmask for that address */
+	struct sockaddr *broadaddr;	/* broadcast address for that address */
+	struct sockaddr *dstaddr;	/* P2P destination address for that address */
 };
-
-/**
- *  @}
- */
-
 
 typedef void (*pcap_handler)(u_char *, const struct pcap_pkthdr *,
 			     const u_char *);
 
 char	*pcap_lookupdev(char *);
 int	pcap_lookupnet(char *, bpf_u_int32 *, bpf_u_int32 *, char *);
-
-
 pcap_t	*pcap_open_live(char *, int, int, int, char *);
 pcap_t	*pcap_open_dead(int, int);
 pcap_t	*pcap_open_offline(const char *, char *);
@@ -228,7 +211,11 @@ int pcap_setbuff(pcap_t *p, int dim);
 int pcap_setmode(pcap_t *p, int mode);
 int pcap_sendpacket(pcap_t *p, u_char *buf, int size);
 int pcap_setmintocopy(pcap_t *p, int size);
-HANDLE pcap_getevent(pcap_t *p);
+
+#ifdef WPCAP
+/* Include file with the wpcap-specific extensions */
+#include <Win32-Extensions.h>
+#endif
 
 #define MODE_CAPT 0
 #define MODE_STAT 1
@@ -240,7 +227,3 @@ HANDLE pcap_getevent(pcap_t *p);
 #endif
 
 #endif
-
-/**
- *  @}
- */

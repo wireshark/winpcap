@@ -300,7 +300,7 @@ pcap_sendpacket(pcap_t *p, u_char *buf, int size){
 	return 0;
 }
 
-/* Set the dimension of the kernel capture buffer */
+/* Set the dimension of the kernel-level capture buffer */
 int 
 pcap_setbuff(pcap_t *p, int dim)
 {

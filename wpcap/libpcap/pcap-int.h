@@ -179,6 +179,7 @@ struct pcap_sf_patched_pkthdr {
     unsigned char pkt_type;
 };
 
+
 int	yylex(void);
 
 #ifndef min
@@ -188,6 +189,11 @@ int	yylex(void);
 /* XXX should these be in pcap.h? */
 int	pcap_offline_read(pcap_t *, int, pcap_handler, u_char *);
 int	pcap_read(pcap_t *, int cnt, pcap_handler, u_char *);
+
+#ifdef WIN32
+/* sf_next_packet must be exported for pcap_read_ex */
+int sf_next_packet(pcap_t *, struct pcap_pkthdr *, u_char *, int);
+#endif
 
 /*
  * Ultrix, DEC OSF/1^H^H^H^H^H^H^H^H^HDigital UNIX^H^H^H^H^H^H^H^H^H^H^H^H
