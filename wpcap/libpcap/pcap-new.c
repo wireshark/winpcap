@@ -324,8 +324,6 @@ pcap_if_t *dev;		// Previous device into the pcap_if_t chain
 
 			if (fp)
 			{
-			pcap_if_t *dev;		// Previous device into the pcap_if_t chain
-
 				// allocate the main structure
 				if (*alldevs == NULL)	// This is in case it is the first file
 				{
