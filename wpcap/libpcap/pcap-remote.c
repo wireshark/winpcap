@@ -66,14 +66,6 @@
 #define PCAP_STATS_EX 1			/*!< Used by pcap_stats_remote to see if we want standard or extended statistics */
 
 
-/*
-	\brief Global variable; needed to keep the message due to an error that we want to discard.
-	
-	This can happen, for instance, because we already have an error message and we want to keep 
-	the first one.
-*/
-char fakeerrbuf[PCAP_ERRBUF_SIZE + 1];
-
 
 //! Keeps a list of all the opened connections in the active mode.
 struct activehosts *activeHosts;
@@ -340,7 +332,7 @@ struct timeval tv;						// maximum time the select() can block waiting for data
 			// Checks if all the data has been read; if not, discard the data in excess
 			// This check has to be done only on TCP connections
 			if (nread != ntohl(header->plen))
-				sock_discard(p->rmt_sockdata, ntohl(header->plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE);
+				sock_discard(p->rmt_sockdata, ntohl(header->plen) - nread, NULL, 0);
 		}
 
 
@@ -423,31 +415,31 @@ int active= 0;					// active mode or not?
 		rpcap_createhdr( &header, RPCAP_MSG_CLOSE, 0, 0);
 
 		// I don't check for errors, since I'm going to close everything
-		sock_send(fp->rmt_sockctrl, (char *) &header, sizeof (struct rpcap_header), fakeerrbuf, PCAP_ERRBUF_SIZE);
+		sock_send(fp->rmt_sockctrl, (char *) &header, sizeof (struct rpcap_header), NULL, 0);
 	}
 	else
 	{
 		rpcap_createhdr( &header, RPCAP_MSG_ENDCAP_REQ, 0, 0);
 
 		// I don't check for errors, since I'm going to close everything
-		sock_send(fp->rmt_sockctrl, (char *) &header, sizeof (struct rpcap_header), fakeerrbuf, PCAP_ERRBUF_SIZE);
+		sock_send(fp->rmt_sockctrl, (char *) &header, sizeof (struct rpcap_header), NULL, 0);
 
 		// wait for the answer
 		// Don't check what we got, since the present libpcap does not uses this pcap_t anymore
-		sock_recv(fp->rmt_sockctrl, (char *) &header, sizeof(struct rpcap_header), SOCK_RECEIVEALL_YES, fakeerrbuf, PCAP_ERRBUF_SIZE);
+		sock_recv(fp->rmt_sockctrl, (char *) &header, sizeof(struct rpcap_header), SOCK_RECEIVEALL_YES, NULL, 0);
 
 		if ( ntohl(header.plen) != 0)
-			sock_discard(fp->rmt_sockctrl, ntohl(header.plen), fakeerrbuf, PCAP_ERRBUF_SIZE);
+			sock_discard(fp->rmt_sockctrl, ntohl(header.plen), NULL, 0);
 	}
 
 	if (fp->rmt_sockdata)
 	{
-		sock_close(fp->rmt_sockdata, fakeerrbuf, PCAP_ERRBUF_SIZE);
+		sock_close(fp->rmt_sockdata, NULL, 0);
 		fp->rmt_sockdata= 0;
 	}
 
 	if ( (!active) && (fp->rmt_sockctrl) )
-		sock_close(fp->rmt_sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
+		sock_close(fp->rmt_sockctrl, NULL, 0);
 
 	fp->rmt_sockctrl= 0;
 
@@ -593,7 +585,7 @@ int retval;							// temp variable which stores functions return value
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))
 	{
-		if (sock_discard(p->rmt_sockctrl, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE) == 1)
+		if (sock_discard(p->rmt_sockctrl, ntohl(header.plen) - nread, NULL, 0) == 1)
 			goto error;
 	}
 
@@ -601,7 +593,7 @@ int retval;							// temp variable which stores functions return value
 
 error:
 	if (nread != ntohl(header.plen))
-		sock_discard(p->rmt_sockctrl, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE);
+		sock_discard(p->rmt_sockctrl, ntohl(header.plen) - nread, NULL, 0);
 
 	return NULL;
 }
@@ -797,7 +789,7 @@ struct rpcap_openreply openreply;	// open reply message
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))
 	{
-		if (sock_discard(sockctrl, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE) == 1)
+		if (sock_discard(sockctrl, ntohl(header.plen) - nread, NULL, 0) == 1)
 			goto error;
 	}
 	return fp;
@@ -810,13 +802,13 @@ error:
 
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))
-		sock_discard(sockctrl, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE);
+		sock_discard(sockctrl, ntohl(header.plen) - nread, NULL, 0);
 
 	if (addrinfo)
 		freeaddrinfo(addrinfo);
 
 	if (!active)
-		sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
+		sock_close(sockctrl, NULL, 0);
 
 	if (fp)
 	{
@@ -1177,7 +1169,7 @@ int sockbufsize= 0;
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))
 	{
-		if (sock_discard(fp->rmt_sockctrl, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE) == 1)
+		if (sock_discard(fp->rmt_sockctrl, ntohl(header.plen) - nread, NULL, 0) == 1)
 			goto error;
 	}
 	return 0;
@@ -1190,13 +1182,13 @@ error:
 
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))
-		sock_discard(fp->rmt_sockctrl, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE);
+		sock_discard(fp->rmt_sockctrl, ntohl(header.plen) - nread, NULL, 0);
 
 	if ((sockdata) && (sockdata != -1))		// we can be here because sockdata said 'error'
-		sock_close(sockdata, fakeerrbuf, PCAP_ERRBUF_SIZE);
+		sock_close(sockdata, NULL, 0);
 
 	if (!active)
-		sock_close(fp->rmt_sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
+		sock_close(fp->rmt_sockctrl, NULL, 0);
 
 	if (fp)
 	{
@@ -1778,7 +1770,7 @@ int32 len;
 				if (sock_recv(sock, errbuf, PCAP_ERRBUF_SIZE - 1, SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) )
 					return -3;
 
-				sock_discard(sock, len - (PCAP_ERRBUF_SIZE - 1), fakeerrbuf, PCAP_ERRBUF_SIZE);
+				sock_discard(sock, len - (PCAP_ERRBUF_SIZE - 1), NULL, 0);
 
 				// Put '\0' at the end of the string
 				errbuf[PCAP_ERRBUF_SIZE - 1]= 0;
@@ -1808,7 +1800,7 @@ int32 len;
 	}
 
 	// we already have an error, so please discard this one
-	sock_discard(sock, ntohl(header->plen), fakeerrbuf, PCAP_ERRBUF_SIZE);
+	sock_discard(sock, ntohl(header->plen), NULL, 0);
 
 	snprintf(errbuf, PCAP_ERRBUF_SIZE, "The other endpoint sent a message that is not allowed here.");
 	SOCK_ASSERT(errbuf, 1);
@@ -1856,7 +1848,7 @@ int rpcap_checkver(SOCKET sock, struct rpcap_header *header, char *errbuf)
 		snprintf(errbuf, PCAP_ERRBUF_SIZE, "Incompatible version number: message discarded.");
 
 		// we already have an error, so please discard this one
-		sock_discard(sock, ntohl(header->plen), fakeerrbuf, PCAP_ERRBUF_SIZE);
+		sock_discard(sock, ntohl(header->plen), NULL, 0);
 		return -1;
 	}
 

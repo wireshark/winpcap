@@ -76,7 +76,7 @@
 	// Constants; used in order to keep strings here
 #define SOCKET_NO_NAME_AVAILABLE "No name available"
 #define SOCKET_NO_PORT_AVAILABLE "No port available"
-#define SOCKET_NAME_NULL_DAD "Null address (DAD Phase)"
+#define SOCKET_NAME_NULL_DAD "Null address (possibly DAD Phase)"
 
 
 
@@ -730,70 +730,6 @@ again:
 
 
 /*!
-	\brief It waits on a connected socket and it manages to receive one message.
-
-	There is a difference here between this function and the sock_recv(): the
-	previous one will loop until 'size' bytes are read (i.e. until a message 
-	with the expected size has arrived); here just one recv() is done, and all what 
-	is waiting in the socket bufer is read all at once.
-
-	This function is required for UDP sockets, in which the message has to
-	be read all at once, otherwise it is discarded.
-	Therefore we have to call this function with a large buffer, in order to
-	be sure no data is lost. It follow that the number of bytes received
-	is usually less than the size buffer: therefore we must exit anyway, even
-	if the number of bytes read is less than the size of the buffer.
-
-	\param sock: the connected socket currently opened.
-
-	\param buffer: a char pointer to a user-allocated buffer in which data has to 
-	be stored.
-
-	\param size: size of the allocated buffer. WARNING: this indicates the maximum
-	number of bytes that we can read.
-	This function (differenctly from the rpcap_recv_dgram() ) does not block if 
-	the number of bytes read is equal to 'size'.
-
-	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
-	error message. This buffer has to be at least 'errbuflen' in length.
-	It can be NULL; in this case the error cannot be printed.
-
-	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
-	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
-
-	\return the number of bytes read if everything is fine, '-1' if some errors occurred.
-	The error message is returned in the 'errbuf' variable.
-*/
-/*
-int sock_recv(SOCKET sock, char *buffer, int size, char *errbuf, int errbuflen)
-{
-int nread;
-
-	nread= recv(sock, buffer, size, 0);
-
-	if (nread == -1)
-	{
-		sock_geterror("recv(): ", errbuf, errbuflen);
-		return -1;
-	}
-
-	if (nread == 0)
-	{
-		if (errbuf)
-		{
-			snprintf(errbuf, errbuflen, "The other host terminated the connection.");
-			errbuf[errbuflen - 1]= 0;
-		}
-
-		return -1;
-	}
-
-	return nread;
-}
-*/
-
-
-/*!
 	\brief It discards N bytes that are currently waiting to be read on the current socket.
 
 	This function is useful in case we receive a message we cannot undestand (e.g.
@@ -1078,14 +1014,16 @@ int retval;					// Variable that keeps the return value;
 	sockaddrlen = sizeof(struct sockaddr_storage);
 #endif
 
-/* TEMP
-	if ( (SockAddr->ss_family == AF_INET6) &&
-		(memcmp( &((sockaddr_in6 *) SockAddr)->sin6_addr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", sizeof(struct in6_addr) ) == 0) )
+	if ((flags & NI_NUMERICHOST) == 0)	// Check that we want literal names
 	{
-		strncpy(Name, SOCKET_NAME_NULL_DAD, NameLen);
-		return -1;
+		if ( (sockaddr->ss_family == AF_INET6) &&
+			(memcmp( &((struct sockaddr_in6 *) sockaddr)->sin6_addr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", sizeof(struct in6_addr) ) == 0) )
+		{
+			if (address)
+				strncpy(address, SOCKET_NAME_NULL_DAD, addrlen);
+			return retval;
+		}
 	}
-*/
 
 	if ( getnameinfo((struct sockaddr *) sockaddr, sockaddrlen, address, addrlen, port, portlen, flags) != 0)
 	{

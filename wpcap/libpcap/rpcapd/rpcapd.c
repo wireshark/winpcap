@@ -482,7 +482,6 @@ int stat;
 */
 void main_passive(void *ptr)
 {
-char fakeerrbuf[PCAP_ERRBUF_SIZE + 1];	// needed to keep the message due to an error that we want to discard.
 char errbuf[PCAP_ERRBUF_SIZE + 1];	// keeps the error string, prior to be printed
 SOCKET sockctrl;				// keeps the socket ID for this control connection
 struct sockaddr_storage from;	// generic sockaddr_storage variable
@@ -530,8 +529,8 @@ SOCKET sockmain;
 		// checks if the connecting host is among the ones allowed
 		if (sock_check_hostlist(hostlist, RPCAP_HOSTLIST_SEP, &from, errbuf, PCAP_ERRBUF_SIZE) < 0 )
 		{
-			rpcap_senderror(sockctrl, errbuf, PCAP_ERR_HOSTNOAUTH, fakeerrbuf);
-			sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
+			rpcap_senderror(sockctrl, errbuf, PCAP_ERR_HOSTNOAUTH, NULL);
+			sock_close(sockctrl, NULL, 0);
 			continue;
 		}
 

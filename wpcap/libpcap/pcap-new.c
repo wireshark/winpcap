@@ -42,14 +42,6 @@
 #endif
 
 
-/*
-	\brief Global variable; needed to keep the message due to an error that we want to discard.
-	
-	This can happen, for instance, because we already have an error message and we want to keep 
-	the first one.
-*/
-char fakeerrbuf[PCAP_ERRBUF_SIZE + 1];
-
 
 //! Keeps a list of all the opened connections in the active mode.
 extern struct activehosts *activeHosts;
@@ -442,7 +434,7 @@ char tmpstring[PCAP_BUF_SIZE + 1];		// Needed to convert names and descriptions 
 		{
 			// Control connection has to be closed only in case the remote machine is in passive mode
 			if (!active)
-				sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
+				sock_close(sockctrl, NULL, 0);
 			return -1;
 		}
 	}
@@ -479,7 +471,7 @@ char tmpstring[PCAP_BUF_SIZE + 1];		// Needed to convert names and descriptions 
 		}
 
 		if (!active)
-			sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
+			sock_close(sockctrl, NULL, 0);
 
 		return -1;
 	}
@@ -689,13 +681,13 @@ error:
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))
 	{
-		if (sock_discard(sockctrl, ntohl(header.plen) - nread, fakeerrbuf, PCAP_ERRBUF_SIZE) == 1)
+		if (sock_discard(sockctrl, ntohl(header.plen) - nread, NULL, 0) == 1)
 			return -1;
 	}
 
 	// Control connection has to be closed only in case the remote machine is in passive mode
 	if (!active)
-		sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
+		sock_close(sockctrl, NULL, 0);
 
 	// To avoid inconsistencies in the number of sock_init()
 	sock_cleanup();
@@ -1165,6 +1157,10 @@ pcap_t *fp;
 	\warning Sampling parameters <strong>cannot</strong> be changed when a capture is 
 	active. These parameters must be applied <strong>before</strong> starting the capture.
 	If they are applied when the capture is in progress, the new settings are ignored.
+
+	\warning Sampling works only when capturing data on Win32 or reading from a file.
+	It has not been implemented on other platforms. Sampling works on remote machines
+	provided that the probe (i.e. the capturing device) is a Win32 workstation.
 */
 struct pcap_samp *pcap_setsampling(pcap_t *p)
 {
@@ -1303,24 +1299,24 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 	if (getnameinfo( (struct sockaddr *) &from, fromlen, connectinghost, RPCAP_HOSTLIST_SIZE, NULL, 0, NI_NUMERICHOST) )
 	{
 		sock_geterror("getnameinfo(): ", errbuf, PCAP_ERRBUF_SIZE);
-		rpcap_senderror(sockctrl, errbuf, PCAP_ERR_REMOTEACCEPT, fakeerrbuf);
-		sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
+		rpcap_senderror(sockctrl, errbuf, PCAP_ERR_REMOTEACCEPT, NULL);
+		sock_close(sockctrl, NULL, 0);
 		return -1;
 	}
 
 	// checks if the connecting host is among the ones allowed
 	if (sock_check_hostlist((char *) hostlist, RPCAP_HOSTLIST_SEP, &from, errbuf, PCAP_ERRBUF_SIZE) < 0)
 	{
-		rpcap_senderror(sockctrl, errbuf, PCAP_ERR_REMOTEACCEPT, fakeerrbuf);
-		sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
+		rpcap_senderror(sockctrl, errbuf, PCAP_ERR_REMOTEACCEPT, NULL);
+		sock_close(sockctrl, NULL, 0);
 		return -1;
 	}
 
 	// Send authentication to the remote machine
 	if ( rpcap_sendauth(sockctrl, auth, errbuf) == -1)
 	{
-		rpcap_senderror(sockctrl, errbuf, PCAP_ERR_REMOTEACCEPT, fakeerrbuf);
-		sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
+		rpcap_senderror(sockctrl, errbuf, PCAP_ERR_REMOTEACCEPT, NULL);
+		sock_close(sockctrl, NULL, 0);
 		return -3;
 	}
 
@@ -1355,8 +1351,8 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 	if (temp == NULL)
 	{
 		snprintf(errbuf, PCAP_ERRBUF_SIZE, "malloc() failed: %s", pcap_strerror(errno));
-		rpcap_senderror(sockctrl, errbuf, PCAP_ERR_REMOTEACCEPT, fakeerrbuf);
-		sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
+		rpcap_senderror(sockctrl, errbuf, PCAP_ERR_REMOTEACCEPT, NULL);
+		sock_close(sockctrl, NULL, 0);
 		return -1;
 	}
 
