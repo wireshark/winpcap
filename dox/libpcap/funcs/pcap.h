@@ -31,19 +31,19 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.14 2003/04/17 15:17:19 fulvio Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.15 2003/06/05 14:25:10 fulvio Exp $ (LBL)
  */
 
 
 
-/** @defgroup wpcap_fn Exported functions
+/** @defgroup wpcapfunc Exported functions
  *  @ingroup wpcap
  *  Functions exported by wpcap.dll
  *  @{
  */
 
-/*!
-\brief <b>Deprecated: use the pcap_open() instead.</b> Opens a physical interface for live capture.
+/*!	\brief <b>Deprecated</b>
+\deprecated Use the pcap_open() instead.
 
   pcap_open_live()  is  used  to  obtain  a  packet  capture
   descriptor to look at packets on the network.  device is a
@@ -76,7 +76,10 @@
 */
 pcap_t *pcap_open_live(char *device, int snaplen, int promisc, int to_ms, char *ebuf);
 
-/*! \brief <b>Deprecated: use the pcap_open() instead.</b> Creates a pcap_t structure without starting a capture.
+/*!	\brief <b>Deprecated</b>
+\deprecated Use the pcap_open() instead.
+
+  It creates a pcap_t structure without starting a capture.
 
   pcap_open_dead()  is  used for creating a pcap_t structure
   to use when calling the other functions in libpcap.  It is
@@ -87,7 +90,10 @@ pcap_t *pcap_open_live(char *device, int snaplen, int promisc, int to_ms, char *
 */
 pcap_t *pcap_open_dead(int linktype, int snaplen);
 
-/*! \brief <b>Deprecated: use the pcap_open() instead.</b> Opens a savefile in the tcpdump/libpcap format to read the packets.
+/*!	\brief <b>Deprecated</b>
+\deprecated Use the pcap_open() instead.
+
+  It opens a savefile in the tcpdump/libpcap format to read the packets.
 
   pcap_open_offline() is called to open a  "savefile"  for
   reading.   fname  specifies  the name of the file to open.
@@ -141,7 +147,10 @@ int pcap_setnonblock(pcap_t *p, int nonblock, char *errbuf);
 */
 int pcap_getnonblock(pcap_t *p, char *errbuf);
 
-/*! \brief <b>Deprecated: use the pcap_findalldevs_ex() instead.</b> Returns the list of the interfaces  available on the system.
+/*!	\brief <b>Deprecated</b>
+\deprecated Use the pcap_findalldevs_ex() instead.
+
+       It returns the list of the interfaces  available on the system.
 
        pcap_findalldevs() constructs a list  of  network  devices
        that  can  be  opened  with  pcap_open_live().  (Note that
@@ -165,7 +174,10 @@ int pcap_findalldevs(pcap_if_t **alldevsp, char *errbuf);
 */
 void pcap_freealldevs(pcap_if_t *alldevsp);
 
-/*! \brief <b> Deprecated, use pcap_findalldevs() instead</b>.\n Returns the first valid device in the system.
+/*! 	\brief <b>Deprecated</b>
+\deprecated Use the pcap_findalldevs_ex() instead.
+
+       It returns the first valid device in the system.
 
        pcap_lookupdev() returns a pointer  to  a  network  device
        suitable  for  use  with pcap_open_live() and pcap_lookupnet().
@@ -176,7 +188,10 @@ void pcap_freealldevs(pcap_if_t *alldevsp);
 */
 char *pcap_lookupdev(char *errbuf);
 
-/*! \brief <b> Deprecated, use pcap_findalldevs() instead</b>.\n Returns the subnet and netmask of an interface.
+/*!	\brief <b>Deprecated</b>
+\deprecated Use the pcap_findalldevs_ex() instead.
+
+       It returns the subnet and netmask of an interface.
 
        pcap_lookupnet()  is  used to determine the network number
        and mask associated with the network device device.   Both
@@ -188,8 +203,11 @@ char *pcap_lookupdev(char *errbuf);
 */
 int pcap_lookupnet(char *device, bpf_u_int32 *netp, bpf_u_int32 *maskp, char *errbuf);
 
-/*! \brief <b>Deprecated: use the pcap_next_ex() instead.</b> Collects a group of packets. Returns when \b cnt packets have been received 
-or when the timeout set with pcap_open_live() expires.
+/*!	\brief <b>Deprecated</b>
+\deprecated Use the pcap_next_ex() instead.
+
+       It collects a group of packets. Returns when \b cnt packets have been received 
+       or when the timeout set with pcap_open_live() expires.
 
        pcap_dispatch()  is  used  to collect and process packets.
        cnt specifies the maximum number  of  packets  to  process
@@ -229,9 +247,12 @@ or when the timeout set with pcap_open_live() expires.
 */
 int pcap_dispatch(pcap_t *p, int cnt, pcap_handler callback, u_char *user);
 
-/*! \brief <b>Deprecated: use the pcap_next_ex() instead.</b> Collects a group of packets. Returns when \b cnt packets have
-been received, but doesn't respect the timeout set with pcap_open_live(), 
-therefore it can block forever.
+/*!	\brief <b>Deprecated</b>
+\deprecated Use the pcap_next_ex() instead.
+
+       It collects a group of packets. Returns when \b cnt packets have
+       been received, but doesn't respect the timeout set with pcap_open_live(), 
+       therefore it can block forever.
 
        pcap_loop()  is similar to pcap_dispatch() except it keeps
        reading packets until cnt  packets  are  processed  or  an
@@ -506,12 +527,13 @@ int pcap_stats(pcap_t *p, struct pcap_stat *ps);
 */
 FILE *pcap_file(pcap_t *p);
 
-/*! \brief <b> Deprecated, handling the device descriptor directly is useless under Win32</b>.\n Returns the file descriptor of a capture device.
+/*!	\brief <b>Discouraged</b>: it returns the file descriptor of a capture device.
 
        pcap_fileno() returns  the  file  descriptor  number  from
        which  captured  packets are read, if a network device was
        opened with pcap_open_live(), or -1, if a "savefile" was
        opened with pcap_open_offline().
+
 
 \sa pcap_open_offline(), pcap_open_live()
 */
