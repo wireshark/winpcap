@@ -176,6 +176,9 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	NdisInitializeEvent(&Open->WriteEvent);
 	NdisInitializeEvent(&Open->IOEvent);
  	NdisInitializeEvent(&Open->DumpEvent);
+ 	NdisInitializeEvent(&Open->IOEvent);
+	NdisAllocateSpinLock(&Open->machine_lock);
+
 
     //  list to hold irp's want to reset the adapter
     InitializeListHead(&Open->ResetIrpList);
@@ -184,16 +187,35 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
     //  Initialize the request list
     KeInitializeSpinLock(&Open->RequestSpinLock);
     InitializeListHead(&Open->RequestList);
+
+	//
+	// Initializes the extended memory of the NPF machine
+	//
+	Open->mem_ex.buffer=ExAllocatePool(NonPagedPool,DEFAULT_MEM_EX_SIZE);
+	if((Open->mem_ex.buffer)==NULL)
+	{
+        //
+        // no memory
+        //
+        ExFreePool(Open);
+	    Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
+        IoCompleteRequest(Irp, IO_NO_INCREMENT);
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
 	
+	Open->mem_ex.size=DEFAULT_MEM_EX_SIZE;
+	RtlZeroMemory(Open->mem_ex.buffer,DEFAULT_MEM_EX_SIZE);
 	
 	// get the absolute value of the system boot time.   
+	TIME_SYNCHRONIZE(&Open->start_time);
+
 	PTime=KeQueryPerformanceCounter(&TimeFreq);
 	KeQuerySystemTime(&SystemTime);
 	Open->StartTime.QuadPart=(((SystemTime.QuadPart)%10000000)*TimeFreq.QuadPart)/10000000;
 	SystemTime.QuadPart=SystemTime.QuadPart/10000000-11644473600;
 	Open->StartTime.QuadPart+=(SystemTime.QuadPart)*TimeFreq.QuadPart-PTime.QuadPart;
 	
-	//initalize the open instance
+	//initialize the open instance
 	Open->BufSize=0;
 	Open->Buffer=NULL;
 	Open->Bhead=0;
@@ -212,6 +234,7 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	Open->Bound=TRUE;
 	Open->DumpFileName.Buffer=NULL;
 	Open->DumpFileHandle=NULL;
+	Open->tme.active=TME_NONE_ACTIVE;
 
 	//allocate the spinlock for the statistic counters
     NdisAllocateSpinLock(&Open->CountersLock);
@@ -327,9 +350,13 @@ NPF_Close(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		// Free the bpf program
 		if(Open->bpfprogram!=NULL)ExFreePool(Open->bpfprogram);
 		
+		//free mem_ex
+		Open->mem_ex.size=0;
+		if(Open->mem_ex.buffer!=NULL)ExFreePool(Open->mem_ex.buffer);
+		
 		// Free the JIT binary
 		BPF_Destroy_JIT_Filter(Open->Filter);
-
+		
 		// Free the buffer
 		Open->BufSize=0;
 		if(Open->Buffer!=NULL)ExFreePool(Open->Buffer);
@@ -408,6 +435,10 @@ NPF_CloseAdapterComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  
 		//free the buffer
 		Open->BufSize=0;
 		if(Open->Buffer!=NULL)ExFreePool(Open->Buffer);
+		
+		//free mem_ex
+		Open->mem_ex.size=0;
+		if(Open->mem_ex.buffer!=NULL)ExFreePool(Open->mem_ex.buffer);
 		
 		NdisFreePacketPool(Open->PacketPool);
 		

@@ -29,7 +29,9 @@
 #include "debug.h"
 #include "packet.h"
 #include "win_bpf.h"
+#include "win_bpf_filter_init.h"
 
+#include "tme.h"
 
 #if DBG
 //
@@ -627,6 +629,10 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	PUCHAR				TmpBPFProgram;
 	INT					WriteRes;
 	BOOLEAN				SyncWrite = FALSE;
+	struct bpf_insn		*initprogram;
+	ULONG				insns;
+	ULONG				cnt;
+	BOOLEAN				IsExtendedFilter=FALSE;
 
     IF_LOUD(DbgPrint("NPF: IoControl\n");)
 		
@@ -703,35 +709,63 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 		if(prog==NULL)
 		{
+			IF_LOUD(DbgPrint("0001");)
+			
 			EXIT_FAILURE(0);
 		}
 		
-		// Before accepting the program we must check that it's valid
-		// Otherwise, a bogus program could easily crash the system
-		if(bpf_validate((struct bpf_insn*)prog,(IrpSp->Parameters.DeviceIoControl.InputBufferLength)/sizeof(struct bpf_insn))==0)
+		insns=(IrpSp->Parameters.DeviceIoControl.InputBufferLength)/sizeof(struct bpf_insn);
+		for (cnt=0;(cnt<insns) &&(((struct bpf_insn*)prog)[cnt].code!=0xff); cnt++);
+		
+		IF_LOUD(DbgPrint("Filter code instructions=%u\n",cnt);)
+
+		if (((struct bpf_insn*)prog)[cnt].code==0xff && (insns-cnt-1)!=0) 
 		{
+			IF_LOUD(DbgPrint("Init code instructions=%u\n",insns-cnt-1);)
+	
+			IsExtendedFilter=TRUE;
+
+			initprogram=&((struct bpf_insn*)prog)[cnt+1];
+			
+			if(bpf_filter_init(initprogram,&(Open->mem_ex),&(Open->tme), &Open->start_time)!=INIT_OK)
+			{
+				
+				IF_LOUD(DbgPrint("Error initializing NPF machine (bpf_filter_init)\n");)
+				
+				EXIT_FAILURE(0);
+			}
+		}
+
+		insns=cnt;
+		
+		if(bpf_validate((struct bpf_insn*)prog,cnt,Open->mem_ex.size)==0)
+		{
+			IF_LOUD(DbgPrint("Error validating program");)
 			EXIT_FAILURE(0);
 		}
 		
 		// Allocate the memory to contain the new filter program
 		// We could need the original BPF binary if we are forced to use bpf_filter_with_2_buffers()
-		TmpBPFProgram=(PUCHAR)ExAllocatePool(NonPagedPool, IrpSp->Parameters.DeviceIoControl.InputBufferLength);
+		TmpBPFProgram=(PUCHAR)ExAllocatePool(NonPagedPool,cnt*sizeof(struct bpf_insn));
 		if (TmpBPFProgram==NULL)
 		{
+			IF_LOUD(DbgPrint("Error - No memory for filter");)
 			// no memory
 			EXIT_FAILURE(0);
 		}
 		
 		//copy the program in the new buffer
-		RtlCopyMemory(TmpBPFProgram,prog,IrpSp->Parameters.DeviceIoControl.InputBufferLength);
+		RtlCopyMemory(TmpBPFProgram,prog,cnt*sizeof(struct bpf_insn));
 		Open->bpfprogram=TmpBPFProgram;
 
 		
 		// Create the new JIT filter function
-		if((Open->Filter=BPF_jitter((struct bpf_insn*)Open->bpfprogram, 
-			IrpSp->Parameters.DeviceIoControl.InputBufferLength/sizeof(struct bpf_insn)))
+
+		if(!IsExtendedFilter)
+			if((Open->Filter=BPF_jitter((struct bpf_insn*)Open->bpfprogram,cnt))
 			== NULL)
 		{
+			IF_LOUD(DbgPrint("Error jittering filter");)
 			EXIT_FAILURE(0);
 		}
 
@@ -755,6 +789,11 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			
 			EXIT_SUCCESS(0);
 		}
+ 		else if (mode==MODE_MON){
+ 			Open->mode=MODE_MON;
+
+			EXIT_SUCCESS(0);
+ 		}	
 		else{
 			if(mode & MODE_STAT){
 				Open->mode = MODE_STAT;

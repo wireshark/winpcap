@@ -27,9 +27,13 @@
  *  @{
  */
 
+#ifndef __PACKET_INCLUDE______
+#define __PACKET_INCLUDE______
+
 #define NTKERNEL	///< Forces the compilation of the jitter with kernel calls 
 
 #include "jitter.h"
+#include "tme.h"
 
 #define  MAX_REQUESTS   32 ///< Maximum number of simultaneous IOCTL requests.
 
@@ -157,6 +161,7 @@
 // Working modes
 #define MODE_CAPT 0x0		///< Capture working mode
 #define MODE_STAT 0x1		///< Statistical working mode
+#define MODE_MON  0x2		///< Kernel monitoring mode
 #define MODE_DUMP 0x10		///< Kernel dump working mode
 
 
@@ -183,16 +188,6 @@ struct packet_file_header
 	UINT sigfigs;			///< Accuracy of timestamps
 	UINT snaplen;			///< Length of the max saved portion of each packet
 	UINT linktype;			///< Data link type (DLT_*). See win_bpf.h for details.
-};
-
-/*!
-  \brief A microsecond precise timestamp.
-
-  included in the sf_pkthdr or the bpf_hdr that NPF associates with every packet. 
-*/
-struct timeval {
-        long    tv_sec;         ///< seconds
-        long    tv_usec;        ///< microseconds
 };
 
 /*!
@@ -327,6 +322,12 @@ typedef struct _OPEN_INSTANCE
 	NDIS_EVENT			DumpEvent;			///< Event used to synchronize the dump thread with the tap when the instance is in dump mode.
 	LARGE_INTEGER		DumpOffset;			///< Current offset in the dump file.
 	UNICODE_STRING      DumpFileName;		///< String containing the name of the dump file.
+
+	MEM_TYPE			mem_ex;				///< Memory used by the TME virtual co-processor
+	TME_CORE			tme;				///< Data structure containing the virtualization of the TME co-processor
+	struct time_conv	start_time;			///< Data structure used to timestamp packets, and stats
+	NDIS_SPIN_LOCK		machine_lock;		///< SpinLock that protects the mem_ex buffer
+
 }
 OPEN_INSTANCE, *POPEN_INSTANCE;
 
@@ -772,6 +773,7 @@ NPF_UnbindAdapter(
   \brief Validates a filtering program arriving from the user-level app.
   \param f The filter.
   \param len Its length, in pseudo instructions.
+  \param mem_ex_size The length of the extended memory, used to validate LD/ST to that memory
   \return true if f is a valid filter program..
   
   The kernel needs to be able to verify an application's filter code. Otherwise, a bogus program could easily 
@@ -779,7 +781,7 @@ NPF_UnbindAdapter(
   This function returns true if f is a valid filter program. The constraints are that each jump be forward and 
   to a valid code.  The code must terminate with either an accept or reject. 
 */
-int bpf_validate(struct bpf_insn *f,int len);
+int bpf_validate(struct bpf_insn *f,int len, uint32 mem_ex_size);
 
 /*!
   \brief The filtering pseudo-machine interpreter.
@@ -788,6 +790,9 @@ int bpf_validate(struct bpf_insn *f,int len);
   \param wirelen Original length of the packet.
   \param buflen Current length of the packet. In some cases (for example when the transfer of the packet to the RAM
   has not yet finished), bpf_filter can be executed on a portion of the packet.
+  \param mem_ex The extended memory.
+  \param tme The virtualization of the TME co-processor
+  \param time_ref Data structure needed by the TME co-processor to timestamp data
   \return The portion of the packet to keep, in bytes. 0 means that the packet must be rejected, -1 means that
    the whole packet must be kept.
   
@@ -797,7 +802,10 @@ int bpf_validate(struct bpf_insn *f,int len);
 UINT bpf_filter(register struct bpf_insn *pc,
 				register UCHAR *p,
 				UINT wirelen,
-				register UINT buflen);
+				register UINT buflen,
+				PMEM_TYPE mem_ex,
+				PTME_CORE tme,
+				struct time_conv *time_ref);
 
 /*!
   \brief The filtering pseudo-machine interpreter with two buffers. This function is slower than bpf_filter(), 
@@ -808,6 +816,9 @@ UINT bpf_filter(register struct bpf_insn *pc,
   \param wirelen Original length of the packet.
   \param buflen Current length of the packet. In some cases (for example when the transfer of the packet to the RAM
   has not yet finished), bpf_filter can be executed on a portion of the packet.
+  \param mem_ex The extended memory.
+  \param tme The virtualization of the TME co-processor
+  \param time_ref Data structure needed by the TME co-processor to timestamp data
   \return The portion of the packet to keep, in bytes. 0 means that the packet must be rejected, -1 means that
    the whole packet must be kept.
   
@@ -818,7 +829,10 @@ UINT bpf_filter_with_2_buffers(register struct bpf_insn *pc,
 							   register UCHAR *pd,
 							   register int headersize,
 							   UINT wirelen,
-							   register UINT buflen);
+							   register UINT buflen,
+							   PMEM_TYPE mem_ex,
+				               PTME_CORE tme,
+							   struct time_conv *time_ref);
 
 /*!
   \brief Creates the file that will receive the packets when the driver is in dump mode.
@@ -882,3 +896,5 @@ NTSTATUS NPF_CloseDumpFile(POPEN_INSTANCE Open);
 /**
  *  @}
  */
+
+#endif  /*main ifndef/define*/
