@@ -79,6 +79,7 @@ struct activehosts *activeHosts;
 int rpcap_checkver(SOCKET sock, struct rpcap_header *header, char *errbuf);
 struct pcap_stat *rpcap_stats_remote(pcap_t *p, struct pcap_stat *ps, int mode);
 int pcap_pack_bpffilter(pcap_t *fp, char *sendbuf, int *sendbufidx, struct bpf_program *prog);
+int pcap_createfilter_norpcappkt(pcap_t *fp, struct bpf_program *prog);
 
 
 
@@ -242,7 +243,7 @@ struct timeval tv;						// maximum time the select() can block waiting for data
 	header= (struct rpcap_header *) netbuf;
 	net_pkt_header= (struct rpcap_pkthdr *) (netbuf + sizeof(struct rpcap_header) );
 
-	if (p->rmt_flags & PCAP_OPENFLAG_UDP_DP)
+	if (p->rmt_flags & PCAP_OPENFLAG_DATATX_UDP)
 	{
 		// Read the entire message from the network
 		if (sock_recv(p->rmt_sockdata, netbuf, RPCAP_NETBUF_SIZE, SOCK_RECEIVEALL_NO, p->errbuf, PCAP_ERRBUF_SIZE) == -1)
@@ -277,7 +278,7 @@ struct timeval tv;						// maximum time the select() can block waiting for data
 	}
 	
 	// In case of TCP, read the remaining of the packet from the socket
-	if ( !(p->rmt_flags & PCAP_OPENFLAG_UDP_DP))
+	if ( !(p->rmt_flags & PCAP_OPENFLAG_DATATX_UDP))
 	{
 		// Read the RPCAP packet header from the network
 		if ( (nread= sock_recv(p->rmt_sockdata, (char *) net_pkt_header, 
@@ -301,7 +302,7 @@ struct timeval tv;						// maximum time the select() can block waiting for data
 		p->md.TotCapt++;
 
 		// Copies the packet into the data buffer
-		if (p->rmt_flags & PCAP_OPENFLAG_UDP_DP)
+		if (p->rmt_flags & PCAP_OPENFLAG_DATATX_UDP)
 		{
 		unsigned int npkt;
 
@@ -440,6 +441,12 @@ int active= 0;					// active mode or not?
 		sock_close(fp->rmt_sockctrl, NULL, 0);
 
 	fp->rmt_sockctrl= 0;
+
+	if (fp->currentfilter)
+	{
+		free(fp->currentfilter);
+		fp->currentfilter= NULL;
+	}
 
 	// To avoid inconsistencies in the number of sock_init()
 	sock_cleanup();
@@ -784,6 +791,14 @@ struct rpcap_openreply openreply;	// open reply message
 	fp->rmt_clientside= 1;
 
 
+	// This code is duplicated from the end of this function
+	fp->read_op= pcap_read_remote;
+	fp->setfilter_op= pcap_setfilter_remote;
+	fp->getnonblock_op= NULL;					// This is not implemented in remote capture
+	fp->setnonblock_op= NULL;	// This is not implemented in remote capture
+	fp->stats_op= pcap_stats_remote;
+	fp->close_op= pcap_close_remote;
+
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))
 	{
@@ -920,7 +935,7 @@ int sockbufsize= 0;
 		- we're using TCP, and the user wants us to be in active mode
 		- we're using UDP
 	*/
-	if ( (active) || (fp->rmt_flags & PCAP_OPENFLAG_UDP_DP) )
+	if ( (active) || (fp->rmt_flags & PCAP_OPENFLAG_DATATX_UDP) )
 	{
 		// We have to create a new socket to receive packets
 		// We have to do that immediately, since we have to tell the other 
@@ -928,7 +943,7 @@ int sockbufsize= 0;
 		memset(&hints, 0, sizeof(struct addrinfo) );
 		// TEMP addrinfo is NULL in case of active
 		hints.ai_family = ai_family;	// Use the same address family of the control socket
-		hints.ai_socktype = (fp->rmt_flags & PCAP_OPENFLAG_UDP_DP) ? SOCK_DGRAM : SOCK_STREAM;
+		hints.ai_socktype = (fp->rmt_flags & PCAP_OPENFLAG_DATATX_UDP) ? SOCK_DGRAM : SOCK_STREAM;
 		hints.ai_flags = AI_PASSIVE;	// Data connection is opened by the server toward the client
 
 		// Let's the server pick up a free network port for us
@@ -988,7 +1003,7 @@ int sockbufsize= 0;
 #endif
 
 	// portdata on the openreq is meaningful only if we're in active mode
-	if ( (active) || (fp->rmt_flags & PCAP_OPENFLAG_UDP_DP) )
+	if ( (active) || (fp->rmt_flags & PCAP_OPENFLAG_DATATX_UDP) )
 	{
 		sscanf(portdata, "%d", &(startcapreq->portdata));
 		startcapreq->portdata= htons(startcapreq->portdata);
@@ -996,9 +1011,10 @@ int sockbufsize= 0;
 
 	startcapreq->snaplen= htonl(fp->snapshot);
 	startcapreq->flags= 0;
+
 	if (fp->rmt_flags & PCAP_OPENFLAG_PROMISCUOUS)
 		startcapreq->flags|= RPCAP_STARTCAPREQ_FLAG_PROMISC;
-	if (fp->rmt_flags & PCAP_OPENFLAG_UDP_DP)
+	if (fp->rmt_flags & PCAP_OPENFLAG_DATATX_UDP)
 		startcapreq->flags|= RPCAP_STARTCAPREQ_FLAG_DGRAM;
 	if (active)
 		startcapreq->flags|= RPCAP_STARTCAPREQ_FLAG_SERVEROPEN;
@@ -1058,13 +1074,13 @@ int sockbufsize= 0;
 	// to tell the port we're using to the remote side; in case we're accepting a TCP
 	// connection, we have to wait this info from the remote side.
 
-	if (!(fp->rmt_flags & PCAP_OPENFLAG_UDP_DP))
+	if (!(fp->rmt_flags & PCAP_OPENFLAG_DATATX_UDP))
 	{
 		if (!active)
 		{
 			memset(&hints, 0, sizeof(struct addrinfo) );
 			hints.ai_family = ai_family;		// Use the same address family of the control socket
-			hints.ai_socktype = (fp->rmt_flags & PCAP_OPENFLAG_UDP_DP) ? SOCK_DGRAM : SOCK_STREAM;
+			hints.ai_socktype = (fp->rmt_flags & PCAP_OPENFLAG_DATATX_UDP) ? SOCK_DGRAM : SOCK_STREAM;
 
 			sprintf(portdata, "%d", ntohs(startcapreply.portdata) );
 
@@ -1170,6 +1186,24 @@ int sockbufsize= 0;
 		if (sock_discard(fp->rmt_sockctrl, ntohl(header.plen) - nread, NULL, 0) == 1)
 			goto error;
 	}
+
+	// In case the user does not want to capture RPCAP packets, let's update the filter
+	// We have to update it here (instead of sending it into the 'StartCapture' message
+	// because when we generate the 'start capture' we do not know (yet) all the ports
+	// we're currently using.
+	if (fp->rmt_flags & PCAP_OPENFLAG_NOCAPTURE_RPCAP)
+	{
+	struct bpf_program fcode;
+
+		if (pcap_createfilter_norpcappkt(fp, &fcode) == -1)
+			goto error;
+
+		if (pcap_setfilter_remote(fp, &fcode) == -1)
+			goto error;
+
+		pcap_freecode(&fcode);
+	}
+
 	return 0;
 
 error:
@@ -1219,7 +1253,7 @@ error:
 
 	\param sendbufidx: it is used to return the abounf of bytes copied into the buffer.
 
-	\param prog: the bpf prgoram we hve to copy.
+	\param prog: the bpf program we have to copy.
 
 	\return '0' if everything is fine, '-1' otherwise. The error message (if one)
 	is returned into the 'errbuf' field of the pcap_t structure.
@@ -1229,7 +1263,17 @@ int pcap_pack_bpffilter(pcap_t *fp, char *sendbuf, int *sendbufidx, struct bpf_p
 struct rpcap_filter *filter;
 struct rpcap_filterbpf_insn *insn;
 struct bpf_insn *bf_insn;
+struct bpf_program fake_prog;		// To be used just in case the user forgot to set a filter
 unsigned int i;
+
+
+	if (prog->bf_len == 0)	// No filters have been specified; so, let's apply a "fake" filter
+	{
+		if (pcap_compile(fp, &fake_prog, NULL /*buffer*/, 1, 0) == -1)
+			return -1;
+
+		prog= &fake_prog;
+	}
 
 	filter= (struct rpcap_filter *) sendbuf;
 
@@ -1257,6 +1301,7 @@ unsigned int i;
 		insn++;
 		bf_insn++;
 	}
+
 	return 0;
 }
 
@@ -1370,6 +1415,130 @@ int pcap_setfilter_remote(pcap_t *fp, struct bpf_program *prog)
 }
 
 
+
+
+
+/*!
+	\ingroup remote_pri_func
+
+	\brief Update the current filter in order not to capture rpcap packets.
+
+	This function is called *only* when the user wants exclude RPCAP packets
+	related to the current session from the captured packets.
+
+	\return '0' if everything is fine, '-1' otherwise. The error message (if one)
+	is returned into the 'errbuf' field of the pcap_t structure.
+*/
+int pcap_createfilter_norpcappkt(pcap_t *fp, struct bpf_program *prog)
+{
+int RetVal= 0;
+
+	// We do not want to capture our RPCAP traffic. So, let's update the filter
+	if (fp->rmt_flags & PCAP_OPENFLAG_NOCAPTURE_RPCAP)
+	{
+	struct sockaddr_storage saddr;		// temp, needed to retrieve the network data port chosen on the local machine
+	socklen_t saddrlen;					// temp, needed to retrieve the network data port chosen on the local machine
+	char myaddress[128];
+	char myctrlport[128];
+	char mydataport[128];
+	char peeraddress[128];
+	char peerctrlport[128];
+//	char peerdataport[128];
+	char *newfilter;
+	const int newstringsize= 1024;
+	int currentfiltersize;
+
+		// Get the name/port of the other peer
+		saddrlen = sizeof(struct sockaddr_storage);
+		if (getpeername(fp->rmt_sockctrl, (struct sockaddr *) &saddr, &saddrlen) == -1)
+		{
+			sock_geterror("getpeername(): ", fp->errbuf, PCAP_ERRBUF_SIZE);
+			return -1;
+		}
+
+		if (getnameinfo( (struct sockaddr *) &saddr, saddrlen, peeraddress, 
+				sizeof(peeraddress), peerctrlport, sizeof(peerctrlport), NI_NUMERICHOST | NI_NUMERICSERV) )
+		{
+			sock_geterror("getnameinfo(): ", fp->errbuf, PCAP_ERRBUF_SIZE);
+			return -1;
+		}
+
+		// We cannot check the data port, because this is available only in case of TCP sockets
+/*		if (getpeername(fp->rmt_sockdata, (struct sockaddr *) &saddr, &saddrlen) == -1)
+		{
+			sock_geterror("getpeername(): ", fp->errbuf, PCAP_ERRBUF_SIZE);
+			return -1;
+		}
+
+
+		if (getnameinfo( (struct sockaddr *) &saddr, saddrlen, NULL, 0, peerdataport, sizeof(peerdataport), NI_NUMERICSERV) )
+		{
+			sock_geterror("getnameinfo(): ", fp->errbuf, PCAP_ERRBUF_SIZE);
+			return -1;
+		}
+*/
+
+		// Get the name/port of the current host
+		if (getsockname(fp->rmt_sockctrl, (struct sockaddr *) &saddr, &saddrlen) == -1)
+		{
+			sock_geterror("getsockname(): ", fp->errbuf, PCAP_ERRBUF_SIZE);
+			return -1;
+		}
+
+		// Get the local port the system picked up
+		if (getnameinfo( (struct sockaddr *) &saddr, saddrlen, myaddress, 
+				sizeof(myaddress), myctrlport, sizeof(myctrlport), NI_NUMERICHOST | NI_NUMERICSERV) )
+		{
+			sock_geterror("getnameinfo(): ", fp->errbuf, PCAP_ERRBUF_SIZE);
+			return -1;
+		}
+
+		// Let's now check the data port
+		if (getsockname(fp->rmt_sockdata, (struct sockaddr *) &saddr, &saddrlen) == -1)
+		{
+			sock_geterror("getsockname(): ", fp->errbuf, PCAP_ERRBUF_SIZE);
+			return -1;
+		}
+
+		// Get the local port the system picked up
+		if (getnameinfo( (struct sockaddr *) &saddr, saddrlen,NULL, 0, mydataport, sizeof(mydataport), NI_NUMERICSERV) )
+		{
+			sock_geterror("getnameinfo(): ", fp->errbuf, PCAP_ERRBUF_SIZE);
+			return -1;
+		}
+
+		currentfiltersize= strlen(fp->currentfilter);
+
+		newfilter= (char *) malloc (currentfiltersize + newstringsize + 1);
+
+		if (currentfiltersize)
+//			snprintf(newfilter, currentfiltersize + newstringsize, 
+//				"(%s) and not (host %s and host %s and port %s and port %s) and not (host %s and host %s and port %s and port %s)", 
+//				fp->currentfilter, myaddress, peeraddress, myctrlport, peerctrlport, myaddress, peeraddress, mydataport, peerdataport);
+			snprintf(newfilter, currentfiltersize + newstringsize, 
+				"(%s) and not (host %s and host %s and port %s and port %s) and not (host %s and host %s and port %s)", 
+				fp->currentfilter, myaddress, peeraddress, myctrlport, peerctrlport, myaddress, peeraddress, mydataport);
+		else
+			snprintf(newfilter, currentfiltersize + newstringsize, 
+				"not (host %s and host %s and port %s and port %s) and not (host %s and host %s and port %s)", 
+				myaddress, peeraddress, myctrlport, peerctrlport, myaddress, peeraddress, mydataport);
+
+		newfilter[currentfiltersize + newstringsize]= 0;
+
+		// This is only an hack to make the pcap_compile() working
+//		fp->rmt_clientside= 0;
+
+		if (pcap_compile(fp, prog, newfilter, 1, 0) == -1)
+			RetVal= -1;
+
+		// This is only an hack to make the pcap_compile() working
+//		fp->rmt_clientside= 1;
+
+		free(newfilter);
+	}
+
+	return RetVal;
+}
 
 /*!
 	\ingroup remote_pri_func

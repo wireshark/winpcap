@@ -303,7 +303,6 @@ struct rpcap_sampling
 #define RPCAP_STARTCAPREQ_FLAG_INBOUND 8	/*!< Capture only inbound packets (take care: the flag has no effects with promiscuous enabled) */
 #define RPCAP_STARTCAPREQ_FLAG_OUTBOUND 16	/*!< Capture only outbound packets (take care: the flag has no effects with promiscuous enabled) */
 
-
 #define RPCAP_UPDATEFILTER_BPF 1			/*!< This code tells us that the filter is encoded with the BPF/NPF syntax */
 
 

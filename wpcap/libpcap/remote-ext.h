@@ -208,8 +208,18 @@
 	This flag is meaningless if the source is not a remote interface.
 	In that case, it is simply ignored.
 */
-#define PCAP_OPENFLAG_UDP_DP			2
+#define PCAP_OPENFLAG_DATATX_UDP			2
 
+
+/*!
+	\brief It defines if the remote probe has to capture its own generated traffic.
+
+	In case the remote probe uses the same interface to capture traffic and to send
+	data back to the caller, the captured traffic includes the RPCAP traffic as well.
+	If this flag is turned on, the RPCAP traffic is excluded from the capture, so that
+	the trace returned back to the collector is does not include this traffic.
+*/
+#define PCAP_OPENFLAG_NOCAPTURE_RPCAP	4
 /*!
 	\}
 */

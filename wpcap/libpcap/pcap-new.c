@@ -367,7 +367,7 @@ char tmpstring[PCAP_BUF_SIZE + 1];		// Needed to convert names and descriptions 
 
 				// Create the description
 				snprintf(tmpstring, sizeof(tmpstring) - 1, "%s '%s' %s", PCAP_TEXT_SOURCE_FILE, 
-					dev->name, PCAP_TEXT_SOURCE_ON_LOCAL_HOST);
+					filename, PCAP_TEXT_SOURCE_ON_LOCAL_HOST);
 
 				stringlen= strlen(tmpstring);
 

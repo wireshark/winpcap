@@ -986,11 +986,12 @@ int serveropen_dp;							// keeps who is going to open the data connection
 	*/
 	serveropen_dp= (startcapreq.flags & RPCAP_STARTCAPREQ_FLAG_SERVEROPEN) || (startcapreq.flags & RPCAP_STARTCAPREQ_FLAG_DGRAM) || active;
 
-	// get the sockaddr structure referred to the other peer in the ctrl connection
 	/*
+	Gets the sockaddr structure referred to the other peer in the ctrl connection
+
 	We need that because:
 	- if we're in passive mode, we need to know the address family we want to use 
-	(the same used for the ctrl socket
+	(the same used for the ctrl socket)
 	- if we're in active mode, we need to know the network address of the other host 
 	we want to connect to
 	*/
@@ -1200,47 +1201,39 @@ unsigned int i;
 
 	bf_prog.bf_len= ntohl(filter.nitems);
 
-	if (bf_prog.bf_len == 0)	// No filters have been specified; so, let's apply a "fake" filter
+	if (ntohs(filter.filtertype) != RPCAP_UPDATEFILTER_BPF)
 	{
-		if (pcap_compile(fp, &bf_prog, NULL, 1, 0) == -1)
+		snprintf(errbuf, PCAP_ERRBUF_SIZE, "Only BPF/NPF filters are currently supported");
 		return -1;
 	}
-	else
+
+	bf_insn= (struct bpf_insn *) malloc ( sizeof(struct bpf_insn) * bf_prog.bf_len);
+	if (bf_insn == NULL)
 	{
-		if (ntohs(filter.filtertype) != RPCAP_UPDATEFILTER_BPF)
-		{
-			snprintf(errbuf, PCAP_ERRBUF_SIZE, "Only BPF/NPF filters are currently supported");
+		snprintf(errbuf, PCAP_ERRBUF_SIZE, "malloc() failed: %s", pcap_strerror(errno));
+		return -1;
+	}
+
+	bf_prog.bf_insns= bf_insn;
+
+	for (i= 0; i < bf_prog.bf_len; i++)
+	{
+		if ( ( *nread+= sock_recv(fp->rmt_sockctrl, (char *) &insn, 
+			sizeof(struct rpcap_filterbpf_insn), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 			return -1;
-		}
 
-		bf_insn= (struct bpf_insn *) malloc ( sizeof(struct bpf_insn) * bf_prog.bf_len);
-		if (bf_insn == NULL)
-		{
-			snprintf(errbuf, PCAP_ERRBUF_SIZE, "malloc() failed: %s", pcap_strerror(errno));
-			return -1;
-		}
+		bf_insn->code= ntohs(insn.code);
+		bf_insn->jf= insn.jf;
+		bf_insn->jt= insn.jt;
+		bf_insn->k= ntohl(insn.k);
 
-		bf_prog.bf_insns= bf_insn;
+		bf_insn++;
+	}
 
-		for (i= 0; i < bf_prog.bf_len; i++)
-		{
-			if ( ( *nread+= sock_recv(fp->rmt_sockctrl, (char *) &insn, 
-				sizeof(struct rpcap_filterbpf_insn), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE)) == -1)
-				return -1;
-
-			bf_insn->code= ntohs(insn.code);
-			bf_insn->jf= insn.jf;
-			bf_insn->jt= insn.jt;
-			bf_insn->k= ntohl(insn.k);
-
-			bf_insn++;
-		}
-
-		if (bpf_validate(bf_prog.bf_insns, bf_prog.bf_len) == 0)
-		{
-			snprintf(errbuf, PCAP_ERRBUF_SIZE, "The filter contains bogus instructions");
-			return -1;
-		}
+	if (bpf_validate(bf_prog.bf_insns, bf_prog.bf_len) == 0)
+	{
+		snprintf(errbuf, PCAP_ERRBUF_SIZE, "The filter contains bogus instructions");
+		return -1;
 	}
 
 	if (pcap_setfilter(fp, &bf_prog) )
