@@ -112,8 +112,7 @@ BOOL APIENTRY DllMain (HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 #endif
 
 		// Create the mutex that will protect the adapter information list
-		AdaptersInfoMutex = CreateMutex(NULL, TRUE, NULL);
-		ReleaseMutex(AdaptersInfoMutex);
+		AdaptersInfoMutex = CreateMutex(NULL, FALSE, NULL);
 
 		//
 		// Retrieve packet.dll version information from the file
@@ -343,7 +342,7 @@ BOOLEAN PacketSetReadEvt(LPADAPTER AdapterObject)
 BOOL PacketInstallDriver(SC_HANDLE ascmHandle,SC_HANDLE *srvHandle)
 {
 	BOOL result = FALSE;
-	ULONG err;
+	ULONG err = 0;
 	
 	ODS("installdriver\n");
 	
@@ -378,6 +377,8 @@ BOOL PacketInstallDriver(SC_HANDLE ascmHandle,SC_HANDLE *srvHandle)
 		if(err != 2)
 			ODSEx("PacketInstallDriver failed, Error=%d\n",err);
 	}
+
+	SetLastError(err);
 	return result;
 	
 }
@@ -494,7 +495,7 @@ BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLe
 	  } 
 	else 
 	{
-		ODSEx("PacketGetFileVersion: failed to call GetFileVersionInfoSize, error = %d\n", GetLastError());
+		ODSEx("PacketGetFileVersion: failed to call GetFileVersionInfoSize, LastError = %d\n", GetLastError());
 		return FALSE;
 	
 	} 
@@ -528,7 +529,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 	
 	if(scmHandle == NULL){
 		error = GetLastError();
-		ODSEx("OpenSCManager failed! Error=%d\n", error);
+		ODSEx("OpenSCManager failed! LastError=%d\n", error);
 	}
 	else{
 		// check if the NPF registry key is already present
@@ -556,8 +557,38 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 			if (srvHandle != NULL)
 			{
 				QuerySStat = QueryServiceStatus(srvHandle, &SStat);
-				ODSEx("The status of the driver is:%d\n",SStat.dwCurrentState);
 				
+#if defined(_DBG) || defined(_DEBUG_TO_FILE)				
+				switch (SStat.dwCurrentState)
+				{
+				case SERVICE_CONTINUE_PENDING:
+					ODS("The status of the driver is: SERVICE_CONTINUE_PENDING\n");
+					break;
+				case SERVICE_PAUSE_PENDING:
+					ODS("The status of the driver is: SERVICE_PAUSE_PENDING\n");
+					break;
+				case SERVICE_PAUSED:
+					ODS("The status of the driver is: SERVICE_PAUSED\n");
+					break;
+				case SERVICE_RUNNING:
+					ODS("The status of the driver is: SERVICE_RUNNING\n");
+					break;
+				case SERVICE_START_PENDING:
+					ODS("The status of the driver is: SERVICE_START_PENDING\n");
+					break;
+				case SERVICE_STOP_PENDING:
+					ODS("The status of the driver is: SERVICE_STOP_PENDING\n");
+					break;
+				case SERVICE_STOPPED:
+					ODS("The status of the driver is: SERVICE_STOPPED\n");
+					break;
+
+				default:
+					ODS("The status of the driver is: unknown\n");
+					break;
+				}
+#endif
+
 				if(!QuerySStat || SStat.dwCurrentState != SERVICE_RUNNING)
 				{
 					ODS("Calling startservice\n");
@@ -570,7 +601,8 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 							if (scmHandle != NULL) 
 								CloseServiceHandle(scmHandle);
 							error = GetLastError();
-							ODSEx("PacketOpenAdapterNPF: StartService failed, Error=%d\n",error);
+							ODSEx("PacketOpenAdapterNPF: StartService failed, LastError=%d\n",error);
+							SetLastError(error);
 							return NULL;
 						}
 					}				
@@ -584,6 +616,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 			{
 				error = GetLastError();
 				ODSEx("OpenService failed! Error=%d", error);
+				SetLastError(error);
 			}
 		}
 		else
@@ -596,10 +629,41 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 			if (Result) {
 				
 				srvHandle = OpenService(scmHandle,NPFServiceName,SERVICE_START);
-				if (srvHandle != NULL){
+				if (srvHandle != NULL)
+				{
 					
 					QuerySStat = QueryServiceStatus(srvHandle, &SStat);
-					ODSEx("The status of the driver is:%d\n",SStat.dwCurrentState);
+
+#if defined(_DBG) || defined(_DEBUG_TO_FILE)				
+					switch (SStat.dwCurrentState)
+					{
+					case SERVICE_CONTINUE_PENDING:
+						ODS("The status of the driver is: SERVICE_CONTINUE_PENDING\n");
+						break;
+					case SERVICE_PAUSE_PENDING:
+						ODS("The status of the driver is: SERVICE_PAUSE_PENDING\n");
+						break;
+					case SERVICE_PAUSED:
+						ODS("The status of the driver is: SERVICE_PAUSED\n");
+						break;
+					case SERVICE_RUNNING:
+						ODS("The status of the driver is: SERVICE_RUNNING\n");
+						break;
+					case SERVICE_START_PENDING:
+						ODS("The status of the driver is: SERVICE_START_PENDING\n");
+						break;
+					case SERVICE_STOP_PENDING:
+						ODS("The status of the driver is: SERVICE_STOP_PENDING\n");
+						break;
+					case SERVICE_STOPPED:
+						ODS("The status of the driver is: SERVICE_STOPPED\n");
+						break;
+
+					default:
+						ODS("The status of the driver is: unknown\n");
+						break;
+					}
+#endif
 					
 					if(!QuerySStat || SStat.dwCurrentState != SERVICE_RUNNING){
 						
@@ -608,9 +672,9 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 						if (StartService(srvHandle, 0, NULL)==0){ 
 							error = GetLastError();
 							if(error!=ERROR_SERVICE_ALREADY_RUNNING && error!=ERROR_ALREADY_EXISTS){
-								SetLastError(error);
 								if (scmHandle != NULL) CloseServiceHandle(scmHandle);
-								ODSEx("PacketOpenAdapterNPF: StartService failed, Error=%d\n",error);
+								ODSEx("PacketOpenAdapterNPF: StartService failed, LastError=%d\n",error);
+								SetLastError(error);
 								return NULL;
 							}
 						}
@@ -622,7 +686,8 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 				}
 				else{
 					error = GetLastError();
-					ODSEx("OpenService failed! Error=%d", error);
+					ODSEx("OpenService failed! LastError=%d", error);
+					SetLastError(error);
 				}
 			}
 		}
@@ -662,7 +727,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 			GlobalFreePtr(lpAdapter);
 			//set the error to the one on which we failed
 			SetLastError(error);
-		    ODSEx("PacketOpenAdapterNPF: PacketSetReadEvt failed, Error=%d\n",error);
+		    ODSEx("PacketOpenAdapterNPF: PacketSetReadEvt failed, LastError=%d\n",error);
 			return NULL;
 		}		
 		
@@ -677,8 +742,8 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 	error=GetLastError();
 	GlobalFreePtr(lpAdapter);
 	//set the error to the one on which we failed
+    ODSEx("PacketOpenAdapterNPF: CreateFile failed, LastError= %d\n",error);
 	SetLastError(error);
-    ODSEx("PacketOpenAdapterNPF: CreateFile failed, Error=2,%d\n",error);
 	return NULL;
 }
 
@@ -894,6 +959,7 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 
 #ifndef _WINNT4
 
+	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
 	// Find the PADAPTER_INFO structure associated with this adapter 
 	TAdInfo = PacketFindAdInfo(AdapterNameA);
 	if(TAdInfo == NULL)
@@ -902,12 +968,16 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 		TAdInfo = PacketFindAdInfo(AdapterNameA);
 		if(TAdInfo == NULL)
 		{
+
 			//can be an ERF file?
 			lpAdapter = PacketOpenAdapterDAG(AdapterNameA, TRUE);
 			
-			if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
-			else GlobalFreePtr(AdapterNameA);
+			if (AdapterNameU != NULL) 
+				GlobalFreePtr(AdapterNameU);
+			else 
+				GlobalFreePtr(AdapterNameA);
 			
+			ReleaseMutex(AdaptersInfoMutex);
 			return lpAdapter;
 		}
 	}
@@ -930,9 +1000,11 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 			{
 				if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
 				else GlobalFreePtr(AdapterNameA);
+				ReleaseMutex(AdaptersInfoMutex);
+				SetLastError(ERROR_BAD_UNIT);
 				return NULL;
 			}
-			
+		
 			// Backup flags for future usage
 			lpAdapter->Flags = TAdInfo->Flags;
 			
@@ -944,6 +1016,8 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 				else GlobalFreePtr(AdapterNameA);
 				
 				GlobalFreePtr(lpAdapter);
+				ReleaseMutex(AdaptersInfoMutex);
+				SetLastError(ERROR_BAD_UNIT);
 				return NULL;
 			}
 			
@@ -951,9 +1025,12 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 			
 			lpAdapter->ReadEvent = WanPacketGetReadEvent(lpAdapter->pWanAdapter);
 			
-			if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
-			else GlobalFreePtr(AdapterNameA);
+			if (AdapterNameU != NULL) 
+				GlobalFreePtr(AdapterNameU);
+			else 
+				GlobalFreePtr(AdapterNameA);
 			
+			ReleaseMutex(AdaptersInfoMutex);
 			return lpAdapter;
 		}
 		else
@@ -965,19 +1042,27 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 								
 				lpAdapter = PacketOpenAdapterDAG(AdapterNameA, FALSE);
 
-				if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
-				else GlobalFreePtr(AdapterNameA);
+				if (AdapterNameU != NULL) 
+					GlobalFreePtr(AdapterNameU);
+				else 
+					GlobalFreePtr(AdapterNameA);
 
+				ReleaseMutex(AdaptersInfoMutex);
 				return lpAdapter;
 			}
 			
 	}
+	
+	ReleaseMutex(AdaptersInfoMutex);
+
 #endif // _WINNT4
    
 	lpAdapter = PacketOpenAdapterNPF(AdapterName);
 
-	if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
-	else GlobalFreePtr(AdapterNameA);
+	if (AdapterNameU != NULL) 
+		GlobalFreePtr(AdapterNameU);
+	else 
+		GlobalFreePtr(AdapterNameA);
 
 	return lpAdapter;
 }
@@ -1932,7 +2017,10 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	//
 	PacketPopulateAdaptersInfoList();
 
-	if(!AdaptersInfoList){
+	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
+	if(!AdaptersInfoList) 
+	{
+		ReleaseMutex(AdaptersInfoMutex);
 		*BufferSize = 0;
 		return FALSE;		// No adapters to return
 	}
@@ -1951,6 +2039,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 		{
 			*BufferSize = SizeNeeded;
 			ODS("PacketGetAdapterNames: input buffer too small\n");
+			ReleaseMutex(AdaptersInfoMutex);
 			return FALSE;
 		}
 	}
@@ -1974,6 +2063,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	// Separate the two lists
 	((PCHAR)pStr)[SizeNames] = 0;
 
+	ReleaseMutex(AdaptersInfoMutex);
 	return TRUE;
 }
 
@@ -2020,13 +2110,16 @@ BOOLEAN PacketGetNetInfoEx(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntrie
 		return FALSE;
 	}
 	
+	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
 	// Find the PADAPTER_INFO structure associated with this adapter 
 	TAdInfo = PacketFindAdInfo(Tname);
 
 	if(TAdInfo != NULL)
 	{
 		*NEntries = (TAdInfo->NNetworkAddresses < *NEntries)? TAdInfo->NNetworkAddresses: *NEntries;
-		memcpy(buffer, TAdInfo->NetworkAddresses, *NEntries * sizeof(npf_if_addr));
+		//TODO what if nentries = 0?
+		if (*NEntries > 0)
+			memcpy(buffer, TAdInfo->NetworkAddresses, *NEntries * sizeof(npf_if_addr));
 		Res = TRUE;
 	}
 	else
@@ -2034,6 +2127,8 @@ BOOLEAN PacketGetNetInfoEx(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntrie
 		ODS("PacketGetNetInfo: Adapter not found\n");
 		Res = FALSE;
 	}
+	
+	ReleaseMutex(AdaptersInfoMutex);
 	
 	if(FreeBuff)GlobalFreePtr(Tname);
 	
@@ -2059,9 +2154,10 @@ BOOLEAN PacketGetNetInfoEx(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntrie
 BOOLEAN PacketGetNetType(LPADAPTER AdapterObject, NetType *type)
 {
 	PADAPTER_INFO TAdInfo;
-	
+	BOOLEAN ret;	
 	ODS("PacketGetNetType\n");
 
+	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
 	// Find the PADAPTER_INFO structure associated with this adapter 
 	TAdInfo = PacketFindAdInfo(AdapterObject->Name);
 
@@ -2069,14 +2165,17 @@ BOOLEAN PacketGetNetType(LPADAPTER AdapterObject, NetType *type)
 	{
 		// Copy the data
 		memcpy(type, &(TAdInfo->LinkLayer), sizeof(struct NetType));
+		ret = TRUE;
 	}
 	else
 	{
 		ODS("PacketGetNetType: Adapter not found\n");
-		return FALSE;
+		ret =  FALSE;
 	}
 
-	return TRUE;
+	ReleaseMutex(AdaptersInfoMutex);
+
+	return ret;
 }
 
 /* @} */
