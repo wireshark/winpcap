@@ -31,41 +31,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.13 2003/04/17 15:06:57 fulvio Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.14 2003/04/17 15:17:19 fulvio Exp $ (LBL)
  */
 
 
-/** \defgroup remote Remote Capture
-*/
-
-/** \defgroup remote_help Using WinPcap Remote Capture
- *  @ingroup remote
- *  @{
-		\htmlinclude wpcap_remote.htm
- *  @}
-*/
-
-/** \defgroup remote_struct Exported Structures and Definitions
- *  @ingroup remote
- *  @{
- *  @}
-*/
-
-/** \defgroup remote_func Exported Functions
- *  @ingroup remote
- *  @{
- *  @}
-*/
-
-/** \defgroup remote_pri_func Internal Functions
- *  @ingroup remote
- *  @{
- *  @}
-*/
-
-/** \defgroup remote_pri_struct Internal Structures and Definitions
- *  @ingroup remote
-*/
 
 /** @defgroup wpcap_fn Exported functions
  *  @ingroup wpcap
