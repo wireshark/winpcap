@@ -118,6 +118,10 @@ SOURCE=..\..\driver\tme.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\version.rc
+# End Source File
+# Begin Source File
+
 SOURCE=.\WanPacket.cpp
 # End Source File
 # Begin Source File
