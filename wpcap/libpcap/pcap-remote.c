@@ -1390,7 +1390,7 @@ int pcap_setfilter_remote(pcap_t *fp, struct bpf_program *prog)
 
 	Sampling parameters are defined into the 'pcap_t' structure.
 
-	\param fp: the pcap_t descriptor of the device currently opened.
+	\param p: the pcap_t descriptor of the device currently opened.
 
 	\return '0' if everything is OK, '-1' is something goes wrong. The error message is returned
 	in the 'errbuf' member of the pcap_t structure.

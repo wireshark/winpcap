@@ -368,15 +368,37 @@ struct pcap_samp
 
 
 // Exported functions
+
+
+
+/** \name New WinPcap functions
+
+	This section lists the new functions that are able to help considerably in writing
+	WinPcap programs because of their easiness of use.
+ */
+//\{
 pcap_t *pcap_open(const char *source, int snaplen, int flags, int read_timeout, struct pcap_rmtauth *auth, char *errbuf);
 int pcap_createsrcstr(char *source, int type, const char *host, const char *port, const char *name, char *errbuf);
 int pcap_parsesrcstr(const char *source, int *type, char *host, char *port, char *name, char *errbuf);
 int pcap_findalldevs_ex(char *source, struct pcap_rmtauth *auth, pcap_if_t **alldevs, char *errbuf);
 struct pcap_samp *pcap_setsampling(pcap_t *p);
+
+//\}
+// End of new winpcap functions
+
+
+
+/** \name Remote Capture functions
+
+	This section lists the functions that are specific for remote capture.
+ */
+//\{ 
 SOCKET pcap_remoteact_accept(const char *address, const char *port, const char *hostlist, char *connectinghost, struct pcap_rmtauth *auth, char *errbuf);
 int pcap_remoteact_list(char *hostlist, char sep, int size, char *errbuf);
 int pcap_remoteact_close(const char *host, char *errbuf);
 void pcap_remoteact_cleanup();
+//\}
+// End of remote capture functions
 
 
 #endif

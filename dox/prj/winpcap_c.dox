@@ -75,8 +75,8 @@ INPUT                  = ../../Common/Packet32.h \
                          ../../wpcap/Win32-Extensions/Win32-Extensions.h \
                          ../../Examples/pcap_filter/pcap_filter.c \
                          ../../Examples/misc/basic_dump.c \
-                         ../../Examples/TestApp/Testapp.c \
-                         ../../Examples/TG/Tg.c \
+                         ../../Examples/PacketDriver/TestPacketCapture/TestPacketCapture.c \
+                         ../../Examples/PacketDriver/TestPacketSend/TestPacketSend.c \
                          ../main.txt \
                          ../wpcap_tut.txt \
                          ../wpcap_tut1.txt \
