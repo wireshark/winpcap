@@ -28,6 +28,7 @@ copy %1\wpcap\libpcap\win32\include\semaphore.h %2\Include
 
 copy %1\wpcap\libpcap\win32\include\bittypes.h %2\Include
 copy %1\wpcap\libpcap\pcap.h %2\Include
+copy %1\wpcap\libpcap\remote-ext.h %2\Include
 copy %1\wpcap\libpcap\Pcap-int.h %2\Include
 copy %1\wpcap\libpcap\bpf\net\bpf.h %2\Include\net
 copy %1\packetntx\dll\project\packet.a %2\Lib

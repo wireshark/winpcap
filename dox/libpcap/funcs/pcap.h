@@ -31,8 +31,41 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.7 2002/08/01 10:20:25 degioanni Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.8 2003/01/20 08:47:49 degioanni Exp $ (LBL)
  */
+
+
+/** \defgroup remote Remote Capture Section
+*/
+
+/** \defgroup remote_help Using WinPcap Remote Capture
+ *  @ingroup remote
+ *  @{
+		\htmlinclude wpcap_remote.htm
+ *  @}
+*/
+
+/** \defgroup remote_struct Exported Structures and Definitions
+ *  @ingroup remote
+ *  @{
+ *  @}
+*/
+
+/** \defgroup remote_func Exported Functions
+ *  @ingroup remote
+ *  @{
+ *  @}
+*/
+
+/** \defgroup remote_pri_func Internal Functions
+ *  @ingroup remote
+ *  @{
+ *  @}
+*/
+
+/** \defgroup remote_pri_struct Internal Structures and Definitions
+ *  @ingroup remote
+*/
 
 /** @defgroup wpcap_fn Exported functions
  *  @ingroup wpcap
@@ -41,7 +74,7 @@
  */
 
 /*!
-\brief Opens a physical interface for live capture.
+\brief <b>Deprecated: use the pcap_open() instead.</b> Opens a physical interface for live capture.
 
   pcap_open_live()  is  used  to  obtain  a  packet  capture
   descriptor to look at packets on the network.  device is a
@@ -74,7 +107,7 @@
 */
 pcap_t *pcap_open_live(char *device, int snaplen, int promisc, int to_ms, char *ebuf);
 
-/*! \brief Creates a pcap_t structure without starting a capture.
+/*! \brief <b>Deprecated: use the pcap_open() instead.</b> Creates a pcap_t structure without starting a capture.
 
   pcap_open_dead()  is  used for creating a pcap_t structure
   to use when calling the other functions in libpcap.  It is
@@ -85,7 +118,7 @@ pcap_t *pcap_open_live(char *device, int snaplen, int promisc, int to_ms, char *
 */
 pcap_t *pcap_open_dead(int linktype, int snaplen);
 
-/*! \brief Opens a savefile in the tcpdump/libpcap format to read the packets.
+/*! \brief <b>Deprecated: use the pcap_open() instead.</b> Opens a savefile in the tcpdump/libpcap format to read the packets.
 
   pcap_open_offline() is called to open a  "savefile"  for
   reading.   fname  specifies  the name of the file to open.
@@ -139,7 +172,7 @@ int pcap_setnonblock(pcap_t *p, int nonblock, char *errbuf);
 */
 int pcap_getnonblock(pcap_t *p, char *errbuf);
 
-/*! \brief Returns the list of the interfaces  available on the system.
+/*! \brief <b>Deprecated: use the pcap_findalldevs_ex() instead.</b> Returns the list of the interfaces  available on the system.
 
        pcap_findalldevs() constructs a list  of  network  devices
        that  can  be  opened  with  pcap_open_live().  (Note that
@@ -186,7 +219,7 @@ char *pcap_lookupdev(char *errbuf);
 */
 int pcap_lookupnet(char *device, bpf_u_int32 *netp, bpf_u_int32 *maskp, char *errbuf);
 
-/*! \brief Collects a group of packets. Returns when \b cnt packets have been received 
+/*! \brief <b>Deprecated: use the pcap_read_ex() instead.</b> Collects a group of packets. Returns when \b cnt packets have been received 
 or when the timeout set with pcap_open_live() expires.
 
        pcap_dispatch()  is  used  to collect and process packets.
@@ -227,7 +260,7 @@ or when the timeout set with pcap_open_live() expires.
 */
 int pcap_dispatch(pcap_t *p, int cnt, pcap_handler callback, u_char *user);
 
-/*! \brief Collects a group of packets. Returns when \b cnt packets have
+/*! \brief <b>Deprecated: use the pcap_read_ex() instead.</b> Collects a group of packets. Returns when \b cnt packets have
 been received, but doesn't respect the timeout set with pcap_open_live(), 
 therefore it can block forever.
 
