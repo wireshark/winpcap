@@ -97,9 +97,10 @@ SOCKET sockmain;
 	Vice versa, the output that comes from pcap_findalldevs() must be formatted with the new
 	pcap_createsrcstr() before passing the source identifier to the pcap_open().
 
-	\param source: a char* buffer that keeps the 'source', according to the new WinPcap
-	syntax. This source will be examined looking for adapters (local or remote) or pcap
-	files.<br>
+	\param source: a char* buffer that keeps the 'source localtion', according to the new WinPcap
+	syntax. This source will be examined looking for adapters (local or remote) (e.g. source
+	can be 'rpcap://' for local adapters or 'rpcap://host:port' for adapters on a remote host)
+	or pcap files (e.g. source can be 'file://c:/myfolder/').<br>
 	The strings that must be prepended to the 'source' in order to define if we want
 	local/remote adapters or files is defined in the new \link remote_source_string Source 
 	Specification Syntax \endlink.
