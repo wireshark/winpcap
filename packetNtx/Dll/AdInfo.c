@@ -25,9 +25,8 @@
 
 	- the adapter list
 	- the device associated to any adapter and the description of the adapter
-	- physical parameters like the link speed or the link layer type
-	- the IP and link layer addresses 
- */
+	- physical parameters like the linkspeed or the link layer type
+	- the IP and link layer addresses  */
 
 #define UNICODE 1
 
@@ -43,9 +42,13 @@
 #include <ntddndis.h>
 
 LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName);
+BOOL PacketAddFakeNdisWanAdapter();
 
 PADAPTER_INFO AdaptersInfoList = NULL;	///< Head of the adapter information list. This list is populated when packet.dll is linked by the application.
-HANDLE AdaptersInfoMutex;		///< Mutex that protects the adapter information list.
+HANDLE AdaptersInfoMutex;		///< Mutex that protects the adapter information list. NOTE: every API that takes an ADAPTER_INFO as parameter assumes that it has been called with the mutex acquired.
+
+#define FAKE_NDISWAN_ADAPTER_NAME "\\Device\\NPF_GenericNdisWanAdapter"  ///< Name of a fake ndiswan adapter that is always available on 2000/XP/2003, used to capture NCP/LCP packets
+#define FAKE_NDISWAN_ADAPTER_DESCRIPTION "Generic NdisWan adapter, useful to capture NCP/LCP packets" ///< Description of a fake ndiswan adapter that is always available on 2000/XP/2003, used to capture NCP/LCP packets
 
 extern FARPROC GetAdaptersAddressesPointer;
 
@@ -368,6 +371,7 @@ fail:
   must be a valid capture device name.
   \note uses the GetAdaptersAddresses() Ip Helper API function, so it works only on systems where IP Helper API
   provides it (WinXP and successive).
+  \note we suppose that we are called after having acquired the AdaptersInfoMutex mutex
 */
 #ifndef _WINNT4
 BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
@@ -444,6 +448,7 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
   \brief Adds an entry to the adapter description list, gathering its values from the IP Helper API.
   \param IphAd PIP_ADAPTER_INFO IP Helper API structure containing the parameters of the adapter that must be added to the list.
   \return If the function succeeds, the return value is TRUE.
+  \note we suppose that we are called after having acquired the AdaptersInfoMutex mutex
 */
 #ifndef _WINNT4
 BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
@@ -463,9 +468,7 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	
 	// Scan the adapters list to see if this one is already present
 	
-	for(SAdInfo = AdaptersInfoList; 
-	SAdInfo != NULL; 
-	WaitForSingleObject(AdaptersInfoMutex, INFINITE), SAdInfo = SAdInfo->Next, ReleaseMutex(AdaptersInfoMutex))
+	for(SAdInfo = AdaptersInfoList; SAdInfo != NULL; SAdInfo = SAdInfo->Next)
 	{
 		if(strcmp(TName, SAdInfo->Name) == 0)
 		{
@@ -520,7 +523,7 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	{
 		
 	}
-	
+
 	TmpAdInfo->NetworkAddresses = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, MAX_NETWORK_ADDRESSES * sizeof(npf_if_addr));
 	if (TmpAdInfo->NetworkAddresses == NULL) {
 		ODS("PacketGetAdaptersIPH: GlobalAlloc Failed\n");
@@ -556,14 +559,10 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 		TmpAdInfo->Flags = INFO_FLAG_NDISWAN_ADAPTER;
 	}
 	
-	
-	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
-	
 	// Update the AdaptersInfo list
 	TmpAdInfo->Next = AdaptersInfoList;
 	AdaptersInfoList = TmpAdInfo;
 	
-	ReleaseMutex(AdaptersInfoMutex);
 SkipAd:
 
 	return TRUE;
@@ -583,7 +582,6 @@ SkipAd:
 #ifndef _WINNT4
 BOOLEAN PacketGetAdaptersIPH()
 {
-
 	PIP_ADAPTER_INFO AdList = NULL;
 	PIP_ADAPTER_INFO TmpAd;
 	ULONG OutBufLen=0;
@@ -632,6 +630,7 @@ BOOLEAN PacketGetAdaptersIPH()
 */
 BOOLEAN AddAdapter(PCHAR AdName)
 {
+	//this function should acquire the AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
 	DWORD		RegKeySize=0;
 	LONG		Status;
 	LPADAPTER	adapter;
@@ -643,20 +642,23 @@ BOOLEAN AddAdapter(PCHAR AdName)
 	
 	ODS("AddAdapter\n");
 
+	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
 
-	for(TAdInfo = AdaptersInfoList; 
-	TAdInfo != NULL; 
-	WaitForSingleObject(AdaptersInfoMutex, INFINITE), TAdInfo = TAdInfo->Next, ReleaseMutex(AdaptersInfoMutex))
+	for(TAdInfo = AdaptersInfoList; TAdInfo != NULL; TAdInfo = TAdInfo->Next)
 	{
 		if(strcmp(AdName, TAdInfo->Name) == 0)
 		{
 			ODS("AddAdapter: Adapter already present in the list\n");
+			ReleaseMutex(AdaptersInfoMutex);
 			return TRUE;
 		}
 	}
 
 	UAdName = SChar2WChar(AdName);
 
+	//here we could have released the mutex, but what happens if two threads try to add the same adapter? 
+	//The adapter would be duplicated on the linked list
+	
 	// Try to Open the adapter
 	adapter = PacketOpenAdapterNPF((PCHAR)UAdName);
 
@@ -665,6 +667,7 @@ BOOLEAN AddAdapter(PCHAR AdName)
 	if(adapter == NULL)
 	{
 		// We are not able to open this adapter. Skip to the next one.
+		ReleaseMutex(AdaptersInfoMutex);
 		return FALSE;
 	}
 
@@ -673,6 +676,7 @@ BOOLEAN AddAdapter(PCHAR AdName)
 	if (OidData == NULL) {
 		ODS("AddAdapter: GlobalAlloc Failed\n");
 		PacketCloseAdapter(adapter);
+		ReleaseMutex(AdaptersInfoMutex);
 		return FALSE;
 	}
 	
@@ -687,6 +691,7 @@ BOOLEAN AddAdapter(PCHAR AdName)
 		ODS("AddAdapter: GlobalAlloc Failed\n");
 		GlobalFreePtr(OidData);
 		PacketCloseAdapter(adapter);
+		ReleaseMutex(AdaptersInfoMutex);
 		return FALSE;
 	}
 	
@@ -736,6 +741,7 @@ BOOLEAN AddAdapter(PCHAR AdName)
 		PacketCloseAdapter(adapter);
 		GlobalFreePtr(OidData);
 		GlobalFreePtr(TmpAdInfo);
+		ReleaseMutex(AdaptersInfoMutex);
 		return FALSE;
 	}
 	
@@ -765,17 +771,14 @@ BOOLEAN AddAdapter(PCHAR AdName)
 	TmpAdInfo->Flags = INFO_FLAG_NDIS_ADAPTER;	// NdisWan adapters are not exported by the NPF driver,
 									// therefore it's impossible to see them here
 
-	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
-
 	// Update the AdaptersInfo list
 	TmpAdInfo->Next = AdaptersInfoList;
 	AdaptersInfoList = TmpAdInfo;
 
-	ReleaseMutex(AdaptersInfoMutex);
-
 	PacketCloseAdapter(adapter);
 	GlobalFreePtr(OidData);
 
+	ReleaseMutex(AdaptersInfoMutex);
 	return TRUE;
 }
 
@@ -961,83 +964,87 @@ nt4:
 */
 BOOLEAN PacketAddAdapterDag(PCHAR name, PCHAR description, BOOLEAN IsAFile)
 {
+	//this function should acquire the AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
 	CHAR ebuf[DAGC_ERRBUF_SIZE];
 	PADAPTER_INFO TmpAdInfo;
 	dagc_t *dagfd;
 
-			//
-			// Allocate a descriptor for this adapter
-			//			
-			TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));
-			if (TmpAdInfo == NULL) 
-			{
-				ODS("PacketAddAdapterDag: GlobalAlloc Failed\n");
-				return FALSE;
-			}
-			
-			// Copy the device name and description
-			_snprintf(TmpAdInfo->Name, 
-				sizeof(TmpAdInfo->Name), 
-				"%s", 
-				name);
-			
-			_snprintf(TmpAdInfo->Description, 
-				sizeof(TmpAdInfo->Description), 
-				"%s", 
-				description);
-			
-			if(IsAFile)
-				TmpAdInfo->Flags = INFO_FLAG_DAG_FILE;
-			else
-				TmpAdInfo->Flags = INFO_FLAG_DAG_CARD;
+	//XXX what about checking if the adapter already exists???
+	
+	//
+	// Allocate a descriptor for this adapter
+	//			
+	//here we do not acquire the mutex, since we are not touching the list, yet.
+    TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));
+	if (TmpAdInfo == NULL) 
+	{
+		ODS("PacketAddAdapterDag: GlobalAlloc Failed\n");
+		return FALSE;
+	}
 
-			if(p_dagc_open)
-				dagfd = p_dagc_open(name, 0, ebuf);
-			else
-				dagfd = NULL;
+	// Copy the device name and description
+	_snprintf(TmpAdInfo->Name, 
+		sizeof(TmpAdInfo->Name), 
+		"%s", 
+		name);
 
-			if(!dagfd)
-			{
-				GlobalFreePtr(TmpAdInfo);
-				return FALSE;
-			}
+	_snprintf(TmpAdInfo->Description, 
+		sizeof(TmpAdInfo->Description), 
+		"%s", 
+		description);
 
-			TmpAdInfo->LinkLayer.LinkType = p_dagc_getlinktype(dagfd);
-						
-			switch(p_dagc_getlinktype(dagfd)) 
-			{
-			case TYPE_HDLC_POS:
-				TmpAdInfo->LinkLayer.LinkType = NdisMediumCHDLC; // Note: custom linktype, NDIS doesn't provide an equivalent
-				break;
-			case -TYPE_HDLC_POS:
-				TmpAdInfo->LinkLayer.LinkType = NdisMediumPPPSerial; // Note: custom linktype, NDIS doesn't provide an equivalent
-				break;
-			case TYPE_ETH:
-				TmpAdInfo->LinkLayer.LinkType = NdisMedium802_3;
-				break;
-			case TYPE_ATM: 
-				TmpAdInfo->LinkLayer.LinkType = NdisMediumAtm;
-				break;
-			default:
-				TmpAdInfo->LinkLayer.LinkType = NdisMediumNull; // Note: custom linktype, NDIS doesn't provide an equivalent
-				break;
-			}			
+	if(IsAFile)
+		TmpAdInfo->Flags = INFO_FLAG_DAG_FILE;
+	else
+		TmpAdInfo->Flags = INFO_FLAG_DAG_CARD;
 
-			TmpAdInfo->LinkLayer.LinkSpeed = (p_dagc_getlinkspeed(dagfd) == -1)?
-				100000000:  // Unknown speed, default to 100Mbit
-				p_dagc_getlinkspeed(dagfd) * 1000000; 
+	if(p_dagc_open)
+		dagfd = p_dagc_open(name, 0, ebuf);
+	else
+		dagfd = NULL;
 
-			p_dagc_close(dagfd);
+	if(!dagfd)
+	{
+		GlobalFreePtr(TmpAdInfo);
+		return FALSE;
+	}
 
-			WaitForSingleObject(AdaptersInfoMutex, INFINITE);
-			
-			// Update the AdaptersInfo list
-			TmpAdInfo->Next = AdaptersInfoList;
-			AdaptersInfoList = TmpAdInfo;
-			
-			ReleaseMutex(AdaptersInfoMutex);
+	TmpAdInfo->LinkLayer.LinkType = p_dagc_getlinktype(dagfd);
 
-			return TRUE;
+	switch(p_dagc_getlinktype(dagfd)) 
+	{
+	case TYPE_HDLC_POS:
+		TmpAdInfo->LinkLayer.LinkType = NdisMediumCHDLC; // Note: custom linktype, NDIS doesn't provide an equivalent
+		break;
+	case -TYPE_HDLC_POS:
+		TmpAdInfo->LinkLayer.LinkType = NdisMediumPPPSerial; // Note: custom linktype, NDIS doesn't provide an equivalent
+		break;
+	case TYPE_ETH:
+		TmpAdInfo->LinkLayer.LinkType = NdisMedium802_3;
+		break;
+	case TYPE_ATM: 
+		TmpAdInfo->LinkLayer.LinkType = NdisMediumAtm;
+		break;
+	default:
+		TmpAdInfo->LinkLayer.LinkType = NdisMediumNull; // Note: custom linktype, NDIS doesn't provide an equivalent
+		break;
+	}			
+
+	TmpAdInfo->LinkLayer.LinkSpeed = (p_dagc_getlinkspeed(dagfd) == -1)?
+		100000000:  // Unknown speed, default to 100Mbit
+	p_dagc_getlinkspeed(dagfd) * 1000000; 
+
+	p_dagc_close(dagfd);
+
+	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
+
+	// Update the AdaptersInfo list
+	TmpAdInfo->Next = AdaptersInfoList;
+	AdaptersInfoList = TmpAdInfo;
+
+	ReleaseMutex(AdaptersInfoMutex);
+
+	return TRUE;
 }
 
 /*!
@@ -1076,6 +1083,7 @@ BOOLEAN PacketGetAdaptersDag()
 */
 PADAPTER_INFO PacketFindAdInfo(PCHAR AdapterName)
 {
+	//this function should NOT acquire the AdaptersInfoMutex, since it does return an ADAPTER_INFO structure
 	PADAPTER_INFO TAdInfo;
 	
 	TAdInfo = AdaptersInfoList;
@@ -1084,9 +1092,7 @@ PADAPTER_INFO PacketFindAdInfo(PCHAR AdapterName)
 	{
 		if(strcmp(TAdInfo->Name, AdapterName) == 0) break;
 
-		WaitForSingleObject(AdaptersInfoMutex, INFINITE);
 		TAdInfo = TAdInfo->Next;
-		ReleaseMutex(AdaptersInfoMutex);
 	}
 
 	return TAdInfo;
@@ -1102,7 +1108,10 @@ PADAPTER_INFO PacketFindAdInfo(PCHAR AdapterName)
 */
 BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 {
+	//this function should acquire the AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
 	PADAPTER_INFO TAdInfo, PrevAdInfo;
+	
+	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
 	
 	PrevAdInfo = TAdInfo = AdaptersInfoList;
 
@@ -1113,6 +1122,12 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 	{
 		if(strcmp(TAdInfo->Name, AdapterName) == 0)
 		{
+			if (strcmp(AdapterName, FAKE_NDISWAN_ADAPTER_NAME) == 0)
+			{
+				ReleaseMutex(AdaptersInfoMutex);
+				return TRUE;
+			}
+
 			if(TAdInfo == AdaptersInfoList)
 			{
 				AdaptersInfoList = TAdInfo->Next;
@@ -1122,7 +1137,8 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 				PrevAdInfo->Next = TAdInfo->Next;
 			}
 
-			GlobalFreePtr(TAdInfo->NetworkAddresses);
+			if (TAdInfo->NNetworkAddresses > 0)
+				GlobalFreePtr(TAdInfo->NetworkAddresses);
 			GlobalFreePtr(TAdInfo);
 
 			break;
@@ -1130,10 +1146,10 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 
 		PrevAdInfo = TAdInfo;
 
-		WaitForSingleObject(AdaptersInfoMutex, INFINITE);
 		TAdInfo = TAdInfo->Next;
-		ReleaseMutex(AdaptersInfoMutex);
 	}
+
+	ReleaseMutex(AdaptersInfoMutex);
 
 	//
 	// Now obtain the information about this adapter
@@ -1167,8 +1183,11 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 */
 void PacketPopulateAdaptersInfoList()
 {
+	//this function should acquire the AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
 	PADAPTER_INFO TAdInfo;
 	PVOID Mem1, Mem2;
+
+	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
 
 	if(AdaptersInfoList)
 	{
@@ -1179,11 +1198,10 @@ void PacketPopulateAdaptersInfoList()
 			Mem1 = TAdInfo->NetworkAddresses;
 			Mem2 = TAdInfo;
 			
-			WaitForSingleObject(AdaptersInfoMutex, INFINITE);
 			TAdInfo = TAdInfo->Next;
-			ReleaseMutex(AdaptersInfoMutex);
 			
-			GlobalFreePtr(Mem1);
+			if (Mem1 != NULL)
+				GlobalFreePtr(Mem1);
 			GlobalFreePtr(Mem2);
 		}
 		
@@ -1204,9 +1222,14 @@ void PacketPopulateAdaptersInfoList()
 		ODS("PacketPopulateAdaptersInfoList: failed to get adapters from the IP Helper API!\n");
 	}
 
+	if (!PacketAddFakeNdisWanAdapter())
+	{
+		ODS("PacketPopulateAdaptersInfoList: adding fake NdisWan adapter failed.\n");
+	}
+
 #ifdef HAVE_DAG_API
 	if(p_dagc_open == NULL)	
-		return;	// dagc.dll not present on this system.
+	{}	// dagc.dll not present on this system.
 	else
 	{
 		if(!PacketGetAdaptersDag())
@@ -1218,6 +1241,54 @@ void PacketPopulateAdaptersInfoList()
 #endif // HAVE_DAG_API
 
 #endif // _WINNT4
+
+	ReleaseMutex(AdaptersInfoMutex);
 }
 
+#ifndef _WINNT4
 
+BOOL PacketAddFakeNdisWanAdapter()
+{
+	//this function should acquire the AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
+	PADAPTER_INFO TmpAdInfo, SAdInfo;
+	
+	// Scan the adapters list to see if this one is already present
+	
+	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
+	
+	for(SAdInfo = AdaptersInfoList; SAdInfo != NULL; SAdInfo = SAdInfo->Next)
+	{
+		if(strcmp(FAKE_NDISWAN_ADAPTER_NAME, SAdInfo->Name) == 0)
+		{
+			ODS("PacketAddFakeNdisWanAdapter: Adapter already present in the list\n");
+			ReleaseMutex(AdaptersInfoMutex);
+			return TRUE;
+		}
+	}
+
+	TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));
+	if (TmpAdInfo == NULL) 
+	{
+		ODS("PacketAddFakeNdisWanAdapter: GlobalAlloc Failed\n");
+		ReleaseMutex(AdaptersInfoMutex);
+		return FALSE;
+	}
+
+	strcpy(TmpAdInfo->Name, FAKE_NDISWAN_ADAPTER_NAME);
+	strcpy(TmpAdInfo->Description, FAKE_NDISWAN_ADAPTER_DESCRIPTION);
+	TmpAdInfo->LinkLayer.LinkType = NdisMedium802_3;
+	TmpAdInfo->LinkLayer.LinkSpeed = 10 * 1000 * 1000; //we emulate a fake 10MBit Ethernet
+	TmpAdInfo->Flags = INFO_FLAG_NDISWAN_ADAPTER;
+	memset(TmpAdInfo->MacAddress,'0',6);
+	TmpAdInfo->MacAddressLen = 6;
+	TmpAdInfo->NetworkAddresses = NULL;
+	TmpAdInfo->NNetworkAddresses = 0;
+
+	TmpAdInfo->Next = AdaptersInfoList;
+	AdaptersInfoList = TmpAdInfo;
+	ReleaseMutex(AdaptersInfoMutex);
+
+	return TRUE;
+}
+
+#endif
