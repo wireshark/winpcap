@@ -309,6 +309,7 @@ VOID NPF_OpenAdapterComplete(
 	else {
 		NdisAcquireSpinLock( &Open->BufLock );
 		n_Opened_Instances++;
+    	TIME_SYNCHRONIZE(&G_Start_Time);
 		NdisReleaseSpinLock( &Open->BufLock );
 
 		IF_LOUD(DbgPrint("Opened Instances:%d", n_Opened_Instances);)
