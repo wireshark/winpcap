@@ -1,7 +1,7 @@
 /** @ingroup wpcapsamps
  */
 
-/** @defgroup wpcapsamp2 pcap_filter sample
+/** @defgroup wpcapsamp2 pcap_filter example
 @{
 
 \include pcap_filter/pcap_filter.c

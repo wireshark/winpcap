@@ -5,20 +5,23 @@
 /** @defgroup wpcap_tut3 Opening an adapter and capturing the packets
  *  @{
 
-Let's complicate a bit the previous sample, adding the ability to open an adapter, capture the transiting traffic and print some information on every packet transiting on the network.
+Now that we've seen how to obtain an adapter to play with, let's start the real job, opening the device and capturing the transiting traffic. In this lesson we'll write a program that will print some information about every packet transiting on the network.
 
-The function that opens a capture device is pcap_open_live(). Among its parameters, \e snaplen and \e promisc deserve a better explanation. 
+The function that opens a capture device is pcap_open_live(). Among its parameters, \e snaplen, \e promisc and \e to_ms deserve a better explanation. 
 
-\e snaplen specifies the portion of the packet to capture. On some OSes (like xBSD and Win32), the packet driver gives the possibility to capture only a part of the packets: this decreases the amount of data to copy and therefore improves the efficiency of the capture. In this case we use a value (65536) higher than the greatest MTU that we could encounter, in this way we are sure that the application will always receive the whole packet.
+\e snaplen specifies the portion of the packet to capture. On some OSes (like xBSD and Win32), the packet driver gives the possibility to capture only a part of any packet: this decreases the amount of data to copy and therefore improves the efficiency of the capture. In this case we use a value (65536) higher than the greatest MTU that we could encounter, therefore we are sure that the application will always receive the whole packet.
 
-\e promisc specifies if the adapter will be put in promiscuous mode. In normal situations, an adapter extracts from the network only the traffic to or from is; the traffic among other hosts is ignored also if the adapter is on a shared medium. Instead, when the adapter is in promiscuous mode it accepts the whole traffic: this means that on shared media (like non-switched Ethernet) the sniffer will be able to capture the packets of other hosts. Promiscuous mode is the default for most capture applications, so we enable it in the following program.
+\e promisc indicates if the adapter will be put in promiscuous mode. In normal situations, an adapter extracts from the network only the traffic destined to it; the packets exchanged by other hosts are therefore ignored. Instead, when the adapter is in promiscuous mode it accepts the whole traffic: this means that on shared media (like non-switched Ethernet) WinPcap will be able to capture the packets of other hosts as well. Promiscuous mode is the default for most capture applications, so we enable it in the following example.
+
+\e to_ms specifies the read timeout, in milliseconds. A read on the adapter (for example with pcap_dispatch() or pcap_read_ex()) will always return after \e to_ms milliseconds, also if no packets are available from the network. Moreover, \e to_ms defines the interval between statistical report if the adapter is in statistical mode (see the lesson "\ref wpcap_tut9" for information about statistical mode). Setting \e to_ms to 0 means no timeout, a read on the adapter never returns if no packets arrive. A -1 timeout on the other side causes a read on the adapter to always return immediately.
+
 
 \include misc/basic_dump.c
 
-Once the adapter is opened, the capture can be started with pcap_dispatch() or pcap_loop(). The two functions are very similar, the difference is that pcap_ dispatch() is granted to return when the timeout set with pcap_open_live() expires, also if no packets arrived meanwhile, while pcap_loop() doesn't return until \e cnt packets have been captured, so it can block for an arbitrary period on a few utilized network. In this sample We used pcap_loop().
+Once the adapter is opened, the capture can be started with pcap_dispatch() or pcap_loop(). These two functions are very similar, the difference is that pcap_ dispatch() is granted to return when the expires while pcap_loop() doesn't return until \e cnt packets have been captured, so it can block for an arbitrary period on a few utilized network. pcap_loop() is enough for the purpose of this sample, while pcap_dispatch() is normally used in more complex program.
 
-pcap_loop() has a \e callback parameter, pointing to a function that will receive the packets, packet_handler in this case. This function is invoked by libpcap for every new packet coming from the network and receives a generic status (corresponding to the \e user parameter of pcap_loop()), an header with some information on the packet like the timestamp and the length, and finally the actual data of the packet including the various protocol headers. Note that The link layer CRC is normally not present, because it is removed by the network adapter after frame validation. Note also that most adapters discard the packets with wrong CRC, therefore WinPcap is not able to capture them.
+Both these functions have a \e callback parameter, pointing to a function that will receive the packets, packet_handler in this case. This function is invoked by libpcap for every new packet coming from the network and receives a generic status (corresponding to the \e user parameter of pcap_loop() and pcap_dispatch()), an header with some information on the packet like the timestamp and the length, and finally the actual data of the packet including all the protocol headers. Note that the MAC CRC is normally not present, because it is removed by the network adapter after frame validation. Note also that most adapters discard the packets with wrong CRC, therefore WinPcap is normally not able to capture them.
 
-The code just proposed extracts from the pcap_pkthdr header the timestamp and the length of the packet and prints them on the screen.
+The just proposed example extracts the timestamp and the length of every packet from the pcap_pkthdr header and prints them on the screen.
 
 @}*/

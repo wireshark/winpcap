@@ -5,22 +5,22 @@
 /** @defgroup wpcap_tut5 Filtering the traffic
  *  @{
 
-One of the most powerful features offered by WinPcap (and by libpcap as well) is the filtering engine. It provides a very efficient way to receive only subsets of the network traffic, and is (usually) integrated with the capture mechanism provided by the OS. The functions to use when packet filtering is needed are pcap_compile() and pcap_setfilter().
+One of the most powerful features offered by WinPcap (and by libpcap as well) is the filtering engine. It provides a very efficient way to receive only subsets of the network traffic, and is (usually) integrated with the capture mechanism provided by the OS. The functions to use to filter the packets are pcap_compile() and pcap_setfilter().
 
-pcap_compile() compiles a filter, i.e. takes a string with an high level boolean expression and produces a low-level filtering program that can be interpreted by the packet driver. The syntax of the boolean expression can be found in the \ref language section of this documantation.
+pcap_compile() compiles a filter, i.e. takes a string with an high level boolean expression and produces a low-level filtering binary that can be interpreted by the packet driver. The syntax of the boolean expression can be found in the \ref language section of this documentation.
 
-pcap_setfilter() associates a filter to a capture session, sending it to the kernel driver. From this moment, the filter will be applied to all the packets coming from the network, and all the conformant packets will be actually captured.
+pcap_setfilter() associates a filter to a capture session in the kernel driver. From this moment, the filter will be applied to all the packets coming from the network, and all the conformant packets will be actually copied to the application.
 
 The following code shows how to compile and set a filter. Note that we must retrieve the netmask from the pcap_if structure that describes the adapter, because some filters created by pcap_compile() require it.
 
-The filter passed to pcap_compile() in this code snippet is "ip and tcp", that means "keep only the tcp packets encapsulated in ipv4 and deliver them to the application".
+The filter passed to pcap_compile() in this code snippet is "ip and tcp", that means "keep only the packets that are both IPv4 and TCP and deliver them to the application".
 
 \code
 	if(d->addresses != NULL)
 		/* Retrieve the mask of the first address of the interface */
 		netmask=((struct sockaddr_in *)(d->addresses->netmask))->sin_addr.S_un.S_addr;
 	else
-		/* If the interface is without addresses we suppose to be in a C class network */
+		/* If the interface is without an address we suppose to be in a C class network */
 		netmask=0xffffff; 
 
 

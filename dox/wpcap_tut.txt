@@ -6,10 +6,10 @@
  *  @{
 
 
-This section shows how to program WinPcap, exploiting the main features of its API. It is organized as a tutorial, subdivided in a set of lessons that will guide the reader, step by step, inside the art of programming WinPcap, from the simple basic functions (obtining the adapters list, opening an adapter) to the more comple ones (sending queues, gathering traffic ststics). Several code snippets and tiny programs are provided as references: all of them are linked to the rest of the documentation, therefore it is possible to click on the functions and data structure to jump to their description.
+This section shows how to exploit the different features of the WinPcap API. It is organized as a tutorial, subdivided in a set of lessons that will guide the reader step by step inside the art of programming WinPcap, from the simple basic functions (obtaining the adapters list, starting a capture) to the most advanced ones (handling send queues, gathering statistics about network traffic). 
 
-All the samples are written in plain C, so a basic knowledge of C programming is required. Also, since this is a tutorial
-on a library for raw networking, good knowledge of networks and protocols is assumed.
+Several code snippets, as well as simple but complete programs are provided as a reference: all this source code contains links to the rest of the manual, therefore it is possible to click on the functions and data structure to jump to their documentation.
 
+The samples are written in plain C, so a basic knowledge of C programming is required. Also, since this is a tutorial on a library for raw networking, good knowledge of networks and protocols is assumed.
 
 @}*/

@@ -6,13 +6,15 @@
 
 \htmlonly&nbsp;
 <h2>How to create an application that uses wpcap.dll</h2>
-<p>To create an application that uses wpcap.dll, follow the next steps:</p>
+<p>To create an application that uses wpcap.dll with Microsoft Visual C++, follow the next steps:</p>
 <ul>
   <li>Include the file <i>pcap.h</i> at the beginning of every source file that
     uses the functions exported by library.</li>
+  <li>If your program uses Win32 specific functions of WinPcap, remember to include <i>WPCAP</i>
+    among the preprocessor definitions.</li>
   <li>Set the options of the linker to include the <i>wpcap.lib</i> library
-    file. <i>wpcap.lib</i> is generated compiling the wpcap source code and can
-    be found in the developer's pack.
+    file. <i>wpcap.lib</i> is generated compiling the WinPcap source code and can
+    be found in the WinPcap developer's pack.
   <li>Set the options of the linker to include the winsock library file (for
     example <i>wsock32.lib</i>). This file is distributed with the C compiler
     and contains the socket functions for Windows. It is needed by some libpcap
@@ -20,6 +22,9 @@
 </ul>
 <p><b>Remember that</b>:</p>
 <ul>
+  <li>To add a preprocessor definition, you must select <em>Settings</em> from the <em>Project</em> menu, then select <em>C/C++</em>
+    from the tab control, and under the category <i>General</i>, you must add
+    the definition under the Preprocessor Definitions text box.
   <li>To add a new library to the project with Microsoft Visual C++, you must
     select <em>Settings</em> from the <em>Project</em> menu, then select <em>Link</em>
     from the tab control, and then add the name of the new library in the <em>Objcet/library
@@ -28,42 +33,47 @@
     you must select <em>Options</em> from the <em>Tools</em> menu, then <em>Link</em>
     from the tab control, <em>library files</em> from the <em>show directories
     for</em> combobox, and the add the path in the <em>directories</em> box.
-  <li>To add a new path where Microsoft Visual C++ will look for the include
+  <li>To add a new path where Microsoft Visual C++ will look for include
     files, you must select <em>Options</em> from the <em>Tools</em> menu, then <em>Link</em>
     from the tab control, <em>include files</em> from the <em>show directories
     for</em> combobox, and the add the path in the <em>directories</em> box.</li>
 </ul>
 <h2>Sample programs</h2>
-<p>A couple of sample programs are provided to show how to use wpcap.dll. The
+<p>
+\endhtmlonly</p>
+<p>A couple of sample programs are provided to show the usage of the WinPcap API. The
 source of the examples, along with all the files needed to compile and run
-them, can be found in the <a href="http://netgoup.polito.it/winpcap/install/bin/WPdpack.zip">Developer's
+them, can be found in the <a href="http://winpcap.polito.it/install/bin">Developer's
 Pack</a>.&nbsp; For didactic purpose we provide here a browsable
-version of the code: it is possible to click on the variables and functions to jump the documentation of each of them.</p>
-\endhtmlonly
-\ref wpcapsamp1
-\htmlonly
-<p>This sample program reads the packets from a file or a network adapter,
-depending on a command line switch. It prints the timestamp, the length and the
-data of the packets. Once compiled, it can run on all the Win32 platforms. It can be compiled
+version of the code: it is possible to click on the variables and functions to jump the documentation of each of them.
+For a more complete and better documented set of samples, give a look at the
+tutorial section (\ref wpcap_tut).</p>
+&nbsp;
+<p>&nbsp;</p>
+<p>
+\ref wpcapsamp1</p>
+<p>This program reads the packets from a file or a network adapter,
+depending on a command line switch. If a source is not provided, the program
+shows a list of available adapters and gives the possibility to choose one of
+them. Once the capture is started, the program prints the timestamp, the length and the
+raw content of the packets. Once compiled, it can run on all the Win32 platforms. It can be compiled
 to run on Unix as well (the makefile is provided).</p>
-\endhtmlonly
-\ref wpcapsamp2
-\htmlonly
+&nbsp;
+<p>
+\ref wpcapsamp2</p>
 <p>This is a more complete example of libpcap usage. It shows, among other
 things, how to create and set filters and how to save a capture to disk. It can
 be compiled under Win32 or Unix (projects and makefiles are provided).
 Pcap_filter (pf.exe)
-is a general-purpose packet filter: it receives as input parameters a source of
+is a general-purpose packet filtering application: its input parameters are a source of
 packets (it can be a physical interface or a file), a filter and an output file.
-It takes packets from the source until CTRL+C is pressed, applies the filter to
-the incoming packets and saves them in the output file if they satisfy the
-filter. Pcap_filter can be used to capture packets from network according to a
+It takes packets from the source until CTRL+C is pressed or the whole file is
+processed, applies the filter to
+the incoming packets and saves them to the output file if they satisfy the
+filter. Pcap_filter can be used to dump network data according to a
 particular filter, but also to extract a set of packets from a previously saved
-file. The format of input and output files is the libpcap one, i.e. same of
+file. The format of both input and output files is the libpcap one, i.e. same of
 WinDump, tcpdump and many other network tools.</p>
-<p>
-
-\endhtmlonly&nbsp;</p>
 <p>
 @}
 */</p>

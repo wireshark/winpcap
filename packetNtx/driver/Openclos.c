@@ -225,10 +225,6 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 
 	//allocate the spinlock for the buffer pointers
     NdisAllocateSpinLock(&Open->BufLock);
-
-	// Get the absolute value of the system boot time.
-	// This is used for timestamp conversion.
-	TIME_SYNCHRONIZE(&G_Start_Time);
 	
     //
     //  link up the request stored in our open block
@@ -307,14 +303,15 @@ VOID NPF_OpenAdapterComplete(
         ExFreePool(Open);
     }
 	else {
-		NdisAcquireSpinLock( &Open->BufLock );
+		NdisAcquireSpinLock(&Opened_Instances_Lock);
 		n_Opened_Instances++;
-    	TIME_SYNCHRONIZE(&G_Start_Time);
-		NdisReleaseSpinLock( &Open->BufLock );
-
+		NdisReleaseSpinLock(&Opened_Instances_Lock);
 		IF_LOUD(DbgPrint("Opened Instances:%d", n_Opened_Instances);)
-	}
 
+		// Get the absolute value of the system boot time.
+		// This is used for timestamp conversion.
+		TIME_SYNCHRONIZE(&G_Start_Time);
+	}
 
     Irp->IoStatus.Status = Status;
     Irp->IoStatus.Information = 0;
