@@ -147,135 +147,36 @@ DriverEntry(
     DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL]  = NPF_IoControl;
     DriverObject->DriverUnload = NPF_Unload;
 
-    //  Get the name of the Packet driver and the name of the NIC driver
-    //  to bind to from the registry
-    Status=NPF_ReadRegistry(
-               &BindString,
-               &ExportString,
-               RegistryPath
-               );
+ 	bindP = getAdaptersList();
 
-    if (Status != STATUS_SUCCESS) {
+	if (bindP == NULL) 
+	{
+		IF_LOUD(DbgPrint("Adapters not found in the registry, try to copy the bindings of TCP-IP.\n");)
 
-		IF_LOUD(DbgPrint("Trying dynamic binding\n");)	
-
-		bindP = getAdaptersList();
-
-		if (bindP == NULL) {
-			IF_LOUD(DbgPrint("Adapters not found in the registry, try to copy the bindings of TCP-IP.\n");)
-
-			tcpBindingsP = getTcpBindings();
+		tcpBindingsP = getTcpBindings();
 			
-			if (tcpBindingsP == NULL){
-				IF_LOUD(DbgPrint("TCP-IP not found, quitting.\n");)
-				goto RegistryError;
-			}
-			
-			bindP = (WCHAR*)tcpBindingsP;
-			bindT = (WCHAR*)(tcpBindingsP->Data);
-			
-		}
-		else {
-
-			bindT = bindP;
-
-		}
-
-		for (; *bindT != UNICODE_NULL; bindT += (macName.Length + sizeof(UNICODE_NULL)) / sizeof(WCHAR)) 
+		if (tcpBindingsP == NULL)
 		{
-			RtlInitUnicodeString(&macName, bindT);
-			createDevice(DriverObject, &macName, NdisProtocolHandle);
+			IF_LOUD(DbgPrint("TCP-IP not found, quitting.\n");)
+			goto RegistryError;
 		}
+			
+		bindP = (WCHAR*)tcpBindingsP;
+		bindT = (WCHAR*)(tcpBindingsP->Data);
+			
+	}
+	else 
+	{
+		bindT = bindP;
+	}
 
-		return STATUS_SUCCESS;
+	for (; *bindT != UNICODE_NULL; bindT += (macName.Length + sizeof(UNICODE_NULL)) / sizeof(WCHAR)) 
+	{
+		RtlInitUnicodeString(&macName, bindT);
+		createDevice(DriverObject, &macName, NdisProtocolHandle);
+	}
 
-    }
-
-    BindStringSave   = BindString;
-    ExportStringSave = ExportString;
-
-
-    //
-    //  create a device object for each entry
-    //
-    while (*BindString!= UNICODE_NULL && *ExportString!= UNICODE_NULL) {
-        //
-        //  Create a counted unicode string for both null terminated strings
-        //
-        RtlInitUnicodeString(
-            &MacDriverName,
-            BindString
-            );
-
-        RtlInitUnicodeString(
-            &UnicodeDeviceName,
-            ExportString
-            );
-
-        //
-        //  Advance to the next string of the MULTI_SZ string
-        //
-        BindString   += (MacDriverName.Length+sizeof(UNICODE_NULL))/sizeof(WCHAR);
-
-        ExportString += (UnicodeDeviceName.Length+sizeof(UNICODE_NULL))/sizeof(WCHAR);
-
-        IF_LOUD(DbgPrint("NPF: DeviceName=%ws  MacName=%ws\n",UnicodeDeviceName.Buffer,MacDriverName.Buffer);)
-
-        //
-        //  Create the device object
-        //
-        Status = IoCreateDevice(
-                    DriverObject,
-                    sizeof(DEVICE_EXTENSION),
-                    &UnicodeDeviceName,
-                    FILE_DEVICE_PROTOCOL,
-                    0,
-                    FALSE,
-                    &DeviceObject
-                    );
-
-        if (Status != STATUS_SUCCESS) {
-            IF_LOUD(DbgPrint("NPF: IoCreateDevice() failed:\n");)
-
-            break;
-        }
-
-        DevicesCreated++;
-
-
-        DeviceObject->Flags |= DO_DIRECT_IO;
-        DeviceExtension  =  (PDEVICE_EXTENSION) DeviceObject->DeviceExtension;
-        DeviceExtension->DeviceObject = DeviceObject;
-
-        //
-        //  Save the the name of the MAC driver to open in the Device Extension
-        //
-
-        DeviceExtension->AdapterName=MacDriverName;
-
-        if (DevicesCreated == 1) {
-
-            DeviceExtension->BindString   = NULL;
-            DeviceExtension->ExportString = NULL;
-        }
-
-
-        DeviceExtension->NdisProtocolHandle=NdisProtocolHandle;
-
-
-    }
-
-    if (DevicesCreated > 0) {
-        //
-        //  Managed to create at least on device.
-        //
-        return STATUS_SUCCESS;
-    }
-
-
-
-    ExFreePool(BindStringSave);
-    ExFreePool(ExportStringSave);
+	return STATUS_SUCCESS;
 
 RegistryError:
 
@@ -492,103 +393,156 @@ PKEY_VALUE_PARTIAL_INFORMATION getTcpBindings(void)
 //-------------------------------------------------------------------
 
 BOOLEAN createDevice(IN OUT PDRIVER_OBJECT adriverObjectP,
-                     IN PUNICODE_STRING amacNameP, NDIS_HANDLE aProtoHandle)
+					 IN PUNICODE_STRING amacNameP, NDIS_HANDLE aProtoHandle)
 {
-  NTSTATUS status;
-  PDEVICE_OBJECT devObjP;
-  UNICODE_STRING deviceName;
-  BOOLEAN result = FALSE;
+	NTSTATUS status;
+	PDEVICE_OBJECT devObjP;
+	UNICODE_STRING deviceName;
+	UNICODE_STRING deviceSymLink;
 
-  IF_LOUD(DbgPrint("\n\ncreateDevice for MAC %ws\n", amacNameP->Buffer);)
-  if (RtlCompareMemory(amacNameP->Buffer, devicePrefix.Buffer,
-                       devicePrefix.Length) < devicePrefix.Length) {
-    return result;
-  }
-
-  deviceName.Length = 0;
-  deviceName.MaximumLength = (USHORT)(amacNameP->Length + NPF_Prefix.Length + sizeof(UNICODE_NULL));
-  deviceName.Buffer = ExAllocatePoolWithTag(PagedPool, deviceName.MaximumLength, '3PWA');
- 
-  if (deviceName.Buffer != NULL) 
-  {
-    RtlAppendUnicodeStringToString(&deviceName, &devicePrefix);
-    RtlAppendUnicodeStringToString(&deviceName, &NPF_Prefix);
-    RtlAppendUnicodeToString(&deviceName, amacNameP->Buffer +
-                             devicePrefix.Length / sizeof(WCHAR));
-    
-	IF_LOUD(DbgPrint("\n\nDevice name: %ws\n", deviceName.Buffer);)
-    
-	status = IoCreateDevice(adriverObjectP, sizeof(PDEVICE_EXTENSION),
-                            &deviceName, FILE_DEVICE_TRANSPORT, 0, FALSE,
-                            &devObjP);
-
-    if (NT_SUCCESS(status)) 
+	IF_LOUD(DbgPrint("\n\ncreateDevice for MAC %ws\n", amacNameP->Buffer););
+	if (RtlCompareMemory(amacNameP->Buffer, devicePrefix.Buffer,
+		devicePrefix.Length) < devicePrefix.Length) 
 	{
-      PDEVICE_EXTENSION devExtP = (PDEVICE_EXTENSION)devObjP->DeviceExtension;
+		return FALSE;
+	}
 
-	  IF_LOUD(DbgPrint("\n\nDevice created succesfully\n");)
+	deviceName.Length = 0;
+	deviceName.MaximumLength = (USHORT)(amacNameP->Length + NPF_Prefix.Length + sizeof(UNICODE_NULL));
+	deviceName.Buffer = ExAllocatePoolWithTag(PagedPool, deviceName.MaximumLength, '3PWA');
 
-      devObjP->Flags |= DO_DIRECT_IO;
-      
-	  devExtP->DeviceObject = devObjP;
-      RtlInitUnicodeString(&devExtP->AdapterName,amacNameP->Buffer);   
-	  devExtP->BindString = NULL;
-      devExtP->ExportString = NULL;
-	  devExtP->NdisProtocolHandle=aProtoHandle;
+	if (deviceName.Buffer == NULL)
+		return FALSE;
 
-    }
+	deviceSymLink.Length = 0;
+	deviceSymLink.MaximumLength =(USHORT)(amacNameP->Length-devicePrefix.Length 
+		+ symbolicLinkPrefix.Length 
+		+ NPF_Prefix.Length 
+		+ sizeof(UNICODE_NULL));
 
-    else IF_LOUD(DbgPrint("\n\nIoCreateDevice status = %x\n", status););
+	deviceSymLink.Buffer = ExAllocatePoolWithTag(NonPagedPool, deviceSymLink.MaximumLength, '3PWA');
 
-	ExFreePool(deviceName.Buffer);
-  }
-  
-  return result;
+	if (deviceSymLink.Buffer  == NULL)
+	{
+		ExFreePool(deviceName.Buffer);
+		return FALSE;
+	}
+
+	RtlAppendUnicodeStringToString(&deviceName, &devicePrefix);
+	RtlAppendUnicodeStringToString(&deviceName, &NPF_Prefix);
+	RtlAppendUnicodeToString(&deviceName, amacNameP->Buffer +
+		devicePrefix.Length / sizeof(WCHAR));
+
+	RtlAppendUnicodeStringToString(&deviceSymLink, &symbolicLinkPrefix);
+	RtlAppendUnicodeStringToString(&deviceSymLink, &NPF_Prefix);
+	RtlAppendUnicodeToString(&deviceSymLink, amacNameP->Buffer +
+		devicePrefix.Length / sizeof(WCHAR));
+
+	IF_LOUD(DbgPrint("Creating device name: %ws\n", deviceName.Buffer);)
+
+		status = IoCreateDevice(adriverObjectP, 
+		sizeof(PDEVICE_EXTENSION),
+		&deviceName, 
+		FILE_DEVICE_TRANSPORT, 
+		0, 
+		FALSE,
+		&devObjP);
+
+	if (NT_SUCCESS(status)) 
+	{
+		PDEVICE_EXTENSION devExtP = (PDEVICE_EXTENSION)devObjP->DeviceExtension;
+		
+		IF_LOUD(DbgPrint("Device created successfully\n"););
+
+		devObjP->Flags |= DO_DIRECT_IO;
+		RtlInitUnicodeString(&devExtP->AdapterName,amacNameP->Buffer);   
+		devExtP->NdisProtocolHandle=aProtoHandle;
+
+		IF_LOUD(DbgPrint("Trying to create SymLink %ws\n",deviceSymLink.Buffer););
+
+		if (IoCreateSymbolicLink(&deviceSymLink,&deviceName) != STATUS_SUCCESS)
+		{
+			IF_LOUD(DbgPrint("\n\nError creating SymLink %ws\nn", deviceSymLink.Buffer););
+
+			ExFreePool(deviceName.Buffer);
+			ExFreePool(deviceSymLink.Buffer);
+
+			devExtP->ExportString = NULL;
+
+			return FALSE;
+		}
+
+		IF_LOUD(DbgPrint("SymLink %ws successfully created.\n\n", deviceSymLink.Buffer););
+
+		devExtP->ExportString = deviceSymLink.Buffer;
+
+		ExFreePool(deviceName.Buffer);
+
+		return TRUE;
+	}
+
+	else 
+	{
+		IF_LOUD(DbgPrint("\n\nIoCreateDevice status = %x\n", status););
+
+		ExFreePool(deviceName.Buffer);
+		ExFreePool(deviceSymLink.Buffer);
+		
+		return FALSE;
+	}
 }
-
 //-------------------------------------------------------------------
 
 VOID NPF_Unload(IN PDRIVER_OBJECT DriverObject)
 {
-	
-    PDEVICE_OBJECT     DeviceObject;
-    PDEVICE_OBJECT     OldDeviceObject;
-    PDEVICE_EXTENSION  DeviceExtension;
-	
-    NDIS_HANDLE        NdisProtocolHandle;
-    NDIS_STATUS        Status;
-	
-    IF_LOUD(DbgPrint("NPF: Unload\n");)
+	PDEVICE_OBJECT     DeviceObject;
+	PDEVICE_OBJECT     OldDeviceObject;
+	PDEVICE_EXTENSION  DeviceExtension;
 
+	NDIS_HANDLE        NdisProtocolHandle;
+	NDIS_STATUS        Status;
+
+	NDIS_STRING		   SymLink;
+
+	IF_LOUD(DbgPrint("NPF: Unload\n"););
 
 	DeviceObject    = DriverObject->DeviceObject;
 
-    while (DeviceObject != NULL) {
-        DeviceExtension = DeviceObject->DeviceExtension;
+	while (DeviceObject != NULL) {
+		OldDeviceObject = DeviceObject;
 
-        NdisProtocolHandle=DeviceExtension->NdisProtocolHandle;
-        OldDeviceObject=DeviceObject;
-		
-        DeviceObject=DeviceObject->NextDevice;
+		DeviceObject = DeviceObject->NextDevice;
+
+		DeviceExtension = OldDeviceObject->DeviceExtension;
+
+		NdisProtocolHandle=DeviceExtension->NdisProtocolHandle;
 
 		IF_LOUD(DbgPrint("Deleting Adapter %ws, Protocol Handle=%x, Device Obj=%x (%x)\n",
 			DeviceExtension->AdapterName.Buffer,
 			NdisProtocolHandle,
 			DeviceObject,
-			OldDeviceObject);)
-		
-        IoDeleteDevice(OldDeviceObject);
-		
-    }
+			OldDeviceObject););
+
+		if (DeviceExtension->ExportString)
+		{
+			RtlInitUnicodeString(&SymLink , DeviceExtension->ExportString);
+
+			IF_LOUD(DbgPrint("Deleting SymLink at %p\n", SymLink.Buffer););
+
+			IoDeleteSymbolicLink(&SymLink);
+			ExFreePool(DeviceExtension->ExportString);
+		}
+
+		IoDeleteDevice(OldDeviceObject);
+	}
 
 	NdisDeregisterProtocol(
-        &Status,
-        NdisProtocolHandle
-        );
+		&Status,
+		NdisProtocolHandle
+		);
 
 	// Free the adapters names
 	ExFreePool( bindP );
-	
 }
 
 //-------------------------------------------------------------------
@@ -1095,6 +1049,9 @@ NPF_RequestComplete(
 		// Put the request in the list of the free ones
 		ExInterlockedInsertTailList(&Open->RequestList, &pRequest->ListElement, &Open->RequestSpinLock);
 		
+		// Unlock the caller
+		NdisSetEvent(&Open->IOEvent);
+
 		return;
 	}
 
@@ -1134,7 +1091,7 @@ NPF_RequestComplete(
 
 	IoCompleteRequest(Irp, IO_NO_INCREMENT);
 
-	// Unlock the IOCTL call
+	// Unlock the caller
 	NdisSetEvent(&Open->IOEvent);
 
     return;
