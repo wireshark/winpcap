@@ -79,7 +79,6 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
     PLIST_ENTRY     PacketListEntry;
 	PCHAR			EvName;
 
-
     IF_LOUD(DbgPrint("NPF: OpenAdapter\n");)
 
     DeviceExtension = DeviceObject->DeviceExtension;
@@ -220,6 +219,7 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	Open->DumpFileHandle = NULL;
 	Open->tme.active = TME_NONE_ACTIVE;
 	Open->DumpLimitReached = FALSE;
+	Open->MaxFrameSize = 0;
 
 	//allocate the spinlock for the statistic counters
     NdisAllocateSpinLock(&Open->CountersLock);
@@ -277,8 +277,12 @@ VOID NPF_OpenAdapterComplete(
     IN NDIS_STATUS  OpenErrorStatus)
 {
 
-    PIRP              Irp;
-    POPEN_INSTANCE    Open;
+    PIRP				Irp;
+    POPEN_INSTANCE		Open;
+    PLIST_ENTRY			RequestListEntry;
+	PINTERNAL_REQUEST	MaxSizeReq;
+	NDIS_STATUS			ReqStatus;
+
 
     IF_LOUD(DbgPrint("NPF: OpenAdapterComplete\n");)
 
@@ -301,6 +305,9 @@ VOID NPF_OpenAdapterComplete(
 
 		ExFreePool(Open->ReadEventName.Buffer);
 
+		ZwClose(Open->ReadEventHandle);
+
+
         ExFreePool(Open);
     }
 	else {
@@ -313,6 +320,43 @@ VOID NPF_OpenAdapterComplete(
 		// Get the absolute value of the system boot time.
 		// This is used for timestamp conversion.
 		TIME_SYNCHRONIZE(&G_Start_Time);
+
+		// Extract a request from the list of free ones
+		RequestListEntry=ExInterlockedRemoveHeadList(&Open->RequestList, &Open->RequestSpinLock);
+		if (RequestListEntry == NULL)
+		{
+		    Open->MaxFrameSize = 1514;	// Assume Ethernet
+
+			// Recycle the request
+			ExInterlockedInsertTailList(&Open->RequestList, RequestListEntry, &Open->RequestSpinLock);
+
+			Irp->IoStatus.Status = Status;
+		    Irp->IoStatus.Information = 0;
+		    IoCompleteRequest(Irp, IO_NO_INCREMENT);
+
+		    return;
+		}
+
+		MaxSizeReq=CONTAINING_RECORD(RequestListEntry, INTERNAL_REQUEST, ListElement);
+		MaxSizeReq->Irp = NULL;
+		
+		MaxSizeReq->Request.RequestType = NdisRequestQueryInformation;
+		MaxSizeReq->Request.DATA.QUERY_INFORMATION.Oid = OID_GEN_MAXIMUM_TOTAL_SIZE;
+		
+		MaxSizeReq->Request.DATA.QUERY_INFORMATION.InformationBuffer = &Open->MaxFrameSize;
+		MaxSizeReq->Request.DATA.QUERY_INFORMATION.InformationBufferLength = 4;
+		
+		//  submit the request
+		NdisRequest(
+			&ReqStatus,
+			Open->AdapterHandle,
+			&MaxSizeReq->Request);
+
+		if (!(Status == NDIS_STATUS_SUCCESS || Status ==NDIS_STATUS_PENDING)) {
+			IF_LOUD(DbgPrint("NPF_OpenAdapterComplete: call to NdisRequest failed");)
+			Open->MaxFrameSize = 1514;	// Assume Ethernet
+		}
+
 	}
 
     Irp->IoStatus.Status = Status;
