@@ -28,13 +28,13 @@ LANGUAGE LANG_ITALIAN, SUBLANG_ITALIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,2,0,0
- PRODUCTVERSION 1,2,0,0
+ FILEVERSION 3,0,0,12
+ PRODUCTVERSION 3,0,0,12
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
- FILEFLAGS 0x29L
+ FILEFLAGS 0x9L
 #else
- FILEFLAGS 0x28L
+ FILEFLAGS 0x8L
 #endif
  FILEOS 0x40004L
  FILETYPE 0x2L
@@ -42,25 +42,25 @@ VS_VERSION_INFO VERSIONINFO
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
-        BLOCK "041004b0"
+        BLOCK "000004b0"
         BEGIN
             VALUE "Comments", "Key Parser\0"
             VALUE "CompanyName", "NetGroup - Politecnico di Torino\0"
             VALUE "FileDescription", "key_parser\0"
-            VALUE "FileVersion", "1, 2, 0, 0\0"
+            VALUE "FileVersion", "3, 0, 0, 12\0"
             VALUE "InternalName", "key_parser\0"
             VALUE "LegalCopyright", "Copyright © 2002\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "key_parser.dll\0"
             VALUE "PrivateBuild", "PRIVATE BUILD\0"
             VALUE "ProductName", "Key Parser\0"
-            VALUE "ProductVersion", "1, 2, 0, 0\0"
-            VALUE "SpecialBuild", "PRIVATE BUILD\0"
+            VALUE "ProductVersion", "3, 0, 0, 12\0"
+            VALUE "SpecialBuild", "\0"
         END
     END
     BLOCK "VarFileInfo"
     BEGIN
-        VALUE "Translation", 0x410, 1200
+        VALUE "Translation", 0x0, 1200
     END
 END
 
