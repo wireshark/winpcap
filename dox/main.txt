@@ -8,9 +8,9 @@
 
 <p><b>Author</b>:&nbsp;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Loris Degioanni (<a href="mailto:degioanni@polito.it">degioanni@polito.it</a>),
-NetGroup, Politecnico di Torino<font face="Arial" size="4"><br>
-</font><b>Home page</b>:&nbsp; <a href="http://netgroup.polito.it/winpcap"><br>
-</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="http://winpcap.polito.it">http://winpcap.polito.it</a></p>
+<a href="http://netgroup.polito.it/winpcap">NetGroup</a>, Politecnico di Torino<br>
+<b>Home page</b>:&nbsp;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="http://winpcap.polito.it">http://winpcap.polito.it</a></p>
 
 
 <hr>
@@ -45,6 +45,12 @@ NetGroup, Politecnico di Torino<font face="Arial" size="4"><br>
   - \ref packet32<br>
   - \ref packetsamps<br>
  - \ref compilation<br>
+- \ref remote<br>
+ - \ref remote_help<br>
+ - \ref remote_struct<br>
+ - \ref remote_func<br>
+ - \ref remote_pri_struct<br>
+ - \ref remote_pri_struct<br>
 </p>
 
 \htmlonly
@@ -53,136 +59,87 @@ NetGroup, Politecnico di Torino<font face="Arial" size="4"><br>
 <h2>Introduction</h2>
 
 
-<p><span lang="EN-US" style="mso-ansi-language:EN-US">This Manual documents the
+<p>This Manual documents the
 programming interface and the source code of WinPcap. It offers a detailed
 description of the functions and structures exported to the programmers, along
 with a complete documentation of the WinPcap internals. Several tutorials and
-examples are provided as well.&nbsp;<o:p>
-</o:p>
-</span></p>
-<p><span lang="EN-US" style="mso-ansi-language:EN-US">You can follow the links
+examples are provided as well.&nbsp;
+
+</p>
+<p>You can follow the links
 at the beginning of this page or use the tree control at the left to reach the
-section you are interested in.<o:p>
-</o:p>
-</span></p>
-<p><span lang="EN-US" style="mso-ansi-language:EN-US">This documentation was
+section you are interested in.
+
+</p>
+<p>This documentation was
 created using (and abusing of) the free Doxygen documentation system, that can
-be found at </span><a href="http://www.doxygen.org/index.html"><span lang="EN-US" style="mso-ansi-language:EN-US">http://www.doxygen.org</span></a><span lang="EN-US" style="mso-ansi-language:EN-US">.<o:p>
-</o:p>
-</span></p>
+be found at <a href="http://www.doxygen.org/index.html">http://www.doxygen.org</a>.
+
+</p>
 <h2>What is WinPcap</h2>
-<p><span lang="EN-US" style="mso-ansi-language:EN-US">WinPcap is a free, public
+<p>WinPcap is a free, public
 system for direct network access under Windows.<br>
 Most networking applications access the network through widely used system
 primitives, like sockets. This approach allows to easily transfer data on a
 network, because the OS copes with low level details (protocol handling, flow
 reassembly, etc.) and provides an interface similar to the one used to read and
-write on a file.<o:p>
-</o:p>
-</span></p>
-<p><span lang="EN-US" style="mso-ansi-language:EN-US">Sometimes however the
+write on a file.
+
+</p>
+<p>Sometimes however the
 'easy way' is not enough, since some applications need a low level view in order
 to directly handle the network traffic. Therefore, they need raw access to the
-network, without the intermediation of entities like protocol stacks.<o:p>
-</o:p>
-</span></p>
-<p><span lang="EN-US" style="mso-ansi-language:EN-US">The purpose of WinPcap is
-to give this kind of access to Win32 applications; it provides facilities to:<o:p>
-</o:p>
-</span></p>
-<ul type="disc">
-  <li class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
-     mso-list:l1 level1 lfo3;tab-stops:list 36.0pt"><span lang="EN-US" style="mso-ansi-language:EN-US">capture
+network, without the intermediation of entities like protocol stacks.
+
+</p>
+<p>The purpose of WinPcap is
+to give this kind of access to Win32 applications; it provides facilities to:</p>
+
+<ul>
+  <li>capture
     raw packets, both the ones destined to the machine where it's running and
-    the ones exchanged by other hosts (on shared media)<o:p>
-    </o:p>
-    </span></li>
-  <li class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
-     mso-list:l1 level1 lfo3;tab-stops:list 36.0pt"><span lang="EN-US" style="mso-ansi-language:EN-US">filter
+    the ones exchanged by other hosts (on shared media)</li>
+  <li>filter
     the packets according to user-specified rules before dispatching them to the
-    application<o:p>
-    </o:p>
-    </span></li>
-  <li class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
-     mso-list:l1 level1 lfo3;tab-stops:list 36.0pt"><span lang="EN-US" style="mso-ansi-language:EN-US">transmit
-    raw packets to the network<o:p>
-    </o:p>
-    </span></li>
-  <li class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
-     mso-list:l1 level1 lfo3;tab-stops:list 36.0pt"><span lang="EN-US" style="mso-ansi-language:EN-US">gather
-    statistical values on the network traffic<o:p>
-    </o:p>
-    </span></li>
+    application</li>
+  <li>transmit raw packets to the network</li>
+  <li>gather statistical values on the network traffic</li>
 </ul>
-<p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto"><span lang="EN-US" style="mso-ansi-language:EN-US">This
+<p>This
 set of capabilities is obtained by means of a device driver, that is installed
-inside the networking portion of the Win32 kernels, plus a couple of DLLs.<o:p>
-</o:p>
-</span></p>
-<p><span lang="EN-US" style="mso-ansi-language:EN-US">All these features are
+inside the networking portion of the Win32 kernels, plus a couple of DLLs.</p>
+
+<p>All these features are
 exported through a powerful programming interface, easily exploitable by the
 applications and portable on different OSes. Documenting this interface, with
 the help of several examples, is the main goals of this manual, so if you are
-interested in it you can directly jump to the \ref wpcap.<o:p>
-</o:p>
-</span></p>
+interested in it you can directly jump to the \ref wpcap.</p>
+
 <h3>What kind of programs use WinPcap</h3>
-<p><span lang="EN-US" style="mso-ansi-language:EN-US">WinPcap can be used by
+<p>WinPcap can be used by
 different kind of tools for network analysis, troubleshooting, security and
-monitoring. In particular, classical tools that rely on WinPcap are:<o:p>
-</o:p>
-</span></p>
-<ul type="disc">
-  <li class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
-     mso-list:l0 level1 lfo6;tab-stops:list 36.0pt"><span lang="EN-US" style="mso-ansi-language:EN-US">network
-    and protocol analyzers<o:p>
-    </o:p>
-    </span></li>
-  <li class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
-     mso-list:l0 level1 lfo6;tab-stops:list 36.0pt"><span lang="EN-US" style="mso-ansi-language:EN-US">network
-    monitors<o:p>
-    </o:p>
-    </span></li>
-  <li class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
-     mso-list:l0 level1 lfo6;tab-stops:list 36.0pt"><span lang="EN-US" style="mso-ansi-language:EN-US">traffic
-    loggers<o:p>
-    </o:p>
-    </span></li>
-  <li class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
-     mso-list:l0 level1 lfo6;tab-stops:list 36.0pt"><span lang="EN-US" style="mso-ansi-language:EN-US">traffic
-    generators<o:p>
-    </o:p>
-    </span></li>
-  <li class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
-     mso-list:l0 level1 lfo6;tab-stops:list 36.0pt"><span lang="EN-US" style="mso-ansi-language:EN-US">user-level
-    bridges and routers<o:p>
-    </o:p>
-    </span></li>
-  <li class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
-     mso-list:l0 level1 lfo6;tab-stops:list 36.0pt"><span lang="EN-US" style="mso-ansi-language:EN-US">network
-    intrusion detection systems (NIDS)<o:p>
-    </o:p>
-    </span></li>
-  <li class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
-     mso-list:l0 level1 lfo6;tab-stops:list 36.0pt"><span lang="EN-US" style="mso-ansi-language:EN-US">network
-    scanners<o:p>
-    </o:p>
-    </span></li>
-  <li class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
-     mso-list:l0 level1 lfo6;tab-stops:list 36.0pt"><span lang="EN-US" style="mso-ansi-language:EN-US">security
-    tools<o:p>
-    </o:p>
-    </span></li>
+monitoring. In particular, classical tools that rely on WinPcap are:</p>
+
+<ul>
+  <li>network and protocol analyzers</li>
+  <li>network monitors</li>
+  <li>traffic loggers</li>
+  <li>traffic generators</li>
+  <li>user-level bridges and routers</li>
+  <li>network intrusion detection systems (NIDS)</li>
+  <li>network scanners</li>
+  <li>security tools</li>
 </ul>
 <h3>What WinPcap can't do</h3>
-<p><span lang="EN-US" style="mso-ansi-language:EN-US">WinPcap receives and sends
+<p>WinPcap receives and sends
 the packets <i>independently</i> from the protocols of the host, like TCP-IP.
 This means that it isn't able to block, filter or manipulate the traffic
 generated by other programs on the same machine: it simply sniffs the packets
 that transit on the wire. Therefore, it cannot be used by applications like
-traffic shapers, QoS schedulers and personal firewalls.<o:p>
-</o:p>
-</span>\endhtmlonly</p>
+traffic shapers, QoS schedulers and personal firewalls.
+
+\endhtmlonly</p>
+
 <h2>Content of this manual</h2>
 <p>The purpose of this manual is the creation of a comprehensive and easy to browse documentation of the WinPcap architecture. You will find two main sections: \ref wpcap and \ref internals.  </p>
 <p>The first one can be used by the programmer that needs to exploit WinPcap from its application: it contains all the information about functions and data structures exported by the WinPcap API,  a manual that explains how to write packet filters, and a page that explains how to include it in an application. A tutorial with several code samples is provided as well; it can be used to learn the basics of the WinPcap API with a step-by-step approach, but it offers also code snippets that show advanced features.  </p>
@@ -198,31 +155,24 @@ following documents:</p>
     Architecture for High Performance Network Analysis</a>, <i>Proceedings of
     the 6<sup>th</sup> IEEE Symposium on Computers and Communications (ISCC
     2001)</i>, Hammamet, Tunisia, July 2001</li>
-  <li><span lang="EN-US" style="mso-fareast-font-family: Times New Roman; mso-ansi-language: EN-US; mso-fareast-language: EN-US; mso-bidi-language: AR-SA">Loris
-    Degioanni, <a href="http://winpcap.polito.it/docs/th_degio.zip">Development
+  <li>Loris Degioanni, <a href="http://winpcap.polito.it/docs/th_degio.zip">Development
     of an Architecture for Packet Capture and Network Traffic Analysis</a>,
-    Graduation Thesis, Politecnico Di Torino (Turin, Italy, Mar. 2000)</span>
+    Graduation Thesis, Politecnico Di Torino (Turin, Italy, Mar. 2000)
 </ul>
-<h2><span lang="EN-US" style="mso-ansi-language:EN-US">Terminology<o:p>
-</o:p>
-</span></h2>
-<ul style="margin-top:0cm" type="disc">
-  <li class="MsoNormal" style="mso-list:l2 level2 lfo9;tab-stops:list 72.0pt"><span lang="EN-US" style="mso-ansi-language:EN-US">For
-    coherence with the literature, we will use the term <i>packet</i> even
+
+<h2>Terminology</h2>
+<ul>
+  <li>For coherence with the literature, we will use the term <i>packet</i> even
     though <i>frame</i> is more accurate, since the capture process is done at
     the data-link layer and the data-link header is included in the frames
-    received.<o:p>
-    </o:p>
-    </span></li>
-  <li class="MsoNormal" style="mso-list:l2 level2 lfo9;tab-stops:list 72.0pt"><span lang="EN-US" style="mso-ansi-language:EN-US">The
-    term Win9x will be used in this documentation to indicate the family of
+    received.</li>
+  <li>The term Win9x will be used in this documentation to indicate the family of
     Microsoft OSes made up of Windows 95 and its derivates, i.e. Windows 98 and
     Windows ME. The term WinNTx will indicate the OSes built upon the NT kernel,
     starting from Windows NT 4, like for example Windows 2000, Windows XP,
-    Windows .net Server and so on.<o:p>
-    </o:p>
-    </span></li>
+    Windows .net Server and so on.</li>
 </ul>
+
 <h2>Note</h2>
 <p>Our development and documentation efforts focus primarily on the
 Windows NT/2000/XP version of WinPcap. This choice is based on the fact that the
@@ -234,10 +184,8 @@ drivers and APIs. Win9x versions are very similar in the concept but sometimes
 differ in the implementation, moreover the Win9x version of the API
 lack of some sophisticated functionality. This documentation will describe the whole
 API, but it will specify when a function is present only in Windows NTx.</p>
-<p>
 
-
-*/</p>
+<p>*/</p>
 </body>
 
 
