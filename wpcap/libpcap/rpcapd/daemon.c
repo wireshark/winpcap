@@ -45,9 +45,11 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <pwd.h>		// for password management
-#include <shadow.h>
 #endif
 
+#ifdef linux
+#include <shadow.h>		// for password management
+#endif
 
 
 
@@ -654,6 +656,7 @@ int daemon_AuthUserPwd(char *username, char *password, char *errbuf)
 		return -1;
 	}
 
+#ifdef linux
 	// This call is needed to get the password; otherwise 'x' is returned
 	if ((usersp= getspnam(username)) == NULL)
 	{
@@ -666,6 +669,15 @@ int daemon_AuthUserPwd(char *username, char *password, char *errbuf)
 		snprintf(errbuf, PCAP_ERRBUF_SIZE, "Authentication failed: password incorrect");
 		return -1;
 	}
+#endif
+
+#ifdef bsd
+	if (strcmp(user->pw_passwd, (char *) crypt(password, user->pw_passwd) ) != 0)
+	{
+		snprintf(errbuf, PCAP_ERRBUF_SIZE, "Authentication failed: password incorrect");
+		return -1;
+	}
+#endif
 
 	if (setuid(user->pw_uid) )
 	{

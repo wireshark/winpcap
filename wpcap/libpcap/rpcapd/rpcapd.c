@@ -527,7 +527,7 @@ SOCKET sockmain;
 		}
 
 		// checks if the connecting host is among the ones allowed
-		if (sock_check_hostlist(hostlist, RPCAP_HOSTLIST_SEP, &from, errbuf, PCAP_ERRBUF_SIZE) )
+		if (sock_check_hostlist(hostlist, RPCAP_HOSTLIST_SEP, &from, errbuf, PCAP_ERRBUF_SIZE) < 0 )
 		{
 			rpcap_senderror(sockctrl, errbuf, PCAP_ERR_HOSTNOAUTH, fakeerrbuf);
 			sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
