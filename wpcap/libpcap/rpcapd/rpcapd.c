@@ -362,7 +362,7 @@ int i;
 
 		while (tempaddrinfo)
 		{
-			if ( (sockmain= sock_open(tempaddrinfo, SOCKOPEN_SERVER, SOCKET_MAXCONN, errbuf, PCAP_ERRBUF_SIZE)) == 0)
+			if ( (sockmain= sock_open(tempaddrinfo, SOCKOPEN_SERVER, SOCKET_MAXCONN, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 			{
 				SOCK_ASSERT(errbuf, 1);
 				tempaddrinfo= tempaddrinfo->ai_next;
@@ -640,7 +640,7 @@ struct daemon_slpars *pars;			// parameters needed by the daemon_serviceloop()
 	{
 	int activeclose;
 
-		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == 0)
+		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 		{
 			SOCK_ASSERT(errbuf, 1);
 

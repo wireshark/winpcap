@@ -300,9 +300,6 @@ int sock_ismcastaddr(const struct sockaddr *saddr)
 	\return the socket that has been opened (that has to be used in the following sockets calls)
 	if everything is fine, '0' if some errors occurred. The error message is returned
 	in the 'errbuf' variable.
-
-	\warning The return code in case of failure is '0' instead of '-1' because SOCKET is an
-	unsigned int in Win32.
 */
 SOCKET sock_open(struct addrinfo *addrinfo, int server, int nconn, char *errbuf, int errbuflen)
 {
@@ -312,7 +309,7 @@ SOCKET sock;
 	if (sock == -1)
 	{
 		sock_geterror("socket(): ", errbuf, errbuflen);
-		return 0;
+		return -1;
 	}
 
 
@@ -336,7 +333,7 @@ SOCKET sock;
 					snprintf(errbuf, errbuflen, "setsockopt(IPV6_BINDV6ONLY)");
 					errbuf[errbuflen - 1]= 0;
 				}
-				return 0;
+				return -1;
 			}
 		} 
 #endif
@@ -345,14 +342,14 @@ SOCKET sock;
 		if (bind(sock, addrinfo->ai_addr, addrinfo->ai_addrlen) != 0)
 		{
 			sock_geterror("bind(): ", errbuf, errbuflen);
-			return 0;
+			return -1;
 		}
 
 		if (addrinfo->ai_socktype == SOCK_STREAM)
 			if (listen(sock, nconn) == -1)
 			{
 				sock_geterror("listen(): ", errbuf, errbuflen);
-				return 0;
+				return -1;
 			}
 
 		// server side ended
@@ -411,7 +408,7 @@ SOCKET sock;
 		if (tempaddrinfo == NULL) 
 		{
 			closesocket(sock);
-			return 0;
+			return -1;
 		}
 		else
 			return sock;
