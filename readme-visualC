@@ -77,7 +77,15 @@ Software requirements:
 - Microsoft Software Development Kit (SDK)
 - Microsoft Visual C++ 6.0
 
-To compile the PACKET.DLL, load the project contained in the directory PacketNTx\dll\project (or Packet9x\dll\project) in the Visual C++ IDE. Build the project to obtain the PACKET.DLL and packet.lib files. The first one is the actual library, the second one is the file that applications need to link in order to use the it. The debug version of these files will be generated in the directory dll\project\debug, the release version in dll\project\release.
+To compile the PACKET.DLL, load the project contained in the directory PacketNTx\dll\project (or Packet9x\dll\project) in the Visual C++ IDE.There are four project configurations:
+PackeNT - Win32 Release: standard release configuration
+PackeNT - Win32 Debug: standard debug configuration
+PackeNT - Win32 NT4 Release: release configuration able to run on NT4 does not include Wan and IP helper API support.
+PackeNT - Win32 NT4 Debug: debug configuration able to run on NT4 does not include Wan and IP helper API support.
+WanPacket - Win32 Release: release version of the WanPacket library, used to inerface with NetMon API for Wan capture
+WanPacket - Win32 Debug: debug version of the WanPacket library, used to inerface with NetMon API for Wan capture
+
+Choose the desired configuration and build the project to obtain the binary files.
 
 
 Compiling wpcap.dll
@@ -90,4 +98,6 @@ System Requirement:
 
 Project files are in the directory winpcap\wpcap\prj of the WinPcap source code distribution. Load wpcap.dsw from the Visual C++ IDE and build the program. The output file wpcap.lib will be generated in winpcap\wpcap\lib\. The output dll wpcap.dll will be generated in winpcap\wpcap\prj\release or winpcap\wpcap\prj\debug depending on the type of binary that is being generated.
 
-Note that wpcap.dll contains the source code of libpcap from www.tcpdump.org, with some modifications for remote capture. You will be able to include and build a different libpcap version simply copying it in the directory winpcap\wpcap\prj of the WinPcap source code distribution, but you must use the WPCAP_test_only.dsw project file.
+Note 1: wpcap.dll contains the source code of libpcap from www.tcpdump.org, with some modifications for remote capture. You will be able to include and build a different libpcap version simply copying it in the directory winpcap\wpcap\prj of the WinPcap source code distribution, but you must use the WPCAP_test_only.dsw project file.
+
+Note 2: the default project does not contain support for Endace Dag cards because, in order to compile wpcap.dll with Dag support, some include files from Dag software distribution are needed. These files are not public and must be requested to Endace (http://www.endace.com), which provides a source code tree with all the Dag source code. This tree must be put in a subfolder called dag of the winpcap folder. At this point, HAVE_DAG_API must be added to the preprocessor definitions and the project can be built.
