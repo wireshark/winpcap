@@ -78,9 +78,6 @@ INPUT                  = ../../Common/Packet32.h \
                          ../../Examples/TestApp/Testapp.c \
                          ../../Examples/TG/Tg.c \
                          ../main.txt \
-                         ../wpcap_samp.txt \
-                         ../wpcap_samp1.txt \
-                         ../wpcap_samp2.txt \
                          ../wpcap_tut.txt \
                          ../wpcap_tut1.txt \
                          ../wpcap_tut2.txt \
