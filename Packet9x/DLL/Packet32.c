@@ -406,6 +406,65 @@ BOOLEAN PacketSendPacket (LPADAPTER AdapterObject,
 }
 
 //---------------------------------------------------------------------------
+// Emulated at user-level under Win9x
+
+INT PacketSendPackets(LPADAPTER AdapterObject, 
+					   PVOID PacketBuff, 
+					   ULONG Size, 
+					   BOOLEAN Sync)
+{
+	struct dump_bpf_hdr	*winpcap_hdr;
+	PCHAR	EndOfUserBuff = (PCHAR)PacketBuff + Size;
+	LPPACKET PacketToSend;
+	BOOLEAN res;
+
+	// Start from the first packet
+	winpcap_hdr = (struct dump_bpf_hdr*)PacketBuff;
+
+	if( (PCHAR)winpcap_hdr + winpcap_hdr->caplen + sizeof(struct dump_bpf_hdr) > EndOfUserBuff )
+	{
+		// Malformed buffer
+		return 0;
+	}
+
+	while( TRUE ){
+		
+		if(winpcap_hdr->caplen ==0 || winpcap_hdr->caplen > 65536)
+		{
+			// Malformed header
+			return 0;
+		}
+		
+		// Set up the LPPACKET structure
+		PacketToSend=PacketAllocatePacket();
+		PacketInitPacket(PacketToSend,
+			(PCHAR)winpcap_hdr + sizeof(struct dump_bpf_hdr),
+			winpcap_hdr->caplen);
+
+		// Send the packet
+		res = PacketSendPacket (AdapterObject,	PacketToSend, TRUE);
+
+		// Free the just used LPPACKET structure
+		PacketFreePacket(PacketToSend);
+
+		if(res == FALSE){
+			// Error sending the packet
+			return (PCHAR)winpcap_hdr - (PCHAR)PacketBuff;
+		}
+
+		
+		// Step to the next packet in the buffer
+		(PCHAR)winpcap_hdr += winpcap_hdr->caplen + sizeof(struct dump_bpf_hdr);
+		
+		// Check if the end of the user buffer has been reached
+		if( (PCHAR)winpcap_hdr >= EndOfUserBuff )
+		{				
+				return (PCHAR)winpcap_hdr - (PCHAR)PacketBuff;
+		}
+	}
+}
+
+//---------------------------------------------------------------------------
 BOOLEAN PacketReceivePacket(LPADAPTER AdapterObject,
 		       LPPACKET lpPacket,
 		       BOOLEAN Sync)
