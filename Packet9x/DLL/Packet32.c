@@ -89,7 +89,7 @@ BOOLEAN StartPacketDriver (LPTSTR ServiceName);
 BOOLEAN StopPacketDriver (void);
 BOOLEAN PacketSetMaxLookaheadsize (LPADAPTER AdapterObject);
 
-char PacketLibraryVersion[] = "3.1"; 
+char PacketLibraryVersion[] = "3.1 beta2"; 
 
 //---------------------------------------------------------------------------
 
@@ -735,117 +735,241 @@ BOOLEAN StopPacketDriver(void)
 
 //---------------------------------------------------------------------------
 
+INT PacketSetSnapLen(LPADAPTER AdapterObject, int snaplen)
+{
+    ODS ("Packet32: PacketSetSnapLen\n"); 
+
+	return 0;
+}
+
+//---------------------------------------------------------------------------
+
 BOOLEAN PacketGetAdapterNames (PTSTR pStr,
 				PULONG BufferSize)
 {
-    ULONG Result,i;
+    ULONG		Result,i;
     LONG		Status;
-	char		*TpStr;
-	char		*TTpStr,*DpStr;
+	char*		pStrInternal;
+	
+	ULONG		RemainingBytes;
+
 	LPADAPTER	adapter;
     PPACKET_OID_DATA  OidData;
-    HKEY		Key,Key1;
-	ULONG		BSize;
-	ULONG		dim;
-	char		NdisName[32];
+    HKEY		Key;
+	char		NdisName[80];
+	ULONG		NeededBytes;
+	ULONG		NeededBytesForString;
+	char		TempBuffer[1024];
+	BOOLEAN		retVal;
 
-    OidData=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,256);
-    if (OidData == NULL) {
+	OidData=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,256);
+    if (OidData == NULL) 
+	{
         return FALSE;
     }
 
-    Status=RegOpenKeyEx(HKEY_LOCAL_MACHINE,"SYSTEM",0,KEY_READ,&Key);
-    Status=RegOpenKeyEx(Key,"CurrentControlSet",0,KEY_READ,&Key);
-    Status=RegOpenKeyEx(Key,"Services",0,KEY_READ,&Key);
-    Status=RegOpenKeyEx(Key,"class",0,KEY_READ,&Key);
-    Status=RegOpenKeyEx(Key,"net",0,KEY_READ,&Key);
-    if (Status != ERROR_SUCCESS) return FALSE;
-
-	TpStr=pStr;
-	BSize=*BufferSize;
-	i=0;
-	while((Result=RegEnumKey(Key,i,NdisName,32))==ERROR_SUCCESS)
+    Status=RegOpenKeyEx(HKEY_LOCAL_MACHINE,"SYSTEM\\CurrentControlSet\\Services\\class\\net",0,KEY_READ,&Key);
+    
+	if (Status != ERROR_SUCCESS) 
 	{
-		Status=RegOpenKeyEx(Key,NdisName,0,KEY_READ,&Key1);
-		Status=RegOpenKeyEx(Key1,"NDIS",0,KEY_READ,&Key1);
-		dim=BSize;
-        Status=RegQueryValueEx(Key1,"LOGDRIVERNAME",NULL,NULL,(LPBYTE)TpStr,&dim);
-		i++;
-		if(Status!=ERROR_SUCCESS) continue;
-		BSize-=dim;
-		TpStr+=dim;
+		GlobalFree(OidData);
+		return FALSE;
 	}
-	
-	TpStr[0]=0;
-	*BufferSize-=BSize;
 
-	if(Result==259){  //259 means OK
-		i=0;
-	
-		(*BufferSize)++;
-		TpStr=pStr;
-		DpStr=pStr+*BufferSize;	
+	NeededBytes = 0;
+
+	//first we calculate the needed bytes
+	i=0;
+	while((Result=RegEnumKey(Key,i,NdisName,sizeof(NdisName) - sizeof("\\NDIS") - 1))==ERROR_SUCCESS)
+	{
+		HKEY hKeyNdisName;
+		strcat(NdisName,"\\NDIS");
+
+		Status=RegOpenKeyEx(Key,NdisName,0,KEY_READ,&hKeyNdisName);
 		
-		while(*TpStr!=0){
-			
-			ODSEx("Found adapter: %s\n", TpStr);
+		if (Status != ERROR_SUCCESS)
+			continue;
 
-			adapter=PacketOpenAdapter(TpStr);
-			if(adapter==NULL){
-				strcpy(DpStr,"Unknown");
-				DpStr+=7;
-				*DpStr++=0;
-				
-				while(*TpStr!=0){
-					TpStr++;
-				}
-				
-				TpStr++;
-				continue;
-			}
-			
+		//we need to tell RegOpenKeyEx the length of the buffer passed as argument
+		NeededBytesForString = sizeof(TempBuffer);
+
+        Status=RegQueryValueEx(hKeyNdisName,"LOGDRIVERNAME",NULL,NULL,(LPBYTE)TempBuffer,&NeededBytesForString);
+		
+		if (Status != ERROR_SUCCESS)
+		{
+			RegCloseKey(hKeyNdisName);
+			continue;
+		}
+
+		NeededBytes += NeededBytesForString;
+
+		//we try to open the adapter and retrieve its name
+		adapter=PacketOpenAdapter(TempBuffer);
+		if(adapter==NULL)
+		{
+			NeededBytes += sizeof("Unknown") + 1;
+		}
+		else
+		{
+			//we retrieve its name by performing a PacketRequest, 
+			//the buffer that will contain the name is at the end of the OidData structure
 			OidData->Oid = OID_GEN_VENDOR_DESCRIPTION;
-			OidData->Length = 256;
+			OidData->Length = 256 - sizeof(PACKET_OID_DATA);
 			Status = PacketRequest(adapter,FALSE,OidData);
-			if(Status==0){
-				strcpy(DpStr,"Unknown");
-
-				ODSEx("Adapter description: %s\n", DpStr);
-
-				DpStr+=7;
-				*DpStr++=0;
-				
-				while(*TpStr!=0){
-					TpStr++;
-				}
-				
-				TpStr++;
-				continue;
+			if(Status==0)
+			{
+				NeededBytes += sizeof("Unknown") + 1;
 			}
-
-			TTpStr=(char*)(OidData->Data);
-
-			ODSEx("Adapter description: %s\n", TTpStr);
-
-			while(*TTpStr!=0){
-				*DpStr++=*TTpStr++;
+			else
+			{
+				NeededBytes += strlen((char*) OidData->Data) + 1;
 			}
-			*DpStr++=*TTpStr++;
 			
 			PacketCloseAdapter(adapter);
-			
-			while(*TpStr!=0){
-				TpStr++;
-			}
-			
-			TpStr++;
+		
 		}
-		*DpStr=0;
 
-		return TRUE;
+		i++;
+		RegCloseKey(hKeyNdisName);
+	}
+
+	NeededBytes += 1 + 1;  //the two nulls at the end of each block of strings
+
+	if (NeededBytes > *BufferSize || pStr == NULL || Result != ERROR_NO_MORE_ITEMS)
+	{
+		*BufferSize = NeededBytes;
+		GlobalFree(OidData);
+		RegCloseKey(Key);
+		return FALSE;
+	}
+
+	//now we copy the strings
+
+	retVal = TRUE;
+	NeededBytes = 0;
+	i = 0;
+	pStrInternal = pStr;
+	RemainingBytes = *BufferSize;
+	while((Result=RegEnumKey(Key,i,NdisName,sizeof(NdisName) - sizeof("\\NDIS") - 1))==ERROR_SUCCESS)
+	{
+		HKEY hKeyNdisName;
+		strcat(NdisName,"\\NDIS");
+		NeededBytesForString = sizeof(TempBuffer);
+
+		Status=RegOpenKeyEx(Key,NdisName,0,KEY_READ,&hKeyNdisName);
+		
+		if (Status != ERROR_SUCCESS)
+			continue;
+
+		Status=RegQueryValueEx(hKeyNdisName,"LOGDRIVERNAME",NULL,NULL,(LPBYTE)TempBuffer,&NeededBytesForString);
+		
+		if (Status == ERROR_SUCCESS && NeededBytesForString <= RemainingBytes)
+		{
+			//this copy is safe, since we have checked that the available space will fit the string
+			strcpy(pStrInternal, TempBuffer);
+			pStrInternal += NeededBytesForString;
+			RemainingBytes -= NeededBytesForString;
+		}
+
+		NeededBytes += NeededBytesForString; //just in case the second scan returns a larger number of adapters!!
+
+		i++;
+		RegCloseKey(hKeyNdisName);
 	}
 	
-	return FALSE;
+	RegCloseKey(Key);
+		
+	//we need to properly terminate the list of adapter names with another \0
+	if (RemainingBytes > 0)
+	{
+		pStrInternal[0] = 0;
+		pStrInternal++;
+		RemainingBytes--;
+	}
+	NeededBytes++;
+
+	while (*pStr != 0)  //now we scan again the list of adapters in pStr to retrieve their names
+	{
+		adapter=PacketOpenAdapter(pStr);
+		if(adapter==NULL)
+		{
+			if ( RemainingBytes < sizeof("Unknown") + 1 )
+				retVal = FALSE;		//we do not copy anything, we simply skip this adapter, and return failure
+			else
+			{	//this copy is safe as we have checked that the remaining bytes will fit the source string
+				strcpy(pStrInternal, "Unknown");
+				//we move the pointer of the list of adapter names
+				pStrInternal += sizeof("Unknown") + 1;
+				RemainingBytes -= sizeof("Unknown") + 1;
+			}
+			
+			//we continue to keep track of available bytes. This is used if we fail in this phase
+			NeededBytes += sizeof("Unknown") + 1;  
+		}
+		else
+		{	
+			OidData->Oid = OID_GEN_VENDOR_DESCRIPTION;
+			OidData->Length = 256 - sizeof(PACKET_OID_DATA);
+			Status = PacketRequest(adapter,FALSE,OidData);
+			if(Status==0)
+			{
+				if ( RemainingBytes < sizeof("Unknown") + 1 )
+					retVal = FALSE;	//we do not copy anything, we simply skip this adapter, and return failure
+				else
+				{	//this copy is safe as we have checked that the remaining bytes will fit the source string
+					strcpy(pStrInternal, "Unknown");
+					//we move the pointer of the list of adapter names
+					pStrInternal += sizeof("Unknown") + 1;
+					RemainingBytes -= sizeof("Unknown") + 1;
+				}
+				
+				//we continue to keep track of available bytes. This is used if we fail in this phase
+				NeededBytes += sizeof("Unknown") + 1;
+			}
+			else
+			{
+				if ( RemainingBytes < strlen((char*) OidData->Data) + 1 )
+					retVal = FALSE; //we do not copy anything, we simply skip this adapter, and return failure
+				else
+				{
+					//this copy is safe as we have checked that the remaining bytes will fit the source string
+					strcpy(pStrInternal, (char*)OidData->Data);
+					//we move the pointer of the list of adapter names
+					pStrInternal += strlen((char*) OidData->Data) + 1;
+					RemainingBytes -= strlen((char*) OidData->Data) + 1;
+				}
+				
+				//we continue to keep track of available bytes. This is used if we fail in this phase
+				NeededBytes += strlen((char*) OidData->Data) + 1;
+			}
+			
+			PacketCloseAdapter(adapter);
+		
+		}
+		
+		//we move to the next adapter in the list. We end when we reach the double \0
+		pStr += strlen(pStr) + 1;
+	
+	}
+
+
+	//we need to properly terminate the list of adapter descriptions with another \0
+	if (RemainingBytes > 0)
+	{
+		pStrInternal[0] = 0;
+		pStrInternal++;
+		RemainingBytes--;
+	}
+	else
+		retVal = FALSE;
+	
+	NeededBytes++;
+
+	*BufferSize = NeededBytes;
+
+	GlobalFree(OidData);
+
+	return retVal;
 }
 
 //---------------------------------------------------------------------------
