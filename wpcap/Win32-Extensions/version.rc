@@ -28,8 +28,8 @@ LANGUAGE LANG_ITALIAN, SUBLANG_ITALIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,0,0,20
- PRODUCTVERSION 3,0,0,20
+ FILEVERSION 3,1,0,20
+ PRODUCTVERSION 3,1,0,20
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -44,17 +44,17 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "Comments", "WinPcap high level library\0"
-            VALUE "CompanyName", "Politecnico di Torino\0"
-            VALUE "FileDescription", "wpcap - Based on libpcap 0.8.10.1 released snapshot dec 29, 2003\0"
-            VALUE "FileVersion", "3, 0, 0, 20\0"
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "NetGroup - Politecnico di Torino\0"
+            VALUE "FileDescription", "wpcap - Based on libpcap 0.8.1\0"
+            VALUE "FileVersion", "3, 1, 0, 20\0"
             VALUE "InternalName", "wpcap\0"
-            VALUE "LegalCopyright", "Copyright © 2004\0"
+            VALUE "LegalCopyright", "Copyright © 1999-2004\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "wpcap.dll\0"
             VALUE "PrivateBuild", "\0"
-            VALUE "ProductName", "WinPcap wpcap.dll\0"
-            VALUE "ProductVersion", "3, 0, 0, 20\0"
+            VALUE "ProductName", "WinPcap high level library\0"
+            VALUE "ProductVersion", "3, 1, 0, 20\0"
             VALUE "SpecialBuild", "\0"
         END
     END

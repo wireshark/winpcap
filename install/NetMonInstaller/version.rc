@@ -1,6 +1,6 @@
 //Microsoft Developer Studio generated resource script.
 //
-#include "version.h"
+#include "resource.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -28,8 +28,8 @@ LANGUAGE LANG_ITALIAN, SUBLANG_ITALIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,0,0,20
- PRODUCTVERSION 3,0,0,20
+ FILEVERSION 3,1,0,20
+ PRODUCTVERSION 3,1,0,20
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -46,15 +46,15 @@ BEGIN
         BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "NetGroup - Politecnico di Torino\0"
-            VALUE "FileDescription", "NetMon Protocol Driver installer\0"
-            VALUE "FileVersion", "3, 0, 0, 20\0"
-            VALUE "InternalName", "NetMon Protocol Driver Installer\0"
-            VALUE "LegalCopyright", "Copyright © 2003 - NetGroup\0"
+            VALUE "FileDescription", "NetMonInstaller\0"
+            VALUE "FileVersion", "3, 1, 0, 20\0"
+            VALUE "InternalName", "NetMonInstaller\0"
+            VALUE "LegalCopyright", "Copyright © 2003-2004\0"
             VALUE "LegalTrademarks", "\0"
-            VALUE "OriginalFilename", "NetMonInstaller\0"
+            VALUE "OriginalFilename", "NetMonInstaller.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "NetMon Protocol Driver Installer\0"
-            VALUE "ProductVersion", "3, 0, 0, 20\0"
+            VALUE "ProductVersion", "3, 1, 0, 20\0"
             VALUE "SpecialBuild", "\0"
         END
     END
