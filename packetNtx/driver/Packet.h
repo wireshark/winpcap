@@ -307,7 +307,6 @@ typedef struct _OPEN_INSTANCE
 											///< is used. See \ref NPF for details on the filtering process.
 	JIT_BPF_Filter		*Filter;			///< Pointer to the native filtering function created by the jitter. 
 											///< See BPF_jitter() for details.
-	LARGE_INTEGER		StartTime;			///< Variable used to convert timestamps from the MS convention to the libpcap/Unix one.
 	PUCHAR				Buffer;				///< Pointer to the circular buffer associated with every driver instance. It contains the 
 											///< data that will be passed to the application. See \ref NPF for details.
 	UINT				Bhead;				///< Head of the circular buffer.
@@ -350,7 +349,7 @@ typedef struct _OPEN_INSTANCE
 											///< reached.
 	MEM_TYPE			mem_ex;				///< Memory used by the TME virtual co-processor
 	TME_CORE			tme;				///< Data structure containing the virtualization of the TME co-processor
-	struct time_conv	start_time;			///< Data structure used to timestamp packets, and stats
+//	struct time_conv	start_time;			///< Data structure used to timestamp packets, and stats
 	NDIS_SPIN_LOCK		machine_lock;		///< SpinLock that protects the mem_ex buffer
 
 }

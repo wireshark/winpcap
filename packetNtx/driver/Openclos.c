@@ -37,6 +37,8 @@ static NDIS_MEDIUM MediumArray[] = {
 
 #define NUM_NDIS_MEDIA  (sizeof MediumArray / sizeof MediumArray[0])
 
+#undef ExAllocatePool
+#define ExAllocatePool(A, B) ExAllocatePoolWithTag(A, B, 'APPA');
 
 ULONG NamedEventsCounter=0;
 
@@ -68,9 +70,6 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
     UINT            i;
 	PUCHAR			tpointer;
     PLIST_ENTRY     PacketListEntry;
-	LARGE_INTEGER	TimeFreq;
-	LARGE_INTEGER	SystemTime;
-	LARGE_INTEGER	PTime;
 	PCHAR			EvName;
 
 
@@ -205,15 +204,6 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	
 	Open->mem_ex.size=DEFAULT_MEM_EX_SIZE;
 	RtlZeroMemory(Open->mem_ex.buffer,DEFAULT_MEM_EX_SIZE);
-	
-	// get the absolute value of the system boot time.   
-	TIME_SYNCHRONIZE(&Open->start_time);
-
-	PTime=KeQueryPerformanceCounter(&TimeFreq);
-	KeQuerySystemTime(&SystemTime);
-	Open->StartTime.QuadPart=(((SystemTime.QuadPart)%10000000)*TimeFreq.QuadPart)/10000000;
-	SystemTime.QuadPart=SystemTime.QuadPart/10000000-11644473600;
-	Open->StartTime.QuadPart+=(SystemTime.QuadPart)*TimeFreq.QuadPart-PTime.QuadPart;
 	
 	//
 	// Initialize the open instance

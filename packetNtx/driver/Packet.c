@@ -33,6 +33,9 @@
 
 #include "tme.h"
 
+#undef ExAllocatePool
+#define ExAllocatePool(A, B) ExAllocatePoolWithTag(A, B, 'APQA');
+
 #if DBG
 //
 // Declare the global debug flag for this driver.
@@ -57,11 +60,11 @@ NDIS_STRING AdapterListKey = NDIS_STRING_CONST("\\Registry\\Machine\\System"
 NDIS_STRING bindValueName = NDIS_STRING_CONST("Bind");
 
 
-//
-// Global variable that points to the names of the bound adapters
-//
+/// Global variable that points to the names of the bound adapters
 WCHAR* bindP = NULL;
 
+/// Global start time. Used as a absulte reference for timestamp conversion.
+struct time_conv G_Start_Time;
 
 //
 //  Packet Driver's entry routine.
@@ -74,33 +77,24 @@ DriverEntry(
 {
 
     NDIS_PROTOCOL_CHARACTERISTICS  ProtocolChar;
-
     UNICODE_STRING MacDriverName;
     UNICODE_STRING UnicodeDeviceName;
-
     PDEVICE_OBJECT DeviceObject = NULL;
     PDEVICE_EXTENSION DeviceExtension = NULL;
-
     NTSTATUS Status = STATUS_SUCCESS;
     NTSTATUS ErrorCode = STATUS_SUCCESS;
     NDIS_STRING ProtoName = NDIS_STRING_CONST("PacketDriver");
-
     ULONG          DevicesCreated=0;
-
     PWSTR          BindString;
     PWSTR          ExportString;
-
     PWSTR          BindStringSave;
     PWSTR          ExportStringSave;
-	
     NDIS_HANDLE    NdisProtocolHandle;
-	
 	WCHAR* bindT;
-	
 	PKEY_VALUE_PARTIAL_INFORMATION tcpBindingsP;
 	UNICODE_STRING macName;
 	
-	//This driver at the moment works only on single processor machines
+	// This driver at the moment works only on single processor machines
 	if(NdisSystemProcessorCount() != 1){
 		return STATUS_IMAGE_MP_UP_MISMATCH;
 	}
@@ -146,25 +140,22 @@ DriverEntry(
         return Status;
 
     }
-
-    //
+	
     // Set up the device driver entry points.
-    //
-
     DriverObject->MajorFunction[IRP_MJ_CREATE] = NPF_Open;
     DriverObject->MajorFunction[IRP_MJ_CLOSE]  = NPF_Close;
     DriverObject->MajorFunction[IRP_MJ_READ]   = NPF_Read;
     DriverObject->MajorFunction[IRP_MJ_WRITE]  = NPF_Write;
     DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL]  = NPF_IoControl;
-
     DriverObject->DriverUnload = NPF_Unload;
 
+	// Get the absolute value of the system boot time.
+	// This is used for timestamp conversion.
+	TIME_SYNCHRONIZE(&G_Start_Time);
 
-    //
+
     //  Get the name of the Packet driver and the name of the MAC driver
     //  to bind to from the registry
-    //
-
     Status=NPF_ReadRegistry(
                &BindString,
                &ExportString,
@@ -649,11 +640,16 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 	case BIOCGSTATS: //function to get the capture stats
 		
-		StatsBuf=Irp->UserBuffer;
-		StatsBuf[0]=Open->Received;
-		StatsBuf[1]=Open->Dropped;
+		if(IrpSp->Parameters.DeviceIoControl.OutputBufferLength < 4*sizeof(INT)){			
+			EXIT_FAILURE(0);
+		}
+
+		*(((PUINT)Irp->UserBuffer)) = Open->Received;
+		*(((PUINT)Irp->UserBuffer)+1) = Open->Dropped;
+		*(((PUINT)Irp->UserBuffer)+2) = 0;		// Not yet supported
+		*(((PUINT)Irp->UserBuffer)+3) = Open->Accepted;
 		
-		EXIT_SUCCESS(8);		
+		EXIT_SUCCESS(4*sizeof(INT));
 		
 		break;
 		
@@ -722,7 +718,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 			initprogram=&((struct bpf_insn*)prog)[cnt+1];
 			
-			if(bpf_filter_init(initprogram,&(Open->mem_ex),&(Open->tme), &Open->start_time)!=INIT_OK)
+			if(bpf_filter_init(initprogram,&(Open->mem_ex),&(Open->tme), &G_Start_Time)!=INIT_OK)
 			{
 				
 				IF_LOUD(DbgPrint("Error initializing NPF machine (bpf_filter_init)\n");)

@@ -30,6 +30,10 @@
 #include "tme.h"
 #include "time_calls.h"
 
+extern struct time_conv G_Start_Time; // from packet.c
+
+#undef ExAllocatePool
+#define ExAllocatePool(A, B) ExAllocatePoolWithTag(A, B, 'APRA');
 
 //-------------------------------------------------------------------
 
@@ -130,15 +134,9 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		if(Open->mode & MODE_STAT){   //this capture instance is in statistics mode
 			CurrBuff=(PUCHAR)MmGetSystemAddressForMdl(Irp->MdlAddress);
 			
-			//get the timestamp
-//OLD		CapTime=KeQueryPerformanceCounter(&TimeFreq); 
-
 			//fill the bpf header for this packet
-//OLD		CapTime.QuadPart+=Open->StartTime.QuadPart;
 			header=(struct bpf_hdr*)CurrBuff;
-//OLD		header->bh_tstamp.tv_usec=(long)((CapTime.QuadPart%TimeFreq.QuadPart*1000000)/TimeFreq.QuadPart);
-//OLD		header->bh_tstamp.tv_sec=(long)(CapTime.QuadPart/TimeFreq.QuadPart);
-			GET_TIME(&header->bh_tstamp,&Open->start_time);
+			GET_TIME(&header->bh_tstamp,&G_Start_Time);
 
 			if(Open->mode & MODE_DUMP){
 				*(LONGLONG*)(CurrBuff+sizeof(struct bpf_hdr)+16)=Open->DumpOffset.QuadPart;
@@ -184,7 +182,7 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			
 			header=(struct bpf_hdr*)UserPointer;
 	
-			GET_TIME(&header->bh_tstamp,&Open->start_time);
+			GET_TIME(&header->bh_tstamp,&G_Start_Time);
 
 			
 			header->bh_hdrlen=sizeof(struct bpf_hdr);
@@ -355,6 +353,15 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 
 	Open->Received++;		// Number of packets received by filter ++
 
+	BufOccupation = GetBuffOccupation(Open);	// Get the full buffer space
+
+	if(Open->BufSize - BufOccupation < PacketSize+HeaderBufferSize+sizeof(struct bpf_hdr)){
+		// Heuristic that drops the packet also if it possibly fits in the buffer.
+		// It allows to avoid filtering in critical situations when CPU is very important.
+		Open->Dropped++;
+		return NDIS_STATUS_NOT_ACCEPTED;
+	}
+
 	NdisAcquireSpinLock(&Open->machine_lock);
 	
 	//
@@ -373,7 +380,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 									   LookaheadBufferSize+HeaderBufferSize,
 									   &Open->mem_ex,
 									   &Open->tme,
-									   &Open->start_time);
+									   &G_Start_Time);
 	
 	
 	else 
@@ -399,7 +406,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 						LookaheadBufferSize+HeaderBufferSize,
 						&Open->mem_ex,
 						&Open->tme,
-						&Open->start_time);
+						&G_Start_Time);
 
 	NdisReleaseSpinLock(&Open->machine_lock);
 	
@@ -415,21 +422,6 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	if(fres==0)
 		// Packet not accepted by the filter, ignore it.
 		return NDIS_STATUS_NOT_ACCEPTED;
-
-	Open->Accepted++;		// Increase the accepted packets counter
-	if(Open->mode & MODE_DUMP && Open->MaxDumpPacks &&	(UINT)Open->Accepted > Open->MaxDumpPacks){
-		// Reached the max number of packets to save in the dump file. Stop the Dump thread
-		Open->DumpLimitReached = TRUE; // This stops the thread
-		// Awake the dump thread
-		NdisSetEvent(&Open->DumpEvent);
-
-		// Awake the application
-		KeSetEvent(Open->ReadEvent,0,FALSE);
-
-		return NDIS_STATUS_NOT_ACCEPTED;
-	}
-
-
 
 	//if the filter returns -1 the whole packet must be accepted
 	if(fres==-1 || fres > PacketSize+HeaderBufferSize)fres=PacketSize+HeaderBufferSize; 
@@ -457,6 +449,18 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 
 	if(Open->BufSize==0)return NDIS_STATUS_NOT_ACCEPTED;
 	
+	if(Open->mode & MODE_DUMP && Open->MaxDumpPacks &&	(UINT)Open->Accepted > Open->MaxDumpPacks){
+		// Reached the max number of packets to save in the dump file. Discard the packet and stop the dump thread.
+		Open->DumpLimitReached = TRUE; // This stops the thread
+		// Awake the dump thread
+		NdisSetEvent(&Open->DumpEvent);
+
+		// Awake the application
+		KeSetEvent(Open->ReadEvent,0,FALSE);
+
+		return NDIS_STATUS_NOT_ACCEPTED;
+	}
+
 	// Calculate the correct size for the header associated with the packet
  	NPFHdrSize=(Open->mode==MODE_CAPT)? sizeof(struct bpf_hdr): sizeof(struct sf_pkthdr);
  
@@ -465,21 +469,19 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	Thead=Open->Bhead;
 	Ttail=Open->Btail;
 	TLastByte = Open->BLastByte;
-	BufOccupation = GetBuffOccupation(Open);
 
 	NdisReleaseSpinLock( &Open->BufLock );
 	
 	maxbufspace=Packet_WORDALIGN(fres+NPFHdrSize);
 
-	
+/*	
 	if(Open->BufSize <= BufOccupation + maxbufspace)
 	{
-			//the buffer is full: the packet must be dropped
+		//the buffer is full: the packet must be dropped
 		Open->Dropped++;
 		return NDIS_STATUS_NOT_ACCEPTED;
 	}
-
-
+*/
 	if(Ttail+maxbufspace >= Open->BufSize){
 		if(Thead<=maxbufspace)
 		{
@@ -571,23 +573,19 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 		Status = NDIS_STATUS_SUCCESS;
 	}
 
+	Open->Accepted++;		// Increase the accepted packets counter
 
 	if (Status != NDIS_STATUS_FAILURE)
 	{
-		//
-		// Build the header
-		//
-		
-		CapTime=KeQueryPerformanceCounter(&TimeFreq); 
 
 		if( fres > (BytesTransfered+HeaderBufferSize+LookaheadBufferSize) )
 			fres = BytesTransfered+HeaderBufferSize+LookaheadBufferSize;
-
-		//fill the bpf header for this packet
-		CapTime.QuadPart+=Open->StartTime.QuadPart;
+		
+		//
+		// Build the header
+		//
 		header=(struct bpf_hdr*)CurrBuff;
-		header->bh_tstamp.tv_usec=(long)((CapTime.QuadPart%TimeFreq.QuadPart*1000000)/TimeFreq.QuadPart);
-		header->bh_tstamp.tv_sec=(long)(CapTime.QuadPart/TimeFreq.QuadPart);
+		GET_TIME(&header->bh_tstamp,&G_Start_Time);
 		header->bh_caplen=fres;
 		header->bh_datalen=PacketSize+HeaderBufferSize;
 		if(Open->mode==MODE_CAPT){

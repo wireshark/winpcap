@@ -28,6 +28,9 @@
 
 #include "win_bpf.h"
 
+#undef ExAllocatePool
+#define ExAllocatePool(A, B) ExAllocatePoolWithTag(A, B, 'APSA');
+
 //-------------------------------------------------------------------
 
 NTSTATUS
@@ -371,6 +374,10 @@ NTSTATUS NPF_SaveCurrentBuffer(POPEN_INSTANCE Open)
 		if(SizeToDump != TLastByte-Thead){
 			// Size limit reached.
 			Open->DumpLimitReached = TRUE;
+	
+			// Awake the application
+			KeSetEvent(Open->ReadEvent,0,FALSE);
+
 			return STATUS_UNSUCCESSFUL;
 		}
 		
@@ -432,6 +439,10 @@ NTSTATUS NPF_SaveCurrentBuffer(POPEN_INSTANCE Open)
 		if(SizeToDump != Ttail-Thead){
 			// Size limit reached.
 			Open->DumpLimitReached = TRUE;
+
+			// Awake the application
+			KeSetEvent(Open->ReadEvent,0,FALSE);
+			
 			return STATUS_UNSUCCESSFUL;
 		}
 		
