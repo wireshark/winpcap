@@ -993,9 +993,10 @@ BOOLEAN PacketAddAdapterDag(PCHAR name, PCHAR description, BOOLEAN IsAFile)
 			else
 				TmpAdInfo->Flags = INFO_FLAG_DAG_CARD;
 
-			dagfd = p_dagc_open(name,
-				0,
-				ebuf);
+			if(p_dagc_open)
+				dagfd = p_dagc_open(name, 0, ebuf);
+			else
+				dagfd = NULL;
 
 			if(!dagfd)
 			{
