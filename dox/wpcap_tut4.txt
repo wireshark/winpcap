@@ -1,0 +1,23 @@
+/** @ingroup wpcap_tut
+ */
+
+
+/** @defgroup wpcap_tut4 Capturing the packets with pcap_read_ex
+ *  @{
+
+The sample showed in this page behave exacltly like the one of the previous tutorial (\ref wpcap_tut2), but it uses pcap_read_ex() instead of pcap_loop().
+
+The callback-based capture mechanism of pcap_loop() is easy to use and proves to be useful in most situations. However, it's not handy in some advanced situations, like multithreaded applications or C++ programs, because handling a callback in a class is sometimes not practical. 
+
+In these cases, pcap_read_ex() allows to receive the packets with an explicit call. Its parameters are the same of a capture callback: it receives an adapter descriptor and a couple of pointers that will be initialized andreturned to the user: one to a pcap_pkthdr structure and another to a buffer with the packet data. In this way, a code similar to the one of a pcap_handler() can be used. In fact, we recycled the callback code of the previous sample and put it inside the main of the program.
+
+
+\include misc/basic_dump_ex.c
+
+\note pcap_read_ex() at the moment is available only under Win32, because is not a part of libpcap. This means that source code that relies on it will not be portable under Unix.
+
+Why we use pcap_read_ex() instead of pcap_next(), that is available in libpcap too and therefore is portable? Because pcap_next() has some annoying limitations, that discourage its use in common situations. First of all, it is inefficient because it hides the callback method but continues to call pcap_dispatch(). Second, it is not able to detect EOF, so it's hard to use when gathering packets from a file.
+
+Notice instead that pcap_read_ex() returns different values for success, timeout elapsed, error and EOF conditions. 
+
+@}*/

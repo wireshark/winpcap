@@ -1,0 +1,41 @@
+/** @ingroup wpcap_tut
+ */
+
+/** @defgroup wpcap_tut8 Sending Packets
+ *  @{
+
+Although the name \e WinPcap indicates clearly that the main purpose of the library is packet capture, other useful features for raw networking are provided. Among them, the user can find a complete set of functions to send raw packets, that will be shown in this lesson.
+
+Note that the libpcap library at the moment doesn't provide any way to send packets: all the functions showed here are WinPcap externsions and will not work under Unix. Send queues are supported under WinNTx only (Windows NT 4, Windows 2000, Windows XP, etc.).
+
+<b>Sending a single packet with pcap_sendpacket</b>
+
+the simplest way to send a packet is shown in the next code snippet. After opening an adapter, pcap_sendpacket() is called to send a hand-crafted packet.
+pcap_sendpacket() takes as arguments a buffer containing the data to send, its length and the interface that will send it.
+Notice that the buffer is sent to the net as is, without any manipulation: this means that the application must crate the correct protocol headers in order to send something meaningful.
+
+\include misc/sendpack.c
+
+<b>Send queues</b>
+
+While pcap_sendpacket() offers a simple and immediate way to send a single packet, send queues provide an advanced, powerful and efficient mechanism to send groups of packets.
+A send queue is a container for a set of raw packets that will be sent to the network. It has a size, that represents the maximum amount of bytes it can store.
+
+A send queue is created calling the pcap_sendqueue_alloc() function and specifying the size that the new queue will have. 
+
+Once the queue is created, pcap_sendqueue_queue() can be used to store a packet in it. This function receives a pcap_pkthdr with the timestamp and the length and a buffer with the data of the packet. These parameters are the same received by pcap_read_ex() and pcap_handler(), therefore queuing a packet that was just captured or read from a dumpfile is straightforward.
+
+To send a queue WinPcap provides the pcap_sendqueue_transmit() function. Note the third parameter: if nonzero, the send will be \e synchronized, i.e. the relative timestamps of the packets will be respected. This requires more CPU power, because the synchronization takes place in the kernel driver using low-level loops, but normally grants a very high precision (often around few microseconds or less).
+
+Note that sending a queue with pcap_sendqueue_transmit() is much more efficient than performing a series of pcap_sendpacket(), because a send queue is buffered at kernel level decreasing drastically the number of system calls.
+
+When a queue is no more needed, it can be deleted with pcap_sendqueue_destroy() that frees all the buffers associated with the queue.
+
+The next code shows how to use send queues. It opens a capture file with pcap_open_offline(), then it moves the packets from the file to a properly allocated queue. At his point it transmits the queue, synchronizing it if requested by the user. 
+
+Note that the MAC of the file is compared with the one of the interface using pcap_datalink(), and a warning is printed if they are different: sending on a link-layer the packets captured from a different one is quite pointless.
+
+\include sendcap/sendcap.c
+
+
+@}*/

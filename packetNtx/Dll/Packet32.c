@@ -479,6 +479,7 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 	HKEY PathKey;
 	SERVICE_STATUS SStat;
 	BOOLEAN QuerySStat;
+	WCHAR SymbolicLink[128];
 
     ODSEx("PacketOpenAdapter: trying to open the adapter=%S\n",AdapterName)
 
@@ -602,10 +603,15 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 	}
 	lpAdapter->NumWrites=1;
 
-	wsprintf(lpAdapter->SymbolicLink,TEXT("\\\\.\\%s%s"),DOSNAMEPREFIX,&AdapterName[8]);
+	wsprintf(SymbolicLink,TEXT("\\\\.\\%s%s"),DOSNAMEPREFIX,&AdapterName[8]);
 	
+	// Copy  only the bytes that fit in the adapter structure.
+	// Note that lpAdapter->SymbolicLink is present for backward compatibility but will
+	// never be used by the apps
+	memcpy(lpAdapter->SymbolicLink, (PCHAR)SymbolicLink, MAX_LINK_NAME_LENGTH);
+
 	//try if it is possible to open the adapter immediately
-	lpAdapter->hFile=CreateFile(lpAdapter->SymbolicLink,GENERIC_WRITE | GENERIC_READ,
+	lpAdapter->hFile=CreateFile(SymbolicLink,GENERIC_WRITE | GENERIC_READ,
 		0,NULL,OPEN_EXISTING,0,0);
 	
 	if (lpAdapter->hFile != INVALID_HANDLE_VALUE) {
@@ -630,11 +636,11 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 	//this is probably the first request on the packet driver. 
 	//We must create the dos device and set the access rights on it
 	else{
-		Result=DefineDosDevice(DDD_RAW_TARGET_PATH,&lpAdapter->SymbolicLink[4],AdapterName);
+		Result=DefineDosDevice(DDD_RAW_TARGET_PATH,&SymbolicLink[4],AdapterName);
 		if (Result)
 		{
 
-			lpAdapter->hFile=CreateFile(lpAdapter->SymbolicLink,GENERIC_WRITE | GENERIC_READ,
+			lpAdapter->hFile=CreateFile(SymbolicLink,GENERIC_WRITE | GENERIC_READ,
 				0,NULL,OPEN_EXISTING,0,0);
 			if (lpAdapter->hFile != INVALID_HANDLE_VALUE)
 			{		

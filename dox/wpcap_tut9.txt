@@ -1,0 +1,33 @@
+/** @ingroup wpcap_tut
+ */
+
+/** @defgroup wpcap_tut9 Gathering Statistics on the network traffic
+ *  @{
+
+This lesson shows another advanced feature of WinPcap: the ability to collect statistics about network traffic.
+The statistical engine make use of the kernel-level packet filter to efficiently classify the incoming packet. You can give a look at the \ref NPF if you want to know more details.
+
+In order to use this feature to monitor the network, the programmer must open an adapter and put it in \e statistical \e mode. This can be done with pcap_setmode(). In particular, MODE_STAT must be used as the argument of this function.
+
+Notice the fourth parameter (\e to_ms) of pcap_open_live(): it defines the interval (in milliseconds) among the statistical samples.
+
+Before enabling statistical mode, the user has the possibility to set a filter, that defines the subset of network traffic that will be monitored. See the paragraph on the \ref language for details. If no filter has been set, all the packets will be counted.
+Once the filter is set, pcap_setmode() is called, and callback invocation is enabled with pcap_loop(), the capture instance starts to work in statistical mode. The callback receives, at precise intervals of to_ms milliceconds, the samples calculated by WinPcap. These samples are encapsulated in the second and third parameter of the callback, like shown in the following figure:
+
+\image html stats_wpcap.gif
+
+
+Two 64-bit counters are provided: the number of packets and the amount of bytes received during the last interval.
+
+With statistical mode, making an application that monitors the TCP traffic load is a matter of few lines of code. The following sample shows how to do it.
+First, the adapter is opened with a timeout of 1000 ms. This means that dispatcher_handler() will be called once per second.
+At this point a filter that keeps only tcp packets is compiled and set. Then pcap_setmode() and pcap_loop() are called. Note that a struct timeval pointer is passed to pcap_loop() as the \e user parameter. This structure will be used to share a timestamp between two callback invocations.
+dispatcher_handler() calculates the exact time interval elapsed from the last invocation, uses it to obtain the BpS and the Pps and then prints these values on the screen.
+
+Note that this example is by far more efficient than a program that captures the packets and calculate statistics at user-level: statistical mode requires the minumum amount of data copies and context switches, therefore the CPU is optimized. Moreover, a very small quantity of memory is required.
+
+\include tcptop/tcptop.c
+
+@}*/
+
+

@@ -32,7 +32,6 @@ pcap_getevent(pcap_t *p)
 	}	
 
 	return PacketGetReadEvent(p->adapter);
-
 }
 
 pcap_send_queue* 

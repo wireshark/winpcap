@@ -171,7 +171,7 @@ struct dump_bpf_hdr{
 #endif
 
 #define        DOSNAMEPREFIX   TEXT("Packet_")	///< Prefix added to the adapters device names to create the WinPcap devices
-#define        MAX_LINK_NAME_LENGTH   64		///< Maximum length of the devices symbolic links
+#define        MAX_LINK_NAME_LENGTH	64			//< Maximum length of the devices symbolic links
 #define        NMAX_PACKET 65535
 
 /*!
@@ -182,7 +182,7 @@ struct dump_bpf_hdr{
 */
 typedef struct _ADAPTER  { 
 	HANDLE hFile;				///< \internal Handle to an open instance of the NPF driver.
-	TCHAR  SymbolicLink[MAX_LINK_NAME_LENGTH]; ///< \internal A string containing the name of the network adapter currently opened.
+	CHAR  SymbolicLink[MAX_LINK_NAME_LENGTH]; ///< \internal A string containing the name of the network adapter currently opened.
 	int NumWrites;				///< \internal Number of times a packets written on this adapter will be repeated 
 								///< on the wire.
 	HANDLE ReadEvent;			///< A notification event associated with the read calls on the adapter.

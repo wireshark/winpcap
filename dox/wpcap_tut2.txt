@@ -1,0 +1,21 @@
+/** @ingroup wpcap_tut
+ */
+
+/** @defgroup wpcap_tut2 Obtaining advanced information about installed devices
+ *  @{
+
+Lesson 1 (\ref wpcap_tut1) showed how to get basic information (i.e. device name and description) about available adapters. Actually, WinPcap provides also other advanced information. In particular, every pcap_if structure returned by pcap_findalldevs() contains also a list of pcap_addr structures, with:
+- a list of addresses for that interface.
+- a list of netmasks (each of which corresponding to an entry in the addresses list).
+- a list of broadcast addresses (each of which corresponding to an entry in the addresses list).
+- a list of destination addresses (each of which corresponding to an entry in the addresses list).
+
+The following sample provides a ifprint() function that prints the whole content of an pcap_if structure. It is invoked by the program with every entry returned by pcap_if.
+
+At this point, the program calls pcap_lookupdev(). This functions returns the first among the available interfaces and is normally used to get a valid device when the user doesn't make an explicit choice. Note however that the output of pcap_lookupdev() depends on the OS where it's used: under Unix and Win9x, it returns an ASCII string while under WinNTx (Windows NT, 2000, XP, etc.) it returns an UNICODE string. This is the reason why a check with GetVersion() is done.
+
+Finally, the address and netmask of the first interface are obtained with pcap_lookupnet(). This function is quite simple to use, but has some remarkable limitations. First, it return a single couple address/mask, so it doesn't work properly on interfaces with more than one adapter. Second, it supports only Ipv4 (32 bit) addresses. pcap_findalldevs() doesn't show any of these problems, so whenever possible use it instead than pcap_lookupnet().
+
+\include iflist/iflist.c
+
+@}*/

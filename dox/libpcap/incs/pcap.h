@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /tcpdump/master/libpcap/pcap.h,v 1.34 2001/12/09 05:10:03 guy Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/incs/pcap.h,v 1.2 2002/05/08 09:15:11 degioanni Exp $ (LBL)
  */
 
 
@@ -63,14 +63,14 @@ extern "C" {
  * predates the bpf typedefs for 64-bit support.
  */
 #if BPF_RELEASE - 0 < 199406
-typedef	int bpf_int32;
-typedef	u_int bpf_u_int32;
+typedef	int bpf_int32; ///< 32-bit integer
+typedef	u_int bpf_u_int32; ///< 32-bit unsigned integer
 #endif
 
 typedef struct pcap pcap_t; ///< Descriptor of an open capture instance. This structure is \b opaque to the user, that handles its content through the functions provided by wpcap.dll.
-typedef struct pcap_dumper pcap_dumper_t;
-typedef struct pcap_if pcap_if_t;
-typedef struct pcap_addr pcap_addr_t;
+typedef struct pcap_dumper pcap_dumper_t; ///< libpcap savefile descriptor.
+typedef struct pcap_if pcap_if_t; ///< Item in a list of interfaces, see pcap_if
+typedef struct pcap_addr pcap_addr_t; ///< Representation of an interface address, see pcap_addr
 
 /*! \brief Header of a libpcap dump file.
  *
@@ -137,6 +137,9 @@ struct pcap_stat {
 	u_int ps_recv;		///< number of packets received
 	u_int ps_drop;		///< number of packets dropped
 	u_int ps_ifdrop;	///< drops by interface, not yet supported
+#ifdef WIN32
+	u_int bs_capt;		///< number of packets that reach the application
+#endif /* WIN32 */
 };
 
 /*! \brief

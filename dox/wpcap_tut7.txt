@@ -1,0 +1,47 @@
+/** @ingroup wpcap_tut
+ */
+
+/** @defgroup wpcap_tut7 Handling offline dump files
+ *  @{
+
+In the previous lessons, we saw the method to perform live captures from a network interface. A similar procedure can be used to write and read the packets from a file with the dump of the network traffic in libpcap format. This format is the one used by most WinPcap-based tools, like WinDump, Ethereal and Snort. In this lesson, we'll see how to create and use traffic dumps. We'll see also hoe to use the kernel dump feature of WinPcap to perform high-performance dumps.
+
+<b>Saving packets to a dump file</b>
+
+First of all, let's see how to write packets in libpcap format.
+
+The following example captures the packets from the selected interface and saves them on a file whose name is provided by the user.
+
+\include misc\savedump.c
+
+As you can see, the structure of the program is very similar to the ones seen in the previous lessons. The differences are:
+- a pcap_dump_open() is issued once the interface is opened. This call opens a dump file associated with the interface.
+- the packets are written to this file with a pcap_dump() inside the packet_handler() callback. The parameters of this function are the same received by the pcap_handler(), so saving a packet is straightforward.
+
+<b>Reading packets from a dump file</b>
+
+Now that we have a dump file, we can see how to read its content. The following code opens a libpcap dump and displays every packet contained in it. The file is opened with pcap_open_offline(), then the usual pcap_loop() is used to cycle among the packets. As you can see, reading packets from an offline capture is nearly identical to receiving them from a physical interface.
+
+
+\include misc\readfile.c
+
+The next example has the same behavior of the previous one, but pcap_read_ex() is used instead than the pcap_loop() callback system.
+
+\include misc\readfile_ex.c
+
+<b>Writing packets to a dump file with pcap_live_dump</b>
+
+Recent versions of WinPcap provide a further way to save network traffic to disk, the pcap_live_dump() function. pcap_live_dump() takes three parameters: a file name, the maximum size (in bytes) that this file is allowed to reach and the maximum amount of packets that the file will contain. Zero means no limit for both these values. Notice that the program can set a filter (with pcap_setfilter(), see the tutorial \ref wpcap_tut5) before calling pcap_live_dump() to filter the traffic that will go to file.
+
+pcap_live_dump() is non-blocking, therefore it starts the dump and returns immediately: The dump process goes on asynchronously until the maximum file size or the maximum amount of packets has been reached. 
+
+The application can check the end of the dump with  pcap_live_dump_ended(), that returns nonzero if the dump process is finished.
+\b Beware that this function can block your application forever if the limits are both 0.
+
+The difference between pcap_live_dump() and pcap_dump(), apart from the possibility to set limits, is performance. pcap_live_dump() uses exploits the possibility of the NPF driver (see \ref NPF) to write dumps from kernel level, minimizing context switches and memory copies.
+
+However, consider that pcap_live_dump() is a Win32-specific extension to libpcap, therefore it's not available under Unix.
+
+\include kdump\kdump.c
+
+@}*/

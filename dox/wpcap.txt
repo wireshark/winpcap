@@ -1,21 +1,20 @@
 /** @defgroup wpcap WinPcap user's manual
- *  @{
-
-\htmlonly<p>This section contains the user manual of wpcap, the highest level of
-the two WinPcap libraries. Wpcap is a dll with a set of high level system independent functions for packet
+ *  @{ \htmlonly<p>This section contains the user manual of wpcap.dll, the
+dynamic library that contains the public WinPcap API. wpcap.dll exports a set of
+system independent functions for packet
 capture and network analysis. These functions allow to:</p>
 <ul>
   <li>obtain the list of the available network adapters
   <li>retrieve various information about an adapter, like the description and the list of addresses</li>
   <li>sniff the packets using one of the network interfaces of the PC</li>
-  <li>send packets to the network
-  <li>save packets to disk and load them with an interface similar to the one of
+  <li>send packets to the network using different methods
+  <li>efficiently save packets to disk and load them with an interface similar to the one of
     live capture</li>
-  <li>create packet filters from an high level language and associate them with
-    a capture</li>
+  <li>create packet filters from an high level language and apply them to the captured
+    packets</li>
 </ul>
 <p>wpcap.dll is compatible with libpcap, the well known packet capture library
-for Unix. This compatibility allows to easily write portable network tools that
+for Unix. This compatibility allows to write portable network tools that
 will work on the whole Win32 OS family and on all the major Unix flavors.</p>
 <p>Several portions of the manuals present in this section derive directly from the man pages of
 tcpdump and libpcap, maintained by the tcpdump.org developers. Therefore, if you
