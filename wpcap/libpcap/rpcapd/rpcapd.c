@@ -249,7 +249,7 @@ char errbuf[PCAP_ERRBUF_SIZE + 1];	// keeps the error string, prior to be printe
 		// Set daemon mode
 		setsid();
 		
-		// generated under unix with 'kill -HUP'
+		// generated under unix with 'kill -HUP', needed to reload the configuration
 		signal(SIGHUP, fileconf_read);
 
 		if ( (pid = fork() ) != 0)
@@ -279,6 +279,9 @@ char errbuf[PCAP_ERRBUF_SIZE + 1];	// keeps the error string, prior to be printe
 	{
 		// Enable the catching of Ctrl+C
 		signal(SIGINT, main_cleanup);
+
+		// generated under unix with 'kill -HUP', needed to reload the configuration
+		signal(SIGHUP, fileconf_read);
 
 		printf("Press CTRL + C to stop the server...\n");
 	}
