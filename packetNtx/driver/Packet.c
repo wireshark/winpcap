@@ -440,7 +440,7 @@ BOOLEAN createDevice(IN OUT PDRIVER_OBJECT adriverObjectP,
 	IF_LOUD(DbgPrint("Creating device name: %ws\n", deviceName.Buffer);)
 
 		status = IoCreateDevice(adriverObjectP, 
-		sizeof(PDEVICE_EXTENSION),
+		sizeof(DEVICE_EXTENSION),
 		&deviceName, 
 		FILE_DEVICE_TRANSPORT, 
 		0, 
