@@ -1,4 +1,4 @@
-// Microsoft Visual C++ generated resource script.
+//Microsoft Developer Studio generated resource script.
 //
 #include "resource.h"
 
@@ -27,18 +27,18 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE 
+1 TEXTINCLUDE MOVEABLE PURE 
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE 
+2 TEXTINCLUDE MOVEABLE PURE 
 BEGIN
     "#include ""afxres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE 
+3 TEXTINCLUDE MOVEABLE PURE 
 BEGIN
     "\r\n"
     "\0"
@@ -59,14 +59,15 @@ LANGUAGE LANG_ITALIAN, SUBLANG_ITALIAN
 #pragma code_page(1252)
 #endif //_WIN32
 
+#ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
 //
 // Version
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,0,0,17
- PRODUCTVERSION 3,0,0,17
+ FILEVERSION 3,0,0,18
+ PRODUCTVERSION 3,0,0,18
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -81,15 +82,18 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "Comments", "NPF.SYS installer/remover"
-            VALUE "CompanyName", "NetGroup - Politecnico di Torino"
-            VALUE "FileDescription", "npf_mgm Application"
-            VALUE "FileVersion", "3, 0, 0, 17"
-            VALUE "InternalName", "npf_mgm"
-            VALUE "LegalCopyright", "Copyright (C) 2003"
-            VALUE "OriginalFilename", "npf_mgm.exe"
-            VALUE "ProductName", " npf_mgm Management NPF.SYS"
-            VALUE "ProductVersion", "3, 0, 0, 17"
+            VALUE "Comments", "NPF.SYS installer/remover\0"
+            VALUE "CompanyName", "NetGroup - Politecnico di Torino\0"
+            VALUE "FileDescription", "npf_mgm Application\0"
+            VALUE "FileVersion", "3, 0, 0, 18\0"
+            VALUE "InternalName", "npf_mgm\0"
+            VALUE "LegalCopyright", "Copyright (C) 2003\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "npf_mgm.exe\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", " npf_mgm Management NPF.SYS\0"
+            VALUE "ProductVersion", "3, 0, 0, 18\0"
+            VALUE "SpecialBuild", "\0"
         END
     END
     BLOCK "VarFileInfo"
@@ -97,6 +101,8 @@ BEGIN
         VALUE "Translation", 0x0, 1200
     END
 END
+
+#endif    // !_MAC
 
 #endif    // Italian (Italy) resources
 /////////////////////////////////////////////////////////////////////////////
