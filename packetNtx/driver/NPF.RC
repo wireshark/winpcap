@@ -54,8 +54,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,0,0,11
- PRODUCTVERSION 3,0,0,11
+ FILEVERSION 3,0,0,12
+ PRODUCTVERSION 3,0,0,12
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x9L
@@ -73,14 +73,14 @@ BEGIN
             VALUE "Comments", "Netgroup Packet Filter Driver\0"
             VALUE "CompanyName", "Politecnico di Torino\0"
             VALUE "FileDescription", "NPF Driver - TME extensions\0"
-            VALUE "FileVersion", "3, 0, 0, 11\0"
+            VALUE "FileVersion", "3, 0, 0, 12\0"
             VALUE "InternalName", "NPF + TME \0"
             VALUE "LegalCopyright", "Copyright © 2002\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "NPF.RC\0"
             VALUE "PrivateBuild", "PRIVATE BUILD\0"
             VALUE "ProductName", "NPF Driver\0"
-            VALUE "ProductVersion", "3, 0, 0, 11\0"
+            VALUE "ProductVersion", "3, 0, 0, 12\0"
             VALUE "SpecialBuild", "\0"
         END
     END

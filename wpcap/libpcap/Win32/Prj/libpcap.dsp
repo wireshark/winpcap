@@ -138,6 +138,10 @@ SOURCE=..\Src\inet_pton.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\libpcap.rc
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\nametoaddr.c
 # End Source File
 # Begin Source File
