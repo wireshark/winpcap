@@ -178,18 +178,21 @@ BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, 
 		status = RegOpenKeyEx(SystemKey,ifname,0,KEY_READ,&InterfaceKey);
 		if (status != ERROR_SUCCESS) {
 			RegCloseKey(SystemKey);
+			RegCloseKey(UnderTcpKey);
 			goto fail;
 		}
 		RegCloseKey(SystemKey);
 		status = RegOpenKeyEx(InterfaceKey,TEXT("Parameters"),0,KEY_READ,&ParametersKey);
 		if (status != ERROR_SUCCESS) {
 			RegCloseKey(InterfaceKey);
+			RegCloseKey(UnderTcpKey);
 			goto fail;
 		}
 		RegCloseKey(InterfaceKey);
 		status = RegOpenKeyEx(ParametersKey,TEXT("TcpIp"),0,KEY_READ,&TcpIpKey);
 		if (status != ERROR_SUCCESS) {
 			RegCloseKey(ParametersKey);
+			RegCloseKey(UnderTcpKey);
 			goto fail;
 		}
 		RegCloseKey(ParametersKey);
@@ -217,6 +220,7 @@ BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, 
 		status = RegQueryValueEx(TcpIpKey,TEXT("DhcpIPAddress"),NULL,&RegType,(LPBYTE)String,&BufLen);
 		if (status != ERROR_SUCCESS) {
 			RegCloseKey(TcpIpKey);
+			RegCloseKey(UnderTcpKey);
 			goto fail;
 		}
 
@@ -249,6 +253,7 @@ BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, 
 		status = RegQueryValueEx(TcpIpKey,TEXT("DhcpSubnetMask"),NULL,&RegType,(LPBYTE)String,&BufLen);
 		if (status != ERROR_SUCCESS) {
 			RegCloseKey(TcpIpKey);
+			RegCloseKey(UnderTcpKey);
 			goto fail;
 		}
 		
@@ -272,6 +277,7 @@ BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, 
 		// The number of masks MUST be equal to the number of adresses
 		if(nmasks != naddrs){
 			RegCloseKey(TcpIpKey);
+			RegCloseKey(UnderTcpKey);
 			goto fail;
 		}
 				
@@ -283,6 +289,7 @@ BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, 
 		status = RegQueryValueEx(TcpIpKey,TEXT("IPAddress"),NULL,&RegType,(LPBYTE)String,&BufLen);
 		if (status != ERROR_SUCCESS) {
 			RegCloseKey(TcpIpKey);
+			RegCloseKey(UnderTcpKey);
 			goto fail;
 		}
 		
@@ -315,6 +322,7 @@ BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, 
 		status = RegQueryValueEx(TcpIpKey,TEXT("SubnetMask"),NULL,&RegType,(LPBYTE)String,&BufLen);
 		if (status != ERROR_SUCCESS) {
 			RegCloseKey(TcpIpKey);
+			RegCloseKey(UnderTcpKey);
 			goto fail;
 		}
 		
@@ -338,6 +346,7 @@ BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, 
 		// The number of masks MUST be equal to the number of adresses
 		if(nmasks != naddrs){
 			RegCloseKey(TcpIpKey);
+			RegCloseKey(UnderTcpKey);
 			goto fail;
 		}
 				
@@ -346,6 +355,7 @@ BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, 
 	*NEntries = naddrs + 1;
 
 	RegCloseKey(TcpIpKey);
+	RegCloseKey(UnderTcpKey);
 	
 	if (status != ERROR_SUCCESS) {
 		goto fail;
