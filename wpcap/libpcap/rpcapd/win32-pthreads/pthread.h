@@ -1,33 +1,33 @@
-/* This is the POSIX thread API (POSIX 1003).
+/* This is an implementation of the threads API of POSIX 1003.1-2001.
  *
  * --------------------------------------------------------------------------
  *
- *	Pthreads-win32 - POSIX Threads Library for Win32
- *	Copyright(C) 1998 John E. Bossom
- *	Copyright(C) 1999,2002 Pthreads-win32 contributors
+ *      Pthreads-win32 - POSIX Threads Library for Win32
+ *      Copyright(C) 1998 John E. Bossom
+ *      Copyright(C) 1999,2003 Pthreads-win32 contributors
  * 
- *	Contact Email: rpj@ise.canberra.edu.au
+ *      Contact Email: rpj@callisto.canberra.edu.au
  * 
- *	The current list of contributors is contained
- *	in the file CONTRIBUTORS included with the source
- *	code distribution. The list can also be seen at the
- *	following World Wide Web location:
- *	http://sources.redhat.com/pthreads-win32/contributors.html
+ *      The current list of contributors is contained
+ *      in the file CONTRIBUTORS included with the source
+ *      code distribution. The list can also be seen at the
+ *      following World Wide Web location:
+ *      http://sources.redhat.com/pthreads-win32/contributors.html
  * 
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation; either
- *	version 2 of the License, or (at your option) any later version.
+ *      This library is free software; you can redistribute it and/or
+ *      modify it under the terms of the GNU Lesser General Public
+ *      License as published by the Free Software Foundation; either
+ *      version 2 of the License, or (at your option) any later version.
  * 
- *	This library is distributed in the hope that it will be useful,
- *	but WITHOUT ANY WARRANTY; without even the implied warranty of
- *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *	Lesser General Public License for more details.
+ *      This library is distributed in the hope that it will be useful,
+ *      but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ *      Lesser General Public License for more details.
  * 
- *	You should have received a copy of the GNU Lesser General Public
- *	License along with this library in the file COPYING.LIB;
- *	if not, write to the Free Software Foundation, Inc.,
- *	59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
+ *      You should have received a copy of the GNU Lesser General Public
+ *      License along with this library in the file COPYING.LIB;
+ *      if not, write to the Free Software Foundation, Inc.,
+ *      59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
 #if !defined( PTHREAD_H )
@@ -76,12 +76,14 @@
  *	Provides an implementation of PThreads based upon the
  *	standard:
  *
- *		POSIX 1003.1c-1995	(POSIX.1c)
+ *		POSIX 1003.1-2001
+ *  and
+ *    The Single Unix Specification version 3
  *
- *	Parts of the implementation also comply with the
- *	Open Group Unix 98 specification in order to enhance
- *	code portability between Windows, various commercial
- *	Unix implementations, and Linux.
+ *    (these two are equivalent)
+ *
+ *	in order to enhance code portability between Windows,
+ *  various commercial Unix implementations, and Linux.
  *
  *	See the ANNOUNCE file for a full list of conforming
  *	routines and defined constants, and a list of missing
@@ -196,6 +198,15 @@
 #endif /* HAVE_SIGNAL_H */
 
 #include <setjmp.h>
+#include <limits.h>
+
+/*
+ * Boolean values to make us independent of system includes.
+ */
+enum {
+  PTW32_FALSE = 0,
+  PTW32_TRUE = (! PTW32_FALSE)
+};
 
 /*
  * This is a duplicate of what is in the autoconf config.h,
@@ -283,8 +294,8 @@ extern "C"
 /*
  * -------------------------------------------------------------
  *
- * POSIX 1003.1c-1995 Options
- * ===========================
+ * POSIX 1003.1-2001 Options
+ * =========================
  *
  * _POSIX_THREADS (set)
  *			If set, you can use threads
@@ -350,11 +361,20 @@ extern "C"
  *			If set you can use the special *_r library
  *			functions that provide thread-safe behaviour
  *
+ * _POSIX_READER_WRITER_LOCKS (set)
+ *			If set, you can use read/write locks
+ *
+ * _POSIX_SPIN_LOCKS (set)
+ *			If set, you can use spin locks
+ *
+ * _POSIX_BARRIERS (set)
+ *			If set, you can use barriers
+ *
  *	+ These functions provide both 'inherit' and/or
  *	  'protect' protocol, based upon these macro
  *	  settings.
  *
- * POSIX 1003.1c-1995 Limits
+ * POSIX 1003.1-2001 Limits
  * ===========================
  *
  * PTHREAD_DESTRUCTOR_ITERATIONS
@@ -373,18 +393,13 @@ extern "C"
  *			Maximum number of threads supported per
  *			process (must be at least 64).
  *
+ * _POSIX_SEM_NSEMS_MAX
+ *	The maximum number of semaphores a process can have.
+ *	(only defined if not already defined)
  *
- * POSIX 1003.1j/D10-1999 Options
- * ==============================
- *
- * _POSIX_READER_WRITER_LOCKS (set)
- *			If set, you can use read/write locks
- *
- * _POSIX_SPIN_LOCKS (set)
- *			If set, you can use spin locks
- *
- * _POSIX_BARRIERS (set)
- *			If set, you can use barriers
+ * _POSIX_SEM_VALUE_MAX
+ *	The maximum value a semaphore can have.
+ *	(only defined if not already defined)
  *
  * -------------------------------------------------------------
  */
@@ -452,11 +467,17 @@ extern "C"
  *		constant should be set at DLL load time.
  *
  */
-#define PTHREAD_DESTRUCTOR_ITERATIONS			   4
-#define PTHREAD_KEYS_MAX				  64
-#define PTHREAD_STACK_MIN				   0
-#define PTHREAD_THREADS_MAX				2019
-
+#define PTHREAD_DESTRUCTOR_ITERATIONS			       4
+#define PTHREAD_KEYS_MAX			64
+#define PTHREAD_STACK_MIN			 0
+#define PTHREAD_THREADS_MAX		      2019
+#ifndef _POSIX_SEM_NSEMS_MAX
+/* Not used and only an arbitrary value. */
+#  define _POSIX_SEM_NSEMS_MAX		      1024
+#endif
+#ifndef _POSIX_SEM_VALUE_MAX
+#  define _POSIX_SEM_VALUE_MAX	       (INT_MAX/2)
+#endif
 
 #if __GNUC__ && ! defined (__declspec)
 # error Please upgrade your GNU compiler to one that supports __declspec.
@@ -563,7 +584,7 @@ enum {
  * ====================
  * ====================
  */
-#define PTHREAD_ONCE_INIT	{ FALSE, -1 }
+#define PTHREAD_ONCE_INIT	{ PTW32_FALSE, -1 }
 
 struct pthread_once_t_
 {
@@ -1053,6 +1074,12 @@ PTW32_DLLPORT int pthread_rwlockattr_setpshared (pthread_rwlockattr_t * attr,
 					   int pshared);
 
 #if PTW32_LEVEL >= PTW32_LEVEL_MAX - 1
+
+/*
+ * Signal Functions. Should be defined in <signal.h> but MSVC and MinGW32
+ * already have signal.h that don't define these.
+ */
+PTW32_DLLPORT int pthread_kill(pthread_t thread, int sig);
 
 /*
  * Non-portable functions
