@@ -103,3 +103,12 @@
 	\defgroup remote_open_flags Flags defined in the pcap_open() function
 */
 
+/*!
+	\ingroup remote_struct
+	\defgroup remote_samp_methods Sampling methods defined in the pcap_setsampling() function
+*/
+
+/*!
+	\ingroup remote_struct
+	\defgroup remote_auth_methods Authentication methods supported by the RPCAP protocol
+*/
