@@ -340,7 +340,7 @@ LONG PacketDumpRegistryKey(PCHAR KeyName, PCHAR FileName)
  */
 
 /// Current packet.dll Version. It can be retrieved directly or through the PacketGetVersion() function.
-char PacketLibraryVersion[] = "3.0 alpha3"; 
+char PacketLibraryVersion[] = "3.0.1"; 
 
 /*! 
   \brief Returns a string with the dll version.
