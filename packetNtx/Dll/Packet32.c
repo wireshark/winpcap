@@ -1141,7 +1141,7 @@ BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
 /*!
   \brief Sets the size of the kernel-level buffer associated with a capture.
   \param AdapterObject Pointer to an _ADAPTER structure.
-  \param dim New size of the buffer, in \b kilobytes.
+  \param dim New size of the buffer, in \b bytes.
   \return The function returns TRUE if successfully completed, FALSE if there is not enough memory to 
    allocate the new buffer.
 
