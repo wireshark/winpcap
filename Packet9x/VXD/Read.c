@@ -572,8 +572,8 @@ Packet_tap (	IN NDIS_HANDLE ProtocolBindingContext,
 		if( fres>uiBytesTransferred )fres=uiBytesTransferred;
 			lCapTime+=pOpen->StartTime;
 			header=(struct bpf_hdr*)CurrBuff;
-			header->bh_tstamp.tv_usec=(long)((lCapTime%1193182)*1000000/1193182);
-			header->bh_tstamp.tv_sec=(long)((lCapTime)/1193182);
+			header->bh_tstamp.tv_usec=(long)((lCapTime%1193046)*1000000/1193046);
+			header->bh_tstamp.tv_sec=(long)((lCapTime)/1193046);
 			header->bh_caplen=(UINT)fres;
 			header->bh_datalen=(UINT)uiPacketSize+uiHeaderBufferSize;
 			header->bh_hdrlen=sizeof(struct bpf_hdr);
