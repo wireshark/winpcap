@@ -30,10 +30,6 @@
  *
  */
 
-//#include <dagnew.h>
-//#include <dagtoken.h>
-//#include <dagapi.h>
-
 #define DAGC_ERRBUF_SIZE   512
 #define FILEBUFSIZE         65536
 #define MAXDAGCARDS         32
@@ -78,6 +74,12 @@ typedef ULONGLONG         ull_t;
 /* Flags for dagc_open */
 #define DAGC_OPEN_SHARED   1
 #define DAGC_OPEN_EXCLUSIVE 2
+
+#define TYPE_LEGACY       0
+#define TYPE_HDLC_POS     1
+#define TYPE_ETH          2
+#define TYPE_ATM          3
+#define TYPE_AAL5         4
 
 /*
  * Card statistics.
