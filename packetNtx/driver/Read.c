@@ -467,23 +467,26 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	NdisReleaseSpinLock( &Open->BufLock );
 	
 	maxbufspace=Packet_WORDALIGN(fres+NPFHdrSize);
-
-	if(Ttail+maxbufspace >= Open->BufSize){
-		if(Thead <= maxbufspace)
-		{
-			Open->Dropped++;
-			return NDIS_STATUS_NOT_ACCEPTED;
-		}
-		else{
-			Ttail=0;
-			ResetBuff = TRUE;
-		}
-	}
 	
 	if (Thead > Ttail && (Thead-Ttail) <= maxbufspace)
 	{
 		Open->Dropped++;
 		return NDIS_STATUS_NOT_ACCEPTED;
+	}
+	else{ 
+		if(Thead <= Ttail && Ttail + maxbufspace >= Open->BufSize)
+		{
+			if(Thead <= maxbufspace)
+			{
+				Open->Dropped++;
+				return NDIS_STATUS_NOT_ACCEPTED;
+			}
+			else
+			{
+				Ttail=0;
+				ResetBuff = TRUE;
+			}
+		}
 	}
 
 	CurrBuff=Open->Buffer+Ttail;
