@@ -27,7 +27,14 @@
 #include "ntddk.h"
 #include "memory_t.h"
 #include "time_calls.h"
-#endif
+#endif /*WIN_NT_DRIVER*/
+
+#ifdef WIN32
+#include "memory_t.h"
+#include "time_calls.h"
+#endif /*WIN32*/
+
+
 
 #ifdef __FreeBSD__
 

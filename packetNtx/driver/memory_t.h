@@ -86,6 +86,8 @@ __inline VOID SW_ULONG_ASSIGN(void *dst, uint32 src)
 
 }
 
+#ifdef WIN_NT_DRIVER
+
 #define ALLOCATE_MEMORY(dest,type,amount) \
 	  (dest)=ExAllocatePool(NonPagedPool,sizeof(type)*(amount));
 #define ALLOCATE_ZERO_MEMORY(dest,type,amount) \
@@ -98,6 +100,9 @@ __inline VOID SW_ULONG_ASSIGN(void *dst, uint32 src)
 #define FREE_MEMORY(dest) ExFreePool(dest);
 #define ZERO_MEMORY(dest,amount) RtlZeroMemory(dest,amount);
 #define COPY_MEMORY(dest,src,amount) RtlCopyMemory(dest,src,amount);
+
+#endif /*WIN_NT_DRIVER*/
+
 
 #endif 
 

@@ -22,6 +22,8 @@
 #ifndef _time_calls
 #define _time_calls
 
+#ifdef WIN_NT_DRIVER
+
 #include "debug.h"
 
 /*!
@@ -35,12 +37,15 @@ struct timeval {
         long    tv_usec;        ///< microseconds
 };
 
+#endif /*WIN_NT_DRIVER*/
+
 struct time_conv
 {
 	ULONGLONG reference;
 	struct timeval start;
 };
 
+#ifdef WIN_NT_DRIVER
 
 #ifdef KQPC_TS
 
@@ -265,5 +270,8 @@ __inline void GET_TIME(struct timeval *dst, struct time_conv *data)
 }
 
 #endif /*KQPC_TS*/
+
+#endif /*WIN_NT_DRIVER*/
+
 
 #endif /*_time_calls*/
