@@ -43,17 +43,22 @@ NPF_Write(
 	UINT				i;
     NDIS_STATUS		    Status;
 
-
-    IF_LOUD(DbgPrint("Packet: SendAdapter\n");)
+	IF_LOUD(DbgPrint("NPF_Write\n");)
 
     IrpSp = IoGetCurrentIrpStackLocation(Irp);
 
 
     Open=IrpSp->FileObject->FsContext;
 
-	// Check the length of the packet to avoid to use an empty packet
-	if(IrpSp->Parameters.Write.Length==0)
+	IF_LOUD(DbgPrint("Max frame size = %d\n", Open->MaxFrameSize);)
+
+
+	if(IrpSp->Parameters.Write.Length == 0 || 	// Check that the buffer provided by the user is not empty
+		Open->MaxFrameSize == 0 ||	// Check that the MaxFrameSize is correctly initialized
+		IrpSp->Parameters.Write.Length > Open->MaxFrameSize) // Check that the fame size is smaller that the MTU
 	{
+		IF_LOUD(DbgPrint("frame size out of range, send aborted\n");)
+
         Irp->IoStatus.Status = NDIS_STATUS_SUCCESS;
         IoCompleteRequest (Irp, IO_NO_INCREMENT);
         return NDIS_STATUS_SUCCESS;
@@ -153,7 +158,16 @@ NPF_BufferedWrite(
 	{
 		return 0;
 	}
-		
+
+	// Check that the MaxFrameSize is correctly initialized
+	if(Open->MaxFrameSize == 0)
+	{
+		IF_LOUD(DbgPrint("BufferedWrite: Open->MaxFrameSize not initialized, probably because of a problem in the OID query\n");)
+
+		return 0;
+	}
+
+	
 	// Start from the first packet
 	winpcap_hdr = (struct sf_pkthdr*)UserBuff;
 	
@@ -176,10 +190,10 @@ NPF_BufferedWrite(
 	// Main loop: send the buffer to the wire
 	while( TRUE ){
 		
-		if(winpcap_hdr->caplen ==0 || winpcap_hdr->caplen > 65536)
+		if(winpcap_hdr->caplen ==0 || winpcap_hdr->caplen > Open->MaxFrameSize)
 		{
 			// Malformed header
-			IF_LOUD(DbgPrint("NPF_BufferedWrite: malformed user buffer, aborting write.\n");)
+			IF_LOUD(DbgPrint("NPF_BufferedWrite: malformed or bogus user buffer, aborting write.\n");)
 			
 			return -1;
 		}
