@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/incs/pcap.h,v 1.2 2002/05/08 09:15:11 degioanni Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/incs/pcap.h,v 1.3 2002/07/12 13:58:57 degioanni Exp $ (LBL)
  */
 
 
@@ -134,11 +134,11 @@ struct pcap_pkthdr {
  * As returned by the pcap_stats()
  */
 struct pcap_stat {
-	u_int ps_recv;		///< number of packets received
-	u_int ps_drop;		///< number of packets dropped
+	u_int ps_recv;		///< number of packets transited on the network
+	u_int ps_drop;		///< number of packets dropped by the driver
 	u_int ps_ifdrop;	///< drops by interface, not yet supported
 #ifdef WIN32
-	u_int bs_capt;		///< number of packets that reach the application
+	u_int bs_capt;		///< <b>Win32 specific.</b> number of packets captured, i.e number of packets that are accepted by the filter, that find place in the kernel buffer and therefore that actually reach the application. For backward compatibility, pcap_stats() does not fill this member, so use pcap_stats_ex() to get it.
 #endif /* WIN32 */
 };
 

@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.5 2002/07/09 07:57:54 degioanni Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.6 2002/07/12 13:58:57 degioanni Exp $ (LBL)
  */
 
 /** @defgroup wpcap_fn Exported functions
@@ -161,9 +161,9 @@ int pcap_findalldevs(pcap_if_t **alldevsp, char *errbuf);
 
 \sa pcap_findalldevs()
 */
-void	pcap_freealldevs(pcap_if_t *alldevsp);
+void pcap_freealldevs(pcap_if_t *alldevsp);
 
-/*! \brief Returns the first valid device in the system.
+/*! \brief <b> Deprecated, use pcap_findalldevs() instead</b>.\n Returns the first valid device in the system.
 
        pcap_lookupdev() returns a pointer  to  a  network  device
        suitable  for  use  with pcap_open_live() and pcap_lookupnet().
@@ -174,7 +174,7 @@ void	pcap_freealldevs(pcap_if_t *alldevsp);
 */
 char *pcap_lookupdev(char *errbuf);
 
-/*! \brief Returns the subnet and netmask of an interface.
+/*! \brief <b> Deprecated, use pcap_findalldevs() instead</b>.\n Returns the subnet and netmask of an interface.
 
        pcap_lookupnet()  is  used to determine the network number
        and mask associated with the network device device.   Both
@@ -273,7 +273,7 @@ filtering engine.
 */
 int pcap_compile(pcap_t *p, struct bpf_program *fp, char *str, int optimize, bpf_u_int32 netmask);
 
-/*!\brief Compiles a packet filter without the need of opening an adapter. Converts an high level filtering expression 
+/*!\brief <b> Deprecated, use pcap_open_dead() and pcap_compile() instead </b>.\n Compiles a packet filter without the need of opening an adapter. Converts an high level filtering expression 
 (see \ref language) in a program that can be interpreted by the kernel-level
 filtering engine.
 
@@ -319,7 +319,7 @@ int pcap_setfilter(pcap_t *p, struct bpf_program *fp);
 */
 void pcap_freecode(struct bpf_program *fp);
 
-/*! \brief Returns the next available packet.
+/*! \brief <b>Discouraged, use pcap_read_ex() instead</b>.\n Returns the next available packet.
 
        pcap_next()  reads  the  next packet (by calling pcap_dispatch() 
 	   with a cnt of 1) and returns a u_char  pointer  to
@@ -478,23 +478,23 @@ int pcap_major_version(pcap_t *p);
 */
 int pcap_minor_version(pcap_t *p);
 
-/*! \brief Returns statistics on current capture.
+/*! \brief <b> Discouraged, Use pcap_stats_ex() instead</b>.\n Returns statistics on current capture.
 
-       pcap_stats()  returns  0  and fills in a pcap_stat struct.
-       The values represent packet statistics from the  start  of
-       the  run  to the time of the call. If there is an error or
-       the  underlying  packet  capture  doesn't  support  packet
-       statistics,  -1  is  returned  and  the  error text can be
-       obtained    with    pcap_perror()    or     pcap_geterr().
-       pcap_stats()  is  supported  only on live captures, not on
-       "savefiles"; no statistics are stored in  "savefiles",
-       so no statistics are available when reading from a "savefile".
+ pcap_stats()  returns  0  and fills in a pcap_stat struct.
+ The values represent packet statistics from the  start  of
+ the  run  to the time of the call. If there is an error or
+ the  underlying  packet  capture  doesn't  support  packet
+ statistics,  -1  is  returned  and  the  error text can be
+ obtained    with    pcap_perror()    or     pcap_geterr().
+ pcap_stats()  is  supported  only on live captures, not on
+ "savefiles"; no statistics are stored in  "savefiles",
+  so no statistics are available when reading from a "savefile".
 
-\sa pcap_open_live()
+\sa pcap_stats_ex(), pcap_open_live()
 */
 int pcap_stats(pcap_t *p, struct pcap_stat *ps);
 
-/*! \brief Returns the stdio stream of an offile capture.
+/*! \brief <b> Discouraged, use pcap_dump() instead</b>.\n Returns the stdio stream of an offile capture.
 
        pcap_file() returns the standard I/O stream of the "savefile",
 	   if    a    "savefile"    was    opened   with
@@ -505,7 +505,7 @@ int pcap_stats(pcap_t *p, struct pcap_stat *ps);
 */
 FILE *pcap_file(pcap_t *p);
 
-/*! \brief Returns the file descriptor of a capture device.
+/*! \brief <b> Deprecated, handling the device descriptor directly is useless under Win32</b>.\n Returns the file descriptor of a capture device.
 
        pcap_fileno() returns  the  file  descriptor  number  from
        which  captured  packets are read, if a network device was
@@ -732,7 +732,14 @@ on this call forever.
 */
 int pcap_live_dump_ended(pcap_t *p, int sync);
 
+/*! \brief<b> Win32 Specific.</b> Returns statistics on current capture.
 
+  This functions has the same purpose and behavior of pcap_stats(), but it returns a further counter,
+  the number of packets that are actually captured.
+
+\sa pcap_stats()
+*/
+int pcap_stats_ex(pcap_t *p, struct pcap_stat *ps);
 
 /*! \brief Prototype of the callback function that receives the packets. 
 

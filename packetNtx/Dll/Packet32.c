@@ -209,7 +209,6 @@ BOOLEAN PacketSetReadEvt(LPADAPTER AdapterObject)
 	AdapterObject->ReadTimeOut=0;
 
 	return TRUE;
-
 }
 
 /*! 
@@ -1385,7 +1384,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 
     ODSEx("PacketGetAdapterNames: BufferSize=%d\n",*BufferSize);
 
-    OidData=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,512);
+    OidData = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,512);
     if (OidData == NULL) {
         ODS("PacketGetAdapterNames: GlobalAlloc Failed\n");
         return FALSE;

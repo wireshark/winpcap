@@ -19,6 +19,17 @@ will work on the whole Win32 OS family and on all the major Unix flavors.</p>
 <p>Several portions of the manuals present in this section derive directly from the man pages of
 tcpdump and libpcap, maintained by the tcpdump.org developers. Therefore, if you
 are looking for updated docs, you can consult the web site <a href="http://www.tcpdump.org">www.tcpdump.org</a>.</p>
+<h2>note</h2>
+<p>Inside the manual, some functions are marked with the labels <i>deprecated</i>
+or <i>discouraged</i>. The meaning of these labels is the following:</p>
+<ul>
+  <li><i>discouraged</i>: the use of another function with similar purpose is
+    suggested, however this one is still valid.</li>
+  <li><i>deprecated</i>: the function is present only for portability and
+    backward compatibility. It should be avoided, and it is strongly suggested
+    to use another equivalent function instead.<br>
+  </li>
+</ul>
 <p>
 
 \endhtmlonly
