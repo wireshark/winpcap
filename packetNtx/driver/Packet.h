@@ -932,12 +932,15 @@ UINT GetBuffOccupation(POPEN_INSTANCE Open);
 
   \param ProtocolBindingContext Pointer to open context structure. This is NULL for global reconfig 
   events.
-  \param pNetPnPEvent Pointer to the PNP event
+  \param pNetPnPEvent Pointer to the PnP event
 
   If there is a power state change, the driver is forced to resynchronize the global timer.
   This hopefully avoids the synchronization issues caused by hibernation or standby.
+  This function is excluded from the NT4 driver, where PnP is not supported
 */
+#ifdef NDIS50
 NDIS_STATUS NPF_PowerChange(IN NDIS_HANDLE ProtocolBindingContext, IN PNET_PNP_EVENT pNetPnPEvent);
+#endif
 
 /**
  *  @}

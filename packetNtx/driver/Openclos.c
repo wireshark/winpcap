@@ -496,6 +496,7 @@ NPF_CloseAdapterComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  
 }
 //-------------------------------------------------------------------
 
+#ifdef NDIS50
 NDIS_STATUS
 NPF_PowerChange(IN NDIS_HANDLE ProtocolBindingContext, IN PNET_PNP_EVENT pNetPnPEvent)
 {
@@ -507,6 +508,7 @@ NPF_PowerChange(IN NDIS_HANDLE ProtocolBindingContext, IN PNET_PNP_EVENT pNetPnP
 
 	return STATUS_SUCCESS;
 }
+#endif
 
 //-------------------------------------------------------------------
 
