@@ -16,7 +16,7 @@ void DisplayErrorText(DWORD dwLastError,FILE* output);
 #define SERVICE_NAME "rpcapd"
 #define SERVICE_DESCRIPTION_SHORT "Remote Packet Capture Protocol v.0 (experimental)"
 #define SERVICE_DESCRIPTION_LONG "Allows to capture traffic on this machine from a remote machine."
-#define SERVICE_EXECUTABLE "%ProgramFiles%\\WinPcap\\rpcapd.exe -d -f rpcapd.ini"
+#define SERVICE_EXECUTABLE "\"%ProgramFiles%\\WinPcap\\rpcapd.exe\" -d -f \"%ProgramFiles%\\WinPcap\\rpcapd.ini\""
 
 
 typedef WINADVAPI BOOL  (WINAPI *MyChangeServiceConfig2)(
