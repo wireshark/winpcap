@@ -82,10 +82,12 @@ To compile the PACKET.DLL, load the project contained in the directory PacketNTx
 
 Compiling wpcap.dll
 ===================
-wpcap.dll can be compiled on any Win32 platform and the generated dll is system independent. Note that wpcap.dll contains the source code of libpcap, from www.tcpdump.org. You will be able to include and build a different libpcap version simply copying it in the directory winpcap\wpcap\prj of the WinPcap source code distribution.
+wpcap.dll can be compiled on any Win32 platform and the generated dll is system independent.
 
 System Requirement:
 - Microsoft Visual C++ 6.0 compiler.
 - Microsoft Software Development Kit (SDK)
 
-Project files are in the directory winpcap\wpcap\prj of the WinPcap source code distribution. Load the project from the Visual C++ 6.0 IDE and build the program. The output file wpcap.lib will be generated in winpcap\wpcap\lib\. The output dll wpcap.dll will be generated in winpcap\wpcap\prj\release or winpcap\wpcap\prj\debug depending on the type of binary that is being generated.
+Project files are in the directory winpcap\wpcap\prj of the WinPcap source code distribution. Load wpcap.dsw from the Visual C++ IDE and build the program. The output file wpcap.lib will be generated in winpcap\wpcap\lib\. The output dll wpcap.dll will be generated in winpcap\wpcap\prj\release or winpcap\wpcap\prj\debug depending on the type of binary that is being generated.
+
+Note that wpcap.dll contains the source code of libpcap from www.tcpdump.org, with some modifications for remote capture. You will be able to include and build a different libpcap version simply copying it in the directory winpcap\wpcap\prj of the WinPcap source code distribution, but you must use the WPCAP_test_only.dsw project file.
