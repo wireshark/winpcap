@@ -1,23 +1,35 @@
 /*
- * Copyright (c) 1999 - 2002
- *	Politecnico di Torino.  All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that: (1) source code distributions
- * retain the above copyright notice and this paragraph in its entirety, (2)
- * distributions including binary code include the above copyright notice and
- * this paragraph in its entirety in the documentation or other materials
- * provided with the distribution, and (3) all advertising materials mentioning
- * features or use of this software display the following acknowledgement:
- * ``This product includes software developed by the Politecnico
- * di Torino, and its contributors.'' Neither the name of
- * the University nor the names of its contributors may be used to endorse
- * or promote products derived from this software without specific prior
- * written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * Copyright (c) 1999 - 2003
+ * NetGroup, Politecnico di Torino (Italy)
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without 
+ * modification, are permitted provided that the following conditions 
+ * are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright 
+ * notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright 
+ * notice, this list of conditions and the following disclaimer in the 
+ * documentation and/or other materials provided with the distribution. 
+ * 3. Neither the name of the Politecnico di Torino nor the names of its 
+ * contributors may be used to endorse or promote products derived from 
+ * this software without specific prior written permission. 
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
  */
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -26,39 +38,46 @@
 
 #define LINE_LEN 16
 
-main(int argc, char **argv) {
-	
-	pcap_if_t *alldevs, *d;
-	pcap_t *fp;
-	u_int inum, i=0;
-	char errbuf[PCAP_ERRBUF_SIZE];
-	int res;
-	struct pcap_pkthdr *header;
-	u_char *pkt_data;
+
+main(int argc, char **argv)
+{	
+pcap_if_t *alldevs, *d;
+pcap_t *fp;
+u_int inum, i=0;
+char errbuf[PCAP_ERRBUF_SIZE];
+int res;
+struct pcap_pkthdr *header;
+u_char *pkt_data;
 
 	printf("pktdump_ex: prints the packets of the network using WinPcap.\n");
-	printf("\t Usage: pktdump_ex [-n adapter] | [-f file_name]\n\n");
+	printf("   Usage: pktdump_ex [-s source]\n\n"
+		   "   Examples:\n"
+		   "      pktdump_ex -s file://c:/temp/file.acp\n"
+		   "      pktdump_ex -s rpcap://\\Device\\NPF_{C8736017-F3C3-4373-94AC-9A34B7DAD998}\n\n");
 
-	if(argc < 3){
+	if(argc < 3)
+	{
 
-		/* The user didn't provide a packet source: Retrieve the device list */
-		if (pcap_findalldevs(&alldevs, errbuf) == -1)
+		printf("\nNo adapter selected: printing the device list:\n");
+		/* The user didn't provide a packet source: Retrieve the local device list */
+		if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf) == -1)
 		{
-			fprintf(stderr,"Error in pcap_findalldevs: %s\n", errbuf);
+			fprintf(stderr,"Error in pcap_findalldevs_ex: %s\n", errbuf);
 			exit(1);
 		}
 		
 		/* Print the list */
 		for(d=alldevs; d; d=d->next)
 		{
-			printf("%d. %s", ++i, d->name);
+			printf("%d. %s\n    ", ++i, d->name);
+
 			if (d->description)
 				printf(" (%s)\n", d->description);
 			else
 				printf(" (No description available)\n");
 		}
 		
-		if(i==0)
+		if (i==0)
 		{
 			printf("\nNo interfaces found! Make sure WinPcap is installed.\n");
 			return -1;
@@ -67,56 +86,50 @@ main(int argc, char **argv) {
 		printf("Enter the interface number (1-%d):",i);
 		scanf("%d", &inum);
 		
-		if(inum < 1 || inum > i)
+		if (inum < 1 || inum > i)
 		{
 			printf("\nInterface number out of range.\n");
+
 			/* Free the device list */
 			pcap_freealldevs(alldevs);
 			return -1;
 		}
 		
 		/* Jump to the selected adapter */
-		for(d=alldevs, i=0; i< inum-1 ;d=d->next, i++);
+		for (d=alldevs, i=0; i< inum-1 ;d=d->next, i++);
 		
 		/* Open the device */
-		if ( (fp= pcap_open_live(d->name, 100, 1, 20, errbuf) ) == NULL)
+		if ( (fp= pcap_open(d->name,
+							100 /*snaplen*/,
+							PCAP_OPENFLAG_PROMISCUOUS /*flags*/,
+							20 /*read timeout*/,
+							NULL /* remote authentication */,
+							errbuf)
+							) == NULL)
 		{
 			fprintf(stderr,"\nError opening adapter\n");
 			return -1;
 		}
 	}
-	else{
-		
-		/* The user provided a packet source: open it */
-		switch (argv[1] [1])
+	else 
+	{
+		// Do not check for the switch type ('-s')
+		if ( (fp= pcap_open(argv[2],
+							100 /*snaplen*/,
+							PCAP_OPENFLAG_PROMISCUOUS /*flags*/,
+							20 /*read timeout*/,
+							NULL /* remote authentication */,
+							errbuf)
+							) == NULL)
 		{
-			
-		case 'n':
-			{
-				/* Open a physical device */
-				if ( (fp= pcap_open_live(argv[2], 100, 1, 20, errbuf) ) == NULL)
-				{
-					fprintf(stderr,"\nError opening adapter\n");
-					return -1;
-				}
-			};
-			break;
-			
-		case 'f':
-			{
-				/* Open a capture file */
-				if ( (fp = pcap_open_offline(argv[2], errbuf) ) == NULL)
-				{
-					fprintf(stderr,"\nError opening dump file\n");
-					return -1;
-				}
-			};
-			break;
+			fprintf(stderr,"\nError opening source: %s\n", errbuf);
+			return -1;
 		}
 	}
 
 	/* Read the packets */
-	while((res = pcap_next_ex( fp, &header, &pkt_data)) >= 0){
+	while((res = pcap_next_ex( fp, &header, &pkt_data)) >= 0)
+	{
 
 		if(res == 0)
 			/* Timeout elapsed */
@@ -135,7 +148,8 @@ main(int argc, char **argv) {
 		printf("\n\n");		
 	}
 
-	if(res == -1){
+	if(res == -1)
+	{
 		printf("Error reading the packets: %s\n", pcap_geterr(fp));
 		return -1;
 	}
