@@ -59,7 +59,7 @@ OBJS = ../libpcap/bpf/net/bpf_filter.o \
 	../Win32-Extensions/Win32-Extensions.o
 
 main: ${OBJS}
-	${CC} ${CFLAGS} ${LDFLAGS} -o wpcap.dll wpcap.def ${OBJS} ${LIBS}
+	${CC} ${CFLAGS} ${LDFLAGS} -o wpcap.dll wpcap_test_only.def ${OBJS} ${LIBS}
 
 install:
 	cp wpcap.dll ${INSTALL_DIR}
