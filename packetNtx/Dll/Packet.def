@@ -1,7 +1,5 @@
 LIBRARY packet
 
-DESCRIPTION 'Packet driver dll'
-
 EXPORTS
 		PacketLibraryVersion
 		PacketGetVersion
