@@ -1720,7 +1720,7 @@ BOOLEAN PacketGetNetInfoEx(LPTSTR AdapterName, npf_if_addr* buffer, PLONG NEntri
 	{
 		
 		// Query the registry key with the interface's adresses
-		status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,TEXT("SYSTEM\\CurrentControlSet"),0,KEY_READ,&SystemKey);
+		status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,TEXT("SYSTEM\\CurrentControlSet\\Services"),0,KEY_READ,&SystemKey);
 		if (status != ERROR_SUCCESS)
 			goto fail;
 		status = RegOpenKeyEx(SystemKey,ifname,0,KEY_READ,&InterfaceKey);

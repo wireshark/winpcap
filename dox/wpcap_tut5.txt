@@ -40,4 +40,7 @@ The filter passed to pcap_compile() in this code snippet is "ip and tcp", that m
 		return -1;
 	}
 \endcode
+
+If you look for a running sample that uses the filtering functions showed in this lesson, look at the next tutorial, \ref wpcap_tut6.
+
 @}*/
