@@ -24,6 +24,8 @@
 
 #include <pcap.h>
 
+#error At the moment the kernel dump feature is not supported in the driver
+
 main(int argc, char **argv) {
 	
 	pcap_if_t *alldevs, *d;
