@@ -21,6 +21,11 @@ copy %1\common\NTDDNDIS.H %2\Include
 rem copy %1\common\Ntddpack.h %2\Include
 copy %1\common\PACKET32.H %2\Include
 copy %1\wpcap\libpcap\win32\include\gnuc.h %2\Include
+
+copy %1\wpcap\libpcap\win32\include\pthread.h %2\Include
+copy %1\wpcap\libpcap\win32\include\sched.h %2\Include
+copy %1\wpcap\libpcap\win32\include\semaphore.h %2\Include
+
 copy %1\wpcap\libpcap\win32\include\bittypes.h %2\Include
 copy %1\wpcap\libpcap\pcap.h %2\Include
 copy %1\wpcap\libpcap\Pcap-int.h %2\Include
@@ -38,9 +43,10 @@ copy %1\packetntx\driver\tcp_session.h %2\Include
 copy %1\packetntx\driver\time_calls.h %2\Include
 copy %1\packetntx\driver\tme.h %2\Include
 
-rem copy %1\wpcap\win32-extensions\keyparser\key_parser.h %2\Include
-rem copy %1\wpcap\win32-extensions\keyparser\key_parser.lib %2\Lib
+copy %1\wpcap\win32-extensions\keyparser\key_parser.h %2\Include
+copy %1\wpcap\win32-extensions\keyparser\key_parser.lib %2\Lib
 
+@echo off
 goto end
 
 :usage
