@@ -757,8 +757,10 @@ BOOLEAN AddAdapter(PCHAR AdName)
 #endif // _WINNT4
 	}
 
+#ifndef _WINNT4
 	// Now Add IPv6 Addresses
 	PacketAddIP6Addresses(TmpAdInfo);
+#endif // _WINNT4
 
 	TmpAdInfo->Flags = INFO_FLAG_NDIS_ADAPTER;	// NdisWan adapters are not exported by the NPF driver,
 									// therefore it's impossible to see them here
