@@ -151,7 +151,7 @@ NPF_BufferedWrite(
 	PMDL				TmpMdl;
 	PCHAR				CurPos;
 	PCHAR				EndOfUserBuff = UserBuff + UserBuffSize;
-	
+
     IF_LOUD(DbgPrint("NPF: BufferedWrite, UserBuff=%x, Size=%u\n", UserBuff, UserBuffSize);)
 		
 	IrpSp = IoGetCurrentIrpStackLocation(Irp);
@@ -199,7 +199,7 @@ NPF_BufferedWrite(
 	
 	// Main loop: send the buffer to the wire
 	while( TRUE ){
-		
+
 		if(winpcap_hdr->caplen ==0 || winpcap_hdr->caplen > Open->MaxFrameSize)
 		{
 			// Malformed header
@@ -214,7 +214,7 @@ NPF_BufferedWrite(
 			FALSE,
 			FALSE,
 			NULL);
-		
+
 		if (TmpMdl == NULL)
 		{
 			// Unable to map the memory: packet lost
@@ -231,6 +231,7 @@ NPF_BufferedWrite(
 		if (Status != NDIS_STATUS_SUCCESS) {
 			//  No free packets
 			IF_LOUD(DbgPrint("NPF_BufferedWrite: no more free packets, returning.\n");)
+			IoFreeMdl(TmpMdl);
 
 			return (PCHAR)winpcap_hdr - UserBuff;
 		}
@@ -238,12 +239,14 @@ NPF_BufferedWrite(
 		// The packet has a buffer that needs to be freed after every single write
 		RESERVED(pPacket)->FreeBufAfterWrite = TRUE;
 		
+        TmpMdl->Next = NULL;
+
 		// Attach the MDL to the packet
-		NdisChainBufferAtFront(pPacket,TmpMdl);
+		NdisChainBufferAtFront(pPacket, TmpMdl);
 		
 		// Call the MAC
 		NdisSend( &Status, Open->AdapterHandle,	pPacket);
-		
+
 		if (Status != NDIS_STATUS_PENDING) {
 			// The send didn't pend so call the completion handler now
 			NPF_SendComplete(
@@ -263,7 +266,7 @@ NPF_BufferedWrite(
 
 			return (PCHAR)winpcap_hdr - UserBuff;
 		}
-		
+	
 		if( Sync ){
 			
 			// Release the application if it has been blocked for approximately more than 1 seconds
@@ -284,9 +287,9 @@ NPF_BufferedWrite(
 			while( CurTicks.QuadPart <= TargetTicks.QuadPart )
 				CurTicks = KeQueryPerformanceCounter(NULL);
 		}
-		
+	
 	}
-				
+
 	return (PCHAR)winpcap_hdr - UserBuff;
 		
 }
@@ -306,11 +309,11 @@ NPF_SendComplete(
 	PIO_STACK_LOCATION  irpSp;
 	POPEN_INSTANCE      Open;
 	PMDL TmpMdl;
-	
+
 	IF_LOUD(DbgPrint("NPF: SendComplete, BindingContext=%d\n",ProtocolBindingContext);)
 		
 	Open= (POPEN_INSTANCE)ProtocolBindingContext;
-	
+
 	if( RESERVED(pPacket)->FreeBufAfterWrite ){
 		
 		// Free the MDL associated with the packet
@@ -339,7 +342,7 @@ NPF_SendComplete(
 	}
 		
 	//  recyle the packet
-	NdisReinitializePacket(pPacket);
+	//	NdisReinitializePacket(pPacket);
 	
 	//  Put the packet back on the free list
 	NdisFreePacket(pPacket);
