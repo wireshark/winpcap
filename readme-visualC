@@ -19,7 +19,7 @@ CompileNT4, to build the driver for Windows NT 4
 or
 Compile2k, to build the driver for Windows NT 5 OSes, (like Windows 2000 or Windows XP)
 
-This commands will generate the driver (packet.sys), that will be put in the DDK output directory (usually \i386).
+This commands will generate the driver (npf.sys), that will be put in the DDK output directory (usually \i386).
 
 Warning: sometimes, during the compilation of the driver, a lot of 'last line incomplete' errors are generated. Ignore these errors and let the compilation process continue, they are due to bugs in some DDK versions.
 
