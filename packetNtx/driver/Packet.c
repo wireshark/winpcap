@@ -278,7 +278,7 @@ PWCHAR getAdaptersList(void)
 				status=ZwOpenKey(&ExportKeyHandle,KEY_READ,&objAttrs);
 				
 				if (!NT_SUCCESS(status)) {
-					DbgPrint("OpenKey Failed, %d!\n",status);
+					IF_LOUD(DbgPrint("OpenKey Failed, %d!\n",status);)
 					i++;
 					continue;
 				}
@@ -993,10 +993,16 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 				Open->CpuData[i].Buffer=(PUCHAR)tpointer + (dim/NCpu)*i;
 			else
 				Open->CpuData[i].Buffer = NULL;
-			IF_LOUD(DbgPrint("Loop %p\n",Open->CpuData[i].Buffer);)
 			Open->CpuData[i].Free = dim/NCpu;
 			Open->CpuData[i].P = 0;
+			Open->CpuData[i].C=0;
+			Open->CpuData[i].Accepted=0;
+			Open->CpuData[i].Dropped=0;
+			Open->CpuData[i].Received = 0;
 		}
+
+		Open->ReaderSN=0;
+		Open->WriterSN=0;
 
 		Open->Size = dim/NCpu;
     
