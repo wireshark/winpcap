@@ -590,6 +590,35 @@ by the network interface.
 */
 int pcap_sendpacket(pcap_t *p, u_char *buf, int size);
 
+
+/*! \brief <b>Win32 Specific.</b> Sends a buffer of raw packets to the network.
+
+This function can be used to send several packets to the wire with a single call. p is a pointer to the 
+adapter on which the packets will be sent, buf points to a buffer with the packets to send, size is
+the dimension of the buffer. Sync determines if the send must be synchronized: if it is non-zero, the 
+packets are sent respecting the timestamps. If 0, the packets are sent as fast as possible.
+
+The return value is the amount of bytes actually sent. If it is smaller than the size parameter, an
+error occurred during the send. The error can be caused by a driver/adapter problem or by an inconsistent/bogus 
+packet buffer.
+
+This function is used to send a buffer of raw packets to the network. The buffer can contain an arbitrary
+number of raw packets, each of which preceded by a pcap_pkthdr structure. The pcap_pkthdr is the same used
+by WinPcap and libpcap to store the packets in a file, therefore sending a capture file is straightforward.
+'Raw packets' means that the sending application will have to include the protocol headers, since every packet 
+is sent to the network 'as is'. The CRC of the packets needs not to be calculated, because it will be 
+transparently added by the network interface.
+
+\note Using this function if more efficient than issuing a series of pcap_sendpacket(), because the packets are
+buffered in the kernel driver, so the number of context switches is reduced.
+
+\note When Sync is set to TRUE, the packets are synchronized in the kerenl with a high precision timestamp.
+This requires a remarkable amount of CPU, but allows to send the packets with a precision of some microseconds
+(depending on the precision of the performance counter of the machine). Such a precision cannot be reached 
+sending the packets separately with pcap_sendpacket().
+*/
+int pcap_sendpackets(pcap_t *p, u_char *buf, int size, int sync, char *ebuf);
+
 /*! \brief <b>Win32 Specific.</b> Sets the minumum amount of data received by the kernel in a single call.
 
 pcap_setmintocopy() changes the minimum amount of data in the kernel buffer that causes a read from 
