@@ -30,10 +30,7 @@
 #include "tme.h"
 #include "time_calls.h"
 
-extern struct time_conv G_Start_Time; // from packet.c
-
-#undef ExAllocatePool
-#define ExAllocatePool(A, B) ExAllocatePoolWithTag(A, B, 'APRA');
+extern struct time_conv G_Start_Time; // from openclos.c
 
 //-------------------------------------------------------------------
 

@@ -129,7 +129,7 @@ struct bpf_stat {
 	UINT bs_drop;		///< number of packets that the driver lost from the beginning of a capture. 
 						///< Basically, a packet is lost when the the buffer of the driver is full. 
 						///< In this situation the packet cannot be stored and the driver rejects it.
-	UINT ps_ifdrop;		///< drops by interface XXX not yet supported
+	UINT ps_ifdrop;		///< drops by interface. XXX not yet supported
 	UINT bs_capt;		///< number of packets that pass the filter, find place in the kernel buffer and
 						///< thus reach the application.
 };
@@ -208,7 +208,7 @@ typedef struct _PACKET {
 	PVOID        Buffer;		///< Buffer with containing the packets. See the PacketReceivePacket() for
 								///< details about the organization of the data in this buffer
 	UINT         Length;		///< Length of the buffer
-	UINT         ulBytesReceived;	///< Number of valid bytes present in the buffer, i.e. amount of data
+	DWORD        ulBytesReceived;	///< Number of valid bytes present in the buffer, i.e. amount of data
 									///< received by the last call to PacketReceivePacket()
 	BOOLEAN      bIoComplete;	///< \deprecated Still present for compatibility with old applications.
 }  PACKET, *LPPACKET;

@@ -929,7 +929,7 @@ INT PacketSendPackets(LPADAPTER AdapterObject, PVOID PacketBuff, ULONG Size, BOO
 
 BOOLEAN PacketSetMinToCopy(LPADAPTER AdapterObject,int nbytes)
 {
-	int BytesReturned;
+	DWORD BytesReturned;
     return DeviceIoControl(AdapterObject->hFile,pBIOCSMINTOCOPY,&nbytes,4,NULL,0,&BytesReturned,NULL);
 }
 
@@ -971,7 +971,7 @@ BOOLEAN PacketSetMinToCopy(LPADAPTER AdapterObject,int nbytes)
 */
 BOOLEAN PacketSetMode(LPADAPTER AdapterObject,int mode)
 {
-	int BytesReturned;
+	DWORD BytesReturned;
 
     return DeviceIoControl(AdapterObject->hFile,pBIOCSMODE,&mode,4,NULL,0,&BytesReturned,NULL);
 }
@@ -992,7 +992,7 @@ BOOLEAN PacketSetMode(LPADAPTER AdapterObject,int mode)
 
 BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len)
 {
-	int		BytesReturned;
+	DWORD		BytesReturned;
 	WCHAR	*FileName;
 	BOOLEAN	res;
 	WCHAR	NameWithPath[1024];
@@ -1039,7 +1039,7 @@ BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len)
 */
 BOOLEAN PacketSetDumpLimits(LPADAPTER AdapterObject, UINT maxfilesize, UINT maxnpacks)
 {
-	int		BytesReturned;
+	DWORD		BytesReturned;
 	UINT valbuff[2];
 
 	valbuff[0] = maxfilesize;
@@ -1070,7 +1070,7 @@ BOOLEAN PacketSetDumpLimits(LPADAPTER AdapterObject, UINT maxfilesize, UINT maxn
 */
 BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync)
 {
-	int		BytesReturned;
+	DWORD		BytesReturned;
 	int		IsDumpEnded;
 	BOOLEAN	res;
 
@@ -1125,7 +1125,7 @@ HANDLE PacketGetReadEvent(LPADAPTER AdapterObject)
 */
 BOOLEAN PacketSetNumWrites(LPADAPTER AdapterObject,int nwrites)
 {
-	int BytesReturned;
+	DWORD BytesReturned;
     return DeviceIoControl(AdapterObject->hFile,pBIOCSWRITEREP,&nwrites,4,NULL,0,&BytesReturned,NULL);
 }
 
@@ -1143,7 +1143,7 @@ BOOLEAN PacketSetNumWrites(LPADAPTER AdapterObject,int nwrites)
 */
 BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
 {
-	int BytesReturned;
+	DWORD BytesReturned;
 	int DriverTimeOut=-1;
 
 	AdapterObject->ReadTimeOut=timeout;
@@ -1169,7 +1169,7 @@ BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
 */
 BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim)
 {
-	int BytesReturned;
+	DWORD BytesReturned;
     return DeviceIoControl(AdapterObject->hFile,pBIOCSETBUFFERSIZE,&dim,4,NULL,0,&BytesReturned,NULL);
 }
 
@@ -1195,7 +1195,7 @@ BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim)
 */
 BOOLEAN PacketSetBpf(LPADAPTER AdapterObject,struct bpf_program *fp)
 {
-	int BytesReturned;
+	DWORD BytesReturned;
     return DeviceIoControl(AdapterObject->hFile,pBIOCSETF,(char*)fp->bf_insns,fp->bf_len*sizeof(struct bpf_insn),NULL,0,&BytesReturned,NULL);
 }
 
@@ -1215,7 +1215,7 @@ BOOLEAN PacketSetBpf(LPADAPTER AdapterObject,struct bpf_program *fp)
 BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
 {
 	BOOLEAN Res;
-	int BytesReturned;
+	DWORD BytesReturned;
 	struct bpf_stat tmpstat;	// We use a support structure to avoid kernel-level inconsistencies with old or malicious applications
 
 	Res = DeviceIoControl(AdapterObject->hFile,
@@ -1249,7 +1249,7 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
 BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s)
 {
 	BOOLEAN Res;
-	int BytesReturned;
+	DWORD BytesReturned;
 	struct bpf_stat tmpstat;	// We use a support structure to avoid kernel-level inconsistencies with old or malicious applications
 
 	Res = DeviceIoControl(AdapterObject->hFile,
@@ -1283,8 +1283,8 @@ BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s)
 */
 BOOLEAN PacketRequest(LPADAPTER  AdapterObject,BOOLEAN Set,PPACKET_OID_DATA  OidData)
 {
-    UINT       BytesReturned;
-    BOOLEAN    Result;
+    DWORD		BytesReturned;
+    BOOLEAN		Result;
 
     Result=DeviceIoControl(AdapterObject->hFile,(DWORD) Set ? pBIOCSETOID : pBIOCQUERYOID,
                            OidData,sizeof(PACKET_OID_DATA)-1+OidData->Length,OidData,
@@ -1365,16 +1365,17 @@ BOOLEAN PacketSetHwFilter(LPADAPTER  AdapterObject,ULONG Filter)
 
 BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 {
-    HKEY       LinkageKey,AdapKey;
-	UINT	   RegKeySize=0;
-    LONG       Status;
-	ULONG	   Result;
-	PTSTR      BpStr;
-	char       *TTpStr,*DpStr,*DescBuf;
-	LPADAPTER  adapter;
+    HKEY		LinkageKey,AdapKey;
+	DWORD		RegKeySize=0;
+    LONG		Status;
+	ULONG		Result;
+	PTSTR		BpStr;
+	char		*TTpStr,*DpStr,*DescBuf;
+	LPADAPTER	adapter;
     PPACKET_OID_DATA  OidData;
-	int		   i=0,k,rewind,dim;
-	TCHAR	   AdapName[256];
+	int			i=0,k,rewind;
+	DWORD		dim;
+	TCHAR		AdapName[256];
 
     ODSEx("PacketGetAdapterNames: BufferSize=%d\n",*BufferSize);
 

@@ -28,9 +28,6 @@
 
 #include "win_bpf.h"
 
-#undef ExAllocatePool
-#define ExAllocatePool(A, B) ExAllocatePoolWithTag(A, B, 'APSA');
-
 //-------------------------------------------------------------------
 
 NTSTATUS
@@ -64,8 +61,9 @@ NPF_OpenDumpFile(POPEN_INSTANCE Open , PUNICODE_STRING fileName, BOOLEAN Append)
 	// Insert the correct path prefix.
 	FullFileNameLength = PathLen + fileName->MaximumLength;
 	
-	FullFileName.Buffer = ExAllocatePool(NonPagedPool,
-		FullFileNameLength);
+	FullFileName.Buffer = ExAllocatePoolWithTag(NonPagedPool, 
+		FullFileNameLength,
+		'0DWA');
 	
 	if (FullFileName.Buffer == NULL) {
 		ntStatus = STATUS_INSUFFICIENT_RESOURCES;

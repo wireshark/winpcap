@@ -922,10 +922,22 @@ VOID NPF_WriteDumpFile(PFILE_OBJECT FileObject,
 NTSTATUS NPF_CloseDumpFile(POPEN_INSTANCE Open);
 
 /*!
-  \brief Return the amount of bytes present in the packet buffer.
+  \brief Returns the amount of bytes present in the packet buffer.
   \param Open The NPF instance that closes the file.
 */
 UINT GetBuffOccupation(POPEN_INSTANCE Open);
+
+/*!
+  \brief Called by NDIS to notify us of a PNP event. The most significant one for us is power state change.
+
+  \param ProtocolBindingContext Pointer to open context structure. This is NULL for global reconfig 
+  events.
+  \param pNetPnPEvent Pointer to the PNP event
+
+  If there is a power state change, the driver is forced to resynchronize the global timer.
+  This hopefully avoids the synchronization issues caused by hibernation or standby.
+*/
+NDIS_STATUS NPF_PowerChange(IN NDIS_HANDLE ProtocolBindingContext, IN PNET_PNP_EVENT pNetPnPEvent);
 
 /**
  *  @}

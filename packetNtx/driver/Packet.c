@@ -33,14 +33,8 @@
 
 #include "tme.h"
 
-#undef ExAllocatePool
-#define ExAllocatePool(A, B) ExAllocatePoolWithTag(A, B, 'APQA');
-
 #if DBG
-//
 // Declare the global debug flag for this driver.
-//
-
 ULONG PacketDebugFlag = PACKET_DEBUG_LOUD;
 
 #endif
@@ -63,8 +57,9 @@ NDIS_STRING bindValueName = NDIS_STRING_CONST("Bind");
 /// Global variable that points to the names of the bound adapters
 WCHAR* bindP = NULL;
 
-/// Global start time. Used as a absulte reference for timestamp conversion.
-struct time_conv G_Start_Time;
+extern struct time_conv G_Start_Time; // from openclos.c
+
+extern NDIS_SPIN_LOCK Opened_Instances_Lock;
 
 //
 //  Packet Driver's entry routine.
@@ -123,6 +118,7 @@ DriverEntry(
 #ifdef NDIS50
     ProtocolChar.BindAdapterHandler          = NPF_BindAdapter;
     ProtocolChar.UnbindAdapterHandler        = NPF_UnbindAdapter;
+    ProtocolChar.PnPEventHandler             = NPF_PowerChange;
     ProtocolChar.ReceivePacketHandler        = NULL;
 #endif
     ProtocolChar.Name                        = ProtoName;
@@ -141,6 +137,8 @@ DriverEntry(
 
     }
 	
+    NdisAllocateSpinLock(&Opened_Instances_Lock);
+
     // Set up the device driver entry points.
     DriverObject->MajorFunction[IRP_MJ_CREATE] = NPF_Open;
     DriverObject->MajorFunction[IRP_MJ_CLOSE]  = NPF_Close;
@@ -149,12 +147,7 @@ DriverEntry(
     DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL]  = NPF_IoControl;
     DriverObject->DriverUnload = NPF_Unload;
 
-	// Get the absolute value of the system boot time.
-	// This is used for timestamp conversion.
-	TIME_SYNCHRONIZE(&G_Start_Time);
-
-
-    //  Get the name of the Packet driver and the name of the MAC driver
+    //  Get the name of the Packet driver and the name of the NIC driver
     //  to bind to from the registry
     Status=NPF_ReadRegistry(
                &BindString,
@@ -306,7 +299,8 @@ PWCHAR getAdaptersList(void)
 	NTSTATUS status;
 	HANDLE keyHandle;
 	UINT BufPos=0;
-	PWCHAR DeviceNames = (PWCHAR) ExAllocatePool(PagedPool, 4096);
+	
+	PWCHAR DeviceNames = (PWCHAR) ExAllocatePoolWithTag(PagedPool, 4096, '0PWA');
 	
 	if (DeviceNames == NULL) {
 		IF_LOUD(DbgPrint("Unable the allocate the buffer for the list of the network adapters\n");)
@@ -379,7 +373,7 @@ PWCHAR getAdaptersList(void)
 				}
 				else {                      // We know how big it needs to be.
 					ULONG valueInfoLength = valueInfo.DataLength + FIELD_OFFSET(KEY_VALUE_PARTIAL_INFORMATION, Data[0]);
-					PKEY_VALUE_PARTIAL_INFORMATION valueInfoP =	(PKEY_VALUE_PARTIAL_INFORMATION) ExAllocatePool(PagedPool, valueInfoLength);
+					PKEY_VALUE_PARTIAL_INFORMATION valueInfoP =	(PKEY_VALUE_PARTIAL_INFORMATION) ExAllocatePoolWithTag(PagedPool, valueInfoLength, '1PWA');
 					if (valueInfoP != NULL) {
 						status = ZwQueryValueKey(ExportKeyHandle, &FinalExportKey,
 							KeyValuePartialInformation,
@@ -453,7 +447,7 @@ PKEY_VALUE_PARTIAL_INFORMATION getTcpBindings(void)
     else {                      // We know how big it needs to be.
       ULONG valueInfoLength = valueInfo.DataLength + FIELD_OFFSET(KEY_VALUE_PARTIAL_INFORMATION, Data[0]);
       PKEY_VALUE_PARTIAL_INFORMATION valueInfoP =
-        (PKEY_VALUE_PARTIAL_INFORMATION)ExAllocatePool(PagedPool, valueInfoLength);
+        (PKEY_VALUE_PARTIAL_INFORMATION)ExAllocatePoolWithTag(PagedPool, valueInfoLength, '2PWA');
       
 	  if (valueInfoP != NULL) {
         status = ZwQueryValueKey(keyHandle, &bindValueName,
@@ -513,7 +507,7 @@ BOOLEAN createDevice(IN OUT PDRIVER_OBJECT adriverObjectP,
 
   deviceName.Length = 0;
   deviceName.MaximumLength = (USHORT)(amacNameP->Length + NPF_Prefix.Length + sizeof(UNICODE_NULL));
-  deviceName.Buffer = ExAllocatePool(PagedPool, deviceName.MaximumLength);
+  deviceName.Buffer = ExAllocatePoolWithTag(PagedPool, deviceName.MaximumLength, '3PWA');
  
   if (deviceName.Buffer != NULL) 
   {
@@ -737,7 +731,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 		// Allocate the memory to contain the new filter program
 		// We could need the original BPF binary if we are forced to use bpf_filter_with_2_buffers()
-		TmpBPFProgram=(PUCHAR)ExAllocatePool(NonPagedPool,cnt*sizeof(struct bpf_insn));
+		TmpBPFProgram=(PUCHAR)ExAllocatePoolWithTag(NonPagedPool, cnt*sizeof(struct bpf_insn), '4PWA');
 		if (TmpBPFProgram==NULL)
 		{
 			IF_LOUD(DbgPrint("Error - No memory for filter");)
@@ -824,7 +818,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			}
 			
 			// Allocate the buffer that will contain the string
-			DumpNameBuff=ExAllocatePool(NonPagedPool, IrpSp->Parameters.DeviceIoControl.InputBufferLength);
+			DumpNameBuff=ExAllocatePoolWithTag(NonPagedPool, IrpSp->Parameters.DeviceIoControl.InputBufferLength, '5PWA');
 			if(DumpNameBuff==NULL || Open->DumpFileName.Buffer!=NULL){
 				IF_LOUD(DbgPrint("NPF: unable to allocate the dump filename: not enough memory or name already set\n");)
 					EXIT_FAILURE(0);
@@ -887,7 +881,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		if(Open->Buffer!=NULL) ExFreePool(Open->Buffer);
 		//allocate the new buffer
 		if(dim!=0){
-			tpointer=ExAllocatePool(NonPagedPool,dim);
+			tpointer=ExAllocatePoolWithTag(NonPagedPool, dim, '6PWA');
 			if (tpointer==NULL)
 			{
 				// no memory
@@ -1188,10 +1182,7 @@ NPF_ReadRegistry(
 
 
 
-    Path=ExAllocatePool(
-             PagedPool,
-             RegistryPath->Length+sizeof(WCHAR)
-             );
+    Path=ExAllocatePoolWithTag(PagedPool, RegistryPath->Length+sizeof(WCHAR), '7PWA');
 
     if (Path == NULL) {
         return STATUS_INSUFFICIENT_RESOURCES;
@@ -1289,7 +1280,7 @@ NPF_QueryRegistryRoutine(
 
     }
 
-    Buffer=ExAllocatePool(NonPagedPool,ValueLength);
+    Buffer=ExAllocatePoolWithTag(NonPagedPool, ValueLength, '8PWA');
 
     if (Buffer==NULL) {
 

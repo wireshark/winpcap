@@ -6,7 +6,7 @@ OPTFLAGS = -O
 # I am suspicious of -O2 since it hosed wpcap.dll. To be safe, use -O only
 
 CFLAGS = -I ../../../common -shared -mno-cygwin ${OPTFLAGS}
-LDFLAGS = -Wl,--out-implib,Packet.a
+LDFLAGS = -Wl,--out-implib,libpacket.a
 OBJS = ../Packet32.o
 LIBS = -lwsock32
 
@@ -17,7 +17,7 @@ Packet.dll: ${OBJS}
 	${CC} ${CFLAGS} -o $*.o -c $<
 
 clean:
-	rm -f ${OBJS} Packet.a Packet.dll
+	rm -f ${OBJS} libpacket.a Packet.dll
 
 install: Packet.dll
 	cp Packet.dll c:/winnt/system32

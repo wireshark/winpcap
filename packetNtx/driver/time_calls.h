@@ -47,6 +47,13 @@ struct time_conv
 
 #ifdef WIN_NT_DRIVER
 
+__inline void TIME_DESYNCHRONIZE(struct time_conv *data)
+{
+	data->reference = 0;
+	data->start.tv_sec = 0;
+	data->start.tv_usec = 0;
+}
+
 #ifdef KQPC_TS
 
 /* KeQueryPerformanceCounter TimeStamps */

@@ -21,7 +21,7 @@
 
 #ifndef lint
 static const char rcsid[] =
-    "@(#) $Header: /usr/cvsroot/winpcap/wpcap/libpcap/Pcap-win32.c,v 1.2 2002/05/28 07:36:57 degioanni Exp $ (LBL)";
+    "@(#) $Header: /usr/cvsroot/winpcap/wpcap/libpcap/Pcap-win32.c,v 1.3 2002/07/09 07:57:56 degioanni Exp $ (LBL)";
 #endif
 
 #include <pcap-int.h>
@@ -56,7 +56,7 @@ int
 pcap_stats(pcap_t *p, struct pcap_stat *ps)
 {
 
-	if(PacketGetStats(p->adapter,ps) != TRUE){
+	if(PacketGetStats(p->adapter, (struct bpf_stat*)ps) != TRUE){
 		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "PacketGetStats error");
 		return -1;
 	}

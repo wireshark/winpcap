@@ -352,7 +352,7 @@ JIT_BPF_Filter;
  */
 
 /*!
-  \brief Deletes a filtering function that was previously created by BPF_jitter().
+  \brief BPF jitter, builds an x86 function from a BPF program.
   \param fp The BPF pseudo-assembly filter that will be translated into x86 code.
   \param nins Number of instructions of the input filter.
   \return The JIT_BPF_Filter structure containing the x86 filtering binary.
@@ -363,7 +363,7 @@ JIT_BPF_Filter;
 JIT_BPF_Filter* BPF_jitter(struct bpf_insn *fp, INT nins);
 
 /*!
-  \brief The actual jitter. Translates a set of BPF instructions in an x86 function.
+  \brief Translates a set of BPF instructions in a set of x86 ones.
   \param ins Pointer to the BPF instructions that will be translated into x86 code.
   \param nins Number of instructions to translate.
   \param mem Memory used by the x86 function to emulate the RAM of the BPF pseudo processor.

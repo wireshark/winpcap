@@ -37,9 +37,6 @@ static NDIS_MEDIUM MediumArray[] = {
 
 #define NUM_NDIS_MEDIA  (sizeof MediumArray / sizeof MediumArray[0])
 
-#undef ExAllocatePool
-#define ExAllocatePool(A, B) ExAllocatePoolWithTag(A, B, 'APPA');
-
 ULONG NamedEventsCounter=0;
 
 //Itoa. Replaces the buggy RtlIntegerToUnicodeString
@@ -53,6 +50,16 @@ int i;
 	}
 
 }
+
+/// Global start time. Used as an absolute reference for timestamp conversion.
+struct time_conv G_Start_Time = {
+	0,	
+	{0, 0},	
+};
+
+UINT n_Opened_Instances = 0;
+
+NDIS_SPIN_LOCK Opened_Instances_Lock;
 
 //-------------------------------------------------------------------
 
@@ -80,17 +87,12 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 
     IrpSp = IoGetCurrentIrpStackLocation(Irp);
 
-
-    //
     //  allocate some memory for the open structure
-    //
-    Open=ExAllocatePool(NonPagedPool,sizeof(OPEN_INSTANCE));
+    Open=ExAllocatePoolWithTag(NonPagedPool, sizeof(OPEN_INSTANCE), '0OWA');
 
 
     if (Open==NULL) {
-        //
         // no memory
-        //
         Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
         IoCompleteRequest(Irp, IO_NO_INCREMENT);
         return STATUS_INSUFFICIENT_RESOURCES;
@@ -102,34 +104,26 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
         );
 
 
-	EvName=ExAllocatePool(NonPagedPool, sizeof(L"\\BaseNamedObjects\\NPF0000000000"));
+	EvName=ExAllocatePoolWithTag(NonPagedPool, sizeof(L"\\BaseNamedObjects\\NPF0000000000"), '1OWA');
 
     if (EvName==NULL) {
-        //
         // no memory
-        //
         ExFreePool(Open);
 	    Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
         IoCompleteRequest(Irp, IO_NO_INCREMENT);
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
-    //
     //  Save or open here
-    //
     IrpSp->FileObject->FsContext=Open;
 	
     Open->DeviceExtension=DeviceExtension;
 	
 	
-    //
     //  Save the Irp here for the completeion routine to retrieve
-    //
     Open->OpenCloseIrp=Irp;
 	
-    //
     //  Allocate a packet pool for our xmit and receive packets
-    //
     NdisAllocatePacketPool(
         &Status,
         &Open->PacketPool,
@@ -187,23 +181,20 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
     KeInitializeSpinLock(&Open->RequestSpinLock);
     InitializeListHead(&Open->RequestList);
 
-	//
 	// Initializes the extended memory of the NPF machine
-	//
-	Open->mem_ex.buffer=ExAllocatePool(NonPagedPool,DEFAULT_MEM_EX_SIZE);
-	if((Open->mem_ex.buffer)==NULL)
+	Open->mem_ex.buffer = ExAllocatePoolWithTag(NonPagedPool, DEFAULT_MEM_EX_SIZE, '2OWA');
+	if((Open->mem_ex.buffer) == NULL)
 	{
-        //
         // no memory
-        //
         ExFreePool(Open);
+		ExFreePool(EvName);
 	    Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
         IoCompleteRequest(Irp, IO_NO_INCREMENT);
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 	
-	Open->mem_ex.size=DEFAULT_MEM_EX_SIZE;
-	RtlZeroMemory(Open->mem_ex.buffer,DEFAULT_MEM_EX_SIZE);
+	Open->mem_ex.size = DEFAULT_MEM_EX_SIZE;
+	RtlZeroMemory(Open->mem_ex.buffer, DEFAULT_MEM_EX_SIZE);
 	
 	//
 	// Initialize the open instance
@@ -234,6 +225,10 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 
 	//allocate the spinlock for the buffer pointers
     NdisAllocateSpinLock(&Open->BufLock);
+
+	// Get the absolute value of the system boot time.
+	// This is used for timestamp conversion.
+	TIME_SYNCHRONIZE(&G_Start_Time);
 	
     //
     //  link up the request stored in our open block
@@ -303,10 +298,22 @@ VOID NPF_OpenAdapterComplete(
 
         NdisFreePacketPool(Open->PacketPool);
 
+		//free mem_ex
+		Open->mem_ex.size = 0;
+		if(Open->mem_ex.buffer != NULL)ExFreePool(Open->mem_ex.buffer);
+
 		ExFreePool(Open->ReadEventName.Buffer);
 
         ExFreePool(Open);
     }
+	else {
+		NdisAcquireSpinLock( &Open->BufLock );
+		n_Opened_Instances++;
+		NdisReleaseSpinLock( &Open->BufLock );
+
+		IF_LOUD(DbgPrint("Opened Instances:%d", n_Opened_Instances);)
+	}
+
 
     Irp->IoStatus.Status = Status;
     Irp->IoStatus.Information = 0;
@@ -340,26 +347,26 @@ NPF_Close(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 		NdisWaitEvent(&Open->IOEvent,10000);
 
-		// Free the bpf program
-		if(Open->bpfprogram!=NULL)ExFreePool(Open->bpfprogram);
-		
-		//free mem_ex
-		Open->mem_ex.size=0;
-		if(Open->mem_ex.buffer!=NULL)ExFreePool(Open->mem_ex.buffer);
-		
-		// Free the JIT binary
-		BPF_Destroy_JIT_Filter(Open->Filter);
-		
-		// Free the buffer
+		// Free the filter if it's present
+		if(Open->bpfprogram != NULL){
+			BPF_Destroy_JIT_Filter(Open->Filter);
+			ExFreePool(Open->bpfprogram);
+		}
+
+		//free the buffer
 		Open->BufSize=0;
 		if(Open->Buffer!=NULL)ExFreePool(Open->Buffer);
+		
+		//free mem_ex
+		Open->mem_ex.size = 0;
+		if(Open->mem_ex.buffer != NULL)ExFreePool(Open->mem_ex.buffer);
+				
+		NdisFreePacketPool(Open->PacketPool);
 
 		// Free the string with the name of the dump file
 		if(Open->DumpFileName.Buffer!=NULL)
 			ExFreePool(Open->DumpFileName.Buffer);
-		
-		NdisFreePacketPool(Open->PacketPool);
-				
+			
 		ExFreePool(Open->ReadEventName.Buffer);
 		ExFreePool(Open);
 
@@ -438,16 +445,19 @@ NPF_CloseAdapterComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  
 	// free the allocated structures only if the instance is still bound to the adapter
 	if(Open->Bound == TRUE){
 		
-		//free the bpf program
-		if(Open->bpfprogram!=NULL)ExFreePool(Open->bpfprogram);
+		// Free the filter if it's present
+		if(Open->bpfprogram != NULL){
+			BPF_Destroy_JIT_Filter(Open->Filter);
+			ExFreePool(Open->bpfprogram);
+		}
 		
 		//free the buffer
-		Open->BufSize=0;
+		Open->BufSize = 0;
 		if(Open->Buffer!=NULL)ExFreePool(Open->Buffer);
 		
 		//free mem_ex
-		Open->mem_ex.size=0;
-		if(Open->mem_ex.buffer!=NULL)ExFreePool(Open->mem_ex.buffer);
+		Open->mem_ex.size = 0;
+		if(Open->mem_ex.buffer != NULL)ExFreePool(Open->mem_ex.buffer);
 		
 		NdisFreePacketPool(Open->PacketPool);
 		
@@ -468,9 +478,34 @@ NPF_CloseAdapterComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  
 	else
 		NdisSetEvent(&Open->IOEvent);
 
+	// Decrease the counter of open instances
+	NdisAcquireSpinLock(&Opened_Instances_Lock);
+	n_Opened_Instances--;
+	NdisReleaseSpinLock(&Opened_Instances_Lock);
+
+	IF_LOUD(DbgPrint("Opened Instances:%d", n_Opened_Instances);)
+
+	if(n_Opened_Instances == 0){
+		// Force a synchronization at the next NPF_Open().
+		// This hopefully avoids the synchronization issues caused by hibernation or standby.
+		TIME_DESYNCHRONIZE(&G_Start_Time);
+	}
 
 	return;
 
+}
+//-------------------------------------------------------------------
+
+NDIS_STATUS
+NPF_PowerChange(IN NDIS_HANDLE ProtocolBindingContext, IN PNET_PNP_EVENT pNetPnPEvent)
+{
+    IF_LOUD(DbgPrint("NPF: PowerChange\n");)
+
+	TIME_DESYNCHRONIZE(&G_Start_Time);
+
+	TIME_SYNCHRONIZE(&G_Start_Time);
+
+	return STATUS_SUCCESS;
 }
 
 //-------------------------------------------------------------------
