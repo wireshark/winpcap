@@ -1386,29 +1386,33 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	while((Result=RegEnumKey(AdapKey,i,AdapName,sizeof(AdapName)/2))==ERROR_SUCCESS)
 	{
 		Status=RegOpenKeyEx(AdapKey,AdapName,0,KEY_READ,&OneAdapKey);
-    if ( Status != ERROR_SUCCESS ){
-    	RegCloseKey(AdapKey);
-      ODS("PacketGetAdapterNames: RegOpenKeyEx ( OneAdapKey ) Failed\n");
-      return FALSE;
-    }
+		if ( Status != ERROR_SUCCESS )
+		{
+    		RegCloseKey(AdapKey);
+			ODS("PacketGetAdapterNames: RegOpenKeyEx ( OneAdapKey ) Failed\n");
+			i++;
+			continue;
+		}
     
 		Status=RegOpenKeyEx(OneAdapKey,L"Linkage",0,KEY_READ,&LinkageKey);
-    if ( Status != ERROR_SUCCESS ){
-      RegCloseKey( OneAdapKey );
-    	RegCloseKey(AdapKey);
-      ODS("PacketGetAdapterNames: RegOpenKeyEx ( LinkageKey ) Failed\n");
-      return FALSE;
-    }
+		if ( Status != ERROR_SUCCESS )
+		{
+			RegCloseKey( OneAdapKey );
+    		RegCloseKey(AdapKey);
+			ODS("PacketGetAdapterNames: RegOpenKeyEx ( LinkageKey ) Failed\n");
+			i++;
+			continue;
+		}
 
-    Status=RegQueryValueEx(LinkageKey,L"Export",NULL,NULL,NULL,&dim);
+		Status=RegQueryValueEx(LinkageKey,L"Export",NULL,NULL,NULL,&dim);
 
-    RegCloseKey( OneAdapKey );
-    RegCloseKey( LinkageKey );
+		RegCloseKey( OneAdapKey );
+		RegCloseKey( LinkageKey );
 
 		i++;
 		if(Status!=ERROR_SUCCESS) continue;
 		RegKeySize+=dim;
-  } // while enum reg key still find keys
+	} // while enum reg key still find keys
 	
 	// Allocate the memory for the original device names
 	ODSEx("Need %d bytes for the names\n", RegKeySize+2);
