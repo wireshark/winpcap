@@ -48,7 +48,7 @@
 	the error description can return max PCAP_ERRBUF_SIZE characters.
 	However there is no guarantees that the string will be zero-terminated.
 	Best practice is to define the errbuf variable as a char of size 'PCAP_ERRBUF_SIZE+1'
-	and to insert manually a '\0' character at the end of the buffer. This will
+	and to insert manually the termination char at the end of the buffer. This will
 	guarantee that no buffer overflows occur even if we use the printf() to show
 	the error on the screen.
 

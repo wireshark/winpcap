@@ -33,10 +33,13 @@
 #include <pcap-int.h>	// for the details of the pcap_t structure
 #include <pcap-remote.h>
 #include <sockutils.h>
-#include <errno.h>	// for the errno variable
+#include <errno.h>		// for the errno variable
 #include <stdlib.h>		// for malloc(), free(), ...
 #include <string.h>		// for strstr, etc
 
+#ifndef WIN32
+#include <dirent.h>		// for readdir
+#endif
 
 
 /*
@@ -77,48 +80,29 @@ SOCKET sockmain;
 	This function is a superset of the old 'pcap_findalldevs()', which is obsolete, and which
 	allows listing only the devices present on the local machine.
 	Vice versa, pcap_findalldevs_ex() allows listing the devices present on a remote 
-	machine as well. Moreover, pcap_findalldevs_ex() is platform independent, since it
+	machine as well. Additionally, it can list all the pcap file availabin into a given folder.
+	Moreover, pcap_findalldevs_ex() is platform independent, since it
 	relies on the standard pcap_findalldevs() to get addresses on the local machine.
 
 	In case the function has to list the interfaces on a remote machine, it opens a new control
 	connection toward that machine, it retrieves the interfaces, and it drops the connection.
 	However, if this function detects that the remote machine is in 'active' mode,
-	the connection is not dropped (see the 'sockctrl' parameters for more details).
-	In the same way, if we're in active mode and the connection is already opened, it
-	uses the existing socket.
+	the connection is not dropped. In the same way, if we're in active mode and 
+	the connection is already opened, it uses the existing socket.
 
-	This function can rely on the pcap_createsrcstr() to create the string that keeps
-	the capture device according to	the new syntax, and the pcap_parsesrcstr() for the
-	other way round.
+	The 'source' is a parameter that tells the function where the lookup has to be done and
+	it uses the same syntax of the pcap_open(). For instance, 'rpcap://host:port/ will list
+	the devices available on a remote adapter, 'file://folder/' lists all the files in
+	the given folder, 'rpcap://' lists all local adapters.
 
-	\param host: a char* buffer that keeps the address of the remote host on which 
-	we want to see the interface list.
-	It can be NULL: in this case the function queries the local host for the locally
-	installed interfaces. The address can be both numeric (e.g. '10.11.12.13', '1:2:3::4')
-	and literal (e.g. 'foo.bar.com').
+	\param source: a char* buffer that keeps the 'source', according to the new WinPcap
+	syntax. This source will be examined looking for adapters (local or remote) or pcap
+	files.
 
 	\param auth: a pointer to a pcap_rmtauth structure. This pointer keeps the information
 	required to authenticate the RPCAP connection to the remote host.
 	This parameter is not meaningful in case of a query to the local host: in that case
 	it can be NULL.
-
-	\param sockctrl: Socket to be used for the control connection.
-	This parameter is meaningful only if the control connection is already open when the 
-	pcap_findalldevs() is called. This can be the case in which the 'ative' mode is used, 
-	in which the capturing machine opens a control connection toward the client in order 
-	to bypass in-middle firewalls. In that case, the control connection is already open, 
-	and we have to use this one instead of opening a new one.
-
-	In case this parameter is non-zero, the 'host' and 'port' parameters are meaningless:
-	the software will always try to retrieve the network adapters using this control
-	connection, despite the value assumed by 'host' and 'port'.
-	In case this parameter is non-zero, the socket is not closed at the end of the function
-	and it remains open for future use.
-
-	\param port: a char* buffer (e.g. "2003") that keeps the network port on which we 
-	want to connect to.
-	It can be NULL: in this case the function uses the standard port, defined in 
-	RPCAP_DEFAULT_NETPORT.
 
 	\param alldevs: a 'struct pcap_if_t' pointer, which will be properly allocated inside
 	this function. When the function returns, it is set to point to the first element 
@@ -147,8 +131,9 @@ SOCKET sockmain;
 
 	\warning The interface list must be deallocated manually by using the pcap_freealldevs().
 */
-int pcap_findalldevs_ex(char *host, char *port, SOCKET sockctrl, struct pcap_rmtauth *auth, pcap_if_t **alldevs, char *errbuf) 
+int pcap_findalldevs_ex(char *source, struct pcap_rmtauth *auth, pcap_if_t **alldevs, char *errbuf) 
 {
+SOCKET sockctrl;			// socket descriptor of the control connection
 unsigned int nread= 0;		// number of bytes of the payload read from the socket
 struct addrinfo hints;		// temp variable needed to resove hostnames into to socket representation
 struct addrinfo *addrinfo;	// temp variable needed to resove hostnames into to socket representation
@@ -158,16 +143,26 @@ int naddr;		// temp var needed to avoid problems with IPv6 addresses
 int retval;		// store the return value of the functions
 int nif;		// Number of interfaces listed
 int active= 0;	// 'true' if we the other end-party is in active mode
+char host[PCAP_BUF_SIZE], port[PCAP_BUF_SIZE], name[PCAP_BUF_SIZE], path[PCAP_BUF_SIZE], filename[PCAP_BUF_SIZE];
+int type;
+pcap_t *fp;
 
+	if (strlen(source) > PCAP_BUF_SIZE)
+	{
+		snprintf(errbuf, PCAP_ERRBUF_SIZE, "The source string is too long. Cannot handle it correctly.");
+		return -1;
+	}
 
-	// We have to perform two controls here, because the user can call this function in two ways:
-	//   pcap_findalldevs_ex(NULL, ...) ==> address == NULL
-	//   pcap_findalldevs_ex("", ...) ==> address[0] == 0
-	if ( (host == NULL) || (host[0] == 0) )
+	// determine the type of the source (file, local, remote)
+	if (pcap_parsesrcstr(source, &type, host, port, name, errbuf) == -1)
+		return -1;
+
+	if (type == PCAP_SRC_IFLOCAL)
 	{
 		// The user wants to retrieve adapters from a local host
 		if (pcap_findalldevs(alldevs, errbuf) == -1)
 			return -1;
+
 		if ( (alldevs == NULL) || (*alldevs == NULL) )
 		{
 			snprintf(errbuf, PCAP_ERRBUF_SIZE,
@@ -175,8 +170,150 @@ int active= 0;	// 'true' if we the other end-party is in active mode
 				" on the local machine.");
 			return -1;
 		}
+
 		return 0;
 	}
+
+	(*alldevs)= NULL;
+
+	if (type == PCAP_SRC_FILE)
+	{
+		int stringlen;
+#ifdef WIN32
+		WIN32_FIND_DATA filedata; 
+		HANDLE filehandle; 
+#else
+		struct dirent *filedata;
+		DIR *unixdir;
+#endif
+
+		// Check that the filename is correct
+		stringlen= strlen(name);
+
+		// The directory must end with '\' in Win32 and '/' in UNIX
+#ifdef WIN32
+	#define ENDING_CHAR '\\'
+#else
+	#define ENDING_CHAR '/'
+#endif
+
+		if (name[stringlen - 1] != ENDING_CHAR )
+		{
+			name[stringlen]= ENDING_CHAR;
+			name[stringlen + 1]= 0;
+
+			stringlen++;
+		}
+		
+		// Save the path for future reference
+		snprintf(path, sizeof(path), "%s", name);
+
+#ifdef WIN32
+		// To perform directory listing, Win32 must have an 'asterisk' as ending char
+		if (name[stringlen - 1] != '*' )
+		{
+			name[stringlen]= '*';
+			name[stringlen + 1]= 0;
+		}
+
+		filehandle = FindFirstFile(name, &filedata);
+
+		if (filehandle == INVALID_HANDLE_VALUE)
+		{
+			snprintf(errbuf, PCAP_ERRBUF_SIZE, "Error when listing files: does folder '%s' exist?", path);
+			return -1;
+		}
+
+#else
+		// opening the folder
+		unixdir= opendir(path);
+
+		// get the first file into it
+		filedata= readdir(unixdir);
+
+		if (filedata == NULL)
+		{
+			snprintf(errbuf, PCAP_ERRBUF_SIZE, "Error when listing files: does folder '%s' exist?", path);
+			return -1;
+		}
+#endif
+
+		do
+		{
+
+#ifdef WIN32
+			snprintf(filename, sizeof(filename), "%s%s", path, filedata.cFileName);
+#else
+			snprintf(filename, sizeof(filename), "%s%s", path, filedata->d_name);
+#endif
+
+			fp= pcap_open_offline(filename, errbuf);
+
+			if (fp)
+			{
+			pcap_if_t *dev;		// Previous device into the pcap_if_t chain
+
+				// allocate the main structure
+				if (*alldevs == NULL)	// This is in case it is the first file
+				{
+					(*alldevs)= (pcap_if_t *) malloc(sizeof(pcap_if_t) );
+					dev= (*alldevs);
+				}
+				else
+				{
+					dev->next= (pcap_if_t *) malloc(sizeof(pcap_if_t) );
+					dev= dev->next;
+				}
+
+				// check that the malloc() didn't fail
+				if (dev == NULL)
+				{
+					snprintf(errbuf, PCAP_ERRBUF_SIZE, "malloc() failed: %s", pcap_strerror(errno));
+					return -1;
+				}
+
+				// Initialize the structure to 'zero'
+				memset(dev, 0, sizeof(pcap_if_t) );
+
+				// allocate memory for file name
+				stringlen= strlen(filename);
+
+				dev->name= (char *) malloc(stringlen + 1);
+				if (dev->name == NULL)
+				{
+					snprintf(errbuf, PCAP_ERRBUF_SIZE, "malloc() failed: %s", pcap_strerror(errno));
+					return -1;
+				}
+
+				strncpy(dev->name, filename, stringlen);
+
+				dev->name[stringlen]= 0;
+
+				pcap_close(fp);
+			}
+		}
+#ifdef WIN32
+		while (FindNextFile(filehandle, &filedata) != 0);
+#else
+		while ( (filedata= readdir(unixdir)) != NULL);
+#endif
+
+
+#ifdef WIN32
+		// Close the search handle. 
+		FindClose(filehandle);
+#endif
+
+		return 0;
+/*
+#else
+		snprintf(errbuf, PCAP_ERRBUF_SIZE, "Directory listing is still unsupported");
+		return -1;
+#endif
+*/
+	}
+
+	// If we come here, it is a remote host
 
 	// Warning: this call can be the first one called by the user.
 	// For this reason, we have to initialize the WinSock support.
@@ -890,7 +1027,7 @@ pcap_t *fp;
 		return NULL;
 	}
 
-	// determine the type of the source (NULL, file, local, remote)
+	// determine the type of the source (file, local, remote)
 	if (pcap_parsesrcstr(source, &type, host, port, name, errbuf) == -1)
 		return NULL;
 
