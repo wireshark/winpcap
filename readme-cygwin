@@ -1,5 +1,6 @@
 Makefile and patches provided by Nate Lawson (nate@rootlabs.com)
 
+
 Only the Packet and WPCAP DLLs can be built under gcc.  The drivers
 themselves (packet.sys and packet.vxd) are too dependent on MSVC for
 their tools and assembler.
