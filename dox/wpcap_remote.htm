@@ -296,9 +296,20 @@ machine you want to contact. The following forms are allowed:</p>
 capture has been tested on Linux and BSD. What you have to do is:</p>
 <ul>
   <li>download the WinPcap sources</li>
-  <li>unpack the sources</li>
+  <li>unpack the sources
+    <ul>
+      <li>we suggest using the <code>unzip -a</code> tool in order o convert DOS
+        files to UNIX ones</li>
+    </ul>
+  </li>
   <li>move to the <code>libpcap</code> folder</li>
-  <li>type <code>./configure</code>, then <code>make</code></li>
+  <li>type:
+    <ul>
+      <li><code>autoconf</code></li>
+      <li> <code>./configure</code></li>
+      <li> <code>make</code></li>
+    </ul>
+  </li>
   <li>move to the <code>rpcapd</code> folder</li>
   <li>type <code>make</code></li>
 </ul>
