@@ -19,6 +19,8 @@
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
+#ifndef __DEBUG_INCLUDE
+#define __DEBUG_INCLUDE
 
 
 #if DBG
@@ -46,3 +48,5 @@ extern ULONG PacketDebugFlag;
 #define IF_INIT_LOUD(A)
 
 #endif
+
+#endif /*#define __DEBUG_INCLUDE*/
