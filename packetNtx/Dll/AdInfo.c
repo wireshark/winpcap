@@ -32,6 +32,7 @@
 
 #include <stdio.h>
 #include <packet32.h>
+#include "WanPacket/WanPacket.h"
 
 #include <windows.h>
 #include <windowsx.h>
@@ -489,7 +490,8 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	
 	if(IphAd->Type == IF_TYPE_PPP || IphAd->Type == IF_TYPE_SLIP)
 	{
-		// NdisWan adapter. We don't try to open them because of problems with the Netmon Com object.
+		if (!WanPacketTestAdapter())
+			goto SkipAd;
 	}
 	else
 	{
@@ -1267,7 +1269,14 @@ BOOL PacketAddFakeNdisWanAdapter()
 	PADAPTER_INFO TmpAdInfo, SAdInfo;
 	
 	// Scan the adapters list to see if this one is already present
-	
+
+	if (!WanPacketTestAdapter())
+	{
+		ODS("Cannot add the adapter, since it cannot be opened.");
+		//the adapter cannot be opened, we do not list it, but we return t
+		return FALSE;
+	}
+
 	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
 	
 	for(SAdInfo = AdaptersInfoList; SAdInfo != NULL; SAdInfo = SAdInfo->Next)
