@@ -28,8 +28,8 @@ LANGUAGE LANG_ITALIAN, SUBLANG_ITALIAN
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,0,0,15
- PRODUCTVERSION 3,0,0,15
+ FILEVERSION 3,0,0,17
+ PRODUCTVERSION 3,0,0,17
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -47,14 +47,14 @@ BEGIN
             VALUE "Comments", "Key Parser\0"
             VALUE "CompanyName", "NetGroup - Politecnico di Torino\0"
             VALUE "FileDescription", "key_parser\0"
-            VALUE "FileVersion", "3, 0, 0, 15\0"
+            VALUE "FileVersion", "3, 0, 0, 17\0"
             VALUE "InternalName", "key_parser\0"
-            VALUE "LegalCopyright", "Copyright © 2002\0"
+            VALUE "LegalCopyright", "Copyright © 2002 - 2003\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "key_parser.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "Key Parser\0"
-            VALUE "ProductVersion", "3, 0, 0, 15\0"
+            VALUE "ProductVersion", "3, 0, 0, 17\0"
             VALUE "SpecialBuild", "\0"
         END
     END
