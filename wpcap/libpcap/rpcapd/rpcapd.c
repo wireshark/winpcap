@@ -131,7 +131,7 @@ char errbuf[PCAP_ERRBUF_SIZE + 1];	// keeps the error string, prior to be printe
 	// Initialize errbuf
 	memset(errbuf, 0, sizeof(errbuf) );
 
-	if (sock_init(errbuf) == -1)
+	if (sock_init(errbuf, PCAP_ERRBUF_SIZE) == -1)
 	{
 		SOCK_ASSERT(errbuf, 1);
 		exit(-1);
@@ -280,8 +280,11 @@ char errbuf[PCAP_ERRBUF_SIZE + 1];	// keeps the error string, prior to be printe
 		// Enable the catching of Ctrl+C
 		signal(SIGINT, main_cleanup);
 
+#ifndef WIN32
 		// generated under unix with 'kill -HUP', needed to reload the configuration
+		// We do not have this kind of signal in Win32
 		signal(SIGHUP, fileconf_read);
+#endif
 
 		printf("Press CTRL + C to stop the server...\n");
 	}
@@ -349,7 +352,7 @@ int i;
 	struct addrinfo *tempaddrinfo;
 
 		// Do the work
-		if (sock_validaddr((address[0]) ? address : NULL, port, &mainhints, &addrinfo, errbuf) == -1)
+		if (sock_initaddress((address[0]) ? address : NULL, port, &mainhints, &addrinfo, errbuf, PCAP_ERRBUF_SIZE) == -1)
 		{
 			SOCK_ASSERT(errbuf, 1);
 			return;
@@ -359,7 +362,7 @@ int i;
 
 		while (tempaddrinfo)
 		{
-			if ( (sockmain= sock_open(tempaddrinfo, SOCKOPEN_SERVER, SOCKET_MAXCONN, errbuf)) == -1)
+			if ( (sockmain= sock_open(tempaddrinfo, SOCKOPEN_SERVER, SOCKET_MAXCONN, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 			{
 				SOCK_ASSERT(errbuf, 1);
 				tempaddrinfo= tempaddrinfo->ai_next;
@@ -377,10 +380,8 @@ int i;
 			{
 				main_passive( (void *) &sockmain);
 				return;
-//				exit(0);
 			}
 #endif
-//			main_passive(sockmain);
 			tempaddrinfo= tempaddrinfo->ai_next;
 		}
 
@@ -487,7 +488,7 @@ struct sockaddr_storage from;	// generic sockaddr_storage variable
 socklen_t fromlen;				// keeps the length of the sockaddr_storage variable
 SOCKET sockmain;
 
-#ifdef linux
+#ifndef WIN32
 	pid_t pid;
 #endif
 
@@ -526,10 +527,10 @@ SOCKET sockmain;
 		}
 
 		// checks if the connecting host is among the ones allowed
-		if (sock_check_hostlist(hostlist, RPCAP_HOSTLIST_SEP, &from, errbuf) )
+		if (sock_check_hostlist(hostlist, RPCAP_HOSTLIST_SEP, &from, errbuf, PCAP_ERRBUF_SIZE) )
 		{
 			rpcap_senderror(sockctrl, errbuf, PCAP_ERR_HOSTNOAUTH, fakeerrbuf);
-			sock_close(sockctrl, fakeerrbuf);
+			sock_close(sockctrl, fakeerrbuf, PCAP_ERRBUF_SIZE);
 			continue;
 		}
 
@@ -623,7 +624,7 @@ struct daemon_slpars *pars;			// parameters needed by the daemon_serviceloop()
 	memset(errbuf, 0, sizeof(errbuf) );
 
 	// Do the work
-	if (sock_validaddr(activepars->address, activepars->port, &hints, &addrinfo, errbuf) == -1)
+	if (sock_initaddress(activepars->address, activepars->port, &hints, &addrinfo, errbuf, PCAP_ERRBUF_SIZE) == -1)
 	{
 		SOCK_ASSERT(errbuf, 1);
 		return;
@@ -633,7 +634,7 @@ struct daemon_slpars *pars;			// parameters needed by the daemon_serviceloop()
 	{
 	int activeclose;
 
-		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf)) == -1)
+		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 		{
 			SOCK_ASSERT(errbuf, 1);
 			snprintf(errbuf, PCAP_ERRBUF_SIZE, "Error connecting to host %s, port %s, using protocol %s",
