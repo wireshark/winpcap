@@ -643,9 +643,11 @@ int daemon_AuthUserPwd(char *username, char *password, char *errbuf)
 		FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, error, 0, errbuf,
 			PCAP_ERRBUF_SIZE, NULL);
 
+		CloseHandle(Token);
 		return -1;
 	}
 
+	CloseHandle(Token);
 	return 0;
 
 #else
