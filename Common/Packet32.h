@@ -46,6 +46,9 @@
 
 #include <winsock2.h>
 #include "devioctl.h"
+#ifdef HAVE_DAG_API
+#include <dagc.h>
+#endif /* HAVE_DAG_API */
 
 // Working modes
 #define PACKET_MODE_CAPT 0x0 ///< Capture mode
@@ -91,6 +94,11 @@
 /// Alignment macro. Rounds up to the next even multiple of Packet_ALIGNMENT. 
 #define Packet_WORDALIGN(x) (((x)+(Packet_ALIGNMENT-1))&~(Packet_ALIGNMENT-1))
 
+
+#define NdisMediumNull	-1		// Custom linktype: NDIS doesn't provide an equivalent
+#define NdisMediumCHDLC	-2		// Custom linktype: NDIS doesn't provide an equivalent
+#define NdisMediumPPPSerial	-3	// Custom linktype: NDIS doesn't provide an equivalent
+
 /*!
   \brief Network type structure.
 
@@ -99,7 +107,7 @@
 typedef struct NetType
 {
 	UINT LinkType;	///< The MAC of the current network adapter (see function PacketGetNetType() for more information)
-	UINT LinkSpeed;	///< The speed of the network in bits per second
+	ULONGLONG LinkSpeed;	///< The speed of the network in bits per second
 }NetType;
 
 
@@ -171,7 +179,7 @@ struct bpf_hdr {
   It is simpler than the bpf_hdr, because it corresponds to the header associated by WinPcap and libpcap to a
   packet in a dump file. This makes straightforward sending WinPcap dump files to the network.
 */
-struct dump_bpf_hdr{
+struct dumbpf_hdr{
     struct timeval	ts;			///< Time stamp of the packet
     UINT			caplen;		///< Length of captured portion. The captured portion can smaller than the 
 								///< the original packet, because it is possible (with a proper filter) to 
@@ -208,22 +216,27 @@ typedef struct npf_if_addr {
 typedef struct WAN_ADAPTER_INT WAN_ADAPTER; ///< Describes an opened wan (dialup, VPN...) network adapter using the NetMon API
 typedef WAN_ADAPTER *PWAN_ADAPTER; ///< Describes an opened wan (dialup, VPN...) network adapter using the NetMon API
 
+#define INFO_FLAG_NDIS_ADAPTER		0	///< Flag for ADAPTER_INFO: this is a traditional ndis adapter
+#define INFO_FLAG_NDISWAN_ADAPTER	1	///< Flag for ADAPTER_INFO: this is a NdisWan adapter
+#define INFO_FLAG_DAG_CARD			2	///< Flag for ADAPTER_INFO: this is a DAG card
+#define INFO_FLAG_DAG_FILE			6	///< Flag for ADAPTER_INFO: this is a DAG file
 /*!
   \brief Contains comprehensive information about a network adapter.
 
   This structure is filled with all the accessory information that the user can need about an adapter installed
   on his system.
 */
-typedef struct _ADAPTER_INFO  {
-	struct _ADAPTER_INFO *Next;		///< Pointer to the next adapter in the list.
-	CHAR Name[ADAPTER_NAME_LENGTH + 1];	///< Name of the device representing the adapter.
+typedef struct _ADAPTER_INFO  
+{
+	struct _ADAPTER_INFO *Next;				///< Pointer to the next adapter in the list.
+	CHAR Name[ADAPTER_NAME_LENGTH + 1];		///< Name of the device representing the adapter.
 	CHAR Description[ADAPTER_DESC_LENGTH + 1];	///< Human understandable description of the adapter
-	UINT MacAddressLen;				///< Length of the link layer address.
+	UINT MacAddressLen;						///< Length of the link layer address.
 	UCHAR MacAddress[MAX_MAC_ADDR_LENGTH];	///< Link layer address.
 	NetType LinkLayer;						///< Physical characteristics of this adapter. This NetType structure contains the link type and the speed of the adapter.
 	INT NNetworkAddresses;					///< Number of network layer addresses of this adapter.
 	npf_if_addr *NetworkAddresses;			///< Pointer to an array of npf_if_addr, each of which specifies a network address of this adapter.
-	UINT IsNdisWan;							///< True if this is a Wan adapter. Wan adapters must be treated in a different way, using the Netmon API to capture.
+	UINT Flags;								///< Adapter's flags. Tell if this adapter must be treated in a different way, using the Netmon API or the dagc API.
 }
 ADAPTER_INFO, *PADAPTER_INFO;
 
@@ -250,6 +263,14 @@ typedef struct _ADAPTER  {
 								///< ReadEvent will be signaled, also if no packets were captured
 	CHAR Name[ADAPTER_NAME_LENGTH];
 	PWAN_ADAPTER pWanAdapter;
+	UINT Flags;					///< Adapter's flags. Tell if this adapter must be treated in a different way, using the Netmon API or the dagc API.
+#ifdef HAVE_DAG_API
+	dagc_t *pDagCard;			///< Pointer to the dagc API adapter descriptor for this adapter
+	PCHAR DagBuffer;			///< Pointer to the buffer with the packets that is received from the DAG card
+	struct timeval DagReadTimeout;	///< Read timeout. The dagc API requires a timeval structure
+	unsigned DagFcsLen;			///< Length of the frame check sequence attached to any packet by the card. Obtained from the registry
+	DWORD DagFastProcess;		///< True if the user requests fast capture processing on this card. Higher level applications can use this value to provide a faster but possibly unprecise capture (for example, libpcap doesn't convert the timestamps).
+#endif // HAVE_DAG_API
 }  ADAPTER, *LPADAPTER;
 
 /*!
@@ -319,6 +340,20 @@ LONG PacketDumpRegistryKey(PCHAR KeyName, PCHAR FileName);
 #endif
 #endif
 
+/* We load dinamically the dag library in order link it only when it's present on the system */
+#ifdef HAVE_DAG_API
+typedef dagc_t* (*dagc_open_handler)(const char *source, unsigned flags, char *ebuf);	///< prototype used to dynamically load the dag dll
+typedef void (*dagc_close_handler)(dagc_t *dagcfd);										///< prototype used to dynamically load the dag dll
+typedef int (*dagc_getlinktype_handler)(dagc_t *dagcfd);								///< prototype used to dynamically load the dag dll
+typedef int (*dagc_getlinkspeed_handler)(dagc_t *dagcfd);								///< prototype used to dynamically load the dag dll
+typedef int (*dagc_setsnaplen_handler)(dagc_t *dagcfd, unsigned snaplen);				///< prototype used to dynamically load the dag dll
+typedef unsigned (*dagc_getfcslen_handler)(dagc_t *dagcfd);								///< prototype used to dynamically load the dag dll
+typedef int (*dagc_receive_handler)(dagc_t *dagcfd, u_char **buffer, u_int *bufsize);	///< prototype used to dynamically load the dag dll
+typedef int (*dagc_stats_handler)(dagc_t *dagcfd, dagc_stats_t *ps);					///< prototype used to dynamically load the dag dll
+typedef int (*dagc_wait_handler)(dagc_t *dagcfd, struct timeval *timeout);				///< prototype used to dynamically load the dag dll
+typedef int (*dagc_finddevs_handler)(dagc_if_t **alldevsp, char *ebuf);					///< prototype used to dynamically load the dag dll
+typedef int (*dagc_freedevs_handler)(dagc_if_t *alldevsp);								///< prototype used to dynamically load the dag dll
+#endif // HAVE_DAG_API
 
 #ifdef __cplusplus
 extern "C" {
@@ -347,6 +382,7 @@ BOOLEAN PacketSetNumWrites(LPADAPTER AdapterObject,int nwrites);
 BOOLEAN PacketSetMode(LPADAPTER AdapterObject,int mode);
 BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout);
 BOOLEAN PacketSetBpf(LPADAPTER AdapterObject,struct bpf_program *fp);
+INT PacketSetSnapLen(LPADAPTER AdapterObject,int snaplen);
 BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s);
 BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s);
 BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim);
