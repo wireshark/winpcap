@@ -28,10 +28,10 @@
       <components>
          <component id="Main">
             <files>
-               <file src="distribution\2000\npf.sys" dst="%System%\drivers\npf.sys" condition="%OSPlatform%=NT and (%OSVersion%=2K or %OSVersion%=XP)" />
+               <file src="distribution\2000\npf.sys" dst="%System%\drivers\npf.sys" condition="%OSPlatform%=NT and (%OSVersion%=2K or %OSVersion%=XP or %OSVersion%=2K3)" />
                <file src="distribution\nt\npf.sys" dst="%System%\drivers\npf.sys" condition="%OSPlatform%=NT and (%OSVersion%=NT4)" />
-               <file src="distribution\2000\packet.dll" dst="%System%\packet.dll" condition="%OSPlatform%=NT and (%OSVersion%=2K or %OSVersion%=XP)" />
-               <file src="distribution\2000\wanpacket.dll" dst="%System%\wanpacket.dll" condition="%OSPlatform%=NT and (%OSVersion%=2K or %OSVersion%=XP)" />
+               <file src="distribution\2000\packet.dll" dst="%System%\packet.dll" condition="%OSPlatform%=NT and (%OSVersion%=2K or %OSVersion%=XP or %OSVersion%=2K3)" />
+               <file src="distribution\2000\wanpacket.dll" dst="%System%\wanpacket.dll" condition="%OSPlatform%=NT and (%OSVersion%=2K or %OSVersion%=XP or %OSVersion%=2K3)" />
                <file src="distribution\nt\packet.dll" dst="%System%\packet.dll" condition="%OSPlatform%=NT and (%OSVersion%=NT4)" />
                <file src="distribution\9x\packet.dll" dst="%System%\packet.dll" condition="%OSPlatform%=9X" />
                <file src="distribution\9x\npf.vxd" dst="%System%\npf.vxd" condition="%OSPlatform%=9X" />
@@ -40,7 +40,7 @@
                <file src="distribution\2000\npf_mgm.exe" dst="%InstallPath%\npf_mgm.exe" condition="%OSPlatform%=NT"/>
                <file src="distribution\2000\daemon_mgm.exe" dst="%InstallPath%\daemon_mgm.exe" condition="%OSPlatform%=NT" />
                <file src="distribution\2000\rpcapd.exe" dst="%InstallPath%\rpcapd.exe" condition="%OSPlatform%=NT"/>
-               <file src="distribution\2000\NetMonInstaller.exe" dst="%InstallPath%\NetMonInstaller.exe" condition="%OSPlatform%=NT and (%OSVersion%=2K or %OSVersion%=XP)"/>
+               <file src="distribution\2000\NetMonInstaller.exe" dst="%InstallPath%\NetMonInstaller.exe" condition="%OSPlatform%=NT and (%OSVersion%=2K or %OSVersion%=XP or %OSVersion%=2K3)"/>
              </files>
 
              <runapps>
@@ -48,7 +48,7 @@
             	<runapp cmdline="%InstallPath%\npf_mgm.exe" arg="-u" workdir="%InstallPath%" showcmd="hide" whenstart="before_uninstall" condition="%OSPlatform%=NT"/>
             	<runapp cmdline="%InstallPath%\daemon_mgm.exe" arg="-r" workdir="%InstallPath%" showcmd="hide" whenstart="after_install" condition="%OSPlatform%=NT"/>
             	<runapp cmdline="%InstallPath%\daemon_mgm.exe" arg="-u" workdir="%InstallPath%" showcmd="hide" whenstart="before_uninstall" condition="%OSPlatform%=NT"/>
-            	<runapp cmdline="%InstallPath%\NetMonInstaller.exe" arg="i" workdir="%InstallPath%" showcmd="hide" whenstart="after_install" condition="%OSPlatform%=NT and (%OSVersion%=2K or %OSVersion%=XP)"/>
+            	<runapp cmdline="%InstallPath%\NetMonInstaller.exe" arg="i" workdir="%InstallPath%" showcmd="hide" whenstart="after_install" condition="%OSPlatform%=NT and (%OSVersion%=2K or %OSVersion%=XP or %OSVersion%=2K3)"/>
             </runapps>
 
          </component>
