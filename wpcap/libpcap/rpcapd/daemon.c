@@ -843,18 +843,18 @@ pcap_t *fp= NULL;					// pcap_t main variable
 unsigned int nread;					// number of bytes of the payload read from the socket
 char sendbuf[RPCAP_NETBUF_SIZE];	// temporary buffer in which data to be sent is buffered
 int sendbufidx= 0;					// index which keeps the number of bytes currently buffered
-
 struct rpcap_openreply *openreply;	// open reply message
 
-	strcpy(source, PCAP_SRC_IF_KEY);
 
-	if (srclen <= (int) (strlen(PCAP_SRC_IF_KEY) + plen) )
+	strcpy(source, PCAP_SRC_IF_STRING);
+
+	if (srclen <= (int) (strlen(PCAP_SRC_IF_STRING) + plen) )
 	{
 		rpcap_senderror(sockctrl, "Source string too long", PCAP_ERR_OPEN, fakeerrbuf);
 		return -1;
 	}
 
-	if ( (nread= sock_recv(sockctrl, &source[strlen(PCAP_SRC_IF_KEY)], plen, SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE)) == -1)
+	if ( (nread= sock_recv(sockctrl, &source[strlen(PCAP_SRC_IF_STRING)], plen, SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 		return -1;
 
 	// Check if all the data has been read; if not, discard the data in excess
@@ -862,7 +862,7 @@ struct rpcap_openreply *openreply;	// open reply message
 		sock_discard(sockctrl, plen - nread, fakeerrbuf, PCAP_ERRBUF_SIZE);
 
 	// Puts a '0' to terminate the source string
-	source[strlen(PCAP_SRC_IF_KEY) + plen]= 0;
+	source[strlen(PCAP_SRC_IF_STRING) + plen]= 0;
 
 	// Open the selected device
 	// This is a fake open, since we do that only to get the needed parameters, then we close the device again
