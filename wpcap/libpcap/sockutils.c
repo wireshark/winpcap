@@ -109,7 +109,7 @@ int sock_ismcastaddr(const struct sockaddr *saddr);
 
 	\param caller: a pointer to a user-allocated string which contains a message that has
 	to be printed *before* the true error message. It could be, for example, 'this error
-	comes from the recv() call at line 31'.
+	comes from the recv() call at line 31'. It may be NULL.
 	
 	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
 	error message. This buffer has to be at least 'errbuflen' in length.
@@ -138,7 +138,11 @@ void sock_geterror(const char *caller, char *errbuf, int errbuflen)
 		{
 			if (errbuf)
 			{
-				snprintf(errbuf, errbuflen, "%sUnable to get the exact error message", caller);
+				if ( (caller) && (*caller) )
+					snprintf(errbuf, errbuflen, "%sUnable to get the exact error message", caller);
+				else
+					snprintf(errbuf, errbuflen, "Unable to get the exact error message");
+
 				errbuf[errbuflen - 1]= 0;
 			}
 
@@ -147,7 +151,11 @@ void sock_geterror(const char *caller, char *errbuf, int errbuflen)
 	
 		if (errbuf)
 		{
-			snprintf(errbuf, errbuflen, "%s%s (code %d)", caller, message, code);
+			if ( (caller) && (*caller) )
+				snprintf(errbuf, errbuflen, "%s%s (code %d)", caller, message, code);
+			else
+				snprintf(errbuf, errbuflen, "%s (code %d)", message, code);
+
 			errbuf[errbuflen - 1]= 0;
 		}
 
@@ -159,7 +167,11 @@ void sock_geterror(const char *caller, char *errbuf, int errbuflen)
 
 		if (errbuf)
 		{
-			snprintf(errbuf, errbuflen, "%s%s (code %d)", caller, message, errno);
+			if ( (caller) && (*caller) )
+				snprintf(errbuf, errbuflen, "%s%s (code %d)", caller, message, errno);
+			else
+				snprintf(errbuf, errbuflen, "%s (code %d)", message, errno);
+
 			errbuf[errbuflen - 1]= 0;
 		}
 
@@ -348,16 +360,47 @@ SOCKET sock;
 	else	// we're the client
 	{
 	struct addrinfo *tempaddrinfo;
+	char *errbufptr;
+	int bufspaceleft;
 
 		tempaddrinfo= addrinfo;
+		errbufptr= errbuf;
+		bufspaceleft= errbuflen;
+		*errbufptr= 0;
+
 
 		// We have to loop though all the addinfo returned.
 		// For instance, we can have both IPv6 and IPv4 addresses, but the service we're trying
 		// to connect to is unavailable in IPv6, so we have to try in IPv4 as well
 		while (tempaddrinfo)
 		{
+			
 			if (connect(sock, tempaddrinfo->ai_addr, tempaddrinfo->ai_addrlen) == -1)
+			{
+			int msglen;
+			char TmpBuffer[100];
+			char SocketErrorMessage[SOCK_ERRBUF_SIZE];
+
+				// We have to retrieve the error message before any other socket call completes, otherwise
+				// the error message is lost
+				sock_geterror(NULL, SocketErrorMessage, sizeof(SocketErrorMessage) );
+
+				// Returns the numeric address of the host that triggered the error
+				sock_getascii_addrport( (struct sockaddr_storage *) tempaddrinfo->ai_addr, TmpBuffer, sizeof(TmpBuffer), NULL, 0, NI_NUMERICHOST, TmpBuffer, sizeof(TmpBuffer) );
+
+				snprintf(errbufptr, bufspaceleft, "Is the server properly installed on %s?  connect() failed: %s", TmpBuffer, SocketErrorMessage);
+
+				// In case more then one 'connect' fails, we manage to keep all the error messages
+				msglen= strlen(errbufptr);
+
+				errbufptr[msglen]= ' ';
+				errbufptr[msglen + 1]= 0;
+
+				bufspaceleft= bufspaceleft - (msglen + 1);
+				errbufptr+= (msglen + 1);
+
 				tempaddrinfo= tempaddrinfo->ai_next;
+			}
 			else
 				break;
 		}
@@ -366,7 +409,6 @@ SOCKET sock;
 		// If tempaddrinfo is equal to NULL, it means that all the connect() failed.
 		if (tempaddrinfo == NULL) 
 		{
-			sock_geterror("Is the server properly installed on the other host? connect() failed: ", errbuf, errbuflen);
 			closesocket(sock);
 			return 0;
 		}
@@ -957,6 +999,71 @@ int sock_cmpaddr(struct sockaddr_storage *first, struct sockaddr_storage *second
 
 
 /*!
+	\brief It gets the address/port the system picked for this socket (on connected sockets).
+
+	It is used to return the addess and port the server picked for our socket on the local machine.
+	It works only on:
+	- connected sockets
+	- server sockets
+
+	On unconnected client sockets it does not work because the system dynamically chooses a port
+	only when the socket calls a send() call.
+
+	\param sock: the connected socket currently opened.
+
+	\param address: it contains the address that will be returned by the function. This buffer
+	must be properly allocated by the user. The address can be either literal or numeric depending
+	on the value of 'Flags'.
+
+	\param addrlen: the length of the 'address' buffer.
+
+	\param port: it contains the port that will be returned by the function. This buffer
+	must be properly allocated by the user.
+
+	\param portlen: the length of the 'port' buffer.
+
+	\param flags: a set of flags (the ones defined into the getnameinfo() standard socket function)
+	that determine if the resulting address must be in numeric / literal form, and so on.
+
+	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
+	error message. This buffer has to be at least 'errbuflen' in length.
+	It can be NULL; in this case the error cannot be printed.
+
+	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
+	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
+
+	\return It returns '-1' if this function succeedes, '0' otherwise.
+	The address and port corresponding are returned back in the buffers 'address' and 'port'.
+	In any case, the returned strings are '0' terminated.
+
+	\warning If the socket is using a connectionless protocol, the address may not be available 
+	until I/O occurs on the socket.
+*/
+int sock_getmyinfo(SOCKET sock, char *address, int addrlen, char *port, int portlen, int flags, char *errbuf, int errbuflen)
+{
+struct sockaddr_storage mysockaddr;
+socklen_t sockaddrlen;
+
+
+	sockaddrlen = sizeof(struct sockaddr_storage);
+
+	if (getsockname(sock, (struct sockaddr *) &mysockaddr, &sockaddrlen) == -1)
+	{
+		sock_geterror("getsockname(): ", errbuf, errbuflen);
+		return 0;
+	}
+	else
+	{
+		// Returns the numeric address of the host that triggered the error
+		return sock_getascii_addrport(&mysockaddr, address, addrlen, port, portlen, flags, errbuf, errbuflen);
+	}
+
+	return 0;
+}
+
+
+
+/*!
 	\brief It retrieves two strings containing the address and the port of a given 'sockaddr' variable.
 
 	This function is basically an extended version of the inet_ntop(), which does not exist in
@@ -982,12 +1089,12 @@ int sock_cmpaddr(struct sockaddr_storage *first, struct sockaddr_storage *second
 	must be properly allocated by the user. The address can be either literal or numeric depending
 	on the value of 'Flags'.
 
-	\param addrlen: the length of the 'Addr' buffer.
+	\param addrlen: the length of the 'address' buffer.
 
 	\param port: it contains the port that will be returned by the function. This buffer
 	must be properly allocated by the user.
 
-	\param portlen: the length of the 'Port' buffer.
+	\param portlen: the length of the 'port' buffer.
 
 	\param flags: a set of flags (the ones defined into the getnameinfo() standard socket function)
 	that determine if the resulting address must be in numeric / literal form, and so on.
@@ -1000,8 +1107,8 @@ int sock_cmpaddr(struct sockaddr_storage *first, struct sockaddr_storage *second
 	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return It returns '-1' if this function succeedes, '0' otherwise.
-	The address and port corresponding to the given SockAddr is returned back in the buffers 'Addr'
-	and 'Port'.
+	The address and port corresponding to the given SockAddr are returned back in the buffers 'address'
+	and 'port'.
 	In any case, the returned strings are '0' terminated.
 */
 int sock_getascii_addrport(const struct sockaddr_storage *sockaddr, char *address, int addrlen, char *port, int portlen, int flags, char *errbuf, int errbuflen)

@@ -41,6 +41,11 @@
 
 
 #ifdef WIN32
+/* Prevents a compiler warning in case this was already defined (to avoid that */
+/* windows.h includes winsock.h */
+#ifdef _WINSOCKAPI_
+#undef _WINSOCKAPI_
+#endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #else
@@ -191,7 +196,6 @@ void sock_geterror(const char *caller, char *errbuf, int errbufsize);
 int sock_initaddress(const char *address, const char *port,
 						struct addrinfo *hints, struct addrinfo **addrinfo, char *errbuf, int errbuflen);
 int sock_recv(SOCKET socket, char *buffer, int size, int receiveall, char *errbuf, int errbuflen);
-//int sock_recv_dgram(SOCKET sock, char *buffer, int size, char *errbuf, int errbuflen);
 SOCKET sock_open(struct addrinfo *addrinfo, int server, int nconn, char *errbuf, int errbuflen);
 int sock_close(SOCKET sock, char *errbuf, int errbuflen);
 
@@ -200,6 +204,8 @@ int sock_bufferize(const char *buffer, int size, char *tempbuf, int *offset, int
 int sock_discard(SOCKET socket, int size, char *errbuf, int errbuflen);
 int	sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage *from, char *errbuf, int errbuflen);
 int sock_cmpaddr(struct sockaddr_storage *first, struct sockaddr_storage *second);
+
+int sock_getmyinfo(SOCKET sock, char *address, int addrlen, char *port, int portlen, int flags, char *errbuf, int errbuflen);
 
 int sock_getascii_addrport(const struct sockaddr_storage *sockaddr, char *address, int addrlen, char *port, int portlen, int flags, char *errbuf, int errbuflen);
 int sock_present2network(const char *address, struct sockaddr_storage *sockaddr, int addr_family, char *errbuf, int errbuflen);
