@@ -52,6 +52,7 @@ LPCTSTR NPFDriverPath = TEXT("system32\\drivers\\npf.sys");
 
 extern PADAPTER_INFO AdaptersInfoList;
 extern HANDLE AdaptersInfoMutex;
+#ifndef _WINNT4
 typedef VOID (*GAAHandler)(
   ULONG,
   DWORD,
@@ -59,6 +60,7 @@ typedef VOID (*GAAHandler)(
   PIP_ADAPTER_ADDRESSES,
   PULONG);
 GAAHandler GetAdaptersAddressesPointer = NULL;
+#endif // _WINNT4
 
 #ifdef HAVE_DAG_API
 /* We load dinamically the dag library in order link it only when it's present on the system */
@@ -128,7 +130,9 @@ BOOL APIENTRY DllMain (HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 		//
 		IPHMod = GetModuleHandle(TEXT("Iphlpapi"));
 		
+#ifndef _WINNT4
 		GetAdaptersAddressesPointer = (GAAHandler) GetProcAddress(IPHMod ,"GetAdaptersAddresses");
+#endif // _WINNT4
 
 #ifdef HAVE_DAG_API
 		/* We load dinamically the dag library in order link it only when it's present on the system */
