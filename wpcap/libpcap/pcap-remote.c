@@ -353,6 +353,9 @@ int active= 0;					// active mode or not?
 		sock_close(fp->rmt_sockctrl, fakeerrbuf);
 
 	fp->rmt_sockctrl= 0;
+
+	// To avoid inconsistencies in the number of sock_init()
+	sock_cleanup();
 }
 
 
@@ -577,11 +580,16 @@ struct rpcap_openreply openreply;	// open reply message
 
 	if ( retval != PCAP_SRC_IFREMOTE)
 	{
-		snprintf(errbuf, PCAP_ERRBUF_SIZE, "This function is able to opening only remote interfaces");
+		snprintf(errbuf, PCAP_ERRBUF_SIZE, "This function is able to open only remote interfaces");
 		return NULL;
 	}
 
 	addrinfo= NULL;
+
+	// Warning: this call can be the first one called by the user.
+	// For this reason, we have to initialize the WinSock support.
+	if (sock_init(errbuf) == -1)
+		return NULL;
 
 	retval= rpcap_remoteact_getsock(host, errbuf);
 

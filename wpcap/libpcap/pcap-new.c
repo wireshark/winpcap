@@ -680,13 +680,19 @@ int tmptype;
 				// To distinguish between the two, we look for the '/' char
 				if (strchr(ptr, '/'))
 				{
+					// We're on a remote capture
 					sscanf(ptr, "%[^/]/%s", tmphost, tmpname);
 					tmptype= PCAP_SRC_IFREMOTE;
 				}
 				else
 				{
+					// We're on a local capture
 					if (*ptr)
 						strncpy(tmpname, ptr, PCAP_BUF_SIZE);
+
+					// Clean the host name, since it is a remote capture
+					// NOTE: the host name has been assigned in the previous "ntoken= sscanf(...)" line
+					tmphost[0]= 0;
 
 					tmptype= PCAP_SRC_IFLOCAL;
 				}
@@ -888,6 +894,7 @@ pcap_t *fp;
 	if (pcap_parsesrcstr(source, &type, host, port, name, errbuf) == -1)
 		return NULL;
 
+
 	switch (type) 
 	{
 		case PCAP_SRC_FILE:
@@ -895,7 +902,7 @@ pcap_t *fp;
 			break;
 
 		case PCAP_SRC_IFREMOTE:
-			// Although we already have host, port and iface, we prefer passing only 'pars' to the 
+			// Although we already have host, port and iface, we prefer TO PASS only 'pars' to the 
 			// pcap_open_remote() so that it has to call the pcap_parsesrcstr() again.
 			// This is less optimized, but much clearer.
 			fp= pcap_opensource_remote(source, auth, errbuf);
@@ -1004,6 +1011,11 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 	hints.ai_family = AF_INET;		// PF_UNSPEC to have both IPv4 and IPv6 server
 	hints.ai_flags = AI_PASSIVE;	// Ready to a bind() socket
 	hints.ai_socktype = SOCK_STREAM;
+
+	// Warning: this call can be the first one called by the user.
+	// For this reason, we have to initialize the WinSock support.
+	if (sock_init(errbuf) == -1)
+		return -1;
 
 	// Do the work
 	if ((port == NULL) || (port[0] == 0) )
@@ -1176,7 +1188,12 @@ int retval;
 				sock_send(temp->sockctrl, (char *) &header, sizeof (struct rpcap_header), errbuf);
 
 				if (sock_close(temp->sockctrl, errbuf) )
+				{
+					// To avoid inconsistencies in the number of sock_init()
+					sock_cleanup();
+
 					return -1;
+				}
 
 				if (prev)
 					prev->next= temp->next;
@@ -1186,6 +1203,10 @@ int retval;
 				freeaddrinfo(addrinfo);
 
 				free(temp);
+
+				// To avoid inconsistencies in the number of sock_init()
+				sock_cleanup();
+
 				return 0;
 			}
 
@@ -1198,18 +1219,22 @@ int retval;
 	if (addrinfo)
 		freeaddrinfo(addrinfo);
 
+	// To avoid inconsistencies in the number of sock_init()
+	sock_cleanup();
+
 	snprintf(errbuf, PCAP_ERRBUF_SIZE, "The host you want to close the active connection is not known");
 	return -1;
 }
+
 
 /*!	\ingroup remote_func
 	\brief Cleans the socket that is currently used in waiting active connections.
 
 	This function does a very dirty job. The fact is that is the waiting socket is not
-	freed if the pcap_remoteaccept() is killed inside a new thread. This function will
-	able to clean the socket in order to allow the next calls to pcap_remoteaccept() to work.
+	freed if the pcap_remoteaccept() is killed inside a new thread. This function is
+	able to clean the socket in order to allow the next calls to pcap_remoteact_accept() to work.
 	
-	This function is useful *only* if you launch pcap_remoteaccept() inside a new thread,
+	This function is useful *only* if you launch pcap_remoteact_accept() inside a new thread,
 	and you stops (not very gracefully) the thread (for example because the user changed idea,
 	and it does no longer want to wait for an active connection).
 	So, basically, the flow should be the following:
@@ -1225,7 +1250,13 @@ void pcap_remoteact_cleanup()
 {
 	// Very dirty, but it works
 	if (sockmain)
+	{
 		closesocket(sockmain);
+
+		// To avoid inconsistencies in the number of sock_init()
+		sock_cleanup();
+	}
+
 }
 
 
