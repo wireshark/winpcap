@@ -608,7 +608,12 @@ LPADAPTER PacketOpenAdapter(LPTSTR AdapterName)
 	}
 	lpAdapter->NumWrites=1;
 
-	wsprintf(SymbolicLink,TEXT("\\\\.\\%s"),&AdapterName[8]);
+
+
+	if (LOWORD(GetVersion()) == 4)
+		wsprintf(SymbolicLink,TEXT("\\\\.\\%s"),&AdapterName[8]);
+	else
+		wsprintf(SymbolicLink,TEXT("\\\\.\\Global\\%s"),&AdapterName[8]);
 	
 	// Copy  only the bytes that fit in the adapter structure.
 	// Note that lpAdapter->SymbolicLink is present for backward compatibility but will
