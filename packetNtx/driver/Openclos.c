@@ -206,6 +206,7 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	Open->BLastByte = 0;
 	Open->Dropped = 0;		//reset the dropped packets counter
 	Open->Received = 0;		//reset the received packets counter
+	Open->Accepted = 0;		//reset the accepted packets counter
 	Open->bpfprogram = NULL;	//reset the filter
 	Open->mode = MODE_CAPT;
 	Open->Nbytes.QuadPart = 0;

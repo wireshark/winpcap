@@ -638,10 +638,10 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			EXIT_FAILURE(0);
 		}
 
+		*(((PUINT)Irp->UserBuffer)+3) = Open->Accepted;
 		*(((PUINT)Irp->UserBuffer)) = Open->Received;
 		*(((PUINT)Irp->UserBuffer)+1) = Open->Dropped;
 		*(((PUINT)Irp->UserBuffer)+2) = 0;		// Not yet supported
-		*(((PUINT)Irp->UserBuffer)+3) = Open->Accepted;
 		
 		EXIT_SUCCESS(4*sizeof(INT));
 		
