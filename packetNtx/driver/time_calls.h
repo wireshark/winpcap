@@ -58,6 +58,8 @@ __inline void TIME_DESYNCHRONIZE(struct time_conv *data)
 
 /* KeQueryPerformanceCounter TimeStamps */
 
+#pragma optimize ("g",off)  //Due to some weird behaviour of the optimizer of DDK build 2600 
+
 __inline VOID TIME_SYNCHRONIZE(struct time_conv *data)
 {
 	struct timeval tmp;
@@ -92,11 +94,6 @@ __inline VOID TIME_SYNCHRONIZE(struct time_conv *data)
 	data->reference=1;
 }
 
-__inline void FORCE_TIME(struct timeval *src, struct time_conv *dest)
-{
-	dest->start=*src;
-}
-
 __inline void GET_TIME(struct timeval *dst, struct time_conv *data)
 {
 	LARGE_INTEGER PTime, TimeFreq;
@@ -115,11 +112,21 @@ __inline void GET_TIME(struct timeval *dst, struct time_conv *data)
 
 }
 
+#pragma optimize ("g",on)  //Due to some weird behaviour of the optimizer of DDK build 2600 
+
+__inline void FORCE_TIME(struct timeval *src, struct time_conv *dest)
+{
+	dest->start=*src;
+}
+
+
 #else
 
 /*RDTSC timestamps*/
 
 /* callers must be at IRQL=PASSIVE_LEVEL */
+#pragma optimize ("g",off)  //Due to some weird behaviour of the optimizer of DDK build 2600 
+
 __inline VOID TIME_SYNCHRONIZE(struct time_conv *data)
 {
 	struct timeval tmp;
@@ -231,6 +238,7 @@ __inline VOID TIME_SYNCHRONIZE(struct time_conv *data)
 
 	IF_LOUD(DbgPrint("Frequency %I64u MHz\n",data->reference);)
 }
+#pragma optimize ("g",on)  //Due to some weird behaviour of the optimizer of DDK build 2600 
 
 __inline void FORCE_TIME(struct timeval *src, struct time_conv *dest)
 {
