@@ -21,10 +21,6 @@
 
 /* Definitions */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*!
   \brief A queue of raw packets that will be sent to the network with pcap_sendqueue_transmit().
 */
@@ -68,20 +64,10 @@ u_int pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue* queue, int sync);
 
 HANDLE pcap_getevent(pcap_t *p);
 
-#ifdef REMOTE
-	struct pcap_stat *pcap_stats_ex(pcap_t *p);
-#else
-	int pcap_stats_ex(pcap_t *p, struct pcap_stat *ps);
-#endif
+struct pcap_stat *pcap_stats_ex(pcap_t *p);
 
 int pcap_setuserbuffer(pcap_t *p, int size);
 
 int pcap_live_dump(pcap_t *p, char *filename, int maxsize, int maxpacks);
 
 int pcap_live_dump_ended(pcap_t *p, int sync);
-
-
-
-#ifdef __cplusplus
-}
-#endif
