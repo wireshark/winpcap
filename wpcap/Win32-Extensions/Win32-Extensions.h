@@ -28,17 +28,9 @@ struct pcap_send_queue{
 
 typedef struct pcap_send_queue pcap_send_queue;
 
-/* Prototypes */
-pcap_send_queue* pcap_sendqueue_alloc(u_int memsize);
-void pcap_sendqueue_destroy(pcap_send_queue* queue);
-int pcap_sendqueue_queue(pcap_send_queue* queue, const struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
-u_int pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue* queue, int sync);
-HANDLE pcap_getevent(pcap_t *p);
-int pcap_read_ex(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data);
-int pcap_setuserbuffer(pcap_t *p, int size);
-
 #define		BPF_MEM_EX_IMM	0xc0
 #define		BPF_MEM_EX_IND	0xe0
+
 /*used for ST*/
 #define		BPF_MEM_EX		0xc0
 #define		BPF_TME					0x08
@@ -57,5 +49,21 @@ int pcap_setuserbuffer(pcap_t *p, int size);
 #define		BPF_SET_AUTODELETION	0x30
 #define		BPF_SEPARATION			0xff
 
+/* Prototypes */
+pcap_send_queue* pcap_sendqueue_alloc(u_int memsize);
 
+void pcap_sendqueue_destroy(pcap_send_queue* queue);
 
+int pcap_sendqueue_queue(pcap_send_queue* queue, const struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
+
+u_int pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue* queue, int sync);
+
+HANDLE pcap_getevent(pcap_t *p);
+
+int pcap_read_ex(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data);
+
+int pcap_setuserbuffer(pcap_t *p, int size);
+
+int pcap_live_dump(pcap_t *p, char *filename, int maxsize, int maxpacks);
+
+int pcap_live_dump_ended(pcap_t *p, int sync);
