@@ -13,15 +13,14 @@ the user-level portion, on the various Win32 platforms. The source code can be
 found on the WinPcap website, at <a href="http://winpcap.polito.it/install/">http://winpcap.polito.it/install/</a>.</p>
 <h2>Compiling the driver</h2>
 <p>Two main NPF sources are available for compilation: the Windows NTx one and
-the Windows 9x one. Note that, since the NPF Driver is platform dependent, we
-STRONGLY suggest to compiled it on the OS where it will be used, in order to
+the Windows 9x one. Note that, since the NPF Driver is platform dependent, it is
+STRONGLY suggested to compiled it on the OS where it will be used, in order to
 link the correct DDK libraries. For example, if you compile the
 driver with the Windows NT 4 DDK, it will not work properly in Windows 2000
-and vice versa, although the source code tree is the same.</p>
+and vice versa, also if the source code tree is the same.</p>
 <h3>Co<a name="#NT40">mpili</a>ng the driver on Windows NTx</h3>
 <p>Software requirements:</p>
 <ul>
-  <li>Microsoft Windows NT 4 or Windows 2000 or Windows XP operating system
   <li>Microsoft Driver Developer Kit (DDK) for NT for Windows 2000 or Windows
     XP
   <li>Microsoft Software Development Kit (SDK)
@@ -44,6 +43,18 @@ and vice versa, although the source code tree is the same.</p>
     </i><br>
     This commands will generate the driver (packet.sys), that will be put in the
     DDK output directory (usually \i386).
+  <li>It is possible to generate a driver that uses the RDTSC x86 instruction
+    instead of the KeQueryPerformanceCounter WinNTx kernel function. Such a
+    driver is more efficient than the standard one, but in some situations (like
+    processors with the Speedstep technology) it can show inconsistences in the
+    timestamps. To build&nbsp; this driver, move to the directory PacketNTx inside the
+    WinPcap source folder and type the command<br>
+    <br>
+    <i>CompileNT4 RDTSC</i>, to build the driver for Windows NT 4<i><br>
+    </i>or<i><br>
+    Compile2k RDTSC</i>, to build the driver for Windows NT 5 OSes, (like Windows 2000
+    or Windows XP)<i><br>
+    </i>
 </ol>
 <p><b>Warning</b>: sometimes, during the compilation of the driver, a lot of
 'last line incomplete' errors are generated. Ignore these errors and let the
@@ -51,7 +62,6 @@ compilation process continue, they are due to bugs in some DDK versions.</p>
 <h3><a name="#95-98">Compili</a>ng the driver on Windows 9x</h3>
 <p>To compile the driver there are the following software requirements:</p>
 <ul>
-  <li>Windows 95/98/ME operating system
   <li><font size="3">Driver Developer Kit (DDK) for Windows 95/98/ME</font>
   <li><font size="3">Software Development Kit (SDK)</font>
   <li><font size="3">Visual C++ 6.0</font></li>
