@@ -935,7 +935,9 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		}
 
 		pRequest=CONTAINING_RECORD(RequestListEntry,INTERNAL_REQUEST,ListElement);
-		pRequest->Irp=Irp;
+		pRequest->Irp = Irp;
+		pRequest->Internal = FALSE;
+
         
 		//
         //  See if it is an Ndis request
@@ -1044,13 +1046,14 @@ NPF_RequestComplete(
     pRequest=CONTAINING_RECORD(NdisRequest,INTERNAL_REQUEST,Request);
     Irp=pRequest->Irp;
 
-	if(Irp == NULL){
+	if(pRequest->Internal == TRUE){
 
 		// Put the request in the list of the free ones
 		ExInterlockedInsertTailList(&Open->RequestList, &pRequest->ListElement, &Open->RequestSpinLock);
 		
-		// Unlock the caller
-		NdisSetEvent(&Open->IOEvent);
+		Irp->IoStatus.Status = Status;
+		Irp->IoStatus.Information = 0;
+		IoCompleteRequest(Irp, IO_NO_INCREMENT);
 
 		return;
 	}

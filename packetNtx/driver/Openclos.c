@@ -323,12 +323,11 @@ VOID NPF_OpenAdapterComplete(
 
 		// Extract a request from the list of free ones
 		RequestListEntry=ExInterlockedRemoveHeadList(&Open->RequestList, &Open->RequestSpinLock);
+
 		if (RequestListEntry == NULL)
 		{
-		    Open->MaxFrameSize = 1514;	// Assume Ethernet
 
-			// Recycle the request
-			ExInterlockedInsertTailList(&Open->RequestList, RequestListEntry, &Open->RequestSpinLock);
+		    Open->MaxFrameSize = 1514;	// Assume Ethernet
 
 			Irp->IoStatus.Status = Status;
 		    Irp->IoStatus.Information = 0;
@@ -337,31 +336,36 @@ VOID NPF_OpenAdapterComplete(
 		    return;
 		}
 
-		MaxSizeReq=CONTAINING_RECORD(RequestListEntry, INTERNAL_REQUEST, ListElement);
-		MaxSizeReq->Irp = NULL;
+		MaxSizeReq = CONTAINING_RECORD(RequestListEntry, INTERNAL_REQUEST, ListElement);
+		MaxSizeReq->Irp = Irp;
+		MaxSizeReq->Internal = TRUE;
+
 		
 		MaxSizeReq->Request.RequestType = NdisRequestQueryInformation;
 		MaxSizeReq->Request.DATA.QUERY_INFORMATION.Oid = OID_GEN_MAXIMUM_TOTAL_SIZE;
+
 		
 		MaxSizeReq->Request.DATA.QUERY_INFORMATION.InformationBuffer = &Open->MaxFrameSize;
 		MaxSizeReq->Request.DATA.QUERY_INFORMATION.InformationBufferLength = 4;
-		
+
 		//  submit the request
 		NdisRequest(
 			&ReqStatus,
 			Open->AdapterHandle,
 			&MaxSizeReq->Request);
 
-		if (!(Status == NDIS_STATUS_SUCCESS || Status ==NDIS_STATUS_PENDING)) {
-			IF_LOUD(DbgPrint("NPF_OpenAdapterComplete: call to NdisRequest failed");)
-			Open->MaxFrameSize = 1514;	// Assume Ethernet
+
+		if (ReqStatus != NDIS_STATUS_PENDING) {
+			NPF_RequestComplete(Open, &MaxSizeReq->Request, ReqStatus);
 		}
+
+		return;
 
 	}
 
-    Irp->IoStatus.Status = Status;
-    Irp->IoStatus.Information = 0;
-    IoCompleteRequest(Irp, IO_NO_INCREMENT);
+	Irp->IoStatus.Status = Status;
+	Irp->IoStatus.Information = 0;
+	IoCompleteRequest(Irp, IO_NO_INCREMENT);
 
     return;
 

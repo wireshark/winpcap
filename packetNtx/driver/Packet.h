@@ -227,9 +227,10 @@ struct sf_pkthdr {
   maintaining information about the IRPs to complete.
 */
 typedef struct _INTERNAL_REQUEST {
-    LIST_ENTRY     ListElement;		///< Used to handle lists of requests.
-    PIRP           Irp;				///< Irp that performed the request
-    NDIS_REQUEST   Request;			///< The structure with the actual request, that will be passed to NdisRequest().
+    LIST_ENTRY		ListElement;		///< Used to handle lists of requests.
+    PIRP			Irp;				///< Irp that performed the request
+	BOOLEAN			Internal;			///< True if the request is for internal use of npf.sys. False if the request is performed by the user through an IOCTL.
+    NDIS_REQUEST	Request;			///< The structure with the actual request, that will be passed to NdisRequest().
 } INTERNAL_REQUEST, *PINTERNAL_REQUEST;
 
 /*!
