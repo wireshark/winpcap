@@ -367,8 +367,8 @@ BOOLEAN WanPacketSetBpfFilter(PWAN_ADAPTER pWanAdapter, PUCHAR FilterCode, DWORD
 			InitializationCode = &((struct bpf_insn*)FilterCode)[Counter+1];
 			
 			//FIXME, just an hack, this structure is never used here.		
-			TimeConv.start.tv_sec = 0;
-			TimeConv.start.tv_usec = 0;
+			TimeConv.start[0].tv_sec = 0;
+			TimeConv.start[0].tv_usec = 0;
 			
 			if ( bpf_filter_init(InitializationCode,
 				&pWanAdapter->MemEx,
