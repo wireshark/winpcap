@@ -16,6 +16,7 @@
    <var name="ServicePresent" regkey="HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NPF" regparam="Type" type="reg" defvalue="0" />
    <var name="Reboot" value="%ServicePresent%" />
    <var name="AdminRights" value="1" />
+   <var name="SilentMode" value="0" />
 </variables>
 
 <packages>
