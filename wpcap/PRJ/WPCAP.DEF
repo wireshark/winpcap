@@ -14,6 +14,7 @@ EXPORTS
 		pcap_dispatch
 		pcap_read
 		pcap_read_ex
+		pcap_setuserbuffer
 		pcap_offline_read
 		pcap_next
 		pcap_stats
