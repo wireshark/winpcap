@@ -78,8 +78,6 @@ INPUT                  = ../../Common/Packet32.h \
                          ../../Examples/TestApp/Testapp.c \
                          ../../Examples/TG/Tg.c \
                          ../main.txt \
-	                     ../wpcap.txt \
-                         ../language.txt \
                          ../wpcap_samp.txt \
                          ../wpcap_samp1.txt \
                          ../wpcap_samp2.txt \
@@ -93,12 +91,7 @@ INPUT                  = ../../Common/Packet32.h \
                          ../wpcap_tut7.txt \
                          ../wpcap_tut8.txt \
                          ../wpcap_tut9.txt \
-						 ../internals.txt \
-                         ../npf.txt \
-                         ../packet.txt \
-                         ../packet_samp.txt \
-                         ../compile.txt \
-                         ../compile.txt \
+                         ../doxygen_groups.txt \
                          ../wpcap_remote.htm \
                          ../../wpcap/libpcap/pcap-remote.h \
                          ../../wpcap/libpcap/remote-ext.h \
