@@ -28,7 +28,7 @@
 
 static NDIS_MEDIUM MediumArray[] = {
 	NdisMedium802_3,
-	NdisMediumWan,
+//	NdisMediumWan,
 	NdisMediumFddi,
 	NdisMediumArcnet878_2,
 	NdisMediumAtm,
@@ -81,14 +81,12 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 
     IF_LOUD(DbgPrint("NPF: OpenAdapter\n");)
 
-    DeviceExtension = DeviceObject->DeviceExtension;
-
+	DeviceExtension = DeviceObject->DeviceExtension;
 
     IrpSp = IoGetCurrentIrpStackLocation(Irp);
 
     //  allocate some memory for the open structure
     Open=ExAllocatePoolWithTag(NonPagedPool, sizeof(OPEN_INSTANCE), '0OWA');
-
 
     if (Open==NULL) {
         // no memory
@@ -169,7 +167,7 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	NdisInitializeEvent(&Open->IOEvent);
  	NdisInitializeEvent(&Open->DumpEvent);
  	NdisInitializeEvent(&Open->IOEvent);
-	NdisAllocateSpinLock(&Open->machine_lock);
+	NdisAllocateSpinLock(&Open->MachineLock);
 
 
     //  list to hold irp's want to reset the adapter
@@ -198,14 +196,14 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	//
 	// Initialize the open instance
 	//
-	Open->BufSize = 0;
-	Open->Buffer = NULL;
-	Open->Bhead = 0;
-	Open->Btail = 0;
-	(INT)Open->BLastByte = -1;
-	Open->Dropped = 0;		//reset the dropped packets counter
-	Open->Received = 0;		//reset the received packets counter
-	Open->Accepted = 0;		//reset the accepted packets counter
+//	Open->BufSize = 0;
+//	Open->Buffer = NULL;
+//	Open->Bhead = 0;
+//	Open->Btail = 0;
+//	(INT)Open->BLastByte = -1;
+//	Open->Dropped = 0;		//reset the dropped packets counter
+//	Open->Received = 0;		//reset the received packets counter
+//	Open->Accepted = 0;		//reset the accepted packets counter
 	Open->bpfprogram = NULL;	//reset the filter
 	Open->mode = MODE_CAPT;
 	Open->Nbytes.QuadPart = 0;
@@ -220,12 +218,17 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	Open->tme.active = TME_NONE_ACTIVE;
 	Open->DumpLimitReached = FALSE;
 	Open->MaxFrameSize = 0;
+	Open->WriterSN=0;
+	Open->ReaderSN=0;
+	Open->Size=0;
+
+
 
 	//allocate the spinlock for the statistic counters
     NdisAllocateSpinLock(&Open->CountersLock);
 
 	//allocate the spinlock for the buffer pointers
-    NdisAllocateSpinLock(&Open->BufLock);
+	//    NdisAllocateSpinLock(&Open->BufLock);
 	
     //
     //  link up the request stored in our open block
@@ -389,7 +392,7 @@ NPF_Close(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
     Open=IrpSp->FileObject->FsContext;
 
  	// Reset the buffer size. This tells the dump thread to stop.
- 	Open->BufSize = 0;
+// 	Open->BufSize = 0;
 
 	if( Open->Bound == FALSE){
 
@@ -404,9 +407,12 @@ NPF_Close(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			BPF_Destroy_JIT_Filter(Open->Filter);
 
 		//free the buffer
-		Open->BufSize=0;
-		if(Open->Buffer != NULL)ExFreePool(Open->Buffer);
-		
+//		Open->BufSize=0;
+//		if(Open->Buffer != NULL)ExFreePool(Open->Buffer);
+
+		if (Open->Size > 0)
+			ExFreePool(Open->CpuData[0].Buffer);
+	
 		//free mem_ex
 		Open->mem_ex.size = 0;
 		if(Open->mem_ex.buffer != NULL)ExFreePool(Open->mem_ex.buffer);
@@ -504,9 +510,12 @@ NPF_CloseAdapterComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  
 			BPF_Destroy_JIT_Filter(Open->Filter);
 		
 		//free the buffer
-		Open->BufSize = 0;
-		if(Open->Buffer!=NULL)ExFreePool(Open->Buffer);
+//		Open->BufSize = 0;
+//		if(Open->Buffer!=NULL)ExFreePool(Open->Buffer);
 		
+		if (Open->Size > 0)
+			ExFreePool(Open->CpuData[0].Buffer);
+
 		//free mem_ex
 		Open->mem_ex.size = 0;
 		if(Open->mem_ex.buffer != NULL)ExFreePool(Open->mem_ex.buffer);
@@ -591,7 +600,7 @@ NPF_UnbindAdapter(
 	IF_LOUD(DbgPrint("NPF: NPF_UnbindAdapter\n");)
 
 	// Reset the buffer size. This tells the dump thread to stop.
- 	Open->BufSize=0;
+// 	Open->BufSize=0;
 
 	NdisResetEvent(&Open->IOEvent);
 

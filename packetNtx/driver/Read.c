@@ -32,54 +32,7 @@
 
 extern struct time_conv G_Start_Time; // from openclos.c
 
-//-------------------------------------------------------------------
-
-UINT GetBuffOccupation(POPEN_INSTANCE Open)
-{
-	UINT Occupation;
-
-	NdisAcquireSpinLock( &Open->BufLock );
-	
-	if(Open->Btail >= Open->Bhead) Occupation = Open->Btail-Open->Bhead;
-	else Occupation = Open->BLastByte-Open->Bhead+Open->Btail;
-
-	NdisReleaseSpinLock( &Open->BufLock );
-
-	return Occupation;
-}
-
-//-------------------------------------------------------------------
-
-void PacketMoveMem(PVOID Destination, PVOID Source, ULONG Length, UINT *Bhead)
-{
-ULONG WordLength;
-UINT n,i,NBlocks;
-
-	WordLength=Length>>2;
-	NBlocks=WordLength>>8;
-	
-	for(n=0;n<NBlocks;n++){
-		for(i=0;i<256;i++){
-			*((PULONG)Destination)++=*((PULONG)Source)++;
-		}
-	*Bhead+=1024;
-	}
-
-	n=WordLength-(NBlocks<<8);
-	for(i=0;i<n;i++){
-		*((PULONG)Destination)++=*((PULONG)Source)++;
-	}
-	*Bhead+=n<<2;
-	
-	n=Length-(WordLength<<2);
-	for(i=0;i<n;i++){
-		*((PUCHAR)Destination)++=*((PUCHAR)Source)++;
-	}
-	*Bhead+=n;
-
-}
-
-//-------------------------------------------------------------------
+extern ULONG NCpu; //from packet.c
 
 NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 {
@@ -99,24 +52,37 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	ULONG				bytecopy;
 	UINT				SizeToCopy;
 	UINT				PktLen;
-
+	ULONG				copied,count,current_cpu,av,plen,increment,ToCopy,available;
+	CpuPrivateData		*LocalData;
+	ULONG				i;
+	ULONG				Occupation;
 	IF_LOUD(DbgPrint("NPF: Read\n");)
 		
 	IrpSp = IoGetCurrentIrpStackLocation(Irp);
     Open=IrpSp->FileObject->FsContext;
-	
+
 	if( Open->Bound == FALSE ){
 		// The Network adapter was removed.
 		EXIT_FAILURE(0);
 	}
 	
+	if (Open->Size == 0)	
+	{
+		EXIT_FAILURE(0);
+	}
+
 	if( Open->mode & MODE_DUMP && Open->DumpFileHandle == NULL ){  
 		// this instance is in dump mode, but the dump file has still not been opened
 		EXIT_FAILURE(0);
 	}
+	
+	Occupation=0;
 
+	for(i=0;i<NCpu;i++)
+		Occupation += (Open->Size - Open->CpuData[i].Free);
+	
 	//See if the buffer is full enough to be copied
-	if( GetBuffOccupation(Open) <= Open->MinToCopy || Open->mode & MODE_DUMP )
+	if( Occupation <= Open->MinToCopy*NCpu || Open->mode & MODE_DUMP )
 	{
 		//wait until some packets arrive or the timeout expires		
 		if(Open->TimeOut.QuadPart != (LONGLONG)IMMEDIATE)
@@ -209,9 +175,9 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			
 			for (cnt=0;cnt<bytecopy;cnt++)
 			{
-				NdisAcquireSpinLock(&Open->machine_lock);
+				NdisAcquireSpinLock(&Open->MachineLock);
 				RtlCopyMemory(UserPointer,tmp,block_size);
-				NdisReleaseSpinLock(&Open->machine_lock);
+				NdisReleaseSpinLock(&Open->MachineLock);
 				tmp+=block_size;
 				UserPointer+=block_size;
 			}
@@ -224,7 +190,13 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			EXIT_SUCCESS(bytecopy+sizeof(struct bpf_hdr));
 		}
 
-		if (Open->Bhead == Open->Btail || Open->mode & MODE_DUMP)
+		Occupation=0;
+
+		for(i=0;i<NCpu;i++)
+			Occupation += (Open->Size - Open->CpuData[i].Free);
+
+
+		if ( Occupation == 0 || Open->mode & MODE_DUMP)
 			// The timeout has expired, but the buffer is still empty (or the packets must be written to file).
 			// We must awake the application, returning an empty buffer.
 		{
@@ -233,130 +205,147 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 				
 	}
 
-	//
-	// The buffer if full enough to be copied,
-	//
-	NdisAcquireSpinLock( &Open->BufLock );
-	
-	Thead = Open->Bhead;
-	Ttail = Open->Btail;
-	TLastByte = Open->BLastByte;
 
-	//get the address of the buffer
-	CurrBuff=Open->Buffer;
-	
-	NdisReleaseSpinLock( &Open->BufLock );
-	
-	Input_Buffer_Length=IrpSp->Parameters.Read.Length;
+
+
+//------------------------------------------------------------------------------
+	copied=0;
+	count=0;
+	current_cpu=0;
+	available = IrpSp->Parameters.Read.Length;
 	packp=(PUCHAR)MmGetSystemAddressForMdl(Irp->MdlAddress);
-	
 
-	//
-	//fill the application buffer
-	//
-	if(Ttail > Thead){ 	//first of all see if it we can copy all the buffer in one time
-		if((Ttail-Thead)<Input_Buffer_Length){
-			KeResetEvent(Open->ReadEvent);
+	while (count < NCpu) //round robin on the CPUs, if count = NCpu there are no packets left to be copied
+	{
+		if (available == copied)
+		{
+			EXIT_SUCCESS(copied);
+		}
+		
+		LocalData = &Open->CpuData[current_cpu];
 
-			PacketMoveMem(packp,CurrBuff+Thead,Ttail-Thead,&(Open->Bhead));
-			EXIT_SUCCESS(Ttail-Thead);
+		if (LocalData->Free < Open->Size)  
+		{  //there are some packets in the selected (aka LocalData) buffer
+			struct PacketHeader *Header = (struct PacketHeader*)(LocalData->Buffer + LocalData->C);
+
+			if ( Header->SN == Open->ReaderSN)
+			{   //check if it the next one to be copied
+				plen = Header->header.bh_caplen;
+				if (plen + sizeof (struct bpf_hdr) > available-copied)  
+				{  //if the packet does not fit into the user buffer, we've ended copying packets
+					EXIT_SUCCESS(copied);
+				}
+				
+				*((struct bpf_hdr*)(&packp[copied]))=Header->header;
+				
+				copied += sizeof(struct bpf_hdr);
+				LocalData->C += sizeof(struct PacketHeader);
+
+				if (LocalData->C == Open->Size)
+					LocalData->C = 0;
+
+				if (Open->Size - LocalData->C < plen)
+				{
+					//the packet is fragmented in the buffer (i.e. it skips the buffer boundary)
+					ToCopy = Open->Size - LocalData->C;
+					RtlCopyMemory(packp + copied,LocalData->Buffer + LocalData->C,ToCopy);
+					RtlCopyMemory(packp + copied + ToCopy,LocalData->Buffer,plen-ToCopy);
+					LocalData->C = plen-ToCopy;
+				}
+				else
+				{
+					//the packet is not fragmented
+					RtlCopyMemory(packp + copied ,LocalData->Buffer + LocalData->C ,plen);
+					LocalData->C += plen;
+			//		if (c==size)  inutile, contemplato nell "header atomico"
+			//			c=0;
+				}
+
+				Open->ReaderSN++;
+				copied+=Packet_WORDALIGN(plen);
+
+				increment = plen + sizeof(struct PacketHeader);
+				if ( Open->Size - LocalData->C < sizeof(struct PacketHeader))
+				{   //the next packet would be saved at the end of the buffer, but the NewHeader struct would be fragmented
+					//so the producer (--> the consumer) skips to the beginning of the buffer
+					increment += Open->Size-LocalData->C;
+					LocalData->C=0;
+				}
+				InterlockedExchangeAdd(&Open->CpuData[current_cpu].Free,increment);
+				count=0;
+			}
+			else
+			{
+				current_cpu=(current_cpu+1)%NCpu;
+				count++;	
+			}
+		
+		}
+		else
+		{
+			current_cpu=(current_cpu+1)%NCpu;
+			count++;	
 		}
 	}
-	else if((TLastByte - Thead) < Input_Buffer_Length){
-		PacketMoveMem(packp, CurrBuff+Thead, TLastByte - Thead, &(Open->Bhead));
-
-		NdisAcquireSpinLock( &Open->BufLock );
 		
-		Open->BLastByte = Open->Btail;
-		Open->Bhead = 0;
+	{EXIT_SUCCESS(copied);}
 
-		NdisReleaseSpinLock( &Open->BufLock );
-		
-		EXIT_SUCCESS(TLastByte-Thead);
-	}
-	
-	//the buffer must be scannned to determine the number of bytes to copy
-	SizeToCopy = 0;
-	while(TRUE){
-		if(Thead + SizeToCopy == Ttail)
-			break;
-
-		if(Thead + SizeToCopy == TLastByte && TLastByte != Ttail){
-
-			PacketMoveMem(packp, CurrBuff+Thead, SizeToCopy, &(Open->Bhead));
-			// Reset the buffer
-			NdisAcquireSpinLock( &Open->BufLock );
-			(INT)Open->BLastByte = -1;
- 			Open->Bhead = 0;			
-			NdisReleaseSpinLock( &Open->BufLock );
-
-			EXIT_SUCCESS(SizeToCopy);
-		}
-
-		// Get the size of the next packet in the buffer
-		PktLen = ((struct bpf_hdr*)(CurrBuff + Thead + SizeToCopy))->bh_caplen + sizeof(struct bpf_hdr);
-
-		// The length is aligned to 32-bit boundary
-		PktLen = Packet_WORDALIGN(PktLen);
-
-		if(SizeToCopy + PktLen > Input_Buffer_Length)
-			break;
-		
-		SizeToCopy += PktLen;
-	}
-
-	PacketMoveMem(packp, CurrBuff+Thead, SizeToCopy, &(Open->Bhead));
-	EXIT_SUCCESS(SizeToCopy);
+//------------------------------------------------------------------------------
 
 }
 
-//-------------------------------------------------------------------
-
 NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacReceiveContext,
-                        IN PVOID HeaderBuffer,IN UINT HeaderBufferSize,IN PVOID LookAheadBuffer,
+                        IN PVOID HeaderBuffer,IN UINT HeaderBufferSize,IN PVOID LookaheadBuffer,
                         IN UINT LookaheadBufferSize,IN UINT PacketSize)
 {
     POPEN_INSTANCE      Open;
-    PNDIS_PACKET        pPacketb;
+    PNDIS_PACKET        pPacket;
     ULONG               SizeToTransfer;
     NDIS_STATUS         Status;
     UINT                BytesTransfered;
     ULONG               BufferLength;
-    PMDL                pMdl;
+    PMDL                pMdl1,pMdl2;
 	LARGE_INTEGER		CapTime;
 	LARGE_INTEGER		TimeFreq;
-	struct bpf_hdr		*header;
-	PUCHAR				CurrBuff;
-	UINT				Thead;
-	UINT				Ttail;
-	UINT				TLastByte;
 	UINT				fres;
-	UINT				maxbufspace;
 	USHORT				NPFHdrSize;
-	UINT				BufOccupation;
-	BOOLEAN				ResetBuff = FALSE;
+
+	CpuPrivateData		*LocalData;
+	ULONG				Cpu;
+	struct PacketHeader	*Header;
+	ULONG				ToCopy;
+	ULONG				increment;
+	ULONG				i;
+	BOOLEAN				Flag;
 
     IF_VERY_LOUD(DbgPrint("NPF: tap\n");)
-    IF_VERY_LOUD(DbgPrint("HeaderBufferSize=%d, LookAheadBuffer=%d, LookaheadBufferSize=%d, PacketSize=%d\n", 
+	IF_VERY_LOUD(DbgPrint("HeaderBufferSize=%d, LookAheadBuffer=%d, LookaheadBufferSize=%d, PacketSize=%d\n", 
 	HeaderBufferSize,
-	LookAheadBuffer,
+	LookaheadBuffer,
 	LookaheadBufferSize,
 	PacketSize);)
 
 	Open= (POPEN_INSTANCE)ProtocolBindingContext;
-
-	Open->Received++;		// Number of packets received by filter ++
-
-	BufOccupation = GetBuffOccupation(Open);	// Get the full buffer space
-
-	if(((Open->mode&MODE_CAPT)||(Open->mode&MODE_DUMP)) && Open->BufSize - BufOccupation < PacketSize+HeaderBufferSize+sizeof(struct bpf_hdr)){
-		// Heuristic that drops the packet also if it possibly fits in the buffer.
-		// It allows to avoid filtering in critical situations when CPU is very important.
-		Open->Dropped++;
+	
+	if (Open->SkipProcessing == 1)  //some IoCtl is modifying some shared structure, we must drop the packet.
 		return NDIS_STATUS_NOT_ACCEPTED;
-	}
+	
+    Cpu = KeGetCurrentProcessorNumber();
+	LocalData = &Open->CpuData[Cpu];
 
-	NdisAcquireSpinLock(&Open->machine_lock);
+	LocalData->Processing = 1;    //this tells the Ioctls that we are processing a packet, they cannot modify anything
+								  //until ALL the Cpu have terminated their processing (aka, set their LocalData->processing to 0)
+	LocalData->Received++;
+	IF_LOUD(DbgPrint("Received on CPU %d \t%d\n",Cpu,LocalData->Received);)
+//	Open->Received++;		// Number of packets received by filter ++
+
+	if (Open->mode == MODE_MON)
+	{
+		Flag = TRUE;
+		NdisAcquireSpinLock(&Open->MachineLock);
+	}
+	else
+		Flag = FALSE;
 	
 	//
 	//Check if the lookahead buffer follows the mac header.
@@ -365,10 +354,10 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	//Otherwise if there are 2 separate buffers (this could be the case of LAN emulation or
 	//things like this) bpf_filter_with_2_buffers() is executed.
 	//
-	if((UINT)LookAheadBuffer-(UINT)HeaderBuffer != HeaderBufferSize)
+	if((UINT)LookaheadBuffer-(UINT)HeaderBuffer != HeaderBufferSize)
 		fres=bpf_filter_with_2_buffers((struct bpf_insn*)(Open->bpfprogram),
 									   HeaderBuffer,
-									   LookAheadBuffer,
+									   LookaheadBuffer,
 									   HeaderBufferSize,
 									   PacketSize+HeaderBufferSize,
 									   LookaheadBufferSize+HeaderBufferSize,
@@ -402,25 +391,32 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 						&Open->tme,
 						&G_Start_Time);
 
-	NdisReleaseSpinLock(&Open->machine_lock);
+	if (Flag)
+		NdisReleaseSpinLock(&Open->MachineLock);
 	
 	if(Open->mode==MODE_MON)
 	// we are in monitor mode
 	{
 		if (fres==1) 
 			KeSetEvent(Open->ReadEvent,0,FALSE);
+		LocalData->Processing = 0;
 		return NDIS_STATUS_NOT_ACCEPTED;
 
 	}
 
 	if(fres==0)
+	{
 		// Packet not accepted by the filter, ignore it.
+		LocalData->Processing = 0;
 		return NDIS_STATUS_NOT_ACCEPTED;
+	}
 
 	//if the filter returns -1 the whole packet must be accepted
-	if(fres==-1 || fres > PacketSize+HeaderBufferSize)fres=PacketSize+HeaderBufferSize; 
+	if(fres==-1 || fres > PacketSize+HeaderBufferSize)
+		fres = PacketSize+HeaderBufferSize; 
 
-	if(Open->mode & MODE_STAT){
+	if(Open->mode & MODE_STAT)
+	{
 	// we are in statistics mode
 		NdisAcquireSpinLock( &Open->CountersLock );
 
@@ -436,193 +432,372 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 
 		NdisReleaseSpinLock( &Open->CountersLock );
 		
-		if(!(Open->mode & MODE_DUMP)){
+		if(!(Open->mode & MODE_DUMP))
+		{
+			LocalData->Processing = 0;
  			return NDIS_STATUS_NOT_ACCEPTED;
 		}
 	}
 
-	if(Open->BufSize==0)return NDIS_STATUS_NOT_ACCEPTED;
-	
-	if(Open->mode & MODE_DUMP && Open->MaxDumpPacks &&	(UINT)Open->Accepted > Open->MaxDumpPacks){
-		// Reached the max number of packets to save in the dump file. Discard the packet and stop the dump thread.
-		Open->DumpLimitReached = TRUE; // This stops the thread
-		// Awake the dump thread
-		NdisSetEvent(&Open->DumpEvent);
-
-		// Awake the application
-		KeSetEvent(Open->ReadEvent,0,FALSE);
-
-		return NDIS_STATUS_NOT_ACCEPTED;
-	}
-
-	// Calculate the correct size for the header associated with the packet
- 	NPFHdrSize=(Open->mode==MODE_CAPT)? sizeof(struct bpf_hdr): sizeof(struct sf_pkthdr);
- 
-	NdisAcquireSpinLock( &Open->BufLock );
-
-	Thead=Open->Bhead;
-	Ttail=Open->Btail;
-	TLastByte = Open->BLastByte;
-
-	NdisReleaseSpinLock( &Open->BufLock );
-	
-	maxbufspace=Packet_WORDALIGN(fres+NPFHdrSize);
-	
-	if (Thead > Ttail && (Thead-Ttail) <= maxbufspace)
+	if(Open->Size == 0)
 	{
-		Open->Dropped++;
+		LocalData->Dropped++;
+		LocalData->Processing = 0;
 		return NDIS_STATUS_NOT_ACCEPTED;
 	}
-	else{ 
-		if(Thead <= Ttail && Ttail + maxbufspace >= Open->BufSize)
+
+	if(Open->mode & MODE_DUMP && Open->MaxDumpPacks)
+	{
+		ULONG Accepted=0;
+		for(i=0;i<NCpu;i++)
+			Accepted+=Open->CpuData[i].Accepted;
+		
+		if(  Accepted > Open->MaxDumpPacks)
 		{
-			if(Thead <= maxbufspace)
+			// Reached the max number of packets to save in the dump file. Discard the packet and stop the dump thread.
+			Open->DumpLimitReached = TRUE; // This stops the thread
+			// Awake the dump thread
+			NdisSetEvent(&Open->DumpEvent);
+
+			// Awake the application
+			KeSetEvent(Open->ReadEvent,0,FALSE);
+
+			LocalData->Processing = 0;
+			return NDIS_STATUS_NOT_ACCEPTED;
+		}
+	}
+
+	//////////////////////////////COPIA.C//////////////////////////////////////////77
+
+	if (fres + sizeof(struct PacketHeader) > LocalData->Free)
+	{
+		LocalData->Dropped++;
+		LocalData->Processing = 0;
+		return NDIS_STATUS_NOT_ACCEPTED;
+	}
+
+	if (LocalData->TransferMdl1 != NULL)
+	{
+		//if TransferMdl is not NULL, there is some TransferData pending (i.e. not having called TransferDataComplete, yet)
+		//in order to avoid buffer corruption, we drop the packet
+		LocalData->Dropped++;
+		LocalData->Processing = 0;
+		return NDIS_STATUS_NOT_ACCEPTED;
+	}
+
+	if (LookaheadBufferSize + HeaderBufferSize >= fres)
+	{
+		//we do not need to call NdisTransferData, either because we need only the HeaderBuffer, or because the LookaheadBuffer
+		//contains what we need
+
+		Header = (struct PacketHeader*)(LocalData->Buffer + LocalData->P);
+		LocalData->Accepted++;
+		GET_TIME(&Header->header.bh_tstamp,&G_Start_Time);
+		Header->SN = InterlockedIncrement(&Open->WriterSN) - 1;
+
+		Header->header.bh_caplen = fres;
+		Header->header.bh_datalen = PacketSize + HeaderBufferSize;
+		Header->header.bh_hdrlen=sizeof(struct bpf_hdr);
+
+		LocalData->P +=sizeof(struct PacketHeader);
+		if (LocalData->P == Open->Size)
+			LocalData->P = 0;
+
+		if ( fres <= HeaderBufferSize || ( (ULONG)LookaheadBuffer - (ULONG)HeaderBuffer ) == HeaderBufferSize )
+		{
+			//we can consider the buffer contiguous, either because we use only the data 
+			//present in the HeaderBuffer, or because HeaderBuffer and LookaheadBuffer are contiguous
+			// ;-))))))
+
+			if (Open->Size - LocalData->P < fres)
 			{
-				Open->Dropped++;
-				return NDIS_STATUS_NOT_ACCEPTED;
+				//the packet will be fragmented in the buffer (aka, it will skip the buffer boundary)
+				//two copies!!
+				ToCopy = Open->Size - LocalData->P;
+				NdisMoveMappedMemory(LocalData->Buffer + LocalData->P,HeaderBuffer, ToCopy);
+				NdisMoveMappedMemory(LocalData->Buffer + 0 , (PUCHAR)HeaderBuffer + ToCopy, fres - ToCopy);
+				LocalData->P = fres-ToCopy;
 			}
 			else
 			{
-				Ttail=0;
-				ResetBuff = TRUE;
+				//the packet does not need to be fragmented in the buffer (aka, it doesn't skip the buffer boundary)
+				// ;-)))))) only ONE copy
+				NdisMoveMappedMemory(LocalData->Buffer + LocalData->P, HeaderBuffer, fres);
+				LocalData->P += fres;
 			}
 		}
-	}
+		else
+		{
+			//HeaderBuffer and LookAhead buffer are NOT contiguous,
+			//AND, we need some bytes from the LookaheadBuffer, too
+			if (Open->Size - LocalData->P < fres)
+			{
+				//the packet will be fragmented in the buffer (aka, it will skip the buffer boundary)
+				if (Open->Size - LocalData->P >= HeaderBufferSize)
+				{
+					//HeaderBuffer is NOT fragmented
+					NdisMoveMappedMemory(LocalData->Buffer + LocalData->P, HeaderBuffer, HeaderBufferSize);
+					LocalData->P += HeaderBufferSize;
+					
+					if (LocalData->P == Open->Size)
+					{
+						//the fragmentation of the packet in the buffer is the same fragmentation
+						//in HeaderBuffer+LookaheadBuffer
+						LocalData->P=0;	
+						NdisMoveMappedMemory(LocalData->Buffer + 0, LookaheadBuffer, fres - HeaderBufferSize);
+						LocalData->P += (fres - HeaderBufferSize);
+					}
+					else
+					{
+						//LookAheadBuffer is fragmented, two copies
+						ToCopy = Open->Size - LocalData->P;
+						NdisMoveMappedMemory(LocalData->Buffer + LocalData->P, LookaheadBuffer, ToCopy);
+						LocalData->P=0;
+ 						NdisMoveMappedMemory(LocalData->Buffer + 0, (PUCHAR)LookaheadBuffer+ ToCopy, fres - HeaderBufferSize - ToCopy);
+						LocalData->P = fres - HeaderBufferSize - ToCopy;
+					}
+				}
+				else
+				{
+					//HeaderBuffer is fragmented in the buffer (aka, it will skip the buffer boundary)
+					//two copies to copy the HeaderBuffer
+					ToCopy = Open->Size - LocalData->P;
+					NdisMoveMappedMemory(LocalData->Buffer + LocalData->P, HeaderBuffer, ToCopy);
+					LocalData->P = 0;
+					NdisMoveMappedMemory(LocalData->Buffer + 0, (PUCHAR)HeaderBuffer + ToCopy, HeaderBufferSize - ToCopy);
+					LocalData->P = HeaderBufferSize - ToCopy;
+					
+					//only one copy to copy the LookaheadBuffer
+					NdisMoveMappedMemory(LocalData->Buffer + LocalData->P, LookaheadBuffer, fres- HeaderBufferSize);
+					LocalData->P += (fres - HeaderBufferSize);
+				}
+			}
+			else
+			{	
+				//the packet won't be fragmented in the destination buffer (aka, it won't skip the buffer boundary)
+				//two copies, the former to copy the HeaderBuffer, the latter to copy the LookaheadBuffer
+				NdisMoveMappedMemory(LocalData->Buffer + LocalData->P, HeaderBuffer, HeaderBufferSize);
+				LocalData->P += HeaderBufferSize;
+				NdisMoveMappedMemory(LocalData->Buffer + LocalData->P, LookaheadBuffer, fres - HeaderBufferSize);
+				LocalData->P += (fres - HeaderBufferSize);
+			}		 
+		}		
 
-	CurrBuff=Open->Buffer+Ttail;
+		increment = fres + sizeof(struct PacketHeader);
+		if (Open->Size - LocalData->P < sizeof(struct PacketHeader))  //we check that the available, AND contiguous, space in the buffer will fit
+		{														   //the NewHeader structure, at least, otherwise we skip the producer
+			increment += Open->Size-LocalData->P;				   //at the beginning of the buffer (p = 0), and decrement the free bytes appropriately
+			LocalData->P = 0;
+		}
 
-	if(LookaheadBufferSize != PacketSize || (UINT)LookAheadBuffer-(UINT)HeaderBuffer != HeaderBufferSize)
-	{
-		//  Allocate an MDL to map the portion of the buffer following the header
-		pMdl=IoAllocateMdl(CurrBuff+HeaderBufferSize+LookaheadBufferSize+NPFHdrSize,
-			maxbufspace,
-			FALSE,
-			FALSE,
-			NULL);
+		InterlockedExchangeAdd(&LocalData->Free, (ULONG)(-(LONG)increment));
+		if(Open->Size - LocalData->Free >= Open->MinToCopy)
+		{
+			if(Open->mode & MODE_DUMP)
+				NdisSetEvent(&Open->DumpEvent);
+			else
+				KeSetEvent(Open->ReadEvent,0,FALSE);	
+		}
 
-		if (pMdl == NULL)
-		{
-			// Unable to map the memory: packet lost
-			IF_LOUD(DbgPrint("NPF: Read-Failed to allocate Mdl\n");)
-				Open->Dropped++;
-			return NDIS_STATUS_NOT_ACCEPTED;
-		}
-		MmBuildMdlForNonPagedPool(pMdl);
-		
-		//allocate the packet from NDIS
-		NdisAllocatePacket(&Status, &pPacketb, Open->PacketPool);
-		if (Status != NDIS_STATUS_SUCCESS)
-		{
-			IF_LOUD(DbgPrint("NPF: Tap - No free packets\n");)
-			IoFreeMdl(pMdl);
-			Open->Dropped++;
-			return NDIS_STATUS_NOT_ACCEPTED;
-		}
-		//link the buffer to the packet
-		NdisChainBufferAtFront(pPacketb,pMdl);
-		
-		BufferLength=fres-HeaderBufferSize;
-		//Find out how much to transfer
-		SizeToTransfer = (PacketSize < BufferLength) ? PacketSize : BufferLength;
-		
-		//copy the ethernet header into buffer
-		NdisMoveMappedMemory((CurrBuff)+NPFHdrSize,HeaderBuffer,HeaderBufferSize);
-		
-		//Copy the look ahead buffer
-		if(LookaheadBufferSize)
-		{
-			NdisMoveMappedMemory((CurrBuff) + NPFHdrSize + HeaderBufferSize,
-				LookAheadBuffer, 
-				(SizeToTransfer < LookaheadBufferSize)?	SizeToTransfer : LookaheadBufferSize );
-			
-			SizeToTransfer = (SizeToTransfer > LookaheadBufferSize)?
-				SizeToTransfer - LookaheadBufferSize : 0;
-		}
-		
-		Open->TransferMdl=pMdl;
-		
-		if(SizeToTransfer)
-		{
-			//Call the Mac to transfer the packet
-			NdisTransferData(&Status,
-				Open->AdapterHandle,
-				MacReceiveContext,
-				LookaheadBufferSize,
-				SizeToTransfer,
-				pPacketb,
-				&BytesTransfered);
-		}
-		else{
-			BytesTransfered = 0;
-		}
-		
+		LocalData->Processing = 0;
+		return NDIS_STATUS_NOT_ACCEPTED;
 	}
 	else
 	{
-	// The whole packet is in the lookahead buffer, we can avoid the call to NdisTransferData.
-	// This allows us to avoid the allocation of the MDL and the NDIS packet as well
-	RtlCopyMemory((CurrBuff) + NPFHdrSize,
-		HeaderBuffer,
-		HeaderBufferSize + LookaheadBufferSize);
+		IF_LOUD(DbgPrint("TransferData!!\n");)
+		//ndisTransferData required
+		LocalData->NewP = LocalData->P;
 
-		BytesTransfered = 0;
+		LocalData->NewP +=sizeof(struct PacketHeader);
+		if (LocalData->NewP == Open->Size)
+			LocalData->NewP = 0;
 
-		Open->TransferMdl = NULL;
-		Status = NDIS_STATUS_SUCCESS;
-	}
-
-	if (Status != NDIS_STATUS_FAILURE)
-	{
-
-		Open->Accepted++;		// Increase the accepted packets counter
-
-		if( fres > (BytesTransfered+HeaderBufferSize+LookaheadBufferSize) )
-			fres = BytesTransfered+HeaderBufferSize+LookaheadBufferSize;
-	
-		//
-		// Build the header
-		//
-		header=(struct bpf_hdr*)CurrBuff;
-		GET_TIME(&header->bh_tstamp,&G_Start_Time);
-		header->bh_caplen=fres;
-		header->bh_datalen=PacketSize+HeaderBufferSize;
-		if(Open->mode==MODE_CAPT){
-			header->bh_hdrlen=NPFHdrSize;
-			// Don't align if the packet goes to disk
-			Ttail+=Packet_WORDALIGN(fres + NPFHdrSize);
+		//first of all, surely the header must be copied
+		if (Open->Size-LocalData->NewP >= HeaderBufferSize)
+		{
+			//1 copy!
+			NdisMoveMappedMemory(LocalData->Buffer + LocalData->NewP, HeaderBuffer, HeaderBufferSize);
+			LocalData->NewP += HeaderBufferSize;
+			if (LocalData->NewP == Open->Size)
+				LocalData->NewP = 0;
 		}
 		else
-			Ttail+=fres+NPFHdrSize;
-		
-		//update the buffer	
-		NdisAcquireSpinLock( &Open->BufLock );
-
-		if(ResetBuff){
-			Open->BLastByte = Open->Btail;
+		{
+			ToCopy = Open->Size - LocalData->NewP;
+			NdisMoveMappedMemory(LocalData->Buffer + LocalData->NewP, HeaderBuffer, ToCopy);
+			NdisMoveMappedMemory(LocalData->Buffer + 0, (PUCHAR)HeaderBuffer + ToCopy, HeaderBufferSize - ToCopy);
+			LocalData->NewP = HeaderBufferSize - ToCopy;
 		}
-		Open->Btail=Ttail;
+
+		//then we copy the Lookahead buffer
+
+		if (Open->Size-LocalData->NewP >= LookaheadBufferSize)
+		{
+			//1 copy!
+			NdisMoveMappedMemory(LocalData->Buffer + LocalData->NewP, LookaheadBuffer, LookaheadBufferSize);
+			LocalData->NewP += LookaheadBufferSize;
+			if (LocalData->NewP == Open->Size)
+				LocalData->NewP = 0;
+		}
+		else
+		{
+			ToCopy = Open->Size - LocalData->NewP;
+			NdisMoveMappedMemory(LocalData->Buffer + LocalData->NewP, LookaheadBuffer, ToCopy);
+			NdisMoveMappedMemory(LocalData->Buffer + 0, (PUCHAR)LookaheadBuffer + ToCopy, LookaheadBufferSize - ToCopy);
+			LocalData->NewP = LookaheadBufferSize - ToCopy;
+		}
+
+		//Now we must prepare the buffer(s) for the NdisTransferData
+		if ((Open->Size - LocalData->NewP) >= (fres - HeaderBufferSize - LookaheadBufferSize))
+		{
+			//only 1 buffer
+			pMdl1 = IoAllocateMdl(
+				LocalData->Buffer + LocalData->NewP, 
+				fres - HeaderBufferSize - LookaheadBufferSize,
+				FALSE,
+				FALSE,
+				NULL);
+			
+			if (pMdl1 == NULL)
+			{
+				IF_LOUD(DbgPrint("Error allocating Mdl1\n");)
+				LocalData->Dropped++;
+				LocalData->Processing = 0;
+				return NDIS_STATUS_NOT_ACCEPTED;
+			}
+
+			MmBuildMdlForNonPagedPool(pMdl1);
+			pMdl2=NULL;
+			LocalData->NewP += fres - HeaderBufferSize - LookaheadBufferSize;
+
+
+		}
+		else
+		{
+			//2 buffers
+			pMdl1 = IoAllocateMdl(
+				LocalData->Buffer + LocalData->NewP, 
+				Open->Size - LocalData->NewP,
+				FALSE,
+				FALSE,
+				NULL);
+			
+			if (pMdl1 == NULL)
+			{
+				IF_LOUD(DbgPrint("Error allocating Mdl1\n");)
+				LocalData->Dropped++;
+				LocalData->Processing = 0;
+				return NDIS_STATUS_NOT_ACCEPTED;
+			}
+
+			pMdl2 = IoAllocateMdl(
+				LocalData->Buffer + 0, 
+				fres - HeaderBufferSize - LookaheadBufferSize - (Open->Size - LocalData->NewP),
+				FALSE,
+				FALSE,
+				NULL);
+			
+			if (pMdl2 == NULL)
+			{
+				IF_LOUD(DbgPrint("Error allocating Mdl2\n");)
+				IoFreeMdl(pMdl1);
+				LocalData->Dropped++;
+				LocalData->Processing = 0;
+				return NDIS_STATUS_NOT_ACCEPTED;
+			}
+
+			LocalData->NewP = fres - HeaderBufferSize - LookaheadBufferSize - (Open->Size - LocalData->NewP);
+
+			MmBuildMdlForNonPagedPool(pMdl1);
+			MmBuildMdlForNonPagedPool(pMdl2);
+		}
+
+
+		NdisAllocatePacket(&Status, &pPacket, Open->PacketPool);
+
+		if (Status != NDIS_STATUS_SUCCESS)
+		{
+			IF_LOUD(DbgPrint("NPF: Tap - No free packets\n");)
+			IoFreeMdl(pMdl1);
+			if (pMdl2 != NULL)
+				IoFreeMdl(pMdl2);
+			LocalData->Dropped++;
+			LocalData->Processing = 0;
+			return NDIS_STATUS_NOT_ACCEPTED;
+		}
+
+		if (pMdl2 != NULL)
+			NdisChainBufferAtFront(pPacket,pMdl2);
+		
+		NdisChainBufferAtFront(pPacket,pMdl1);
+
+		RESERVED(pPacket)->Cpu = Cpu;
+
+		LocalData->TransferMdl1 = pMdl1;	
+		LocalData->TransferMdl2 = pMdl2;	
+
 	
-		NdisReleaseSpinLock( &Open->BufLock );
-	}
+		Header = (struct PacketHeader*)(LocalData->Buffer + LocalData->P);
+		Header->header.bh_caplen = fres;
+		Header->header.bh_datalen = PacketSize + HeaderBufferSize;
+		Header->header.bh_hdrlen=sizeof(struct bpf_hdr);
 
-	if (Status != NDIS_STATUS_PENDING){
+		NdisTransferData(
+				&Status,
+				Open->AdapterHandle,
+				MacReceiveContext,
+				LookaheadBufferSize,
+				fres - HeaderBufferSize - LookaheadBufferSize,
+				pPacket,
+				&BytesTransfered);
 
-		if( Open->TransferMdl != NULL)
-			// Complete the request and free the buffers
-			NPF_TransferDataComplete(Open,pPacketb,Status,fres);
-		else{
-			// Unfreeze the consumer
-			if(GetBuffOccupation(Open)>Open->MinToCopy){
-				if(Open->mode & MODE_DUMP){
+		if (Status != NDIS_STATUS_PENDING)
+		{
+			IF_LOUD(DbgPrint("NdisTransferData, not pending!\n");)	
+			LocalData->TransferMdl1 = NULL;
+			LocalData->TransferMdl2 = NULL;
+
+			IoFreeMdl(pMdl1);
+			if ( pMdl2 != NULL )
+				IoFreeMdl(pMdl2);
+
+			NdisReinitializePacket(pPacket);
+			// Put the packet on the free queue
+			NdisFreePacket(pPacket);
+
+			LocalData->P = LocalData->NewP;
+
+			LocalData->Accepted++;
+			GET_TIME(&Header->header.bh_tstamp,&G_Start_Time);
+			Header->SN = InterlockedIncrement(&Open->WriterSN) - 1;
+
+			increment = fres + sizeof(struct PacketHeader);
+			if (Open->Size - LocalData->P < sizeof(struct PacketHeader))
+			{
+				increment += Open->Size-LocalData->P;
+				LocalData->P = 0;
+			}
+
+			InterlockedExchangeAdd(&LocalData->Free, (ULONG)(-(LONG)increment));
+
+			if(Open->Size - LocalData->Free >= Open->MinToCopy)
+			{
+				if(Open->mode & MODE_DUMP)
 					NdisSetEvent(&Open->DumpEvent);
-				}
 				else
 					KeSetEvent(Open->ReadEvent,0,FALSE);	
 			}
-			
+
+			LocalData->Processing = 0;
+			return NDIS_STATUS_NOT_ACCEPTED;
+		}
+		else
+		{
+			DbgPrint("NdisTransferData, pending!\n");	
+			return NDIS_STATUS_NOT_ACCEPTED;
 		}
 	}
-	
+
 	return NDIS_STATUS_SUCCESS;
 	
 }
@@ -633,21 +808,63 @@ VOID NPF_TransferDataComplete (IN NDIS_HANDLE ProtocolBindingContext,IN PNDIS_PA
                                  IN NDIS_STATUS Status,IN UINT BytesTransfered)
 {
     POPEN_INSTANCE      Open;
+	ULONG				Cpu;
+    CpuPrivateData		*LocalData;
+	struct PacketHeader*	Header;
+	ULONG				increment;
 
-    IF_LOUD(DbgPrint("NPF: TransferDataComplete\n");)
+	IF_LOUD(DbgPrint("NPF: TransferDataComplete\n");)
     
-	Open= (POPEN_INSTANCE)ProtocolBindingContext;
+	Open = (POPEN_INSTANCE)ProtocolBindingContext;
 
-	IoFreeMdl(Open->TransferMdl);
-	// recylcle the packet
+	Cpu = RESERVED(pPacket)->Cpu;
+
+	LocalData = &Open->CpuData[Cpu];
+
+	IoFreeMdl(LocalData->TransferMdl1);
+	if ( LocalData->TransferMdl2 != NULL )
+		IoFreeMdl(LocalData->TransferMdl2);
+
 	NdisReinitializePacket(pPacket);
 	// Put the packet on the free queue
 	NdisFreePacket(pPacket);
-	// Unfreeze the consumer
-	if(GetBuffOccupation(Open)>Open->MinToCopy){
- 		if(Open->mode & MODE_DUMP){
+
+	//the packet has been successfully copied to the kernel buffer, we can prepend it with the PacketHeader,
+	//and obtain the sequence number and the timestamp
+
+	LocalData->Accepted++;
+	Header = (struct PacketHeader*)(LocalData->Buffer + LocalData->P);
+	GET_TIME(&Header->header.bh_tstamp,&G_Start_Time);
+	Header->SN = InterlockedIncrement(&Open->WriterSN) - 1;
+
+	LocalData->P = LocalData->NewP;
+	
+	increment = Header->header.bh_caplen + sizeof(struct PacketHeader);
+	if (Open->Size - LocalData->P < sizeof(struct PacketHeader))
+	{
+		increment += Open->Size-LocalData->P;
+		LocalData->P = 0;
+	}
+
+	InterlockedExchangeAdd(&LocalData->Free, (ULONG)(-(LONG)increment));
+
+	if(Open->Size - LocalData->Free >= Open->MinToCopy)
+	{
+		if(Open->mode & MODE_DUMP)
+			NdisSetEvent(&Open->DumpEvent);
+		else
+			KeSetEvent(Open->ReadEvent,0,FALSE);	
+	}
+
+	LocalData->TransferMdl1 = NULL;
+	LocalData->TransferMdl2 = NULL;
+	LocalData->Processing = 0;
+
+// Unfreeze the consumer
+	if(Open->Size - LocalData->Free > Open->MinToCopy)
+	{
+ 		if(Open->mode & MODE_DUMP)
  			NdisSetEvent(&Open->DumpEvent);
- 		}
  		else
  			KeSetEvent(Open->ReadEvent,0,FALSE);	
 	}

@@ -61,6 +61,8 @@ extern struct time_conv G_Start_Time; // from openclos.c
 
 extern NDIS_SPIN_LOCK Opened_Instances_Lock;
 
+ULONG NCpu;
+
 //
 //  Packet Driver's entry routine.
 //
@@ -89,10 +91,7 @@ DriverEntry(
 	PKEY_VALUE_PARTIAL_INFORMATION tcpBindingsP;
 	UNICODE_STRING macName;
 	
-	// This driver at the moment works only on single processor machines
-	if(NdisSystemProcessorCount() != 1){
-		return STATUS_IMAGE_MP_UP_MISMATCH;
-	}
+	NCpu = NdisSystemProcessorCount();
 
     IF_LOUD(DbgPrint("\n\nPacket: DriverEntry\n");)
 
@@ -573,6 +572,8 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	ULONG				cnt;
 	BOOLEAN				IsExtendedFilter=FALSE;
 
+	BOOLEAN				Flag;
+
     IF_LOUD(DbgPrint("NPF: IoControl\n");)
 		
 	IrpSp = IoGetCurrentIrpStackLocation(Irp);
@@ -581,8 +582,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
     Irp->IoStatus.Status = STATUS_SUCCESS;
 
-    IF_LOUD(DbgPrint("NPF: Function code is %08lx  buff size=%08lx  %08lx\n",FunctionCode,IrpSp->Parameters.DeviceIoControl.InputBufferLength,IrpSp->Parameters.DeviceIoControl.OutputBufferLength);)
-		
+	IF_LOUD(DbgPrint("NPF: Function code is %08lx  buff size=%08lx  %08lx\n",FunctionCode,IrpSp->Parameters.DeviceIoControl.InputBufferLength,IrpSp->Parameters.DeviceIoControl.OutputBufferLength);)
 
 	switch (FunctionCode){
 		
@@ -592,11 +592,19 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			EXIT_FAILURE(0);
 		}
 
-		*(((PUINT)Irp->UserBuffer)+3) = Open->Accepted;
-		*(((PUINT)Irp->UserBuffer)) = Open->Received;
-		*(((PUINT)Irp->UserBuffer)+1) = Open->Dropped;
+		*(((PUINT)Irp->UserBuffer)+3) = 0;
+		*(((PUINT)Irp->UserBuffer)+0) = 0;
+		*(((PUINT)Irp->UserBuffer)+1) = 0;
 		*(((PUINT)Irp->UserBuffer)+2) = 0;		// Not yet supported
-		
+
+		for(i=0;i<NCpu;i++)
+		{
+
+			*(((PUINT)Irp->UserBuffer)+3) += Open->CpuData[i].Accepted;
+			*(((PUINT)Irp->UserBuffer)+0) += Open->CpuData[i].Received;
+			*(((PUINT)Irp->UserBuffer)+1) += Open->CpuData[i].Dropped;
+			*(((PUINT)Irp->UserBuffer)+2) += 0;		// Not yet supported
+		}
 		EXIT_SUCCESS(4*sizeof(INT));
 		
 		break;
@@ -634,7 +642,19 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		break;
 
 	case BIOCSETF:  
-		
+
+		Open->SkipProcessing = 1;
+
+		do
+		{
+			Flag = FALSE;
+			for(i=0;i<NCpu;i++)
+				if (Open->CpuData[i].Processing == 1)
+					Flag = TRUE;
+		}
+		while(Flag);  //BUSY FORM WAITING...
+
+
 		// Free the previous buffer if it was present
 		if(Open->bpfprogram!=NULL){
 			TmpBPFProgram=Open->bpfprogram;
@@ -656,6 +676,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		{
 			IF_LOUD(DbgPrint("0001");)
 			
+			Open->SkipProcessing = 0;
 			EXIT_FAILURE(0);
 		}
 		
@@ -679,6 +700,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			
 				IF_LOUD(DbgPrint("Error initializing NPF machine (bpf_filter_init)\n");)
 				
+				Open->SkipProcessing = 0;
 				EXIT_FAILURE(0);
 			}
 		}
@@ -692,6 +714,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			//FIXME: the machine has been initialized(?), but the operative code is wrong. 
 			//we have to reset the machine!
 			//something like: reallocate the mem_ex, and reset the tme_core
+			Open->SkipProcessing = 0;
 			EXIT_FAILURE(0);
 		}
 		
@@ -702,6 +725,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		{
 			IF_LOUD(DbgPrint("Error - No memory for filter");)
 			// no memory
+			Open->SkipProcessing = 0;
 			EXIT_FAILURE(0);
 		}
 		
@@ -714,25 +738,45 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			if((Open->Filter=BPF_jitter((struct bpf_insn*)Open->bpfprogram,cnt)) == NULL)
 			{
 				IF_LOUD(DbgPrint("Error jittering filter");)
-					EXIT_FAILURE(0);
+				Open->SkipProcessing = 0;
+				EXIT_FAILURE(0);
 			}
 
 		//return
-		Open->Bhead = 0;
-		Open->Btail = 0;
-		(INT)Open->BLastByte = -1;
-		Open->Received = 0;		
-		Open->Dropped = 0;
-		Open->Accepted = 0;
+		for (i=0;i<NCpu;i++)
+		{
+			Open->CpuData[i].C=0;
+			Open->CpuData[i].P=0;
+			Open->CpuData[i].Free = Open->Size;
+			Open->CpuData[i].Accepted=0;
+			Open->CpuData[i].Dropped=0;
+			Open->CpuData[i].Received = 0;
+		}
 
+		Open->ReaderSN=0;
+		Open->WriterSN=0;
+
+		Open->SkipProcessing = 0;
 		EXIT_SUCCESS(IrpSp->Parameters.DeviceIoControl.InputBufferLength);
 		
 		break;		
 		
 	case BIOCSMODE:  //set the capture mode
 		
+		if(IrpSp->Parameters.DeviceIoControl.InputBufferLength < sizeof(ULONG))
+		{			
+			EXIT_FAILURE(0);
+		}
+
 		mode=*((PULONG)Irp->AssociatedIrp.SystemBuffer);
 		
+///////kernel dump does not work at the moment//////////////////////////////////////////
+		if (mode & MODE_DUMP)
+		{			
+			EXIT_FAILURE(0);
+		}
+///////kernel dump does not work at the moment//////////////////////////////////////////
+
 		if(mode == MODE_CAPT){
 			Open->mode=MODE_CAPT;
 			
@@ -746,8 +790,10 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		else{
 			if(mode & MODE_STAT){
 				Open->mode = MODE_STAT;
+				NdisAcquireSpinLock(&Open->CountersLock);
 				Open->Nbytes.QuadPart=0;
 				Open->Npackets.QuadPart=0;
+				NdisReleaseSpinLock(&Open->CountersLock);
 				
 				if(Open->TimeOut.QuadPart==0)Open->TimeOut.QuadPart=-10000000;
 				
@@ -756,7 +802,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			if(mode & MODE_DUMP){
 				
 				Open->mode |= MODE_DUMP;
-				Open->MinToCopy=(Open->BufSize<2000000)?Open->BufSize/2:1000000;
+//				Open->MinToCopy=(Open->BufSize<2000000)?Open->BufSize/2:1000000;
 				
 			}	
 			EXIT_SUCCESS(0);
@@ -768,11 +814,16 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 	case BIOCSETDUMPFILENAME:
 
+///////kernel dump does not work at the moment//////////////////////////////////////////
+		EXIT_FAILURE(0);
+///////kernel dump does not work at the moment//////////////////////////////////////////
+
 		if(Open->mode & MODE_DUMP)
 		{
 			
 			// Close current dump file
-			if(Open->DumpFileHandle != NULL){
+			if(Open->DumpFileHandle != NULL)
+			{
 				NPF_CloseDumpFile(Open);
 				Open->DumpFileHandle = NULL;
 			}
@@ -805,8 +856,8 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 				
 			// Try to create the file
 			if ( NT_SUCCESS( NPF_OpenDumpFile(Open,&Open->DumpFileName,FALSE)) &&
-				NT_SUCCESS( NPF_StartDump(Open))){
-				
+				NT_SUCCESS( NPF_StartDump(Open)))
+			{
 				EXIT_SUCCESS(0);
 			}
 		}
@@ -816,6 +867,15 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		break;
 				
 	case BIOCSETDUMPLIMITS:
+
+///////kernel dump does not work at the moment//////////////////////////////////////////
+		EXIT_FAILURE(0);
+///////kernel dump does not work at the moment//////////////////////////////////////////
+
+		if (IrpSp->Parameters.DeviceIoControl.InputBufferLength < 2*sizeof(ULONG))
+		{
+			EXIT_FAILURE(0);
+		}
 
 		Open->MaxDumpBytes = *(PULONG)Irp->AssociatedIrp.SystemBuffer;
 		Open->MaxDumpPacks = *((PULONG)Irp->AssociatedIrp.SystemBuffer + 1);
@@ -827,7 +887,13 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		break;
 
 	case BIOCISDUMPENDED:
-		if(IrpSp->Parameters.DeviceIoControl.OutputBufferLength < 4){			
+
+///////kernel dump does not work at the moment//////////////////////////////////////////
+		EXIT_FAILURE(0);
+///////kernel dump does not work at the moment//////////////////////////////////////////
+
+		if(IrpSp->Parameters.DeviceIoControl.OutputBufferLength < sizeof(UINT))
+		{			
 			EXIT_FAILURE(0);
 		}
 
@@ -839,42 +905,63 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 	case BIOCSETBUFFERSIZE:
 		
+
+		if(IrpSp->Parameters.DeviceIoControl.InputBufferLength < sizeof(ULONG))
+		{			
+			EXIT_FAILURE(0);
+		}
+
 		// Get the number of bytes to allocate
 		dim = *((PULONG)Irp->AssociatedIrp.SystemBuffer);
 
-		// Free the old buffer
-		tpointer = Open->Buffer;
-		if(tpointer != NULL){
-			Open->BufSize = 0;
-			Open->Buffer = NULL;
-			ExFreePool(tpointer);
-		}
-		// Allocate the new buffer
-		if(dim!=0){
-			tpointer = ExAllocatePoolWithTag(NonPagedPool, dim, '6PWA');
-			if (tpointer==NULL)
-			{
-				// no memory
-				Open->BufSize = 0;
-				Open->Buffer = NULL;
-				EXIT_FAILURE(0);
-			}
-		}
-		else
-			tpointer = NULL;
+		Open->SkipProcessing = 1;
 
-		Open->Buffer = tpointer;
-		Open->Bhead = 0;
-		Open->Btail = 0;
-		(INT)Open->BLastByte = -1;
-		
-		Open->BufSize = (UINT)dim;
+		do
+		{
+			Flag = FALSE;
+			for(i=0;i<NCpu;i++)
+				if (Open->CpuData[i].Processing == 1)
+					Flag = TRUE;
+		}
+		while(Flag);  //BUSY FORM WAITING...
+
+		if (dim / NCpu < sizeof(struct PacketHeader))
+		{
+			Open->SkipProcessing = 0;
+			EXIT_FAILURE(0);
+		}
+
+		tpointer = ExAllocatePoolWithTag(NonPagedPool, dim, '6PWA');
+		if (tpointer==NULL)
+		{
+			// no memory
+			Open->SkipProcessing = 0;
+			EXIT_FAILURE(0);
+		}
+
+		for (i=0;i<NCpu;i++)
+		{
+			Open->CpuData[i].Buffer=(PUCHAR)tpointer + (dim/NCpu)*i;
+			IF_LOUD(DbgPrint("Loop %p\n",Open->CpuData[i].Buffer);)
+			Open->CpuData[i].Free = dim/NCpu;
+			Open->CpuData[i].P = 0;
+		}
+
+		Open->Size = dim/NCpu;
+    
+		Open->SkipProcessing = 0;
 		EXIT_SUCCESS(dim);
 		
 		break;
 		
 	case BIOCSRTIMEOUT: //set the timeout on the read calls
 		
+
+		if(IrpSp->Parameters.DeviceIoControl.InputBufferLength < sizeof(ULONG))
+		{			
+			EXIT_FAILURE(0);
+		}
+
 		timeout = *((PULONG)Irp->AssociatedIrp.SystemBuffer);
 		if((int)timeout==-1)
 			Open->TimeOut.QuadPart=(LONGLONG)IMMEDIATE;
@@ -892,6 +979,11 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 	case BIOCSWRITEREP: //set the writes repetition number
 		
+	if(IrpSp->Parameters.DeviceIoControl.InputBufferLength < sizeof(ULONG))
+	{			
+		EXIT_FAILURE(0);
+	}
+
 		Open->Nwrites = *((PULONG)Irp->AssociatedIrp.SystemBuffer);
 		
 		EXIT_SUCCESS(Open->Nwrites);
@@ -900,7 +992,12 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 	case BIOCSMINTOCOPY: //set the minimum buffer's size to copy to the application
 
-		Open->MinToCopy = *((PULONG)Irp->AssociatedIrp.SystemBuffer);
+		if(IrpSp->Parameters.DeviceIoControl.InputBufferLength < sizeof(ULONG))
+		{			
+			EXIT_FAILURE(0);
+		}
+
+		Open->MinToCopy = (*((PULONG)Irp->AssociatedIrp.SystemBuffer))/NCpu;  //An hack to make the NCPU-buffers behave like a larger one
 		
 		EXIT_SUCCESS(Open->MinToCopy);
 		
@@ -1035,7 +1132,7 @@ NPF_RequestComplete(
     PIRP                Irp;
     PINTERNAL_REQUEST   pRequest;
     UINT                FunctionCode;
-	KIRQL				OldIrq;
+//	KIRQL				OldIrq;
 
     PPACKET_OID_DATA    OidData;
 

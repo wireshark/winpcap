@@ -34,14 +34,13 @@
 
 #include "jitter.h"
 #include "tme.h"
+#include "win_bpf.h"
 
 #define  MAX_REQUESTS   32 ///< Maximum number of simultaneous IOCTL requests.
 
 #define Packet_ALIGNMENT sizeof(int) ///< Alignment macro. Defines the alignment size.
 #define Packet_WORDALIGN(x) (((x)+(Packet_ALIGNMENT-1))&~(Packet_ALIGNMENT-1))	///< Alignment macro. Rounds up to the next 
 																				///< even multiple of Packet_ALIGNMENT. 
-
-
 /***************************/
 /*         IOCTLs          */
 /***************************/
@@ -246,6 +245,7 @@ typedef struct _PACKET_RESERVED {
     PMDL			pMdl;				///< MDL mapping the buffer of the packet.
 	BOOLEAN			FreeBufAfterWrite;	///< True if the memory buffer associated with the packet must be freed 
 										///< after a call to NdisSend().
+	ULONG			Cpu;				///< The CPU on which the packet was pulled out of the linked list of free packets
 }  PACKET_RESERVED, *PPACKET_RESERVED;
 
 #define RESERVED(_p) ((PPACKET_RESERVED)((_p)->ProtocolReserved)) ///< Macro to obtain a NDIS_PACKET from a PACKET_RESERVED
@@ -261,6 +261,37 @@ typedef struct _DEVICE_EXTENSION {
 	PWSTR		   ExportString;		///< Name of the exported device, i.e. name that the applications will use 
 										///< to open this adapter through WinPcap.
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
+
+/*!
+  \brief Kernel buffer of each CPU.
+
+  Structure containing the kernel buffer (and other CPU related fields) used to capture packets.
+*/
+typedef struct __CPU_Private_Data
+{
+	ULONG	P;					///< Zero-based index of the producer in the buffer. It indicates the first free byte to be written.
+	ULONG	C;					///< Zero-based index of the consumer in the buffer. It indicates the first free byte to be read.
+	ULONG	Free;				///< Number of the free bytes in the buffer
+	PUCHAR	Buffer;				///< Pointer to the kernel buffer used to capture packets.
+	ULONG	Accepted;			///< Number of packet that current capture instance acepted, from its opening. A packet 
+								///< is accepted if it passes the filter and fits in the buffer. Accepted packets are the
+								///< ones that reach the application. 
+								///< This number is related to the particular CPU this structure is referring to.
+	ULONG	Received;			///< Number of packets received by current instance from its opening, i.e. number of 
+								///< packet received by the network adapter since the beginning of the 
+								///< capture/monitoring/dump session. 
+								///< This number is related to the particular CPU this structure is referring to.
+	ULONG	Dropped;			///< Number of packet that current instance had to drop, from its opening. A packet 
+								///< is dropped if there is no more space to store it in the circular buffer that the 
+								///< driver associates to current instance. 
+								///< This number is related to the particular CPU this structure is referring to.
+	ULONG	Processing;			///< Flag. If set to 1, it indicates that the tap is processing a packet on the CPU this structure is referring to.
+	PMDL    TransferMdl1;		///< MDL used to map the portion of the buffer that will contain an incoming packet. 
+	PMDL    TransferMdl2;		///< Second MDL used to map the portion of the buffer that will contain an incoming packet. 
+	ULONG	NewP;				///< Used by NdisTransferData() (when we call NdisTransferData, p index must be updated only in the TransferDataComplete.
+}
+	CpuPrivateData;
+
 
 /*!
   \brief Contains the state of a running instance of the NPF driver.
@@ -290,15 +321,6 @@ typedef struct _OPEN_INSTANCE
 											///< The event is created with a name, so it can be used at user level to know when it 
 											///< is possible to access the driver without being blocked. This fiels stores the name 
 											///< that and is used by the BIOCGEVNAME IOCTL call.
-	INT					Received;			///< Number of packets received by current instance from its opening, i.e. number of 
-											///< packet received by the network adapter since the beginning of the 
-											///< capture/monitoring/dump session.
-	INT					Dropped;			///< Number of packet that current instance had to drop, from its opening. A packet 
-											///< is dropped if there is no more space to store it in the circular buffer that the 
-											///< driver associates to current instance.
-	INT					Accepted;			///< Number of packet that current capture instance acepted, from its opening. A packet 
-											///< is accepted if it passes the filter and fits in the buffer. Accepted packets are the
-											///< ones that reach the application.
 	PUCHAR				bpfprogram;			///< Pointer to the filtering pseudo-code associated with current instance of the driver.
 											///< This code is used only in particular situations (for example when the packet received
 											///< from the NIC driver is stored in two non-consecutive buffers. In normal situations
@@ -306,17 +328,8 @@ typedef struct _OPEN_INSTANCE
 											///< is used. See \ref NPF for details on the filtering process.
 	JIT_BPF_Filter		*Filter;			///< Pointer to the native filtering function created by the jitter. 
 											///< See BPF_jitter() for details.
-	PUCHAR				Buffer;				///< Pointer to the circular buffer associated with every driver instance. It contains the 
-											///< data that will be passed to the application. See \ref NPF for details.
-	UINT				Bhead;				///< Head of the circular buffer.
-	UINT				Btail;				///< Tail of the circular buffer.
-	UINT				BufSize;			///< Size of the circular buffer.
-	UINT				BLastByte;			///< Position of the last valid byte in the circular buffer.
-	PMDL                TransferMdl;		///< MDL used to map the portion of the buffer that will contain an incoming packet. 
-											///< Used by NdisTransferData().
-	NDIS_SPIN_LOCK		BufLock;			///< SpinLock that protects the access tho the circular buffer variables.
 	UINT				MinToCopy;			///< Minimum amount of data in the circular buffer that unlocks a read. Set with the
-											///< BIOCSMINTOCOPY IOCTL.
+											///< BIOCSMINTOCOPY IOCTL. 
 	LARGE_INTEGER		TimeOut;			///< Timeout after which a read is released, also if the amount of data in the buffer is 
 											///< less than MinToCopy. Set with the BIOCSRTIMEOUT IOCTL.
 											
@@ -348,11 +361,33 @@ typedef struct _OPEN_INSTANCE
 											///< reached.
 	MEM_TYPE			mem_ex;				///< Memory used by the TME virtual co-processor
 	TME_CORE			tme;				///< Data structure containing the virtualization of the TME co-processor
-	NDIS_SPIN_LOCK		machine_lock;		///< SpinLock that protects the mem_ex buffer
+	NDIS_SPIN_LOCK		MachineLock;		///< SpinLock that protects the mem_ex buffer
 	UINT				MaxFrameSize;		///< Maximum frame size that the underlying MAC acceptes. Used to perform a check on the 
 											///< size of the frames sent with NPF_Write() or NPF_BufferedWrite().
+	CpuPrivateData		CpuData[32];		///< Pool of kernel buffer structures, one for each CPU.
+	ULONG				ReaderSN;			///< Sequence number of the next packet to be read from the pool of kernel buffers.
+	ULONG				WriterSN;			///< Sequence number of the next packet to be written in the pool of kernel buffers.
+											///< These two sequence numbers are unique for each capture instance.
+	ULONG				Size;				///< Size of each kernel buffer contained in the CpuData field.
+	ULONG				SkipProcessing;		///< Flag. When set to 1, the tap discards each packet. It is set to 1 by the IOCTLs that modify
+											///< some "sensible" fields of the Open structure (e.g. they reallocate the pool of kernel buffers,
+											///< or change the filter program
+
 }
 OPEN_INSTANCE, *POPEN_INSTANCE;
+
+/*!
+  \brief Structure prepended to each packet in the kernel buffer pool.
+  
+  Each packet in one of the kernel buffers is prepended by this header. It encapsulates the bpf_header, 
+  which will be passed to user level programs, as well as the sequence number of the packet, set by the producer (the tap function),
+  and used by the consumer (the read function) to "reorder" the packets contained in the various kernel buffers.
+*/
+struct PacketHeader
+{
+	ULONG SN;								///< Sequence number of the packet.
+	struct bpf_hdr header;					///< bpf header, created by the tap, and copied unmodified to user level programs.
+};
 
 
 #define TRANSMIT_PACKETS 256	///< Maximum number of packets in the transmit packet pool. This value is an upper bound to the number

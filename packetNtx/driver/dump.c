@@ -274,7 +274,7 @@ VOID NPF_DumpThread(POPEN_INSTANCE Open)
 		IF_LOUD(DbgPrint("NPF: Worker Thread - event signalled\n");)
 			
 		if(Open->DumpLimitReached ||
-			Open->BufSize==0){		// BufSize=0 means that this instance was closed, or that the buffer is too
+			Open->Size==0){		// BufSize=0 means that this instance was closed, or that the buffer is too
 									// small for any capture. In both cases it is better to end the dump
 
 			IF_LOUD(DbgPrint("NPF: Worker Thread - Exiting happily\n");)
@@ -293,7 +293,7 @@ VOID NPF_DumpThread(POPEN_INSTANCE Open)
 		}
 	
 	}
-	
+
 }
 
 //-------------------------------------------------------------------
@@ -309,7 +309,8 @@ NTSTATUS NPF_SaveCurrentBuffer(POPEN_INSTANCE Open)
     PMDL		lMdl;
 	UINT		SizeToDump;
 
-	
+#if 0
+
 	Thead=Open->Bhead;
 	Ttail=Open->Btail;
 	TLastByte=Open->BLastByte;
@@ -324,7 +325,7 @@ NTSTATUS NPF_SaveCurrentBuffer(POPEN_INSTANCE Open)
 	if( Ttail < Thead )
 	{
 		if(Open->MaxDumpBytes &&
-			(UINT)Open->DumpOffset.QuadPart + GetBuffOccupation(Open) > Open->MaxDumpBytes)
+			(UINT)Open->DumpOffset.QuadPart /*+ GetBuffOccupation(Open)*/ > Open->MaxDumpBytes)
 		{
 			// Size limit reached
 			UINT PktLen;
@@ -388,7 +389,7 @@ NTSTATUS NPF_SaveCurrentBuffer(POPEN_INSTANCE Open)
 	if( Ttail > Thead ){
 		
 		if(Open->MaxDumpBytes &&
-			(UINT)Open->DumpOffset.QuadPart + GetBuffOccupation(Open) > Open->MaxDumpBytes)
+			(UINT)Open->DumpOffset.QuadPart /* +GetBuffOccupation(Open)*/ > Open->MaxDumpBytes)
 		{
 			// Size limit reached
 			UINT PktLen;
@@ -449,7 +450,7 @@ NTSTATUS NPF_SaveCurrentBuffer(POPEN_INSTANCE Open)
 		Open->Bhead=Ttail;
 		
 	}
-
+#endif
 	return STATUS_SUCCESS;
 }
 
@@ -462,7 +463,7 @@ NTSTATUS NPF_CloseDumpFile(POPEN_INSTANCE Open){
     PUCHAR		VMBuff;
 	UINT		VMBufLen;
 
-
+#if 0
     IF_LOUD(DbgPrint("NPF: NPF_CloseDumpFile.\n");)
     IF_LOUD(DbgPrint("Dumpoffset=%d\n",Open->DumpOffset.QuadPart);)
 
@@ -494,7 +495,7 @@ DbgPrint("3\n");
 	Open->DumpFileHandle = NULL;
 
 	ObDereferenceObject(Open->DumpFileObject);
-
+#endif
 	return STATUS_SUCCESS;
 }
 
