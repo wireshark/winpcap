@@ -4,7 +4,7 @@
 # General configuration options
 #---------------------------------------------------------------------------
 PROJECT_NAME           = WinPcap
-PROJECT_NUMBER         = 3.0
+PROJECT_NUMBER         = 3.1 beta
 OUTPUT_DIRECTORY       = ./winpcap/winpcap
 OUTPUT_LANGUAGE        = English
 EXTRACT_ALL            = YES
