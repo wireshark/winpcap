@@ -306,6 +306,7 @@ struct addrinfo *addrinfo;				// keeps the addrinfo chain; required to open a ne
 int i;
 #ifdef WIN32
 	pthread_t threadId;					// Pthread variable that keeps the thread structures
+	pthread_attr_t detachedAttribute;	// PThread attribute needed to create the thread as detached
 #else
 	pid_t pid;
 #endif
@@ -320,11 +321,17 @@ int i;
 		activelist[i].ai_family= mainhints.ai_family;
 		
 #ifdef WIN32
-		if ( pthread_create( &threadId, NULL, (void *) &main_active, (void *) &activelist[i]) )
+		/* GV we need this to create the thread as detached. */
+		/* GV otherwise, the thread handle is not destroyed  */
+		pthread_attr_init(&detachedAttribute); 
+		pthread_attr_setdetachstate(&detachedAttribute, PTHREAD_CREATE_DETACHED);
+		if ( pthread_create( &threadId, &detachedAttribute, (void *) &main_active, (void *) &activelist[i]) )
 		{
 			SOCK_ASSERT("Error creating the active child thread", 1);
+			pthread_attr_destroy(&detachedAttribute);
 			continue;
 		}
+		pthread_attr_destroy(&detachedAttribute);
 #else
 		if ( (pid= fork() ) == 0)	// I am the child
 		{
@@ -370,11 +377,17 @@ int i;
 			}
 
 #ifdef WIN32
-			if ( pthread_create( &threadId, NULL, (void *) &main_passive, (void *) &sockmain ) )
+			/* GV we need this to create the thread as detached. */
+			/* GV otherwise, the thread handle is not destroyed  */
+			pthread_attr_init(&detachedAttribute); 
+			pthread_attr_setdetachstate(&detachedAttribute, PTHREAD_CREATE_DETACHED);
+			if ( pthread_create( &threadId, &detachedAttribute, (void *) &main_passive, (void *) &sockmain ) )
 			{
 				SOCK_ASSERT("Error creating the passive child thread", 1);
+				pthread_attr_destroy(&detachedAttribute);
 				continue;
 			}
+			pthread_attr_destroy(&detachedAttribute);
 #else
 			if ( (pid= fork() ) == 0)	// I am the child
 			{
@@ -510,6 +523,7 @@ SOCKET sockmain;
 	{
 #ifdef WIN32
 	pthread_t threadId;					// Pthread variable that keeps the thread structures
+	pthread_attr_t detachedAttribute;
 #endif
 	struct daemon_slpars *pars;			// parameters needed by the daemon_serviceloop()
 
@@ -560,11 +574,17 @@ SOCKET sockmain;
 		pars->isactive= 0;
 		pars->nullAuthAllowed= nullAuthAllowed;
 
-		if ( pthread_create( &threadId, NULL, (void *) &daemon_serviceloop, (void *) pars) )
+		/* GV we need this to create the thread as detached. */
+		/* GV otherwise, the thread handle is not destroyed  */
+		pthread_attr_init(&detachedAttribute); 
+		pthread_attr_setdetachstate(&detachedAttribute, PTHREAD_CREATE_DETACHED);
+		if ( pthread_create( &threadId, &detachedAttribute, (void *) &daemon_serviceloop, (void *) pars) )
 		{
 			SOCK_ASSERT("Error creating the child thread", 1);
+			pthread_attr_destroy(&detachedAttribute);
 			continue;
 		}
+		pthread_attr_destroy(&detachedAttribute);
 
 #else
 		if ( (pid= fork() ) == 0)	// I am the child

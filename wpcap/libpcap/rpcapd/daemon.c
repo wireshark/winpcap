@@ -955,6 +955,8 @@ struct addrinfo *addrinfo;			// temp, needed to open a socket connection
 struct sockaddr_storage saddr;		// temp, needed to retrieve the network data port chosen on the local machine
 socklen_t saddrlen;					// temp, needed to retrieve the network data port chosen on the local machine
 
+pthread_attr_t detachedAttribute;	// temp, needed to set the created thread as detached
+
 // RPCAP-related variables
 struct rpcap_startcapreq startcapreq;		// start capture request message
 struct rpcap_startcapreply *startcapreply;	// start capture reply message
@@ -1116,13 +1118,20 @@ int serveropen_dp;							// keeps who is going to open the data connection
 
 	fp->rmt_sockdata= sockdata;
 
+	/* GV we need this to create the thread as detached. */
+	/* GV otherwise, the thread handle is not destroyed  */
+	pthread_attr_init(&detachedAttribute); 
+	pthread_attr_setdetachstate(&detachedAttribute, PTHREAD_CREATE_DETACHED);
+	
 	// Now we have to create a new thread to receive packets
-	if ( pthread_create(threaddata, NULL, (void *) daemon_thrdatamain, (void *) fp) )
+	if ( pthread_create(threaddata, &detachedAttribute, (void *) daemon_thrdatamain, (void *) fp) )
 	{
 		snprintf(errbuf, PCAP_ERRBUF_SIZE, "Error creating the data thread");
+		pthread_attr_destroy(&detachedAttribute);
 		goto error;
 	}
 
+	pthread_attr_destroy(&detachedAttribute);
 	// Check if all the data has been read; if not, discard the data in excess
 	if (nread != plen)
 		sock_discard(sockctrl, plen - nread, NULL, 0);
