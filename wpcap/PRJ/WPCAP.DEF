@@ -72,4 +72,11 @@ EXPORTS
 		pcap_next_ex
 		pcap_offline_filter
 		pcap_setsampling
-
+		pcap_breakloop
+		pcap_list_datalinks
+		pcap_set_datalink
+		pcap_datalink_name_to_val
+		pcap_datalink_val_to_name
+		pcap_datalink_val_to_description
+		pcap_lib_version
+		pcap_dump_file
