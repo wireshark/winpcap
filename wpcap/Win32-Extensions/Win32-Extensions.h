@@ -66,7 +66,11 @@ HANDLE pcap_getevent(pcap_t *p);
 
 int pcap_stats_ex(pcap_t *p, struct pcap_stat *ps);
 
-int pcap_read_ex(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data);
+#ifdef REMOTE
+	struct pcap_stat *pcap_stats_ex(pcap_t *p);
+#else
+	int pcap_stats_ex(pcap_t *p, struct pcap_stat *ps);
+#endif
 
 int pcap_setuserbuffer(pcap_t *p, int size);
 

@@ -22,6 +22,11 @@
 #include "pcap-int.h"
 #include <packet32.h>
 
+#ifdef REMOTE
+#include <pcap-remote.h>
+#endif
+
+
 HANDLE
 pcap_getevent(pcap_t *p)
 {
@@ -34,6 +39,34 @@ pcap_getevent(pcap_t *p)
 	return PacketGetReadEvent(p->adapter);
 }
 
+
+
+#ifdef REMOTE
+/*
+This way is definitely safer than passing the pcap_stat * from the userland. In fact, there could
+happen than the user allocates a variable which is not big enough for the new structure, and the
+library will write in a zone which is not allocated to this variable.
+In this way, we're pretty sure we are writing on memory allocated to this variable.
+*/
+struct pcap_stat *
+pcap_stats_ex(pcap_t *p)
+{
+#ifdef REMOTE
+	if (p->rmt_clientside)
+	{
+		/* We are on an remote capture */
+		return pcap_stats_ex_remote(p);
+	}
+#endif
+	if(PacketGetStatsEx(p->adapter, (struct bpf_stat*) (&p->md.stat) ) != TRUE){
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "PacketGetStatsEx error: %s", pcap_win32strerror());
+		return NULL;
+	}
+	return (&p->md.stat);
+}
+
+
+/*	FULVIO - TEMP
 int
 pcap_stats_ex(pcap_t *p, struct pcap_stat *ps)
 {
@@ -45,6 +78,8 @@ pcap_stats_ex(pcap_t *p, struct pcap_stat *ps)
 
 	return 0;
 }
+*/
+
 
 pcap_send_queue* 
 pcap_sendqueue_alloc(u_int memsize)
@@ -138,6 +173,22 @@ int
 pcap_read_ex(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data)
 {
 	/* Check the capture type */
+
+#ifdef REMOTE
+	if (p->rmt_clientside)
+	{
+		/* We are on an remote capture */
+		if (!p->rmt_capstarted)
+		{
+			// if the capture has not started yet, please start it
+			if (pcap_startcapture_remote(p) )
+				return -1;
+			p->rmt_capstarted= 1;
+		}
+		return pcap_read_ex_remote(p, pkt_header, pkt_data);
+	}
+#endif
+
 	if (p->adapter!=NULL)
 	{
 		/* We are on a live capture */
