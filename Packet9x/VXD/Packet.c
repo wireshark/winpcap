@@ -202,31 +202,36 @@ OUTPUT:	instance of the driver
 ************************************************************/
 POPEN_INSTANCE GetRunningAdapter(DWORD hDevice,DWORD tagProcess)
 {
-	DWORD						dwBytes = 0;
-    BYTE						*lpzName;
-    POPEN_INSTANCE				pOpen;
-	PWRAPPER_MAC_BLOCK			pWMBlock;
-	PNDIS_MAC_CHARACTERISTICS	pNMChar;
-	PLIST_ENTRY					pEntry;
-	PLIST_ENTRY					pHead;
-
-	NdisAcquireSpinLock(&GlobalDeviceExtension->OpenSpinLock);
-	pHead = &(GlobalDeviceExtension->OpenList);
-
-	pOpen = 0;
+	DWORD		dwBytes = 0; 
+	DWORD		dwSec_Counter=1000; // Or something like that 
+	BYTE		*lpzName; 
+	POPEN_INSTANCE		pOpen; 
+	PWRAPPER_MAC_BLOCK		pWMBlock; 
+	PNDIS_MAC_CHARACTERISTICS		pNMChar; 
+	PLIST_ENTRY                                   pEntry; 
+	PLIST_ENTRY                                   pHead; 
+	
+	NdisAcquireSpinLock(&GlobalDeviceExtension->OpenSpinLock); 
+	
+	pHead = &(GlobalDeviceExtension->OpenList); 
+	pOpen = 0; 
 	
 	pEntry=pHead->Flink; 
-	do {    
-		pOpen = CONTAINING_RECORD( pEntry, OPEN_INSTANCE, ListElement );
-		if((pOpen->hDevice==hDevice)&&(pOpen->tagProcess==tagProcess)){
-			NdisReleaseSpinLock( &GlobalDeviceExtension->OpenSpinLock );
-			return pOpen;
-		}
-		pEntry=pEntry->Flink;
-	}while (pEntry != pHead); 
- 	  
-	NdisReleaseSpinLock( &GlobalDeviceExtension->OpenSpinLock );
-	return NULL;
+	
+	do 
+	{    
+        pOpen = CONTAINING_RECORD( pEntry, OPEN_INSTANCE, ListElement ); 
+        if((pOpen->hDevice==hDevice)&&(pOpen->tagProcess==tagProcess)){ 
+			NdisReleaseSpinLock( &GlobalDeviceExtension->OpenSpinLock ); 
+			return pOpen; 
+		} 
+		pEntry=pEntry->Flink; 
+		dwSec_Counter--; 
+		
+	}while ((pEntry != pHead)&&(dwSec_Counter));
+	
+	NdisReleaseSpinLock( &GlobalDeviceExtension->OpenSpinLock ); 
+	return NULL; 
 }
 
 /************************************************************
