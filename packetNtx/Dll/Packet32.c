@@ -948,9 +948,10 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 	PADAPTER_INFO TAdInfo;
 #endif // _WINNT4
 
-    ODSEx("PacketOpenAdapter: trying to open the adapter=%S\n",AdapterName)
+    ODSEx("PacketOpenAdapter: trying to open the adapter=%s\n",AdapterName)
 
 	if(AdapterName[1]!=0){ //ASCII
+		
 		AdapterNameU = SChar2WChar(AdapterName);
 		AdapterNameA = AdapterName;
 		AdapterName = (PCHAR)AdapterNameU;
@@ -973,13 +974,15 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 
 			//can be an ERF file?
 			lpAdapter = PacketOpenAdapterDAG(AdapterNameA, TRUE);
-			
+
 			if (AdapterNameU != NULL) 
 				GlobalFreePtr(AdapterNameU);
 			else 
 				GlobalFreePtr(AdapterNameA);
 			
 			ReleaseMutex(AdaptersInfoMutex);
+			if (lpAdapter == NULL)
+				SetLastError(ERROR_BAD_UNIT); //this is the best we can do....
 			return lpAdapter;
 		}
 	}
@@ -990,6 +993,7 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 		// Not a standard NDIS adapter, we must have specific handling
 		//
 		
+
 		if(TAdInfo->Flags & INFO_FLAG_NDISWAN_ADAPTER)
 		{
 			//
@@ -1050,6 +1054,8 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 					GlobalFreePtr(AdapterNameA);
 
 				ReleaseMutex(AdaptersInfoMutex);
+				if (lpAdapter == NULL)
+					SetLastError(ERROR_BAD_UNIT);
 				return lpAdapter;
 			}
 			
