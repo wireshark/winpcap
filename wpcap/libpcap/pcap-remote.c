@@ -1254,7 +1254,7 @@ int pcap_setfilter_remote(pcap_t *fp, struct bpf_program *prog)
 /*!	\ingroup remote_pri_func
 	\brief Suspends a pthread for msec milliseconds.
 
-	This fucntion is provided since pthreads do not have a suspend() call.
+	This function is provided since pthreads do not have a suspend() call.
 */
 void pthread_suspend(int msec)
 {

@@ -641,10 +641,14 @@ struct daemon_slpars *pars;			// parameters needed by the daemon_serviceloop()
 		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 		{
 			SOCK_ASSERT(errbuf, 1);
+
 			snprintf(errbuf, PCAP_ERRBUF_SIZE, "Error connecting to host %s, port %s, using protocol %s",
 					activepars->address, activepars->port, (hints.ai_family == AF_INET) ? "IPv4": "IPv6" );
+
 			SOCK_ASSERT(errbuf, 1);
+
 			pthread_suspend(RPCAP_ACTIVE_WAIT * 1000);
+
 			continue;
 		}
 
@@ -665,6 +669,7 @@ struct daemon_slpars *pars;			// parameters needed by the daemon_serviceloop()
 		activeclose= pars->activeclose;
 
 		free(pars);
+
 		// If the connection is closed by the user explicitely, don't try to connect to it again
 		// just exit the program
 		if (activeclose == 1)
