@@ -86,6 +86,7 @@ int main()
 void ifprint(pcap_if_t *d)
 {
   pcap_addr_t *a;
+  char ip6str[128];
 
   /* Name */
   printf("%s\n",d->name);
