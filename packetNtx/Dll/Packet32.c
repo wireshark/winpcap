@@ -2045,7 +2045,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 
 	// Chack that we don't overflow the buffer.
 	// Note: 2 is the number of additional separators needed inside the list
-	if(SizeNeeded + 2 >= *BufferSize)
+	if(SizeNeeded + 2 >= *BufferSize || pStr == NULL)
 	{
 		ReleaseMutex(AdaptersInfoMutex);
 
