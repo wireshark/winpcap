@@ -216,8 +216,10 @@ PWCHAR getAdaptersList(void)
 	NTSTATUS status;
 	HANDLE keyHandle;
 	UINT BufPos=0;
+	UINT BufLen=4096;
+
 	
-	PWCHAR DeviceNames = (PWCHAR) ExAllocatePoolWithTag(PagedPool, 4096, '0PWA');
+	PWCHAR DeviceNames = (PWCHAR) ExAllocatePoolWithTag(PagedPool, BufLen, '0PWA');
 	
 	if (DeviceNames == NULL) {
 		IF_LOUD(DbgPrint("Unable the allocate the buffer for the list of the network adapters\n");)
@@ -301,10 +303,23 @@ PWCHAR getAdaptersList(void)
 						}
 						else{
 							IF_LOUD(DbgPrint("Device %d = %ws\n", i, valueInfoP->Data);)
-								RtlCopyMemory((PCHAR)DeviceNames+BufPos,
-								valueInfoP->Data,
-								valueInfoP->DataLength);
-							BufPos+=valueInfoP->DataLength-2;
+								if( BufPos + valueInfoP->DataLength > BufLen ) {
+									// double the buffer size
+									PWCHAR DeviceNames2 = (PWCHAR) ExAllocatePoolWithTag(PagedPool, BufLen
+										<< 1, '0PWA');
+									if( DeviceNames2 ) {
+										RtlCopyMemory((PCHAR)DeviceNames2, (PCHAR)DeviceNames, BufLen);
+										BufLen <<= 1;
+										ExFreePool(DeviceNames);
+										DeviceNames = DeviceNames2;
+									}
+								} 
+								if( BufPos + valueInfoP->DataLength < BufLen ) {
+									RtlCopyMemory((PCHAR)DeviceNames+BufPos,
+										valueInfoP->Data,
+										valueInfoP->DataLength);
+									BufPos+=valueInfoP->DataLength-2;
+								}
 						}
 						
 						ExFreePool(valueInfoP);
