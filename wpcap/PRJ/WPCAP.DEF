@@ -34,6 +34,7 @@ EXPORTS
 		pcap_fileno
 		pcap_dump_open
 		pcap_dump_close
+		pcap_dump_flush
 		pcap_dump
 		pcap_setbuff
 		pcap_setmode
