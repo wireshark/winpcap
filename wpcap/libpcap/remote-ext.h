@@ -243,7 +243,7 @@
 */
 
 /*!
-	\brief It defines that the sampling is disabled.
+	\brief No sampling has to be done on the current capture.
 
 	In this case, no sampling algorithms are applied to the current capture.
 */
@@ -358,9 +358,9 @@ struct pcap_rmtauth
 	only a subset of the packets coming from the source. The returned packets depend
 	on the sampling parameters.
 
-	\warning The sampling process is appllied <strong>after</strong> the filtering process.
-	In other words, pacekts are filtered first, then the sampling process selects only a
-	subset of them and it returns them to the called.
+	\warning The sampling process is applied <strong>after</strong> the filtering process.
+	In other words, packets are filtered first, then the sampling process selects a
+	subset of the 'filtered' packets and it returns them to the caller.
 */
 struct pcap_samp
 {
