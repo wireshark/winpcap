@@ -18,6 +18,7 @@ EXPORTS
 		pcap_offline_read
 		pcap_next
 		pcap_stats
+		pcap_stats_ex
 		pcap_setfilter
 		pcap_perror
 		pcap_strerror

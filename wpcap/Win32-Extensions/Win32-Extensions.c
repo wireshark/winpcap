@@ -34,6 +34,18 @@ pcap_getevent(pcap_t *p)
 	return PacketGetReadEvent(p->adapter);
 }
 
+int
+pcap_stats_ex(pcap_t *p, struct pcap_stat *ps)
+{
+
+	if(PacketGetStatsEx(p->adapter, (struct bpf_stat*)ps) != TRUE){
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "PacketGetStatsEx error: %s", pcap_win32strerror());
+		return -1;
+	}
+
+	return 0;
+}
+
 pcap_send_queue* 
 pcap_sendqueue_alloc(u_int memsize)
 {

@@ -64,6 +64,8 @@ u_int pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue* queue, int sync);
 
 HANDLE pcap_getevent(pcap_t *p);
 
+int pcap_stats_ex(pcap_t *p, struct pcap_stat *ps);
+
 int pcap_read_ex(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data);
 
 int pcap_setuserbuffer(pcap_t *p, int size);
