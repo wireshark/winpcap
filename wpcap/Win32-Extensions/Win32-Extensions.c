@@ -48,8 +48,10 @@ library will write in a zone which is not allocated to this variable.
 In this way, we're pretty sure we are writing on memory allocated to this variable.
 */
 struct pcap_stat *
-pcap_stats_ex(pcap_t *p)
+pcap_stats_ex(pcap_t *p, int *pcap_stat_size)
 {
+	*pcap_stat_size= sizeof (struct pcap_stat);
+
 #ifdef REMOTE
 	if (p->rmt_clientside)
 	{
