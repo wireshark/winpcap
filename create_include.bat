@@ -30,7 +30,6 @@ xcopy /s/e/v /Y %WINPCAPSOURCEDIR%\Common\Packet32.h			 		%WPDPACKDESTDIR%\Inclu
 xcopy /s/e/v /Y %WINPCAPSOURCEDIR%\Common\Devioctl.h			 		%WPDPACKDESTDIR%\Include\	
 xcopy /s/e/v /Y %WINPCAPSOURCEDIR%\Common\Ntddndis.h			 		%WPDPACKDESTDIR%\Include\	
 xcopy /s/e/v /Y %WINPCAPSOURCEDIR%\Common\Ntddpack.h			 		%WPDPACKDESTDIR%\Include\	
-xcopy /s/e/v /Y %WINPCAPSOURCEDIR%\wpcap\Win32-Extensions\keyparser\key_parser.h	%WPDPACKDESTDIR%\Include\	
 
 echo Creating \Include\NET folder
 mkdir %WPDPACKDESTDIR%\Include\NET  2>nul >nul
