@@ -38,6 +38,8 @@ void main(int argc, char **argv)
 	pcap_send_queue *squeue;
 	struct pcap_pkthdr *pktheader;
 	u_char *pktdata;
+	float cpu_time;
+	u_int npacks = 0;
 	
 	/* Check the validity of the command line */
 	if (argc <= 2 || argc >= 5)
@@ -110,6 +112,8 @@ void main(int argc, char **argv)
 			printf("Warning: packet buffer too small, not all the packets will be sent.\n");
 			break;
 		}
+
+		npacks++;
 	}
 
 	if (res == -1)
@@ -121,11 +125,20 @@ void main(int argc, char **argv)
 
 	/* Transmit the queue */
 	
+	cpu_time = (float)clock ();
+
 	if ((res = pcap_sendqueue_transmit(outdesc, squeue, sync)) < squeue->len)
 	{
 		printf("An error occurred sending the packets: %s. Only %d bytes were sent\n", pcap_geterr(outdesc), res);
 	}
 	
+	cpu_time = (clock() - cpu_time)/CLK_TCK;
+	
+	printf ("\n\nElapsed time: %5.3f\n", cpu_time);
+	printf ("\nTotal packets generated = %d", npacks);
+	printf ("\nAverage packets per second = %d", (int)((double)npacks/cpu_time));
+	printf ("\n");
+
 	/* free the send queue */
 	pcap_sendqueue_destroy(squeue);
 
