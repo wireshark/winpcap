@@ -154,7 +154,7 @@ pcap_t *fp;
 	}
 
 	// determine the type of the source (file, local, remote)
-	if (pcap_parsesrcstr(source, &type, host, port, name, errbuf) == -1)
+	if (pcap_parsesrcstr(source, &type, host, port, NULL /* we're not interested in interface name */, errbuf) == -1)
 		return -1;
 
 	if (type == PCAP_SRC_IFLOCAL)
@@ -591,7 +591,7 @@ error:
 	\brief Accepts a set of strings (host name, port, ...), and it returns the complete 
 	source string according to the new format (e.g. 'rpcap://1.2.3.4/eth0').
 
-	This function is provided in order to help the user to create the source string
+	This function is provided in order to help the user creating the source string
 	according to the new format.
 	An unique source string is used in order to make easy for old applications to use the
 	remote facilities. Think about tcpdump, for example, which has only one way to specify
@@ -620,6 +620,8 @@ error:
 
 	\param name: an user-allocated buffer that keeps the interface name we want to use
 	(e.g. "eth0").
+	It can be NULL in case the return string (i.e. 'source') has to be used with the
+	pcap_findalldevs_ex(), which does not require the interface name.
 
 	\param errbuf: a pointer to a user-allocated buffer (of size PCAP_ERRBUF_SIZE)
 	that will contain the error message (in case there is one).
@@ -647,6 +649,7 @@ int pcap_createsrcstr(char *source, int type, const char *host, const char *port
 				return -1;
 			}
 		}
+
 		case PCAP_SRC_IFREMOTE:
 		{
 			strncpy(source, PCAP_SRC_IF_KEY, PCAP_BUF_SIZE);
@@ -678,30 +681,21 @@ int pcap_createsrcstr(char *source, int type, const char *host, const char *port
 			}
 
 			if ((name) && (*name) )
-			{
 				strncat(source, name, PCAP_BUF_SIZE);
-				return 0;
-			}
-			else
-			{
-				snprintf(errbuf, PCAP_ERRBUF_SIZE, "The interface name cannot be NULL.");
-				return -1;
-			}
+
+			return 0;
 		}
+
 		case PCAP_SRC_IFLOCAL:
 		{
 			strncpy(source, PCAP_SRC_IF_KEY, PCAP_BUF_SIZE);
+
 			if ((name) && (*name) )
-			{
 				strncat(source, name, PCAP_BUF_SIZE);
-				return 0;
-			}
-			else
-			{
-				snprintf(errbuf, PCAP_ERRBUF_SIZE, "The interface name cannot be NULL.");
-				return -1;
-			}
+
+			return 0;
 		}
+
 		default:
 		{
 			snprintf(errbuf, PCAP_ERRBUF_SIZE, "The interface type is not valid.");
@@ -794,6 +788,14 @@ int tmptype;
 	// Look for a 'rpcap://' identifier
 	if ( (ptr= strstr(source, PCAP_SRC_IF_KEY)) != NULL)
 	{
+		if (strlen(PCAP_SRC_IF_KEY) == strlen(source) )
+		{
+			// The source identifier contains only the 'rpcap://' string.
+			// So, this is a local capture.
+			*type= PCAP_SRC_IFLOCAL;
+			return 0;
+		}
+
 		ptr+= strlen(PCAP_SRC_IF_KEY);
 
 		if (strchr(ptr, '[')) // This is probably a numeric address
@@ -838,26 +840,32 @@ int tmptype;
 				tmptype= PCAP_SRC_IFREMOTE;
 		}
 
-		if (tmpname[0])
+		if (host)
+			strcpy(host, tmphost);
+		if (port) 
+			strcpy(port, tmpport);
+		if (type)
+			*type= tmptype;
+
+		if (name)
 		{
-			if (host)
-				strcpy(host, tmphost);
-			if (port) 
-				strcpy(port, tmpport);
-			if (name)
+			// If the user wants the host name, but it cannot be located into the source string, return error
+			// However, if the user is not interested in the interface name (e.g. if we're called by 
+			// pcap_findalldevs_ex(), which does not have interface name, do not return error
+			if (tmpname[0])
+			{
 				strcpy(name, tmpname);
-			if (type)
-				*type= tmptype;
+			}
+			else
+			{
+				if (errbuf)
+					snprintf(errbuf, PCAP_ERRBUF_SIZE, "The interface name has not been specified.");
 
-			return 0;
+				return -1;
+			}
 		}
-		else
-		{
-			if (errbuf)
-				snprintf(errbuf, PCAP_ERRBUF_SIZE, "The interface name has not been specified.");
 
-			return -1;
-		}
+		return 0;
 	}
 
 	// Look for a 'file://' identifier
