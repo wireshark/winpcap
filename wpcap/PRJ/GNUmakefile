@@ -51,7 +51,8 @@ OBJS = ../libpcap/bpf/net/bpf_filter.o \
 	../libpcap/Win32/Src/inet_pton.o \
 	../libpcap/nametoaddr.o \
 	../libpcap/optimize.o \
-	../libpcap/Pcap-win32.o \
+	../libpcap/pcap-win32.o \
+	../libpcap/fad-win32.o \
 	../libpcap/pcap.o \
 	../libpcap/savefile.o \
 	../libpcap/scanner.o \
