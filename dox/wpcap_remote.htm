@@ -10,6 +10,14 @@
 <body>
 
 <hr>
+<ul>
+  <li><a href="#RunningModes">Remote Capture Running Modes</a></li>
+  <li><a href="#Config">Configuring the Remote Daemon (rpcapd)</a></li>
+  <li><a href="#StartCap">Starting a capture on a remote machine</a></li>
+  <li><a href="#UNIX">Installing the Remote Capture Daemon in UNIX</a></li>
+</ul>
+
+<hr>
 <p>WinPcap 3.0 comes with Remote Capture capabilities. This is an highly
 experimental feature that allows to interact to a remote machine and capture
 packets that are being transmitted on the remote network.</p>
@@ -21,7 +29,7 @@ WinPcap-based tools can expoit remote capture capabilities. For instance, the
 capabillity to interact with a remote daemon are added to the client software without any explicit
 modification to it. Vice versa, the remote daemon must be explicitely installed
 (and configured) on the remote machine.</p>
-<h2>Remote Capture Running Modes</h2>
+<h2><a name="RunningModes"></a>Remote Capture Running Modes</h2>
 <p>The Remote Capture Protocol (RPCAP) can work in two modes:</p>
 <ul>
   <li><b>Passive Mode</b> (default): the client (e.g. a network sniffer)
@@ -40,11 +48,11 @@ been configured in order to <i>wait</i> for that connection. After establishing
 the connection, the protocol continues its job in almost the same way in both Active
 and Passive Mode.</p>
 <p>Analyzer (<a href="http://analyzer.polito.it/30alpha/">http://analyzer.polito.it/30alpha/</a>)
-has a set of commands (in the <b>File</b> menu) that allows you to accept a
+has a set of commands (in the <b>Capture</b> menu) that allows you to accept a
 remote connection and then start the capture on the remote device. Currently,
 Analyzer is the only tool that is able to work in active mode, since it requires
 some modifications to the application code.</p>
-<h2>Configuring the Remote Daemon (rpcapd)</h2>
+<h2><a name="Config"></a>Configuring the Remote Daemon (rpcapd)</h2>
 <p>The Remote Daemon is a standard Win32 executable running either in console
 mode or as a service. The executable can be found in the <code>WinPcap</code>
 folder and it has the following syntax:</p>
@@ -163,13 +171,13 @@ connections will be created according to the new parameters.</p>
 can launch <code>rpcapd</code> with the requested parameters plus the &quot;<code>-s
 filename</code>&quot; one. The daemon will parse all the parameters and save
 them into the specified configuration file.</p>
-<h3>Launching the remote daemon as a standard executable</h3>
+<h3>Starting the remote daemon as a standard executable</h3>
 <p>The <code>rpcapd</code> executable can be launched directly, i.e. it can run
 in the foreground as well (not as a daemon/service). The procedure is quite
 simple: you have to invoke the executable from the command line with all the
 requested parameters but the &quot;<code>-d</code>&quot; flag. The capture
 server will start in the foreground.</p>
-<h2>Launching a capture on a remote machine</h2>
+<h2><a name="StartCap"></a>Starting a capture on a remote machine</h2>
 <p>If you are using a tool that is already aware of the remote capture (like
 Analyzer), everything is simple. The capture wizard will help you to locate the
 appropriate interface on the remote machine.</p>
@@ -283,8 +291,34 @@ machine you want to contact. The following forms are allowed:</p>
     <td>It cannot be used to open the first remote adapter.</td>
   </tr>
 </table>
-<hr>
-<p align="right"><i>For any question, please refer to the WinPcap help page.</i></p>
+<h2><a name="UNIX"></a>Installing the Remote Capture Daemon in UNIX</h2>
+<p>The WinPcap source archive can be compiled in UNIX as well. Currently, remote
+capture has been tested on Linux and BSD. What you have to do is:</p>
+<ul>
+  <li>download the WinPcap sources</li>
+  <li>unpack the sources</li>
+  <li>move to the <code>libpcap</code> folder</li>
+  <li>type <code>./configure</code>, then <code>make</code></li>
+  <li>move to the <code>rpcapd</code> folder</li>
+  <li>type <code>make</code></li>
+</ul>
+<p>What you obtained right now, is:</p>
+<ul>
+  <li>a library file (<code>libpcap.a</code>), which can be linked to other
+    applications (like <code>tcpdump</code>) in order to enable the remote
+    capture for them.</li>
+  <li>an executable (<code>rpcapd</code>) that is the remote daemon</li>
+</ul>
+<p>Warning: in order to run the <code>rpcapd</code> daemon, the program must
+either</p>
+<ul>
+  <li> run as root (or)</li>
+  <li>run as user, but it
+must be owned by root and must be SUID root (<code>chmod u+s rpcapd</code>)</li>
+</ul>
+<p>&nbsp;</p>
+
+<p><i>For any question, please refer to the WinPcap help page.</i></p>
 
 </body>
 
