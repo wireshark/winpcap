@@ -291,31 +291,30 @@ BOOLEAN PacketSetReadEvt(LPADAPTER AdapterObject)
 	DWORD BytesReturned;
 	TCHAR EventName[39];
 
-	// this tells the terminal service to retrieve the event from the global namespace
-	wcsncpy(EventName,L"Global\\",sizeof(L"Global\\"));
+ 	if (LOWORD(GetVersion()) == 4)
+	{
+		// retrieve the name of the shared event from the driver without the "Global\\" prefix
+		if(DeviceIoControl(AdapterObject->hFile,pBIOCEVNAME,NULL,0,EventName,13*sizeof(TCHAR),&BytesReturned,NULL)==FALSE) 
+			return FALSE;
 
-	// retrieve the name of the shared event from the driver
-	if(DeviceIoControl(AdapterObject->hFile,pBIOCEVNAME,NULL,0,EventName+7,13*sizeof(TCHAR),&BytesReturned,NULL)==FALSE) return FALSE;
+		EventName[BytesReturned/sizeof(TCHAR)]=0; // terminate the string
+	}
+	else
+	{
+		// this tells the terminal service to retrieve the event from the global namespace
+		wcsncpy(EventName,L"Global\\",sizeof(L"Global\\"));
+		// retrieve the name of the shared event from the driver with the "Global\\" prefix
+		if(DeviceIoControl(AdapterObject->hFile,pBIOCEVNAME,NULL,0,EventName + 7,13*sizeof(TCHAR),&BytesReturned,NULL)==FALSE) 
+			return FALSE;
 
-	EventName[20]=0; // terminate the string
+		EventName[BytesReturned/sizeof(TCHAR) + 7]=0; // terminate the string
+	}
 
 	// open the shared event
 	AdapterObject->ReadEvent=CreateEvent(NULL,
 										 TRUE,
 										 FALSE,
 										 EventName);
-
-	// in NT4 "Global\" is not automatically ignored: try to use simply the event name
-	if(GetLastError()!=ERROR_ALREADY_EXISTS){
-		if(AdapterObject->ReadEvent != NULL)
-			CloseHandle(AdapterObject->ReadEvent);
-		
-		// open the shared event
-		AdapterObject->ReadEvent=CreateEvent(NULL,
-			TRUE,
-			FALSE,
-			EventName+7);
-	}	
 
 	if(AdapterObject->ReadEvent==NULL || GetLastError()!=ERROR_ALREADY_EXISTS){
         ODS("PacketSetReadEvt: error retrieving the event from the kernel\n");
@@ -704,7 +703,10 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 	}
 	lpAdapter->NumWrites=1;
 
-	wsprintf(SymbolicLink, TEXT("\\\\.\\%s"), &AdapterName[16]);
+ 	if (LOWORD(GetVersion()) == 4)
+ 		wsprintf(SymbolicLink,TEXT("\\\\.\\%s"),&AdapterName[16]);
+ 	else
+ 		wsprintf(SymbolicLink,TEXT("\\\\.\\Global\\%s"),&AdapterName[16]);
 	
 	// Copy  only the bytes that fit in the adapter structure.
 	// Note that lpAdapter->SymbolicLink is present for backward compatibility but will
