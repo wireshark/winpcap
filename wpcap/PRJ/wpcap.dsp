@@ -113,13 +113,13 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib ../libpcap/win32/prj/debug/libpcap.lib /nologo /dll /debug /machine:I386 /implib:"../lib/wpcap.lib" /pdbtype:sept /FORCE:MULTIPLE /WARN:0
 # SUBTRACT BASE LINK32 /pdb:none /incremental:no
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib ../libpcap/win32/prj/Debug_REMOTE/libpcap.lib /nologo /dll /debug /machine:I386 /def:".\wpcap.def" /pdbtype:sept /FORCE:MULTIPLE /WARN:0
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib ../libpcap/win32/prj/debug/libpcap.lib /nologo /dll /debug /machine:I386 /def:".\wpcap.def" /pdbtype:sept /FORCE:MULTIPLE /WARN:0
 # SUBTRACT LINK32 /pdb:none
 # Begin Special Build Tool
 OutDir=.\Debug_REMOTE
 SOURCE="$(InputPath)"
 PostBuild_Desc=copy wpcap.lib file
-PostBuild_Cmds=copy   $(OutDir)\wpcap.lib   $(OutDir)\..\..\LIB\ 
+PostBuild_Cmds=copy    $(OutDir)\wpcap.lib    $(OutDir)\..\..\LIB\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "wpcap - Win32 Debug REMOTE DAG"
@@ -148,13 +148,13 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib ../libpcap/win32/prj/Debug_REMOTE_DAG/libpcap.lib /nologo /dll /debug /machine:I386 /implib:"../lib/wpcap.lib" /pdbtype:sept /FORCE:MULTIPLE /WARN:0
 # SUBTRACT BASE LINK32 /pdb:none /incremental:no
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib ../libpcap/win32/prj/Debug_REMOTE_DAG/libpcap.lib /nologo /dll /debug /machine:I386 /def:".\wpcap.def" /pdbtype:sept /FORCE:MULTIPLE /WARN:0
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib ../libpcap/win32/prj/debug/libpcap.lib /nologo /dll /debug /machine:I386 /def:".\wpcap.def" /pdbtype:sept /FORCE:MULTIPLE /WARN:0
 # SUBTRACT LINK32 /pdb:none
 # Begin Special Build Tool
 OutDir=.\Debug_REMOTE_DAG
 SOURCE="$(InputPath)"
 PostBuild_Desc=copy wpcap.lib file
-PostBuild_Cmds=copy   $(OutDir)\wpcap.lib   $(OutDir)\..\..\LIB\ 
+PostBuild_Cmds=copy    $(OutDir)\wpcap.lib    $(OutDir)\..\..\LIB\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "wpcap - Win32 Release REMOTE"
@@ -183,13 +183,13 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib ../libpcap/win32/prj/Release_REMOTE/libpcap.lib /nologo /dll /machine:I386 /nodefaultlib:"libcmtd.lib" /def:".\wpcap.def" /implib:"../lib/wpcap.lib" /FORCE:MULTIPLE /WARN:0
 # SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib ../libpcap/win32/prj/Release_REMOTE/libpcap.lib /nologo /dll /machine:I386 /nodefaultlib:"libcmtd.lib" /def:".\wpcap.def" /FORCE:MULTIPLE /WARN:0
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib ../libpcap/win32/prj/release/libpcap.lib /nologo /dll /machine:I386 /nodefaultlib:"libcmtd.lib" /def:".\wpcap.def" /FORCE:MULTIPLE /WARN:0
 # SUBTRACT LINK32 /pdb:none
 # Begin Special Build Tool
 OutDir=.\Release_REMOTE
 SOURCE="$(InputPath)"
 PostBuild_Desc=copy wpcap.lib file
-PostBuild_Cmds=copy   $(OutDir)\wpcap.lib   $(OutDir)\..\..\LIB\ 
+PostBuild_Cmds=copy    $(OutDir)\wpcap.lib    $(OutDir)\..\..\LIB\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "wpcap - Win32 Release REMOTE DAG"
@@ -218,13 +218,13 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib ../libpcap/win32/prj/Release_REMOTE_DAG/libpcap.lib /nologo /dll /machine:I386 /nodefaultlib:"libcmtd.lib" /def:".\wpcap.def" /implib:"../lib/wpcap.lib" /FORCE:MULTIPLE /WARN:0
 # SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib ../libpcap/win32/prj/Release_REMOTE_DAG/libpcap.lib /nologo /dll /machine:I386 /nodefaultlib:"libcmtd.lib" /def:".\wpcap.def" /FORCE:MULTIPLE /WARN:0
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ws2_32.lib ../libpcap/win32/prj/release/libpcap.lib /nologo /dll /machine:I386 /nodefaultlib:"libcmtd.lib" /def:".\wpcap.def" /FORCE:MULTIPLE /WARN:0
 # SUBTRACT LINK32 /pdb:none
 # Begin Special Build Tool
 OutDir=.\Release_REMOTE_DAG
 SOURCE="$(InputPath)"
 PostBuild_Desc=copy wpcap.lib file
-PostBuild_Cmds=copy   $(OutDir)\wpcap.lib   $(OutDir)\..\..\LIB\ 
+PostBuild_Cmds=copy    $(OutDir)\wpcap.lib    $(OutDir)\..\..\LIB\ 
 # End Special Build Tool
 
 !ENDIF 
