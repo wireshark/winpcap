@@ -29,16 +29,16 @@ void usage();
 
 void main(int argc, char **argv)
 {
-pcap_t *indesc,*outdesc;
-char errbuf[PCAP_ERRBUF_SIZE];
-char source[PCAP_BUF_SIZE];
-FILE *capfile;
-int caplen, sync;
-u_int res;
-pcap_send_queue *squeue;
-struct pcap_pkthdr *pktheader;
-u_char *pktdata;
-
+	pcap_t *indesc,*outdesc;
+	char errbuf[PCAP_ERRBUF_SIZE];
+	char source[PCAP_BUF_SIZE];
+	FILE *capfile;
+	int caplen, sync;
+	u_int res;
+	pcap_send_queue *squeue;
+	struct pcap_pkthdr *pktheader;
+	u_char *pktdata;
+	
 	/* Check the validity of the command line */
 	if (argc <= 2 || argc >= 5)
 	{
@@ -128,6 +128,17 @@ u_char *pktdata;
 	
 	/* free the send queue */
 	pcap_sendqueue_destroy(squeue);
+
+	/* Close the input file */
+	pcap_close(indesc);
+
+	/* 
+	 * lose the output adapter 
+	 * IMPORTANT: remember to close the adapter, otherwise there will be no guarantee that all the 
+	 * packets will be sent!
+	 */
+	pcap_close(outdesc);
+
 
 	return;
 }
