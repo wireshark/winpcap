@@ -44,7 +44,7 @@
 // Function prototypes
 void ifprint(pcap_if_t *d);
 char *iptos(u_long in);
-
+char* ip6tos(struct sockaddr *sockaddr, char *address, int addrlen);
 
 
 int main()
@@ -114,7 +114,14 @@ void ifprint(pcap_if_t *d)
         if (a->dstaddr)
           printf("\tDestination Address: %s\n",iptos(((struct sockaddr_in *)a->dstaddr)->sin_addr.s_addr));
         break;
-      default:
+
+	  case AF_INET6:
+        printf("\tAddress Family Name: AF_INET6\n");
+        if (a->addr)
+          printf("\tAddress: %s\n", ip6tos(a->addr, ip6str, sizeof(ip6str)));
+       break;
+
+	  default:
         printf("\tAddress Family Name: Unknown\n");
         break;
     }
@@ -137,3 +144,27 @@ char *iptos(u_long in)
 	sprintf(output[which], "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
 	return output[which];
 }
+
+char* ip6tos(struct sockaddr *sockaddr, char *address, int addrlen)
+{
+	socklen_t sockaddrlen;
+
+	#ifdef WIN32
+	sockaddrlen = sizeof(struct sockaddr_in6);
+	#else
+	sockaddrlen = sizeof(struct sockaddr_storage);
+	#endif
+
+
+	if(getnameinfo(sockaddr, 
+		sockaddrlen, 
+		address, 
+		addrlen, 
+		NULL, 
+		0, 
+		NI_NUMERICHOST) != 0) address = NULL;
+
+	return address;
+}
+
+
