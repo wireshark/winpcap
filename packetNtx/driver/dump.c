@@ -97,7 +97,7 @@ NPF_OpenDumpFile(POPEN_INSTANCE Open , PUNICODE_STRING fileName, BOOLEAN Append)
 		FILE_SYNCHRONOUS_IO_NONALERT,
 		NULL,
 		0 );
-	
+
     if ( !NT_SUCCESS( ntStatus ) )
     {
         IF_LOUD(DbgPrint("NPF: Error opening file %x\n", ntStatus);)
@@ -232,9 +232,216 @@ NPF_StartDump(POPEN_INSTANCE Open)
         return ntStatus;
     }  
 
+	ntStatus = ObReferenceObjectByHandle(Open->DumpThreadHandle,
+		THREAD_ALL_ACCESS,
+		NULL,
+		KernelMode,
+		&Open->DumpThreadObject,
+		0);
+
+    if ( !NT_SUCCESS( ntStatus ) )
+    {
+        IF_LOUD(DbgPrint("NPF: Error creating dump thread, status=%x\n", ntStatus);)
+		
+		ObDereferenceObject(Open->DumpFileObject);
+		ZwClose( Open->DumpFileHandle );
+		Open->DumpFileHandle=NULL;
+
+        return ntStatus;
+    }  
+
 	
 	return ntStatus;
 	
+}
+
+//-------------------------------------------------------------------
+// Dump Thread
+//-------------------------------------------------------------------
+
+VOID NPF_DumpThread(POPEN_INSTANCE Open)
+{
+	ULONG		FrozenNic;
+
+    IF_LOUD(DbgPrint("NPF: In the work routine.  Parameter = 0x%0x\n",Open);)
+
+	while(TRUE){
+
+		// Wait until some packets arrive or the timeout expires
+		NdisWaitEvent(&Open->DumpEvent, 5000);  
+
+		IF_LOUD(DbgPrint("NPF: Worker Thread - event signalled\n");)
+			
+		if(Open->DumpLimitReached ||
+			Open->BufSize==0){		// BufSize=0 means that this instance was closed, or that the buffer is too
+									// small for any capture. In both cases it is better to end the dump
+
+			IF_LOUD(DbgPrint("NPF: Worker Thread - Exiting happily\n");)
+			IF_LOUD(DbgPrint("Thread: Dumpoffset=%I64d\n",Open->DumpOffset.QuadPart);)
+
+			PsTerminateSystemThread(STATUS_SUCCESS);
+			return;
+		}
+		
+		NdisResetEvent(&Open->DumpEvent);
+
+		// Write the content of the buffer to the file
+		if(NPF_SaveCurrentBuffer(Open) != STATUS_SUCCESS){
+			PsTerminateSystemThread(STATUS_SUCCESS);
+			return;
+		}
+	
+	}
+	
+}
+
+//-------------------------------------------------------------------
+
+NTSTATUS NPF_SaveCurrentBuffer(POPEN_INSTANCE Open)
+{
+	UINT		Thead;
+	UINT		Ttail;
+	UINT		TLastByte;
+	PUCHAR		CurrBuff;
+	NTSTATUS	ntStatus;
+	IO_STATUS_BLOCK IoStatus;
+    PMDL		lMdl;
+	UINT		SizeToDump;
+
+	
+	Thead=Open->Bhead;
+	Ttail=Open->Btail;
+	TLastByte=Open->BLastByte;
+	
+    IF_LOUD(DbgPrint("NPF: NPF_SaveCurrentBuffer.\n");)
+
+	// Get the address of the buffer
+	CurrBuff=Open->Buffer;
+	//
+	// Fill the application buffer
+	//
+	if( Ttail < Thead )
+	{
+		if(Open->MaxDumpBytes &&
+			(UINT)Open->DumpOffset.QuadPart + GetBuffOccupation(Open) > Open->MaxDumpBytes)
+		{
+			// Size limit reached
+			UINT PktLen;
+			
+			SizeToDump = 0;
+			
+			// Scan the buffer to detect the exact amount of data to save
+			while(TRUE){
+				PktLen = ((struct sf_pkthdr*)(CurrBuff + Thead + SizeToDump))->caplen + sizeof(struct sf_pkthdr);
+				
+				if((UINT)Open->DumpOffset.QuadPart + SizeToDump + PktLen > Open->MaxDumpBytes)
+					break;
+				
+				SizeToDump += PktLen;
+			}
+			
+		}
+		else
+			SizeToDump = TLastByte-Thead;
+		
+		lMdl=IoAllocateMdl(CurrBuff+Thead, SizeToDump, FALSE, FALSE, NULL);
+		if (lMdl == NULL)
+		{
+			// No memory: stop dump
+			IF_LOUD(DbgPrint("NPF: dump thread: Failed to allocate Mdl\n");)
+			return STATUS_UNSUCCESSFUL;
+		}
+		
+		MmBuildMdlForNonPagedPool(lMdl);
+		
+		// Write to disk
+		NPF_WriteDumpFile(Open->DumpFileObject,
+			&Open->DumpOffset,
+			SizeToDump,
+			lMdl,
+			&IoStatus);
+		
+		IoFreeMdl(lMdl);
+		
+		if(!NT_SUCCESS(IoStatus.Status)){
+			// Error
+			return STATUS_UNSUCCESSFUL;
+		}
+		
+		if(SizeToDump != TLastByte-Thead){
+			// Size limit reached.
+			Open->DumpLimitReached = TRUE;
+			return STATUS_UNSUCCESSFUL;
+		}
+		
+		// Update the packet buffer
+		Open->DumpOffset.QuadPart+=(TLastByte-Thead);
+		Open->BLastByte=Ttail;
+		Open->Bhead=0;
+	}
+
+	if( Ttail > Thead ){
+		
+		if(Open->MaxDumpBytes &&
+			(UINT)Open->DumpOffset.QuadPart + GetBuffOccupation(Open) > Open->MaxDumpBytes)
+		{
+			// Size limit reached
+			UINT PktLen;
+						
+			SizeToDump = 0;
+			
+			// Scan the buffer to detect the exact amount of data to save
+			while(Thead + SizeToDump < Ttail){
+
+				PktLen = ((struct sf_pkthdr*)(CurrBuff + Thead + SizeToDump))->caplen + sizeof(struct sf_pkthdr);
+				
+				if((UINT)Open->DumpOffset.QuadPart + SizeToDump + PktLen > Open->MaxDumpBytes)
+					break;
+				
+				SizeToDump += PktLen;
+			}
+			
+		}
+		else
+			SizeToDump = Ttail-Thead;
+				
+		lMdl=IoAllocateMdl(CurrBuff+Thead, SizeToDump, FALSE, FALSE, NULL);
+		if (lMdl == NULL)
+		{
+			// No memory: stop dump
+			IF_LOUD(DbgPrint("NPF: dump thread: Failed to allocate Mdl\n");)
+			return STATUS_UNSUCCESSFUL;
+		}
+		
+		MmBuildMdlForNonPagedPool(lMdl);
+		
+		// Write to disk
+		NPF_WriteDumpFile(Open->DumpFileObject,
+			&Open->DumpOffset,
+			SizeToDump,
+			lMdl,
+			&IoStatus);
+		
+		IoFreeMdl(lMdl);
+		
+		if(!NT_SUCCESS(IoStatus.Status)){
+			// Error
+			return STATUS_UNSUCCESSFUL;
+		}
+		
+		if(SizeToDump != Ttail-Thead){
+			// Size limit reached.
+			Open->DumpLimitReached = TRUE;
+			return STATUS_UNSUCCESSFUL;
+		}
+		
+		// Update the packet buffer
+		Open->DumpOffset.QuadPart+=(Ttail-Thead);			
+		Open->Bhead=Ttail;
+		
+	}
+
+	return STATUS_SUCCESS;
 }
 
 //-------------------------------------------------------------------
@@ -248,160 +455,38 @@ NTSTATUS NPF_CloseDumpFile(POPEN_INSTANCE Open){
 
 
     IF_LOUD(DbgPrint("NPF: NPF_CloseDumpFile.\n");)
-
     IF_LOUD(DbgPrint("Dumpoffset=%d\n",Open->DumpOffset.QuadPart);)
 
+DbgPrint("1\n");
+	// Consistency check
+	if(Open->DumpFileHandle == NULL)
+		return STATUS_UNSUCCESSFUL;
+
+DbgPrint("2\n");
 	ZwClose( Open->DumpFileHandle );
 
 	ObDereferenceObject(Open->DumpFileObject);
+/*
+	if(Open->DumpLimitReached == TRUE)
+		// Limit already reached: don't save the rest of the buffer.
+		return STATUS_SUCCESS;
+*/
+DbgPrint("3\n");
 
 	NPF_OpenDumpFile(Open,&Open->DumpFileName, TRUE);
 
-	//fill the application buffer
-	if(Open->Btail>Open->Bhead){
-
-		ntStatus = ZwWriteFile(Open->DumpFileHandle,
-			NULL,
-			NULL,
-			NULL,
-			&IoStatus,
-			Open->Buffer+Open->Bhead,
-			Open->Btail-Open->Bhead,
-			&Open->DumpOffset,
-			NULL );	
-	}
-	else {
-		
-		ntStatus = ZwWriteFile(Open->DumpFileHandle,
-			NULL,
-			NULL,
-			NULL,
-			&IoStatus,
-			Open->Buffer+Open->Bhead,
-			Open->BLastByte-Open->Bhead,
-			&Open->DumpOffset,
-			NULL );	
-
-	}	
+	// Flush the buffer to file 
+	NPF_SaveCurrentBuffer(Open);
 
 	// Close The file
+	ObDereferenceObject(Open->DumpFileObject);
 	ZwClose( Open->DumpFileHandle );
-	Open->DumpFileHandle=NULL;
+	
+	Open->DumpFileHandle = NULL;
 
 	ObDereferenceObject(Open->DumpFileObject);
 
 	return STATUS_SUCCESS;
-}
-
-//-------------------------------------------------------------------
-// Dump Thread
-//-------------------------------------------------------------------
-
-VOID NPF_DumpThread(POPEN_INSTANCE Open)
-{
-	UINT		Thead;
-	UINT		Ttail;
-	UINT		TLastByte;
-	PUCHAR		CurrBuff;
-	NTSTATUS	ntStatus;
-	IO_STATUS_BLOCK IoStatus;
-    PMDL		lMdl;
-	ULONG				FrozenNic;
-
-    IF_LOUD(DbgPrint("NPF: In the work routine.  Parameter = 0x%0x\n",Open);)
-
-	while(TRUE){
-
-		// Wait until some packets arrive or the timeout expires
-		NdisWaitEvent(&Open->DumpEvent, 5000);  
-
-		IF_LOUD(DbgPrint("NPF: Worker Thread - event signalled\n");)
-			
-		// BufSize=0 means that this instance was closed, or that the buffer is too small for any capture.
-		// In both cases it is better to end the dump
-		if(Open->BufSize==0){
-			IF_LOUD(DbgPrint("NPF: Worker Thread - Exiting happily\n");)
-				PsTerminateSystemThread(STATUS_SUCCESS);
-			return;
-		}
-		
-		NdisResetEvent(&Open->DumpEvent);
-		
-		// The buffer is full enough to be dumped,
-		// The read call is completed
-		Thead=Open->Bhead;
-		Ttail=Open->Btail;
-		TLastByte=Open->BLastByte;
-		
-		// Get the address of the buffer
-		CurrBuff=Open->Buffer;
-					
-		// Fill the application buffer
-		if( Ttail > Thead ){			
-			lMdl=IoAllocateMdl(CurrBuff+Thead,Ttail-Thead,FALSE,FALSE,NULL);
-			if (lMdl == NULL)
-			{
-				// No memory: packet lost
-				IF_LOUD(DbgPrint("NPF: dump thread: Failed to allocate Mdl\n");)
-				PsTerminateSystemThread(STATUS_SUCCESS);
-				return;
-			}
-			
-			MmBuildMdlForNonPagedPool(lMdl);
-
-			// Write to disk
-			NPF_WriteDumpFile(Open->DumpFileObject,
-				&Open->DumpOffset,
-				Ttail-Thead,
-				lMdl,
-				&IoStatus);
-
-			IoFreeMdl(lMdl);
-
-			if(!NT_SUCCESS(IoStatus.Status)){
-				PsTerminateSystemThread(STATUS_SUCCESS);
-				return;
-			}
-			
-			// Update the packet buffer
-			Open->DumpOffset.QuadPart+=(Ttail-Thead);			
-			Open->Bhead=Ttail;
-			
-		}
-		else if( Ttail < Thead ){
-			lMdl=IoAllocateMdl(CurrBuff+Thead,TLastByte-Thead,FALSE,FALSE,NULL);
-			if (lMdl == NULL)
-			{
-				//no memory: packet lost
-				IF_LOUD(DbgPrint("NPF: dump thread: Failed to allocate Mdl\n");)
-				PsTerminateSystemThread(STATUS_SUCCESS);
-				return;
-			}
-			
-			MmBuildMdlForNonPagedPool(lMdl);
-			
-			// Write to disk
-			NPF_WriteDumpFile(Open->DumpFileObject,
-				&Open->DumpOffset,
-				TLastByte-Thead,
-				lMdl,
-				&IoStatus);
-
-			IoFreeMdl(lMdl);
-
-			if(!NT_SUCCESS(IoStatus.Status)){
-				PsTerminateSystemThread(STATUS_SUCCESS);
-				return;
-			}
-
-			// Update the packet buffer
-			Open->DumpOffset.QuadPart+=(TLastByte-Thead);
-			Open->BLastByte=Ttail;
-			Open->Bhead=0;
-		}
-						
-	}
-	
 }
 
 //-------------------------------------------------------------------

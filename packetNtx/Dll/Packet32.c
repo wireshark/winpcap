@@ -1032,6 +1032,72 @@ BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len)
 }
 
 /*!
+  \brief Set the dump mode limits.
+  \param AdapterObject Pointer to an _ADAPTER structure.
+  \param maxfilesize The maximum dimension of the dump file, in bytes. 0 means no limit.
+  \param maxnpacks The maximum number of packets contained in the dump file. 0 means no limit.
+  \return If the function succeeds, the return value is nonzero.
+
+  This function sets the limits after which the NPF driver stops to save the packets to file when an adapter
+  is in dump mode. This allows to limit the dump file to a precise number of bytes or packets, avoiding that
+  very long dumps fill the disk space. If both maxfilesize and maxnpacks are set, the dump is stopped when
+  the first of the two is reached.
+
+  \note When a limit is reached, the dump is stopped, but the file remains opened. In order to flush 
+  correctly the data and access the file consistently, you need to close the adapter with PacketCloseAdapter().
+*/
+BOOLEAN PacketSetDumpLimits(LPADAPTER AdapterObject, UINT maxfilesize, UINT maxnpacks)
+{
+	int		BytesReturned;
+	UINT valbuff[2];
+
+	valbuff[0] = maxfilesize;
+	valbuff[1] = maxnpacks;
+
+    return DeviceIoControl(AdapterObject->hFile,
+		pBIOCSETDUMPLIMITS,
+		valbuff,
+		sizeof valbuff,
+		NULL,
+		0,
+		&BytesReturned,
+		NULL);	
+}
+
+/*!
+  \brief Returns the status of the kernel dump process, i.e. tells if one of the limits defined with PacketSetDumpLimits() was reached.
+  \param AdapterObject Pointer to an _ADAPTER structure.
+  \param sync if TRUE, the function blocks until the dump is finished, otherwise it returns immediately.
+  \return TRUE if the dump is ended, FALSE otherwise.
+
+  PacketIsDumpEnded() informs the user about the limits that were set with a previous call to 
+  PacketSetDumpLimits().
+
+  \warning If no calls to PacketSetDumpLimits() were performed or if the dump process has no limits 
+  (i.e. if the arguments of the last call to PacketSetDumpLimits() were both 0), setting sync to TRUE will
+  block the application on this call forever.
+*/
+BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync)
+{
+	int		BytesReturned;
+	int		IsDumpEnded;
+
+	if(sync)
+		WaitForSingleObject(AdapterObject->ReadEvent, INFINITE);
+
+    DeviceIoControl(AdapterObject->hFile,
+		pBIOCISDUMPENDED,
+		NULL,
+		0,
+		&IsDumpEnded,
+		4,
+		&BytesReturned,
+		NULL);
+
+	return (BOOLEAN)IsDumpEnded;
+}
+
+/*!
   \brief Returns the notification event associated with the read calls on an adapter.
   \param AdapterObject Pointer to an _ADAPTER structure.
   \return The handle of the event that the driver signals when some data is available in the kernel buffer.

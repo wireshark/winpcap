@@ -1,4 +1,4 @@
-/** @defgroup wpcap wpcap developer's manual
+/** @defgroup wpcap WinPcap user's manual
  *  @{
 
 \htmlonly<p>This section contains the user manual of wpcap, the highest level of

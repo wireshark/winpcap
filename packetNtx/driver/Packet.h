@@ -157,6 +157,21 @@
 */
 #define  BIOCSENDPACKETSSYNC 9033
 
+/*!
+  \brief IOCTL code: Set the dump file limits.
+
+  This IOCTL sets the limits (maximum size and maximum number of packets) of the dump file created when the
+  driver works in dump mode.
+*/
+#define  BIOCSETDUMPLIMITS 9034
+
+/*!
+  \brief IOCTL code: Get the status of the kernel dump process.
+
+  This command returns TRUE if the kernel dump is ended, i.e if one of the limits set with BIOCSETDUMPLIMITS
+  (amount of bytes or number of packets) has been reached.
+*/
+#define BIOCISDUMPENDED 7411
 
 // Working modes
 #define MODE_CAPT 0x0		///< Capture working mode
@@ -276,12 +291,15 @@ typedef struct _OPEN_INSTANCE
 											///< The event is created with a name, so it can be used at user level to know when it 
 											///< is possible to access the driver without being blocked. This fiels stores the name 
 											///< that and is used by the BIOCGEVNAME IOCTL call.
-	int					Received;			///< Number of packets received by current instance from its opening, i.e. number of 
+	INT					Received;			///< Number of packets received by current instance from its opening, i.e. number of 
 											///< packet received by the network adapter since the beginning of the 
 											///< capture/monitoring/dump session.
-	int					Dropped;			///< Number of packet that current instance had to drop, from its opening. A packet 
+	INT					Dropped;			///< Number of packet that current instance had to drop, from its opening. A packet 
 											///< is dropped if there is no more space to store it in the circular buffer that the 
 											///< driver associates to current instance.
+	INT					Accepted;			///< Number of packet that current capture instance acepted, from its opening. A packet 
+											///< is accepted if it passes the filter and fits in the buffer. Accepted packets are the
+											///< ones that reach the application.
 	PUCHAR				bpfprogram;			///< Pointer to the filtering pseudo-code associated with current instance of the driver.
 											///< This code is used only in particular situations (for example when the packet received
 											///< from the NIC driver is stored in two non-consecutive buffers. In normal situations
@@ -318,11 +336,18 @@ typedef struct _OPEN_INSTANCE
 											///< FALSE if a Plug and Play adapter has been removed or disabled by the user.
 	HANDLE				DumpFileHandle;		///< Handle of the file used in dump mode.
 	PFILE_OBJECT		DumpFileObject;		///< Pointer to the object of the file used in dump mode.
+	PKTHREAD			DumpThreadObject;	///< Pointer to the object of the thread used in dump mode.
 	HANDLE				DumpThreadHandle;	///< Handle of the thread created by dump mode to asynchronously move the buffer to disk.
 	NDIS_EVENT			DumpEvent;			///< Event used to synchronize the dump thread with the tap when the instance is in dump mode.
 	LARGE_INTEGER		DumpOffset;			///< Current offset in the dump file.
 	UNICODE_STRING      DumpFileName;		///< String containing the name of the dump file.
-
+	UINT				MaxDumpBytes;		///< Maximum dimension in bytes of the dump file. If the dump file reaches this size it 
+											///< will be closed. A value of 0 means unlimited size.
+	UINT				MaxDumpPacks;		///< Maximum number of packets that will be saved in the dump file. If this number of 
+											///< packets is reached the dump will be closed. A value of 0 means unlimited number of 
+											///< packets.
+	BOOLEAN				DumpLimitReached;	///< TRUE if the maximum dimension of the dump file (MaxDumpBytes or MaxDumpPacks) is 
+											///< reached.
 	MEM_TYPE			mem_ex;				///< Memory used by the TME virtual co-processor
 	TME_CORE			tme;				///< Data structure containing the virtualization of the TME co-processor
 	struct time_conv	start_time;			///< Data structure used to timestamp packets, and stats
@@ -863,6 +888,14 @@ NTSTATUS NPF_StartDump(POPEN_INSTANCE Open);
 VOID NPF_DumpThread(PVOID Open);
 
 /*!
+  \brief Saves the content of the packet buffer to the file associated with current instance.
+  \param Open The NPF instance that creates the thread.
+
+  Used by NPF_DumpThread() and NPF_CloseDumpFile().
+*/
+NTSTATUS NPF_SaveCurrentBuffer(POPEN_INSTANCE Open);
+
+/*!
   \brief Writes a block of packets on the dump file.
   \param FileObject The file object that will receive the packets.
   \param Offset The offset in the file where the packets will be put.
@@ -888,6 +921,12 @@ VOID NPF_WriteDumpFile(PFILE_OBJECT FileObject,
   \return The status of the operation. See ntstatus.h in the DDK.
 */
 NTSTATUS NPF_CloseDumpFile(POPEN_INSTANCE Open);
+
+/*!
+  \brief Return the amount of bytes present in the packet buffer.
+  \param Open The NPF instance that closes the file.
+*/
+UINT GetBuffOccupation(POPEN_INSTANCE Open);
 
 /**
  *  @}

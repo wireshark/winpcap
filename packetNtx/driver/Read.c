@@ -284,9 +284,9 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	CpStart=Thead;
 	i=0;
 	while(TRUE){
-		if(Thead==Ttail)break;
+		if(Thead == Ttail)break;
 
-		if(Thead==TLastByte){
+		if(Thead == TLastByte){
 			// Copy the portion between thead and TLastByte
 			PacketMoveMem(packp,CurrBuff+CpStart,Thead-CpStart,&(Open->Bhead));
 			packp+=(Thead-CpStart);
@@ -349,11 +349,11 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	USHORT				NPFHdrSize;
 	UINT				BufOccupation;
 
-    IF_LOUD(DbgPrint("NPF: tap\n");)
+    IF_VERY_LOUD(DbgPrint("NPF: tap\n");)
 
 	Open= (POPEN_INSTANCE)ProtocolBindingContext;
 
-	Open->Received++;		//number of packets received by filter ++
+	Open->Received++;		// Number of packets received by filter ++
 
 	NdisAcquireSpinLock(&Open->machine_lock);
 	
@@ -412,7 +412,24 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 
 	}
 
-	if(fres==0)return NDIS_STATUS_NOT_ACCEPTED; //packet not accepted by the filter
+	if(fres==0)
+		// Packet not accepted by the filter, ignore it.
+		return NDIS_STATUS_NOT_ACCEPTED;
+
+	Open->Accepted++;		// Increase the accepted packets counter
+	if(Open->mode & MODE_DUMP && Open->MaxDumpPacks &&	(UINT)Open->Accepted > Open->MaxDumpPacks){
+		// Reached the max number of packets to save in the dump file. Stop the Dump thread
+		Open->DumpLimitReached = TRUE; // This stops the thread
+		// Awake the dump thread
+		NdisSetEvent(&Open->DumpEvent);
+
+		// Awake the application
+		KeSetEvent(Open->ReadEvent,0,FALSE);
+
+		return NDIS_STATUS_NOT_ACCEPTED;
+	}
+
+
 
 	//if the filter returns -1 the whole packet must be accepted
 	if(fres==-1 || fres > PacketSize+HeaderBufferSize)fres=PacketSize+HeaderBufferSize; 
@@ -457,8 +474,8 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	
 	if(Open->BufSize <= BufOccupation + maxbufspace)
 	{
+			//the buffer is full: the packet must be dropped
 		Open->Dropped++;
-		
 		return NDIS_STATUS_NOT_ACCEPTED;
 	}
 
@@ -466,7 +483,6 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	if(Ttail+maxbufspace >= Open->BufSize){
 		if(Thead<=maxbufspace)
 		{
-			//the buffer is full: the packet is lost
 			Open->Dropped++;
 			return NDIS_STATUS_NOT_ACCEPTED;
 		}
@@ -646,6 +662,6 @@ VOID NPF_TransferDataComplete (IN NDIS_HANDLE ProtocolBindingContext,IN PNDIS_PA
 
 VOID NPF_ReceiveComplete(IN NDIS_HANDLE ProtocolBindingContext)
 {
-    IF_LOUD(DbgPrint("NPF: NPF_ReceiveComplete\n");)
+    IF_VERY_LOUD(DbgPrint("NPF: NPF_ReceiveComplete\n");)
     return;
 }

@@ -68,6 +68,8 @@
 #define  pBIOCEVNAME 7415				///< IOCTL code: get the name of the event that the driver signals when some data is present in the buffer.
 #define  pBIOCSENDPACKETSNOSYNC 9032	///< IOCTL code: Send a buffer containing multiple packets to the network, ignoring the timestamps associated with the packets.
 #define  pBIOCSENDPACKETSSYNC 9033		///< IOCTL code: Send a buffer containing multiple packets to the network, respecting the timestamps associated with the packets.
+#define  pBIOCSETDUMPLIMITS 9034		///< IOCTL code: Set the dump file limits. See the PacketSetDumpLimits() function.
+#define  pBIOCISDUMPENDED 7411			///< IOCTL code: Get the status of the kernel dump process. See the PacketIsDumpEnded() function.
 
 #define  pBIOCSTIMEZONE 7471			///< IOCTL code: set time zone. Used in Win9x only.
 
@@ -271,6 +273,8 @@ BOOLEAN PacketGetNetInfoEx(LPTSTR AdapterName, npf_if_addr* buffer, PLONG NEntri
 BOOLEAN PacketRequest(LPADAPTER  AdapterObject,BOOLEAN Set,PPACKET_OID_DATA  OidData);
 HANDLE PacketGetReadEvent(LPADAPTER AdapterObject);
 BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len);
+BOOLEAN PacketSetDumpLimits(LPADAPTER AdapterObject, UINT maxfilesize, UINT maxnpacks);
+BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync);
 BOOL PacketStopDriver();
 VOID PacketCloseAdapter(LPADAPTER lpAdapter);
 

@@ -93,6 +93,12 @@ pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue* queue, int sync){
 	DWORD error;
 	int errlen;
 
+	if (p->adapter==NULL)
+	{
+		sprintf(p->errbuf, "Cannot transmit a queue to an offline capture");
+		return NULL;
+	}	
+
 	res = PacketSendPackets(p->adapter,
 		queue->buffer,
 		queue->len,
@@ -132,7 +138,7 @@ pcap_read_ex(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data)
 		if (p->cc == 0) 
 		{
 			/* capture the packets */
-			if(PacketReceivePacket(p->adapter,p->Packet,TRUE)==FALSE)
+			if(PacketReceivePacket(p->adapter, p->Packet, TRUE) == FALSE)
 			{
 				sprintf(p->errbuf, "read error: PacketReceivePacket failed");
 				return (-1);
@@ -240,3 +246,54 @@ pcap_setuserbuffer(pcap_t *p, int size)
 
 }
 
+int
+pcap_live_dump(pcap_t *p, char *filename, int maxsize, int maxpacks){
+
+	BOOLEAN res;
+
+	if (p->adapter==NULL)
+	{
+		sprintf(p->errbuf, "live dump needs a physical interface");
+		return NULL;
+	}	
+
+	/* Set the packet driver in dump mode */
+	res = PacketSetMode(p->adapter, PACKET_MODE_DUMP);
+	if(res == FALSE){
+		sprintf(p->errbuf, "Error setting dump mode");
+		return -1;
+	}
+
+	/* Set the name of the dump file */
+	res = PacketSetDumpName(p->adapter, filename, strlen(filename));
+	if(res == FALSE){
+		sprintf(p->errbuf, "Error setting kernel dump file name");
+		return -1;
+	}
+
+	/* Set the limits of the dump file */
+	res = PacketSetDumpLimits(p->adapter, maxsize, maxpacks);
+
+	return 0;
+}
+
+int 
+pcap_live_dump_ended(pcap_t *p, int sync){
+
+	BOOLEAN res;
+
+	if (p->adapter==NULL)
+	{
+		sprintf(p->errbuf, "wrong interface type. A physical interface is needed");
+		return NULL;
+	}	
+
+	res = PacketIsDumpEnded(p->adapter, (BOOLEAN)sync);
+
+	if(res == FALSE){
+		sprintf(p->errbuf, "Error checking the state of the kernel dump file name.");
+		return -1;
+	}
+
+	return 0;
+}

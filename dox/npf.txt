@@ -1,3 +1,7 @@
+/** @ingroup internals
+ */
+
+
 /** @defgroup NPF NPF driver internals manual 
  *  @{
 @}

@@ -28,3 +28,6 @@ EXPORTS
 		PacketSetMinToCopy
 		PacketGetReadEvent
 		PacketStopDriver
+		PacketSetDumpName
+		PacketSetDumpLimits
+		PacketIsDumpEnded

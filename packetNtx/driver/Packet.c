@@ -639,11 +639,6 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	IrpSp = IoGetCurrentIrpStackLocation(Irp);
     FunctionCode=IrpSp->Parameters.DeviceIoControl.IoControlCode;
     Open=IrpSp->FileObject->FsContext;
-    RequestListEntry=ExInterlockedRemoveHeadList(&Open->RequestList,&Open->RequestSpinLock);
-    if (RequestListEntry == NULL)
-    {
-		EXIT_FAILURE(0);
-    }
 
     Irp->IoStatus.Status = STATUS_SUCCESS;
 
@@ -694,7 +689,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 		break;
 
-	case BIOCSETF:  //fuction to set a new bpf filter	
+	case BIOCSETF:  
 		
 		// Free the previous buffer if it was present
 		if(Open->bpfprogram!=NULL){
@@ -782,7 +777,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 	case BIOCSMODE:  //set the capture mode
 		
-		mode=((PULONG)Irp->AssociatedIrp.SystemBuffer)[0];
+		mode=*((PULONG)Irp->AssociatedIrp.SystemBuffer);
 		
 		if(mode == MODE_CAPT){
 			Open->mode=MODE_CAPT;
@@ -840,7 +835,9 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			}
 			
 			// Copy the buffer
-			RtlCopyBytes((PVOID)DumpNameBuff, Irp->AssociatedIrp.SystemBuffer, IrpSp->Parameters.DeviceIoControl.InputBufferLength);
+			RtlCopyBytes((PVOID)DumpNameBuff, 
+				Irp->AssociatedIrp.SystemBuffer, 
+				IrpSp->Parameters.DeviceIoControl.InputBufferLength);
 			
 			// Force a \0 at the end of the filename to avoid that malformed strings cause RtlInitUnicodeString to crash the system 
 			((PSHORT)DumpNameBuff)[IrpSp->Parameters.DeviceIoControl.InputBufferLength/2-1]=0;
@@ -848,7 +845,9 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			// Create the unicode string
 			RtlInitUnicodeString(&Open->DumpFileName, DumpNameBuff);
 			
-			IF_LOUD(DbgPrint("NPF: dump file name set to %ws, len=%d\n",Open->DumpFileName.Buffer,IrpSp->Parameters.DeviceIoControl.InputBufferLength);)
+			IF_LOUD(DbgPrint("NPF: dump file name set to %ws, len=%d\n",
+				Open->DumpFileName.Buffer,
+				IrpSp->Parameters.DeviceIoControl.InputBufferLength);)
 				
 			// Try to create the file
 			if ( NT_SUCCESS( NPF_OpenDumpFile(Open,&Open->DumpFileName,FALSE)) &&
@@ -862,10 +861,32 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 		break;
 				
-	case BIOCSETBUFFERSIZE:	//function to set the dimension of the buffer for the packets
+	case BIOCSETDUMPLIMITS:
+
+		Open->MaxDumpBytes = *(PULONG)Irp->AssociatedIrp.SystemBuffer;
+		Open->MaxDumpPacks = *((PULONG)Irp->AssociatedIrp.SystemBuffer + 1);
+
+		IF_LOUD(DbgPrint("NPF: Set dump limits to %u bytes, %u packs\n", Open->MaxDumpBytes, Open->MaxDumpPacks);)
+
+		EXIT_SUCCESS(0);
+
+		break;
+
+	case BIOCISDUMPENDED:
+		if(IrpSp->Parameters.DeviceIoControl.OutputBufferLength < 4){			
+			EXIT_FAILURE(0);
+		}
+
+		*((UINT*)Irp->UserBuffer) = (Open->DumpLimitReached)?1:0;
+
+		EXIT_SUCCESS(4);
+
+		break;
+
+	case BIOCSETBUFFERSIZE:
 		
 		//get the number of buffers to allocate
-		dim=((PULONG)Irp->AssociatedIrp.SystemBuffer)[0];
+		dim = *((PULONG)Irp->AssociatedIrp.SystemBuffer);
 		//free the old buffer
 		if(Open->Buffer!=NULL) ExFreePool(Open->Buffer);
 		//allocate the new buffer
@@ -894,7 +915,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 	case BIOCSRTIMEOUT: //set the timeout on the read calls
 		
-		timeout=((PULONG)Irp->AssociatedIrp.SystemBuffer)[0];
+		timeout = *((PULONG)Irp->AssociatedIrp.SystemBuffer);
 		if((int)timeout==-1)
 			Open->TimeOut.QuadPart=(LONGLONG)IMMEDIATE;
 		else
@@ -911,7 +932,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 	case BIOCSWRITEREP: //set the writes repetition number
 		
-		Open->Nwrites=((PULONG)Irp->AssociatedIrp.SystemBuffer)[0];
+		Open->Nwrites = *((PULONG)Irp->AssociatedIrp.SystemBuffer);
 		
 		EXIT_SUCCESS(Open->Nwrites);
 		
@@ -919,7 +940,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 	case BIOCSMINTOCOPY: //set the minimum buffer's size to copy to the application
 
-		Open->MinToCopy=((PULONG)Irp->AssociatedIrp.SystemBuffer)[0];
+		Open->MinToCopy = *((PULONG)Irp->AssociatedIrp.SystemBuffer);
 		
 		EXIT_SUCCESS(Open->MinToCopy);
 		
@@ -945,8 +966,14 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 	case BIOCSETOID:
 	case BIOCQUERYOID:
-	    
+		
 		// Extract a request from the list of free ones
+		RequestListEntry=ExInterlockedRemoveHeadList(&Open->RequestList,&Open->RequestSpinLock);
+		if (RequestListEntry == NULL)
+		{
+			EXIT_FAILURE(0);
+		}
+
 		pRequest=CONTAINING_RECORD(RequestListEntry,INTERNAL_REQUEST,ListElement);
 		pRequest->Irp=Irp;
         

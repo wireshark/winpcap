@@ -215,26 +215,29 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	SystemTime.QuadPart=SystemTime.QuadPart/10000000-11644473600;
 	Open->StartTime.QuadPart+=(SystemTime.QuadPart)*TimeFreq.QuadPart-PTime.QuadPart;
 	
-	//initialize the open instance
-	Open->BufSize=0;
-	Open->Buffer=NULL;
-	Open->Bhead=0;
-	Open->Btail=0;
-	Open->BLastByte=0;
-	Open->Dropped=0;		//reset the dropped packets counter
-	Open->Received=0;		//reset the received packets counter
-	Open->bpfprogram=NULL;	//reset the filter
-	Open->mode=MODE_CAPT;
-	Open->Nbytes.QuadPart=0;
-	Open->Npackets.QuadPart=0;
-	Open->Nwrites=1;
-	Open->Multiple_Write_Counter=0;
-	Open->MinToCopy=0;
-	Open->TimeOut.QuadPart=(LONGLONG)1;
-	Open->Bound=TRUE;
-	Open->DumpFileName.Buffer=NULL;
-	Open->DumpFileHandle=NULL;
-	Open->tme.active=TME_NONE_ACTIVE;
+	//
+	// Initialize the open instance
+	//
+	Open->BufSize = 0;
+	Open->Buffer = NULL;
+	Open->Bhead = 0;
+	Open->Btail = 0;
+	Open->BLastByte = 0;
+	Open->Dropped = 0;		//reset the dropped packets counter
+	Open->Received = 0;		//reset the received packets counter
+	Open->bpfprogram = NULL;	//reset the filter
+	Open->mode = MODE_CAPT;
+	Open->Nbytes.QuadPart = 0;
+	Open->Npackets.QuadPart = 0;
+	Open->Nwrites = 1;
+	Open->Multiple_Write_Counter = 0;
+	Open->MinToCopy = 0;
+	Open->TimeOut.QuadPart = (LONGLONG)1;
+	Open->Bound = TRUE;
+	Open->DumpFileName.Buffer = NULL;
+	Open->DumpFileHandle = NULL;
+	Open->tme.active = TME_NONE_ACTIVE;
+	Open->DumpLimitReached = FALSE;
 
 	//allocate the spinlock for the statistic counters
     NdisAllocateSpinLock(&Open->CountersLock);
@@ -332,7 +335,7 @@ NPF_Close(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
     POPEN_INSTANCE    Open;
     NDIS_STATUS     Status;
     PIO_STACK_LOCATION  IrpSp;
-
+	LARGE_INTEGER ThreadDelay;
 
     IF_LOUD(DbgPrint("NPF: CloseAdapter\n");)
 
@@ -341,7 +344,7 @@ NPF_Close(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
     Open=IrpSp->FileObject->FsContext;
 
  	// Reset the buffer size. This tells the dump thread to stop.
- 	Open->BufSize=0;
+ 	Open->BufSize = 0;
 
 	if( Open->Bound == FALSE){
 
@@ -384,14 +387,30 @@ NPF_Close(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
  		KeSetEvent(Open->ReadEvent,0,FALSE);
 
     // Save the IRP
-    Open->OpenCloseIrp=Irp;
+    Open->OpenCloseIrp = Irp;
 
     IoMarkIrpPending(Irp);
  
 	// If this instance is in dump mode, complete the dump and close the file
- 	if((Open->mode & MODE_DUMP) && Open->DumpFileHandle != NULL)
- 		NPF_CloseDumpFile(Open);
- 	
+	if((Open->mode & MODE_DUMP) && Open->DumpFileHandle != NULL){
+
+		NTSTATUS wres;
+
+		ThreadDelay.QuadPart = -50000000;
+		// Wait the completion of the thread
+		wres = KeWaitForSingleObject(Open->DumpThreadObject,
+				UserRequest,
+				KernelMode,
+				TRUE,
+				&ThreadDelay);
+
+		ObDereferenceObject(Open->DumpThreadObject);
+
+
+		// Flush and close the dump file
+		NPF_CloseDumpFile(Open);
+	}
+
 	// Destroy the read Event
 	ZwClose(Open->ReadEventHandle);
 

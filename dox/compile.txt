@@ -1,3 +1,7 @@
+/** @ingroup internals
+ */
+
+
 /** @defgroup compilation How to compile WinPcap
  *  @{
 @}

@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /tcpdump/master/libpcap/pcap.h,v 1.34 2001/12/09 05:10:03 guy Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/funcs/pcap.h,v 1.3 2002/05/08 09:15:10 degioanni Exp $ (LBL)
  */
 
 /** @defgroup wpcap_fn Exported functions
@@ -590,35 +590,6 @@ by the network interface.
 */
 int pcap_sendpacket(pcap_t *p, u_char *buf, int size);
 
-
-/*! \brief <b>Win32 Specific.</b> Sends a buffer of raw packets to the network.
-
-This function can be used to send several packets to the wire with a single call. p is a pointer to the 
-adapter on which the packets will be sent, buf points to a buffer with the packets to send, size is
-the dimension of the buffer. Sync determines if the send must be synchronized: if it is non-zero, the 
-packets are sent respecting the timestamps. If 0, the packets are sent as fast as possible.
-
-The return value is the amount of bytes actually sent. If it is smaller than the size parameter, an
-error occurred during the send. The error can be caused by a driver/adapter problem or by an inconsistent/bogus 
-packet buffer.
-
-This function is used to send a buffer of raw packets to the network. The buffer can contain an arbitrary
-number of raw packets, each of which preceded by a pcap_pkthdr structure. The pcap_pkthdr is the same used
-by WinPcap and libpcap to store the packets in a file, therefore sending a capture file is straightforward.
-'Raw packets' means that the sending application will have to include the protocol headers, since every packet 
-is sent to the network 'as is'. The CRC of the packets needs not to be calculated, because it will be 
-transparently added by the network interface.
-
-\note Using this function if more efficient than issuing a series of pcap_sendpacket(), because the packets are
-buffered in the kernel driver, so the number of context switches is reduced.
-
-\note When Sync is set to TRUE, the packets are synchronized in the kerenl with a high precision timestamp.
-This requires a remarkable amount of CPU, but allows to send the packets with a precision of some microseconds
-(depending on the precision of the performance counter of the machine). Such a precision cannot be reached 
-sending the packets separately with pcap_sendpacket().
-*/
-int pcap_sendpackets(pcap_t *p, u_char *buf, int size, int sync, char *ebuf);
-
 /*! \brief <b>Win32 Specific.</b> Sets the minumum amount of data received by the kernel in a single call.
 
 pcap_setmintocopy() changes the minimum amount of data in the kernel buffer that causes a read from 
@@ -642,6 +613,121 @@ until the driver's buffer contains some data without performing a read.
 */
 HANDLE pcap_getevent(pcap_t *p);
 
+/*! \brief <b>Win32 Specific.</b> Allocate a send queue. 
+
+This function allocate a send queue, i.e. a buffer containing a set of raw packets that will be sent with
+pcap_sendqueue_transmit().
+
+memsize is the size, in bytes, of the queue, therefore it determines the maximum amount of data that the 
+queue will contain.
+
+Use pcap_sendqueue_queue() to add a packet to the queue.
+
+\sa pcap_sendqueue_queue(), pcap_sendqueue_transmit(), pcap_sendqueue_destroy()
+*/
+pcap_send_queue* pcap_sendqueue_alloc(u_int memsize);
+
+/*! \brief <b>Win32 Specific.</b> Destroy a send queue. 
+
+Delete the send queue pointed by the queue parameter and frees all the memory associated with it.
+
+\sa pcap_sendqueue_alloc(), pcap_sendqueue_queue(), pcap_sendqueue_transmit()
+*/
+void pcap_sendqueue_destroy(pcap_send_queue* queue);
+
+/*! \brief <b>Win32 Specific.</b> Add a packet to a send queue. 
+
+pcap_sendqueue_queue() adds a packet at the end of the send queue pointed by the queue parameter. 
+pkt_header points to a pcap_pkthdr structure with the timestamp and the length of the packet, pkt_data
+points to a buffer with the raw packet.
+
+The pcap_pkthdr structure is the same used by WinPcap and libpcap to store the packets in a file, 
+therefore sending a capture file is straightforward.
+'Raw packet' means that the sending application will have to include the protocol headers, since every packet 
+is sent to the network 'as is'. The CRC of the packets needs not to be calculated, because it will be 
+transparently added by the network interface.
+
+\sa pcap_sendqueue_alloc(), pcap_sendqueue_transmit(), pcap_sendqueue_destroy()
+*/
+int pcap_sendqueue_queue(pcap_send_queue* queue, const struct pcap_pkthdr *pkt_header, const u_char *pkt_data);
+
+/*! \brief <b>Win32 Specific.</b> Sends a queue of raw packets to the network.
+
+This function can be used to send a queue with several packets to the wire with a single call. p is a 
+pointer to the adapter on which the packets will be sent, queue points to a pcap_send_queue structure 
+with the packets to send (see pcap_sendqueue_alloc() and pcap_sendqueue_queue()), sync determines if the 
+send must be synchronized: if it is non-zero, the packets are sent respecting the timestamps. 
+If 0, the packets are sent as fast as possible.
+
+The return value is the amount of bytes actually sent. If it is smaller than the size parameter, an
+error occurred during the send. The error can be caused by a driver/adapter problem or by an inconsistent/bogus 
+packet buffer.
+
+\note Using this function if more efficient than issuing a series of pcap_sendpacket(), because the packets are
+buffered in the kernel driver, so the number of context switches is reduced.
+
+\note When Sync is set to TRUE, the packets are synchronized in the kernel with a high precision timestamp.
+This requires a remarkable amount of CPU, but allows normally to send the packets with a precision of some 
+microseconds (depending on the precision of the performance counter of the machine). Such a precision cannot 
+be reached sending the packets with pcap_sendpacket().
+
+\sa pcap_sendqueue_alloc(), pcap_sendqueue_queue(), pcap_sendqueue_destroy()
+*/
+u_int pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue* queue, int sync);
+
+/*! \brief <b>Win32 Specific.</b> Read a packet from an interface or from an offline capture.
+
+This function is used to explicitly read a single packet, bypassing the callback method traditionally exported
+by libpcap.
+
+pcap_read_ex fills the pkt_header and pkt_data parameters (see pcap_handler()) with the pointers to the 
+header and to the data of the last captured packet.
+
+The return value can be:
+- 1 if a packet has been read without problems
+- 0 if the timeout set with pcap_open_live() has elapsed. In this case pkt_header and pkt_data don't point to a valid packet
+- -1 if an error occurred
+- -2 if EOF was reached readinf from an offline capture
+
+\sa pcap_open_live(), pcap_loop(), pcap_dispatch(), pcap_handler()
+*/
+int pcap_read_ex(pcap_t *p, struct pcap_pkthdr **pkt_header, u_char **pkt_data);
+
+/*! \brief <b>Win32 Specific.</b> Saves a capture to file.
+
+pcap_live_dump() exploits the capabilities of the NPF packet driver to dump the packets from an interface to
+a file. Using this function the dump is performed at kernel level, therefore it is more efficient than using
+pcap_dump().
+
+The parameters of this function are an interface descriptor (obtained with pcap_open_live()), the name of the
+dump file, the maximum of the file (in bytes) and the maximum number of packets that the file
+will contain. When maxsize or maxpacks are reached, the driver stops to save the packets to the file. 
+Setting maxsize or maxpacks to 0 means no limit.
+
+pcap_live_dump_ended() can be used to check if the limits are reached.
+
+Note that when one of the two limits is reached, the dump is stopped, but the file remains opened. In order 
+to correctly flush the data and to access the file consistently, the adapter must be closed with 
+pcap_close().
+
+
+\sa pcap_live_dump_ended(), pcap_open_live(), pcap_close(), pcap_dump_open(), pcap_dump()
+*/
+int pcap_live_dump(pcap_t *p, char *filename, int maxsize, int maxpacks);
+
+/*! \brief <b>Win32 Specific.</b> Returns the status of the kernel dump process, i.e. tells if one of the limits defined with pcap_live_dump() has been reached.
+
+pcap_live_dump_ended() informs the user about the limits that were set with a previous call to 
+pcap_live_dump() on the interface pointed by p. If sync is nonzero, the function blocks until the dump is 
+finished, otherwise it returns immediately.
+
+\warning if the dump process has no limits (i.e. if the maxsize and maxpacks arguments of pcap_live_dump() 
+were both 0), setting sync to TRUE will block the application on this call forever.
+
+\sa pcap_live_dump()
+*/
+int pcap_live_dump_ended(pcap_t *p, int sync);
+
 
 
 /*! \brief Prototype of the callback function that receives the packets. 
@@ -654,6 +740,5 @@ points to the data of the packet, including the protocol headers.
 */
 typedef void (*pcap_handler)(u_char *user, const struct pcap_pkthdr *pkt_header,
 			     const u_char *pkt_data);
-
 
 /*@}*/
