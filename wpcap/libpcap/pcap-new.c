@@ -424,7 +424,7 @@ char tmpstring[PCAP_BUF_SIZE + 1];		// Needed to convert names and descriptions 
 				return -1;
 		}
 
-		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == -1)
+		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == 0)
 			goto error;
 
 		// addrinfo is no longer used
@@ -1274,7 +1274,7 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 	}
 
 
-	if ( (sockmain= sock_open(addrinfo, SOCKOPEN_SERVER, 1, errbuf, PCAP_ERRBUF_SIZE)) == -1)
+	if ( (sockmain= sock_open(addrinfo, SOCKOPEN_SERVER, 1, errbuf, PCAP_ERRBUF_SIZE)) == 0)
 	{
 		SOCK_ASSERT(errbuf, 1);
 		return -2;

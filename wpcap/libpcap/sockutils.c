@@ -285,8 +285,11 @@ int sock_ismcastaddr(const struct sockaddr *saddr)
 	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return the socket that has been opened (that has to be used in the following sockets calls)
-	if everything is fine, '-1' if some errors occurred. The error message is returned
+	if everything is fine, '0' if some errors occurred. The error message is returned
 	in the 'errbuf' variable.
+
+	\warning The return code in case of failure is '0' instead of '-1' because SOCKET is an
+	unsigned int in Win32.
 */
 SOCKET sock_open(struct addrinfo *addrinfo, int server, int nconn, char *errbuf, int errbuflen)
 {
@@ -296,7 +299,7 @@ SOCKET sock;
 	if (sock == -1)
 	{
 		sock_geterror("socket(): ", errbuf, errbuflen);
-		return -1;
+		return 0;
 	}
 
 
@@ -320,7 +323,7 @@ SOCKET sock;
 					snprintf(errbuf, errbuflen, "setsockopt(IPV6_BINDV6ONLY)");
 					errbuf[errbuflen - 1]= 0;
 				}
-				return -1;
+				return 0;
 			}
 		} 
 #endif
@@ -336,7 +339,7 @@ SOCKET sock;
 			if (listen(sock, nconn) == -1)
 			{
 				sock_geterror("listen(): ", errbuf, errbuflen);
-				return -1;
+				return 0;
 			}
 
 		// server side ended
@@ -365,7 +368,7 @@ SOCKET sock;
 		{
 			sock_geterror("Is the server properly installed on the other host? connect() failed: ", errbuf, errbuflen);
 			closesocket(sock);
-			return -1;
+			return 0;
 		}
 		else
 			return sock;
@@ -837,6 +840,9 @@ int sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage
 		strcpy(temphostlist, hostlist);
 
 		token= strtok(temphostlist, sep);
+
+		// it avoids a warning in the compilation ('addrinfo used but not initialized')
+		addrinfo = NULL;
 
 		while( token != NULL )
 		{

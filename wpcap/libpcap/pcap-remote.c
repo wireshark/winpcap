@@ -709,7 +709,7 @@ struct rpcap_openreply openreply;	// open reply message
 				return NULL;
 		}
 
-		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == -1)
+		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == 0)
 			goto error;
 
 		freeaddrinfo(addrinfo);
@@ -938,7 +938,7 @@ int sockbufsize= 0;
 			goto error;
 
 		if ( (sockdata= sock_open(addrinfo, SOCKOPEN_SERVER, 
-			1 /* max 1 connection in queue */, fp->errbuf, PCAP_ERRBUF_SIZE)) == -1)
+			1 /* max 1 connection in queue */, fp->errbuf, PCAP_ERRBUF_SIZE)) == 0)
 			goto error;
 
 		// addrinfo is no longer used
@@ -1074,7 +1074,7 @@ int sockbufsize= 0;
 			if (sock_initaddress(host, portdata, &hints, &addrinfo, fp->errbuf, PCAP_ERRBUF_SIZE) == -1)
 				goto error;
 
-			if ( (sockdata= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, fp->errbuf, PCAP_ERRBUF_SIZE)) == -1)
+			if ( (sockdata= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, fp->errbuf, PCAP_ERRBUF_SIZE)) == 0)
 				goto error;
 
 			// addrinfo is no longer used

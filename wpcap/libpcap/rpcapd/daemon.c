@@ -1021,7 +1021,7 @@ int serveropen_dp;							// keeps who is going to open the data connection
 		if (sock_initaddress(peerhost, portdata, &hints, &addrinfo, errbuf, PCAP_ERRBUF_SIZE) == -1)
 			goto error;
 
-		if ( (sockdata= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == -1)
+		if ( (sockdata= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == 0)
 			goto error;
 	}
 	else		// Data connection is opened by the client toward the server
@@ -1032,7 +1032,7 @@ int serveropen_dp;							// keeps who is going to open the data connection
 		if (sock_initaddress(NULL, "0", &hints, &addrinfo, errbuf, PCAP_ERRBUF_SIZE) == -1)
 			goto error;
 
-		if ( (sockdata= sock_open(addrinfo, SOCKOPEN_SERVER, 1 /* max 1 connection in queue */, errbuf, PCAP_ERRBUF_SIZE)) == -1)
+		if ( (sockdata= sock_open(addrinfo, SOCKOPEN_SERVER, 1 /* max 1 connection in queue */, errbuf, PCAP_ERRBUF_SIZE)) == 0)
 			goto error;
 
 		// get the complete sockaddr structure used in the data connection
