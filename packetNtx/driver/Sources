@@ -1,0 +1,18 @@
+TARGETNAME=npf
+TARGETPATH=$(WORKDIR)
+TARGETTYPE=DRIVER
+
+TARGETLIBS=$(DDK_LIB_PATH)\ndis.lib
+C_DEFINES=$(C_DEFINES) -D$(NDISVERSION)
+
+INCLUDES=..\..\inc;..\..\common
+
+SOURCES=packet.c    \
+        openclos.c  \
+        read.c      \
+        write.c     \
+        dump.c      \
+        jitter.c      \
+	win_bpf_filter.c \
+	NPF.rc
+

@@ -1,0 +1,23 @@
+Makefile and patches provided by Nate Lawson (nate@rootlabs.com)
+
+Only the Packet and WPCAP DLLs can be built under gcc.  The drivers
+themselves (packet.sys and packet.vxd) are too dependent on MSVC for
+their tools and assembler.
+
+To build packet.dll, cd to Packet9x/DLL/Project (or packetNtx/...) and type
+"make". To build wpcap.dll, cd to WPCAP/PRJ and type "make". 
+"make install" in either directory installs the DLL in c:/windows/system
+
+If you want to link with your programs, use packet.a and wpcap.a.  These
+are the import libraries for gcc.  You CANNOT use the MSVC-generated
+.lib files with gcc.  For help on how to link to them, see the developer's
+pack examples.
+
+To remove all objects, type "make clean".
+
+TODO:
+Make VXD and SYS build on non-VC platforms - NOT TRIVIAL.  Possible routes
+include:
+Look into reactos.com and monitor cygwin.com/ml/cygwin for DDK equivalents.
+Port *.asm to GNU as.
+

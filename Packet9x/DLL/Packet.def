@@ -1,0 +1,32 @@
+LIBRARY Packet.dll
+
+DESCRIPTION 'Packet driver dll'
+
+EXPORTS
+		PacketLibraryVersion
+		PacketGetVersion
+		PacketOpenAdapter
+		PacketInitPacket
+		PacketAllocatePacket
+		PacketSendPacket
+		PacketResetAdapter
+		PacketReceivePacket
+		PacketWaitPacket
+		PacketCloseAdapter
+		PacketSetHwFilter
+		PacketFreePacket
+		PacketGetAdapterNames
+		PacketRequest
+		StartPacketDriver
+		StopPacketDriver
+		PacketSetBuff
+		PacketSetBpf
+		PacketGetStats
+		PacketGetNetType
+		PacketSetReadTimeout
+		PacketSetMode
+		PacketSetNumWrites
+		PacketGetNetInfo
+		PacketGetNetInfoEx
+		PacketSetMinToCopy
+		PacketGetReadEvent

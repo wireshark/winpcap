@@ -1,0 +1,72 @@
+WinPcap
+See 		http://netgroup-serv.polito.it/winpcap
+
+Building the drivers
+--------------------
+
+The Packet Drivers are platform dependent, therefore they MUST be compiled on the system where you intend to use them. 
+
+Windows NT 4.0 and Windows 2000 
+-------------------------------
+
+Software requirements: 
+- Microsoft Windows NT 4.0 or Windows 2000 operating system 
+- Microsoft Driver Developer Kit (DDK) for NT 4.0 or for Windows 2000 
+- Microsoft Software Development Kit (SDK) 
+- Microsoft Visual C++ 6.0 
+
+Important note: Windowd NT and 2000 share the common set of code. However the code must be compiled under the correct platform in order to obtain the correct driver. In other words, if you compile the driver with the DDK for Windows NT 4, it will not work properly in Windows 2000 and vice versa. 
+If your system satisfies the requirements, follow these steps: 
+
+1. From the Window NT Start menu, select the folder Programs and then Windows NT DDK. From here select the voice Checked Build Environment if you want to build a debug version, or Free Build Environment if you want to build a release version. 
+2. A DOS shell will be opened. Move to the directory whit the driver's source code and type the command
+ compile
+This command will generate the driver (packet.sys). The debug version of the files will be generated in the directory \i386\checked. The release version in \i386\free. 
+3. To compile the sources of PACKET.DLL, load the project contained in the directory packetNTx\dll\project in the Visual C++ 6.0 IDE. Build the project to obtain the PACKET.DLL and packet.lib files. The debug version of these files will be generated in the directory packetNTx\dll\project\debug, the release version in packetNTx\dll\project\release. 
+
+Warning: usually, during the first compilation of the driver, a lot of 'last line incomplete' errors are generated. Ignore these errors and let the compilation process continue. These errors usually disappear from the second compilation.
+
+Windows 95/98/ME
+----------------
+
+software requirements: 
+
+- Windows 95/98 operating system 
+- Driver Developer Kit (DDK) for Windows 95 
+- Software Development Kit (SDK) 
+- Visual C++ 6.0 
+
+If your system satisfies the requirements, follow these steps: 
+
+1. Open a dos shell 
+2. Go in the VisualC++ BIN directory (for example C:\DEVSTUDIO\VC\BIN) and execute the command
+ Vcvars32
+3. Go in the SDK directory (for example C:\MSSDK) and execute the command
+ Setenv sdk_path
+where sdk_path is the directory of SDK (for example Setenv C:\MSSDK) 
+4. Go in the DDK directory (for example C:\DDK) and execute the command
+ Ddkenv 32 net
+5. Move to the directory whit the driver's source code and type the command
+ nmake rtl
+to obtain a release version, or
+ nmake
+to obtain a debug version.
+The release version of packet.vxd will be placed in the retail directory, the debug version in the debug directory. 
+6. To compile the sources of PACKET.DLL, load the project contained in the directory packet9x\dll\project in the Visual C++ 6.0 IDE. Build the project to obtain the PACKET.DLL and packet.lib files. The debug version of these files will be generated in the directory packet9x\dll\project\debug, the release version in packet9x\dll\project\release. 
+
+Warning: we often encountered problems compiling the driver for Windows 95. In particular on some systems the NMAKE utility was not able to launch ADRC2VXD (the driver is generated without the copyright information), and on other systems the debug version of the driver was not compiled correctly. We don't know the cause of these problems.
+
+-------------------------------------------------
+
+Building wpcap.dll
+------------------
+
+System Requirements:
+
+- Microsoft Visual C++ 6.0 compiler
+
+Project files are in the directory winpcap\wpcap\prj of the winpcap source code distribution. Load the project from the Visual C++ 6.0 IDE and build the program. The output file wpcap.lib will be generated in winpcap\wpcap\lib\. The output dll wpcap.dll will be generated in winpcap\wpcap\prj\release or winpcap\wpcap\prj\debug depending on the type of binary that is being generated.
+
+NOTE: in the folder winpcap\wpcap\libpcap\win32\prj there is a project that can be used to compile a reduced dll with all the calls of libpcap, but without the wpcap-specific functions. The output files will be winpcap\wpcap\libpcap\lib\libpcap.lib and winpcap\wpcap\libpcap\win32\prj\release\libpcap.dll (or winpcap\wpcap\libpcap\win32\prj\debug\libpcap.dll)
+
+The project can be compiled indifferently in Windows 95, 98,ME,NT or 2000. The output files are system-independent. 

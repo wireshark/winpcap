@@ -1,0 +1,263 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- saved from url=(0058)http://www.cse.nau.edu/~mc8/Socket/Tutorials/section2.html -->
+<HTML><HEAD><TITLE>libpcap packet capture tutorial</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252">
+<META content="MSHTML 5.50.4807.2300" name=GENERATOR></HEAD>
+<BODY bgColor=white>
+<CENTER>
+<H2>Capturing Our First Packet</H2></CENTER>
+<HR noShade>
+(P.S. Hey peeps, sorry this was such a long time coming... graduating and 
+getting a job is a major pain in the ass... as things settle down I will 
+certainly have more time to work on this :-) :-) :-) ) 
+<P>Well now we sort of know the nature of packet capture, we have identified 
+that we do in fact have an interface to pull things from, how about we go ahead 
+and grab a packet!<BR>"Just give me the damn example and let me hack...", you 
+cry<BR>Very well..... Here you go.. download from here.. <A 
+href="http://www.cse.nau.edu/~mc8/Socket/Tutorials/testpcap1.c">testpcap1.c</A> 
+or just cut and paste below. </P><PRE>/***************************************************
+* file:     testpcap1.c
+* Date:     Thu Mar 08 17:14:36 MST 2001 
+* Author:   Martin Casado
+* Location: LAX Airport (hehe)
+*
+* Simple single packet capture program
+*****************************************************/
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;pcap.h&gt; /* if this gives you an error try pcap/pcap.h */
+#include &lt;errno.h&gt;
+#include &lt;sys/socket.h&gt;
+#include &lt;netinet/in.h&gt;
+#include &lt;arpa/inet.h&gt;
+#include &lt;netinet/if_ether.h&gt; /* includes net/ethernet.h */
+
+int main(int argc, char **argv)
+{
+    int i;
+    char *dev; 
+    char errbuf[PCAP_ERRBUF_SIZE];
+    pcap_t* descr;
+    const u_char *packet;
+    struct pcap_pkthdr hdr;     /* pcap.h */
+    struct ether_header *eptr;  /* net/ethernet.h */
+
+    u_char *ptr; /* printing out hardware header info */
+
+    /* grab a device to peak into... */
+    dev = pcap_lookupdev(errbuf);
+
+    if(dev == NULL)
+    {
+        printf("%s\n",errbuf);
+        exit(1);
+    }
+
+    printf("DEV: %s\n",dev);
+
+    /* open the device for sniffing.
+
+       pcap_t *pcap_open_live(char *device,int snaplen, int prmisc,int to_ms,
+       char *ebuf)
+
+       snaplen - maximum size of packets to capture in bytes
+       promisc - set card in promiscuous mode?
+       to_ms   - time to wait for packets in miliseconds before read
+       times out
+       errbuf  - if something happens, place error string here
+
+       Note if you change "prmisc" param to anything other than zero, you will
+       get all packets your device sees, whether they are intendeed for you or
+       not!! Be sure you know the rules of the network you are running on
+       before you set your card in promiscuous mode!!     */
+
+    descr = pcap_open_live(dev,BUFSIZ,0,-1,errbuf);
+
+    if(descr == NULL)
+    {
+        printf("pcap_open_live(): %s\n",errbuf);
+        exit(1);
+    }
+
+
+    /*
+       grab a packet from descr (yay!)                    
+       u_char *pcap_next(pcap_t *p,struct pcap_pkthdr *h) 
+       so just pass in the descriptor we got from         
+       our call to pcap_open_live and an allocated        
+       struct pcap_pkthdr                                 */
+
+    packet = pcap_next(descr,&amp;hdr);
+
+    if(packet == NULL)
+    {/* dinna work *sob* */
+        printf("Didn't grab packet\n");
+        exit(1);
+    }
+
+    /*  struct pcap_pkthdr {
+        struct timeval ts;   time stamp 
+        bpf_u_int32 caplen;  length of portion present 
+        bpf_u_int32;         lebgth this packet (off wire) 
+        }
+     */
+
+    printf("Grabbed packet of length %d\n",hdr.len);
+    printf("Recieved at ..... %s\n",ctime((const time_t*)&amp;hdr.ts.tv_sec)); 
+    printf("Ethernet address length is %d\n",ETHER_HDR_LEN);
+
+    /* lets start with the ether header... */
+    eptr = (struct ether_header *) packet;
+
+    /* Do a couple of checks to see what packet type we have..*/
+    if (ntohs (eptr-&gt;ether_type) == ETHERTYPE_IP)
+    {
+        printf("Ethernet type hex:%x dec:%d is an IP packet\n",
+                ntohs(eptr-&gt;ether_type),
+                ntohs(eptr-&gt;ether_type));
+    }else  if (ntohs (eptr-&gt;ether_type) == ETHERTYPE_ARP)
+    {
+        printf("Ethernet type hex:%x dec:%d is an ARP packet\n",
+                ntohs(eptr-&gt;ether_type),
+                ntohs(eptr-&gt;ether_type));
+    }else {
+        printf("Ethernet type %x not IP", ntohs(eptr-&gt;ether_type));
+        exit(1);
+    }
+
+    /* THANK YOU RICHARD STEVENS!!! RIP*/
+    ptr = eptr-&gt;ether_dhost;
+    i = ETHER_ADDR_LEN;
+    printf(" Destination Address:  ");
+    do{
+        printf("%s%x",(i == ETHER_ADDR_LEN) ? " " : ":",*ptr++);
+    }while(--i&gt;0);
+    printf("\n");
+
+    ptr = eptr-&gt;ether_shost;
+    i = ETHER_ADDR_LEN;
+    printf(" Source Address:  ");
+    do{
+        printf("%s%x",(i == ETHER_ADDR_LEN) ? " " : ":",*ptr++);
+    }while(--i&gt;0);
+    printf("\n");
+
+    return 0;
+}
+</PRE>
+<P>Well, that wasn't too bad was it?! Lets give her a test run .. <PRE>[root@pepe libpcap]# ./a.out
+DEV: eth0
+Grabbed packet of length 76
+Recieved at time..... Mon Mar 12 22:23:29 2001
+
+Ethernet address length is 14
+Ethernet type hex:800 dec:2048 is an IP packet
+ Destination Address:   0:20:78:d1:e8:1
+ Source Address:   0:a0:cc:56:c2:91
+[root@pepe libpcap]# 
+</PRE>After typing <B>a.out</B> I jumped into another terminal and tried to ping 
+www.google.com. The output captured the ICMP packet used to ping www.google.com. 
+If you don't know exactly what goes on under the covers of a network you may be 
+curios how the computer obtained the destination ethernet address. Aha! You 
+don't actually think that the destination address of the ethernet packet is the 
+same as the machine at www.google.com do you!? <BR>"..uhhh of course not",you 
+stammer<BR>The destination address is most likely your gateway... aka the 
+computer that ties your network to the internet. The packet must first find its 
+way to your gateway which will then forward it to a router or make its own 
+routing decisions as to where the packet should go next. Lets do a quick sanity 
+check to see if we in fact are sending to the router.... ho hum!! You can use 
+the <B>route</B> command to get your gateways IP. <PRE>[root@pepe libpcap]# /sbin/route 
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+192.168.1.0     *               255.255.255.0   U     0      0        0 eth0
+127.0.0.0       *               255.0.0.0       U     0      0        0 lo
+default         192.168.1.1     0.0.0.0         UG    0      0        0 eth0
+</PRE>and then use the <B>arp</B>command to get the cached ethernet address... <PRE>[root@pepe libpcap]# /sbin/arp 
+Address			HWtype	HWaddress	    Flags Mask		  Iface
+192.168.1.1            	ether   00:20:78:D1:E8:01   C                     eth0
+</PRE>If your gateway is not in your arp cache, try and telnet to it, and then 
+retry the arp command. Hey, by the way, this could certainly be the long, 
+painful, bloody, ignorant way of getting the gateway hardware address but I 
+couldn't think of another way... 
+<P>
+<P>Notice that my gateway's address matches the destination address of the 
+packet that I captured. All packets leaving my machine that are not sent to a 
+machine on my network must go through the gateway. Alas!!!! We have still not 
+answered the question... "how did my computer know the gateway hardware 
+address"? Let me then digress for a moment. My computer knows the IP address of 
+the gateway and is certainly savy enough to send outbound packets to it. As you 
+can see from the handy-dandy <B>arp</B> command there is an internal table (the 
+arp cache) which maps IP addresses to hardware addresses. "AAAUUGHH!!! BUT HOW 
+DID IT CONSTUCT THE ARP CACHE!!!!", you scream! </P>
+<P>Hardware addresses on ethernet are obtained using the Address Resolution 
+Protocol or <B>ARP</B>. ARP is is described in RFC826 which can be found... <A 
+href="http://www.cse.nau.edu/~mc8/rfc/rfc826.html">Here!</A> Pretty much what 
+happenes is when you send a packet, the kernel first checks the arp cache to see 
+if you already have the hardware address for the higher level destination 
+address. If not, the kernel sends an arp request which is of type... 
+<B>ETHERTYPE_ARP</B> which is defined in net/ethernet.h as follows. <PRE>#define	ETHERTYPE_ARP		0x0806		/* Address resolution */
+</PRE>On recieveing the arp packet, the machine with the high level address (in 
+my case the gateway) will reply with an arp reply, basically saying.. I DO! send 
+it here! Shall we test it out?! (to bad... I'm gonna do it anyways :-P) <PRE>[root@pepe libpcap]# /sbin/arp -n    # look at arp cache 
+Address			HWtype	HWaddress	    Flags Mask		  Iface
+192.168.1.1            	ether   00:20:78:D1:E8:01   C                     eth0
+
+[root@pepe libpcap]# /sbin/arp -n -d 192.168.1.1  #delete gateqay entrance
+[root@pepe libpcap]# /sbin/arp -n   #make sure gateway hardware addy is empty             
+Address			HWtype	HWaddress	    Flags Mask		  Iface
+192.168.1.1            	        (incomplete)                              eth0
+[root@pepe libpcap]# ./a.out
+DEV: eth0
+Grabbed packet of length 42
+Recieved at time..... Tue Mar 13 00:36:49 2001
+
+Ethernet address length is 14
+Ethernet type hex:806 dec:2054 is an ARP packet
+ Destination Address:   ff:ff:ff:ff:ff:ff
+ Source Address:   0:a0:cc:56:c2:91
+[root@pepe libpcap]#echo YAY 
+</PRE>So as you can see, once the hardware address was removed the the cache, my 
+computer needed to send an arp request to broadcast (i.e. ff:ff:ff:ff:ff:ff) 
+looking for the owner of the higher level address, in this case IP 192.168.1.1. 
+What do you think would happen if you cleared your arp cache and modified 
+testpcap1.c to capture 2 packets?! Hey I know why don't you try it :-P~~~~ 
+<P></P>
+<P>Lets now disect the packet by checking out &lt;net/ethernet.h&gt; right now 
+we are not concerned with the network or transport protocol, we just want to 
+peer into the ethernet headers.... Lets say that we are runnig at 10Mb/s... <PRE>/* 10Mb/s ethernet header */
+struct ether_header
+{
+  u_int8_t  ether_dhost[ETH_ALEN];	/* destination eth addr	*/
+  u_int8_t  ether_shost[ETH_ALEN];	/* source ether addr	*/
+  u_int16_t ether_type;		        /* packet type ID field	*/
+} __attribute__ ((__packed__));
+</PRE>So it looks like the first ETH_ALEN bytes are the destination ethernet 
+address (look at linux/if_ether.h for the definition of ETH_ALEN :-) of the 
+packet (presumedly your machine). The next ETH_ALEN bytes are the source. 
+Finally, the last word is the packet type. Here are the protocol ID's on my 
+machine from net/ethernet.h<BR><PRE>/* Ethernet protocol ID's */
+#define	ETHERTYPE_PUP		0x0200      /* Xerox PUP */
+#define	ETHERTYPE_IP		0x0800		/* IP */
+#define	ETHERTYPE_ARP		0x0806		/* Address resolution */
+#define	ETHERTYPE_REVARP	0x8035		/* Reverse ARP */
+</PRE>For the purpose of this tutorial I will be focusing on IP and perhaps a 
+little bit on ARP... the truth is I have no idea what the hell Xerox PUP is. 
+<P></P>
+<P>Ack! Allright so where are we now? We know the most basic of methods for 
+grabbing a packet. We covered how hardware addresses are resolved and what a 
+basic ethernet packet looks like. Still we are using a sad, sad 1% of the 
+functionality of libpcap, and we haven't even begun to peer into the packets 
+themselves (other than the hardware headers) so much to do and so little time 
+:-) As you can probably tell by now, it would be near impossible to do any real 
+protocol analysis with a program that simply captures one packet at a time. What 
+we really want to do is write a simple packet capturing engine that will nab as 
+many packets as possible while filtering out those we dont want. In the next 
+section we will construct a simple packet capturing engine which will aid us in 
+packet dissection (eww, that kinda sounds gross) later on. 
+<HR noShade>
+
+<CENTER>[<A 
+href="http://www.cse.nau.edu/~mc8/Socket/Tutorials/section1.html">prev</A>] [<A 
+href="http://www.cse.nau.edu/~mc8/Socket/Contents.html">socket home </A>] [<A 
+href="http://www.cse.nau.edu/~mc8/Socket/Tutorials/section3.html">next</A>] 
+</CENTER></BODY></HTML>
