@@ -18,7 +18,7 @@
  * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
  * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * @(#) $Header: /usr/cvsroot/winpcap/wpcap/libpcap/Win32/Include/IP6_misc.h,v 1.2 2002/05/28 07:37:04 degioanni Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/wpcap/libpcap/Win32/Include/IP6_misc.h,v 1.3 2002/06/10 06:17:50 degioanni Exp $ (LBL)
  */
 
 /*
@@ -42,6 +42,9 @@
 
 #define	IN_LOOPBACKNET		127
 
+const struct in6_addr in6addr_any;        /* :: */
+const struct in6_addr in6addr_loopback;   /* ::1 */
+
 #ifndef HAVE_ADDRINFO
 /* IPv6 address */
 struct in6_addr
@@ -58,8 +61,6 @@ struct in6_addr
 #define s6_addr64		in6_u.u6_addr64
   };
 
-extern const struct in6_addr in6addr_any;        /* :: */
-extern const struct in6_addr in6addr_loopback;   /* ::1 */
 #define IN6ADDR_ANY_INIT { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
 #define IN6ADDR_LOOPBACK_INIT { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1 }
 #endif /* HAVE_ADDRINFO */
