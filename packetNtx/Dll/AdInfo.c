@@ -810,7 +810,7 @@ BOOLEAN PacketGetAdapters()
 		&AdapKey);
 	
 	if ( Status != ERROR_SUCCESS ){
-		ODS("PacketGetAdapters: RegOpenKeyEx ( Class\{networkclassguid} ) Failed\n");
+		ODS("PacketGetAdapters: RegOpenKeyEx ( Class\\{networkclassguid} ) Failed\n");
 		goto nt4;
 	}
 
