@@ -53,6 +53,8 @@ typedef struct pcap_send_queue pcap_send_queue;
 #define		BPF_SET_AUTODELETION	0x30
 #define		BPF_SEPARATION			0xff
 
+#define MODE_MON	2
+
 /* Prototypes */
 pcap_send_queue* pcap_sendqueue_alloc(u_int memsize);
 
