@@ -64,7 +64,6 @@ NDIS_STRING AdapterListKey = NDIS_STRING_CONST("\\Registry\\Machine\\System"
 								L"\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}");
 NDIS_STRING bindValueName = NDIS_STRING_CONST("Bind");
 
-
 /// Global variable that points to the names of the bound adapters
 WCHAR* bindP = NULL;
 
@@ -73,6 +72,8 @@ extern struct time_conv G_Start_Time; // from openclos.c
 extern NDIS_SPIN_LOCK Opened_Instances_Lock;
 
 ULONG NCpu;
+
+ULONG TimestampMode;
 
 //
 //  Packet Driver's entry routine.
@@ -102,6 +103,11 @@ DriverEntry(
 	PKEY_VALUE_PARTIAL_INFORMATION tcpBindingsP;
 	UNICODE_STRING macName;
 	
+	
+	ReadTimeStampModeFromRegistry(RegistryPath);
+
+/**/DbgPrint("%ws",RegistryPath->Buffer);
+
 	NCpu = NdisSystemProcessorCount();
 
     IF_LOUD(DbgPrint("\n\nPacket: DriverEntry\n");)
