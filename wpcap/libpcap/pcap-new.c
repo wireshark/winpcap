@@ -63,7 +63,15 @@ extern struct activehosts *activeHosts;
 SOCKET sockmain;
 
 
+//! String identifier to be used in the pcap_findalldevs_ex()
+#define PCAP_TEXT_SOURCE_FILE "File"
+//! String identifier to be used in the pcap_findalldevs_ex()
+#define PCAP_TEXT_SOURCE_ADAPTER "Network adapter"
 
+//! String identifier to be used in the pcap_findalldevs_ex()
+#define PCAP_TEXT_SOURCE_ON_LOCAL_HOST "on local host"
+//! String identifier to be used in the pcap_findalldevs_ex()
+#define PCAP_TEXT_SOURCE_ON_REMOTE_HOST "on remote node"
 
 
 
@@ -74,26 +82,30 @@ SOCKET sockmain;
  ****************************************************/
 
 
-/*! \ingroup remote_func
+/*! \ingroup wpcapfunc
 	\brief It creates a list of network devices that can be opened with pcap_open().
 	
 	This function is a superset of the old 'pcap_findalldevs()', which is obsolete, and which
 	allows listing only the devices present on the local machine.
 	Vice versa, pcap_findalldevs_ex() allows listing the devices present on a remote 
-	machine as well. Additionally, it can list all the pcap file availabin into a given folder.
+	machine as well. Additionally, it can list all the pcap files available into a given folder.
 	Moreover, pcap_findalldevs_ex() is platform independent, since it
 	relies on the standard pcap_findalldevs() to get addresses on the local machine.
 
 	In case the function has to list the interfaces on a remote machine, it opens a new control
 	connection toward that machine, it retrieves the interfaces, and it drops the connection.
 	However, if this function detects that the remote machine is in 'active' mode,
-	the connection is not dropped. In the same way, if we're in active mode and 
-	the connection is already opened, it uses the existing socket.
+	the connection is not dropped and the existing socket is used.
 
 	The 'source' is a parameter that tells the function where the lookup has to be done and
 	it uses the same syntax of the pcap_open(). For instance, 'rpcap://host:port/ will list
 	the devices available on a remote adapter, 'file://folder/' lists all the files in
 	the given folder, 'rpcap://' lists all local adapters.
+
+	Differently from the pcap_findalldevs(), the interface names (pointed by the alldevs->name
+	and the other ones in the linked list) are already ready to be used in the pcap_open() call.
+	Vice versa, the output that comes from pcap_findalldevs() must be formatted with the new
+	pcap_createsrcstr() before passing the source identifier to the pcap_open().
 
 	\param source: a char* buffer that keeps the 'source', according to the new WinPcap
 	syntax. This source will be examined looking for adapters (local or remote) or pcap
@@ -119,7 +131,7 @@ SOCKET sockmain;
 	The error message is returned in the 'errbuf' variable. An error could be due to 
 	several reasons:
 	- libpcap/WinPcap was not installed on the local/remote host
-	- the user does not have enough privileges to list the devices
+	- the user does not have enough privileges to list the devices / files
 	- a network problem
 	- the RPCAP version negotiation failed
 	- other errors (not enough memory and others).
@@ -146,6 +158,7 @@ int active= 0;	// 'true' if we the other end-party is in active mode
 char host[PCAP_BUF_SIZE], port[PCAP_BUF_SIZE], name[PCAP_BUF_SIZE], path[PCAP_BUF_SIZE], filename[PCAP_BUF_SIZE];
 int type;
 pcap_t *fp;
+char tmpstring[PCAP_BUF_SIZE + 1];		// Needed to convert names and descriptions from 'old' syntax to the 'new' one
 
 	if (strlen(source) > PCAP_BUF_SIZE)
 	{
@@ -159,6 +172,11 @@ pcap_t *fp;
 
 	if (type == PCAP_SRC_IFLOCAL)
 	{
+	pcap_if_t *dev;		// Previous device into the pcap_if_t chain
+
+		// Initialize temporary string
+		tmpstring[PCAP_BUF_SIZE]= 0;
+
 		// The user wants to retrieve adapters from a local host
 		if (pcap_findalldevs(alldevs, errbuf) == -1)
 			return -1;
@@ -169,6 +187,55 @@ pcap_t *fp;
 				"No interfaces found! Make sure libpcap/WinPcap is properly installed"
 				" on the local machine.");
 			return -1;
+		}
+
+		// Scan all the interfaces and modify name and description
+		// This is a trick in order to avoid the re-implementation of the pcap_findalldevs here
+		dev= *alldevs;
+		while (dev)
+		{
+			// Create the new device identifier
+			if (pcap_createsrcstr(tmpstring, PCAP_SRC_IFLOCAL, NULL, NULL, dev->name, errbuf) == -1)
+				return -1;
+
+			// Delete the old pointer
+			free(dev->name);
+
+			dev->name= (char *) malloc( strlen(tmpstring) + 1);
+
+			if (dev->name == NULL)
+			{
+				snprintf(errbuf, PCAP_ERRBUF_SIZE, "malloc() failed: %s", pcap_strerror(errno));
+				return -1;
+			}
+
+			// Copy the new device identifier into the correct memory location
+			strncpy(dev->name, tmpstring, strlen(tmpstring) + 1);
+
+
+			// Create the new device description
+			if ( (dev->description == NULL) || (dev->description[0] == 0) )
+				snprintf(tmpstring, sizeof(tmpstring) - 1, "%s '%s' %s", PCAP_TEXT_SOURCE_ADAPTER, 
+					dev->name, PCAP_TEXT_SOURCE_ON_LOCAL_HOST);
+			else
+				snprintf(tmpstring, sizeof(tmpstring) - 1, "%s '%s' %s", PCAP_TEXT_SOURCE_ADAPTER, 
+					dev->description, PCAP_TEXT_SOURCE_ON_LOCAL_HOST);
+
+			// Delete the old pointer
+			free(dev->description);
+
+			dev->description= (char *) malloc( strlen(tmpstring) + 1);
+
+			if (dev->description == NULL)
+			{
+				snprintf(errbuf, PCAP_ERRBUF_SIZE, "malloc() failed: %s", pcap_strerror(errno));
+				return -1;
+			}
+
+			// Copy the new device description into the correct memory location
+			strncpy(dev->description, tmpstring, strlen(tmpstring) + 1);
+
+			dev= dev->next;
 		}
 
 		return 0;
@@ -275,8 +342,11 @@ pcap_t *fp;
 				// Initialize the structure to 'zero'
 				memset(dev, 0, sizeof(pcap_if_t) );
 
-				// allocate memory for file name
-				stringlen= strlen(filename);
+				// Create the new source identifier
+				if (pcap_createsrcstr(tmpstring, PCAP_SRC_FILE, NULL, NULL, filename, errbuf) == -1)
+					return -1;
+
+				stringlen= strlen(tmpstring);
 
 				dev->name= (char *) malloc(stringlen + 1);
 				if (dev->name == NULL)
@@ -285,9 +355,26 @@ pcap_t *fp;
 					return -1;
 				}
 
-				strncpy(dev->name, filename, stringlen);
+				strncpy(dev->name, tmpstring, stringlen);
 
 				dev->name[stringlen]= 0;
+
+				// Create the description
+				snprintf(tmpstring, sizeof(tmpstring) - 1, "%s '%s' %s", PCAP_TEXT_SOURCE_FILE, 
+					dev->name, PCAP_TEXT_SOURCE_ON_LOCAL_HOST);
+
+				stringlen= strlen(tmpstring);
+
+				dev->description= (char *) malloc(stringlen + 1);
+
+				if (dev->description == NULL)
+				{
+					snprintf(errbuf, PCAP_ERRBUF_SIZE, "malloc() failed: %s", pcap_strerror(errno));
+					return -1;
+				}
+
+				// Copy the new device description into the correct memory location
+				strncpy(dev->description, tmpstring, stringlen + 1);
 
 				pcap_close(fp);
 			}
@@ -305,12 +392,6 @@ pcap_t *fp;
 #endif
 
 		return 0;
-/*
-#else
-		snprintf(errbuf, PCAP_ERRBUF_SIZE, "Directory listing is still unsupported");
-		return -1;
-#endif
-*/
 	}
 
 	// If we come here, it is a remote host
@@ -410,6 +491,10 @@ pcap_t *fp;
 	{
 	struct rpcap_findalldevs_if findalldevs_if;
 	pcap_if_t *dev;		// Previous device into the pcap_if_t chain
+	char tmpstring2[PCAP_BUF_SIZE + 1];		// Needed to convert names and descriptions from 'old' syntax to the 'new' one
+	int stringlen;
+
+		tmpstring2[PCAP_BUF_SIZE]= 0;
 
 		// receive the findalldevs structure from remote hsot
 		if ( (nread+= sock_recv(sockctrl, (char *) &findalldevs_if, 
@@ -438,41 +523,74 @@ pcap_t *fp;
 			snprintf(errbuf, PCAP_ERRBUF_SIZE, "malloc() failed: %s", pcap_strerror(errno));
 			goto error;
 		}
-		dev->next= NULL;
-		dev->addresses= NULL;
+
+		// Initialize the structure to 'zero'
+		memset(dev, 0, sizeof(pcap_if_t) );
 
 		// allocate mem for name and description
 		if (findalldevs_if.namelen)
 		{
-			dev->name= (char *) malloc(findalldevs_if.namelen + 1);
+
+			if (findalldevs_if.namelen >= sizeof(tmpstring) )
+			{
+				snprintf(errbuf, PCAP_ERRBUF_SIZE, "Interface name too long");
+				goto error;
+			}
+
+			// Retrieve adapter name
+			if ( (nread+= sock_recv(sockctrl, tmpstring, findalldevs_if.namelen, SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) ) == -1)
+				goto error;
+
+			tmpstring[findalldevs_if.namelen]= 0;
+
+			// Create the new device identifier
+			if (pcap_createsrcstr(tmpstring2, PCAP_SRC_IFREMOTE, host, port, tmpstring, errbuf) == -1)
+				return -1;
+
+			stringlen= strlen(tmpstring2);
+
+			dev->name= (char *) malloc(stringlen + 1);
 			if (dev->name == NULL)
 			{
 				snprintf(errbuf, PCAP_ERRBUF_SIZE, "malloc() failed: %s", pcap_strerror(errno));
 				goto error;
 			}
-			// Retrieve adapter name and description
-			if ( (nread+= sock_recv(sockctrl, dev->name, findalldevs_if.namelen, SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) ) == -1)
-				goto error;
-			dev->name[findalldevs_if.namelen]= 0;
+
+			// Copy the new device name into the correct memory location
+			strncpy(dev->name, tmpstring2, stringlen + 1);
 		}
-		else
-			dev->name= NULL;
 
 		if (findalldevs_if.desclen)
 		{
-			dev->description= (char *) malloc(findalldevs_if.desclen + 1);
+			if (findalldevs_if.desclen >= sizeof(tmpstring) )
+			{
+				snprintf(errbuf, PCAP_ERRBUF_SIZE, "Interface description too long");
+				goto error;
+			}
+
+			// Retrieve adapter description
+			if ( (nread+= sock_recv(sockctrl, tmpstring, findalldevs_if.desclen, SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) ) == -1)
+				goto error;
+
+			tmpstring[findalldevs_if.desclen]= 0;
+
+
+			snprintf(tmpstring2, sizeof(tmpstring2) - 1, "%s '%s' %s %s", PCAP_TEXT_SOURCE_ADAPTER, 
+				tmpstring, PCAP_TEXT_SOURCE_ON_REMOTE_HOST, host);
+
+			stringlen= strlen(tmpstring2);
+
+			dev->description= (char *) malloc(stringlen + 1);
+
 			if (dev->description == NULL)
 			{
 				snprintf(errbuf, PCAP_ERRBUF_SIZE, "malloc() failed: %s", pcap_strerror(errno));
 				goto error;
 			}
-			// Retrieve adapter name and description
-			if ( (nread+= sock_recv(sockctrl, dev->description, findalldevs_if.desclen, SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) ) == -1)
-				goto error;
-			dev->description[findalldevs_if.desclen]= 0;
+
+			// Copy the new device description into the correct memory location
+			strncpy(dev->description, tmpstring2, stringlen + 1);
 		}
-		else
-			dev->description= NULL;
 
 		dev->flags= ntohl(findalldevs_if.flags);
 
@@ -587,7 +705,7 @@ error:
 
 
 
-/*! \ingroup remote_func
+/*! \ingroup wpcapfunc
 	\brief Accepts a set of strings (host name, port, ...), and it returns the complete 
 	source string according to the new format (e.g. 'rpcap://1.2.3.4/eth0').
 
@@ -637,7 +755,7 @@ int pcap_createsrcstr(char *source, int type, const char *host, const char *port
 	{
 		case PCAP_SRC_FILE:
 		{
-			strncpy(source, PCAP_SRC_FILE_KEY, PCAP_BUF_SIZE);
+			strncpy(source, PCAP_SRC_FILE_STRING, PCAP_BUF_SIZE);
 			if ((name) && (*name) )
 			{
 				strncat(source, name, PCAP_BUF_SIZE);
@@ -652,7 +770,7 @@ int pcap_createsrcstr(char *source, int type, const char *host, const char *port
 
 		case PCAP_SRC_IFREMOTE:
 		{
-			strncpy(source, PCAP_SRC_IF_KEY, PCAP_BUF_SIZE);
+			strncpy(source, PCAP_SRC_IF_STRING, PCAP_BUF_SIZE);
 			if ((host) && (*host) )
 			{
 				if ( (strcspn(host, "aAbBcCdDeEfFgGhHjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ")) == strlen(host) )
@@ -688,7 +806,7 @@ int pcap_createsrcstr(char *source, int type, const char *host, const char *port
 
 		case PCAP_SRC_IFLOCAL:
 		{
-			strncpy(source, PCAP_SRC_IF_KEY, PCAP_BUF_SIZE);
+			strncpy(source, PCAP_SRC_IF_STRING, PCAP_BUF_SIZE);
 
 			if ((name) && (*name) )
 				strncat(source, name, PCAP_BUF_SIZE);
@@ -707,14 +825,14 @@ int pcap_createsrcstr(char *source, int type, const char *host, const char *port
 
 
 
-/*! \ingroup remote_func
+/*! \ingroup wpcapfunc
 	\brief Parses the source string and returns the pieces in which the source can be split.
 
 	This call is the other way round of pcap_createsrcstr().
 	It accepts a null-terminated string and it returns the parameters related 
 	to the source. This includes:
 	- the type of the source (file, winpcap on a remote adapter, winpcap on local adapter),
-	which is determined by the source prefix (PCAP_SRC_IF_KEY and so on)
+	which is determined by the source prefix (PCAP_SRC_IF_STRING and so on)
 	- the host on which the capture has to be started (only for remote captures)
 	- the 'raw' name of the source (file name, name of the remote adapter, name 
 	of the local adapter), without the source prefix. The string returned does not 
@@ -786,9 +904,9 @@ int tmptype;
 		*name= 0;
 
 	// Look for a 'rpcap://' identifier
-	if ( (ptr= strstr(source, PCAP_SRC_IF_KEY)) != NULL)
+	if ( (ptr= strstr(source, PCAP_SRC_IF_STRING)) != NULL)
 	{
-		if (strlen(PCAP_SRC_IF_KEY) == strlen(source) )
+		if (strlen(PCAP_SRC_IF_STRING) == strlen(source) )
 		{
 			// The source identifier contains only the 'rpcap://' string.
 			// So, this is a local capture.
@@ -796,7 +914,7 @@ int tmptype;
 			return 0;
 		}
 
-		ptr+= strlen(PCAP_SRC_IF_KEY);
+		ptr+= strlen(PCAP_SRC_IF_STRING);
 
 		if (strchr(ptr, '[')) // This is probably a numeric address
 		{
@@ -869,9 +987,9 @@ int tmptype;
 	}
 
 	// Look for a 'file://' identifier
-	if ( (ptr= strstr(source, PCAP_SRC_FILE_KEY)) != NULL)
+	if ( (ptr= strstr(source, PCAP_SRC_FILE_STRING)) != NULL)
 	{
-		ptr+= strlen(PCAP_SRC_FILE_KEY);
+		ptr+= strlen(PCAP_SRC_FILE_STRING);
 		if (*ptr)
 		{
 			if (name)
@@ -914,7 +1032,7 @@ int tmptype;
 
 
 
-/*!	\ingroup remote_func
+/*!	\ingroup wpcapfunc
 
 	\brief It opens a generic source in order to capture / send (WinPcap only) traffic.
 	
@@ -949,10 +1067,6 @@ int tmptype;
 	- adaptername [to open a local adapter; kept for compability, but it is strongly discouraged]
 	- (NULL) [to open the first local adapter; kept for compability, but it is strongly discouraged]
 	
-	The following formats are not allowed:
-	- rpcap:// [to open the first local adapter]
-	- rpcap://hostname/ [to open the first remote adapter]
-
 	\param snaplen: length of the packet that has to be retained.	
 	For each packet received by the filter, only the first 'snaplen' bytes are stored 
 	in the buffer and passed to the user application. For instance, snaplen equal to 
@@ -1022,6 +1136,11 @@ int tmptype;
 	problems, it returns NULL and the 'errbuf' variable keeps the error message.
 
 	\warning The source cannot be larger than PCAP_BUF_SIZE.
+
+	\warning The following formats are not allowed as 'source' strings:
+	- rpcap:// [to open the first local adapter]
+	- rpcap://hostname/ [to open the first remote adapter]
+
 */
 pcap_t *pcap_open(const char *source, int snaplen, int flags, int read_timeout, struct pcap_rmtauth *auth, char *errbuf)
 {
@@ -1077,7 +1196,8 @@ pcap_t *fp;
 
 
 
-/*!	\ingroup remote_func
+/*!
+	\ingroup remotefunc wpcapfunc
 
 	\brief It blocks until a network connection is accepted (active mode only).
 
@@ -1274,7 +1394,8 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 
 
 
-/*!	\ingroup remote_func
+/*!
+	\ingroup remotefunc wpcapfunc
 
 	\brief It drops an active connection (active mode only).
 
@@ -1369,7 +1490,9 @@ int retval;
 }
 
 
-/*!	\ingroup remote_func
+/*!
+	\ingroup remotefunc wpcapfunc
+
 	\brief Cleans the socket that is currently used in waiting active connections.
 
 	This function does a very dirty job. The fact is that is the waiting socket is not
@@ -1402,7 +1525,8 @@ void pcap_remoteact_cleanup()
 }
 
 
-/*!	\ingroup remote_func
+/*!
+	\ingroup remotefunc wpcapfunc
 
 	\brief Returns the hostname of the host that have an active connection with us (active mode only).
 

@@ -110,7 +110,7 @@
 
 	This string indicates that the user wants to open a capture from a local file.
 */
-#define PCAP_SRC_FILE_KEY "file://"
+#define PCAP_SRC_FILE_STRING "file://"
 /*!
 	\brief String that will be used to determine the type of source in use (null, file,
 	remote/local interface).
@@ -123,7 +123,7 @@
 	interface required resides on the local host, the RPCAP protocol is not involved
 	and the local functions are used.
 */
-#define PCAP_SRC_IF_KEY "rpcap://"
+#define PCAP_SRC_IF_STRING "rpcap://"
 
 
 
