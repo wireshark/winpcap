@@ -302,7 +302,7 @@ struct rpcap_stats
 #define PCAP_ERR_OPEN 6					/*!< Generic pcap_open error */
 #define PCAP_ERR_UPDATEFILTER 7			/*!< Generic updatefilter error */
 #define PCAP_ERR_GETSTATS 8				/*!< Generic pcap_stats error */
-#define PCAP_ERR_READEX 9				/*!< Generic pcap_read_ex error */
+#define PCAP_ERR_READEX 9				/*!< Generic pcap_next_ex error */
 #define PCAP_ERR_HOSTNOAUTH 10			/*!< The host is not authorized to connect to this server */
 #define PCAP_ERR_REMOTEACCEPT 11		/*!< Generic pcap_remoteaccept error */
 #define PCAP_ERR_STARTCAPTURE 12		/*!< Generic pcap_startcapture error */

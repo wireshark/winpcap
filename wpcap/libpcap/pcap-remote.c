@@ -182,11 +182,11 @@ int rpcap_deseraddr(struct sockaddr_storage *sockaddrin, struct sockaddr_storage
 	\brief It reads a packet from the network socket. This does not make used of 
 	callback (hence the "nocb" string into its name).
 
-	This function is called by the several pcap_read_ex() when they detect that 
+	This function is called by the several pcap_next_ex() when they detect that 
 	we have a remote capture and they are the client side. In that case, they need
 	to read packets from the socket.
 
-	Parameters and return values are exactly the same of the pcap_read_ex().
+	Parameters and return values are exactly the same of the pcap_next_ex().
 
 	\warning By choice, this function does not make use of semaphores. A smarter
 	implementation should put a semaphore into the data thread, and a signal will
@@ -1340,7 +1340,7 @@ struct timeval tv;					// maximum time the select() can block waiting for data
 		This job ends when (1) there is no data coming from the network, (2)
 		the user buffer is completely full.
 
-		The consumer (i.e. the thread that calls pcap_read_ex) can read only when
+		The consumer (i.e. the thread that calls pcap_next_ex) can read only when
 		the producer finished its job. In other words, even if there is already 
 		data into the user buffer, the consumer cannot read it because the producer
 		updates the status variables (fp->cc, fp->bp) only when it ends its job.

@@ -23,7 +23,7 @@ A send queue is a container for a variable number of packets that will be sent t
 
 A send queue is created calling the pcap_sendqueue_alloc() function, specifying the size that the new queue will have.
 
-Once the queue is created, pcap_sendqueue_queue() can be used to store a packet in it. This function receives a pcap_pkthdr with the timestamp and the length and a buffer with the data of the packet. These parameters are the same received by pcap_read_ex() and pcap_handler(), therefore queuing a packet that was just captured or read from a file is a matter of passing them to pcap_sendqueue_queue().
+Once the queue is created, pcap_sendqueue_queue() can be used to store a packet in it. This function receives a pcap_pkthdr with the timestamp and the length and a buffer with the data of the packet. These parameters are the same received by pcap_next_ex() and pcap_handler(), therefore queuing a packet that was just captured or read from a file is a matter of passing them to pcap_sendqueue_queue().
 
 To send a queue, WinPcap provides the pcap_sendqueue_transmit() function. Note the third parameter: if nonzero, the send will be \e synchronized, i.e. the relative timestamps of the packets will be respected. This requires a remarkable amount of CPU, because the synchronization takes place in the kernel driver using "brute force" loops, but normally grants a very high precision (often around few microseconds or less).
 

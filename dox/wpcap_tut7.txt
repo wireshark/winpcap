@@ -27,7 +27,7 @@ Now that we have a dump file available, we can see how to read its content. The 
 
 \include misc\readfile.c
 
-The following example has the same purpose of the last one, but pcap_read_ex() is used instead of the pcap_loop() callback method.
+The following example has the same purpose of the last one, but pcap_next_ex() is used instead of the pcap_loop() callback method.
 
 \include misc\readfile_ex.c
 
