@@ -110,7 +110,7 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		EXIT_FAILURE(0);
 	}
 	
-	if( Open->mode & MODE_DUMP && Open->DumpFileHandle != NULL ){
+	if( Open->mode & MODE_DUMP && Open->DumpFileHandle == NULL ){  
 		// this instance is in dump mode, but the dump file has still not been opened
 		EXIT_FAILURE(0);
 	}
@@ -352,7 +352,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 
 	BufOccupation = GetBuffOccupation(Open);	// Get the full buffer space
 
-	if(Open->BufSize - BufOccupation < PacketSize+HeaderBufferSize+sizeof(struct bpf_hdr)){
+	if(((Open->mode&MODE_CAPT)||(Open->mode&MODE_DUMP)) && Open->BufSize - BufOccupation < PacketSize+HeaderBufferSize+sizeof(struct bpf_hdr)){
 		// Heuristic that drops the packet also if it possibly fits in the buffer.
 		// It allows to avoid filtering in critical situations when CPU is very important.
 		Open->Dropped++;

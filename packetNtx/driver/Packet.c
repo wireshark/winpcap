@@ -685,10 +685,16 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		if(Open->bpfprogram!=NULL){
 			TmpBPFProgram=Open->bpfprogram;
 			Open->bpfprogram = NULL;
-			BPF_Destroy_JIT_Filter(Open->Filter);
 			ExFreePool(TmpBPFProgram);
 		}
 		
+		if (Open->Filter!=NULL)
+		{
+			JIT_BPF_Filter *OldFilter=Open->Filter;
+			Open->Filter=NULL;
+			BPF_Destroy_JIT_Filter(OldFilter);
+		}
+        
 		// Get the pointer to the new program
 		prog=(PUCHAR)Irp->AssociatedIrp.SystemBuffer;
 		
@@ -700,13 +706,15 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		}
 		
 		insns=(IrpSp->Parameters.DeviceIoControl.InputBufferLength)/sizeof(struct bpf_insn);
-		for (cnt=0;(cnt<insns) &&(((struct bpf_insn*)prog)[cnt].code!=0xff); cnt++);
 		
-		IF_LOUD(DbgPrint("Filter code instructions=%u\n",cnt);)
+		//count the number of operative instructions
+		for (cnt=0;(cnt<insns) &&(((struct bpf_insn*)prog)[cnt].code!=BPF_SEPARATION); cnt++);
+		
+		IF_LOUD(DbgPrint("Operative instructions=%u\n",cnt);)
 
-		if (((struct bpf_insn*)prog)[cnt].code==0xff && (insns-cnt-1)!=0) 
+		if (((struct bpf_insn*)prog)[cnt].code==BPF_SEPARATION && (insns-cnt-1)!=0) 
 		{
-			IF_LOUD(DbgPrint("Init code instructions=%u\n",insns-cnt-1);)
+			IF_LOUD(DbgPrint("Initialization instructions=%u\n",insns-cnt-1);)
 	
 			IsExtendedFilter=TRUE;
 
@@ -714,18 +722,22 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			
 			if(bpf_filter_init(initprogram,&(Open->mem_ex),&(Open->tme), &G_Start_Time)!=INIT_OK)
 			{
-				
+			
 				IF_LOUD(DbgPrint("Error initializing NPF machine (bpf_filter_init)\n");)
 				
 				EXIT_FAILURE(0);
 			}
 		}
 
+		//the NPF processor has been initialized, we have to validate the operative instructions
 		insns=cnt;
 		
 		if(bpf_validate((struct bpf_insn*)prog,cnt,Open->mem_ex.size)==0)
 		{
 			IF_LOUD(DbgPrint("Error validating program");)
+			//FIXME: the machine has been initialized(?), but the operative code is wrong. 
+			//we have to reset the machine!
+			//something like: reallocate the mem_ex, and reset the tme_core
 			EXIT_FAILURE(0);
 		}
 		
@@ -742,7 +754,6 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		//copy the program in the new buffer
 		RtlCopyMemory(TmpBPFProgram,prog,cnt*sizeof(struct bpf_insn));
 		Open->bpfprogram=TmpBPFProgram;
-
 		
 		// Create the new JIT filter function
 
