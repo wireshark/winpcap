@@ -73,10 +73,10 @@ INPUT                  = ../../Common/Packet32.h \
                          ../../wpcap/libpcap/savefile.c \
                          ../../wpcap/Win32-Extensions/Win32-Extensions.c \
                          ../../wpcap/Win32-Extensions/Win32-Extensions.h \
-                         ../../../WPdpack/Examples/pcap_filter/pcap_filter.c \
-                         ../../../WPdpack/Examples/misc/basic_dump.c \
-                         ../../../WPdpack/Examples/TestApp/Testapp.c \
-                         ../../../WPdpack/Examples/TG/Tg.c \
+                         ../../Examples/pcap_filter/pcap_filter.c \
+                         ../../Examples/misc/basic_dump.c \
+                         ../../Examples/TestApp/Testapp.c \
+                         ../../Examples/TG/Tg.c \
                          ../main.txt \
 	                     ../wpcap.txt \
                          ../language.txt \
@@ -125,7 +125,7 @@ RECURSIVE              = YES
 EXCLUDE                = test
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 
-EXAMPLE_PATH           = ../../../WPdpack/Examples/ \
+EXAMPLE_PATH           = ../../Examples/ \
                          ../
 EXAMPLE_PATTERNS       = 
 EXAMPLE_RECURSIVE      = NO
