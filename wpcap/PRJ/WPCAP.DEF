@@ -59,3 +59,13 @@ EXPORTS
 		endservent
 		getservent
 		eproto_db
+		pcap_stats_ex
+		pcap_open
+		pcap_createsrcstr
+		pcap_parsesrcstr
+		pcap_findalldevs_ex
+		pcap_remoteact_accept
+		pcap_remoteact_list
+		pcap_remoteact_close
+		pcap_remoteact_cleanup
+		install_bpf_program
