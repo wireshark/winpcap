@@ -19,7 +19,7 @@ Once
 - callback invocation is enabled with pcap_loop()
 
 the interface descriptor starts to work in statistical mode.
-Notice the fourth parameter (\e to_ms) of pcap_open_live(): it defines the interval among the statistical samples. The callback receives, every to_ms milliseconds, the samples calculated by the driver. These samples are encapsulated in the second and third parameter of the callback, like shown in the following figure:
+Notice the fourth parameter (\e to_ms) of pcap_open(): it defines the interval among the statistical samples. The callback receives, every to_ms milliseconds, the samples calculated by the driver. These samples are encapsulated in the second and third parameter of the callback, like shown in the following figure:
 
 \image html stats_wpcap.gif
 
@@ -31,6 +31,8 @@ At this point a filter that keeps only tcp packets is compiled and set. Then pca
 dispatcher_handler()uses this interval to obtain the bits per second and the packets per second and then prints these values on the screen.
 
 Note finally that this example is by far more efficient than a program that captures the packets in the traditional way and calculates statistics at user-level: statistical mode requires the minumum amount of data copies and context switches, therefore the CPU is optimized. Moreover, a very small quantity of memory is required.
+
+\ref wpcap_tut8 "<<< Previous"
 
 @}*/
 

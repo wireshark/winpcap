@@ -6,11 +6,11 @@
 
 Although the name \e WinPcap indicates clearly that the main purpose of the library is packet capture, other useful features for raw networking are provided. Among them, the user can find a complete set of functions to send packets, that this lesson will show.
 
-Note that the original libpcap library at the moment doesn't provide any way to send packets: all the functions showed here are WinPcap externsions and will not work under Unix.
+Note that the original libpcap library at the moment doesn't provide any way to send packets: all the functions showed here are WinPcap extensions and will not work under Unix.
 
-<b>Sending a single packet with pcap_sendpacket</b>
+<b>Sending a single packet with pcap_sendpacket()</b>
 
-the simplest way to send a packet is shown in the next code snippet. After opening an adapter, pcap_sendpacket() is called to send a hand-crafted packet.
+The simplest way to send a packet is shown in the following code snippet. After opening an adapter, pcap_sendpacket() is called to send a hand-crafted packet.
 pcap_sendpacket() takes as arguments a buffer containing the data to send, its length and the adapter that will send it.
 Notice that the buffer is sent to the net as is, without any manipulation: this means that the application has to create the correct protocol headers in order to send something meaningful.
 
@@ -36,6 +36,8 @@ The next code shows how to use send queues. It opens a capture file with pcap_op
 Note that the link-layer of the dumpfile is compared with the one of the interface that will send the packets using pcap_datalink(), and a warning is printed if they are different: sending on a link-layer the packets captured from a different one is quite pointless.
 
 \include sendcap/sendcap.c
+
+\ref wpcap_tut7 "<<< Previous" \ref wpcap_tut9 "Next >>>"
 
 
 @}*/

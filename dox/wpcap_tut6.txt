@@ -37,4 +37,6 @@ listening on Xircom CardBus Ethernet 10/100 Adapter... \n
 
 In which every line represents a different packet.
 
+\ref wpcap_tut5 "<<< Previous" \ref wpcap_tut7 "Next >>>"
+
 @}*/

@@ -12,4 +12,6 @@ Several code snippets, as well as simple but complete programs are provided as a
 
 The samples are written in plain C, so a basic knowledge of C programming is required. Also, since this is a tutorial on a library for raw networking, good knowledge of networks and protocols is assumed.
 
+\ref wpcap_tut1 "Next >>>"
+
 @}*/

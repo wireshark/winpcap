@@ -22,8 +22,9 @@ As you can see, the structure of the program is very similar to the ones seen in
 
 <b>Reading packets from a dump file</b>
 
-Now that we have a dump file available, we can see how to read its content. The following code opens a libpcap dump and displays every packet contained in it. The file is opened with pcap_open_offline(), then the usual pcap_loop() is used to cycle among the packets. As you can see, reading packets from an offline capture is nearly identical to receiving them from a physical interface.
+Now that we have a dump file available, we can see how to read its content. The following code opens a WinPcap / libpcap dump and displays every packet contained in it. The file is opened with pcap_open_offline(), then the usual pcap_loop() is used to cycle among the packets. As you can see, reading packets from an offline capture is nearly identical to receiving them from a physical interface.
 
+This example introduces also another function: pcap_createsrcsrc(). This function is required to create a source string that begins with a marker used to tell WinPcap the type of the source, e.g. "rpcap://" if we are going to open an adapter, or "file://" if we are going to open a file. This step is not required when pcap_findalldevs_ex() is used (the returned values contain already these strings). However, it is required in this example because the name of the file is read from the user input.
 
 \include misc\readfile.c
 
@@ -45,5 +46,7 @@ The application can wait or check the end of the dump with pcap_live_dump_ended(
 The difference between pcap_live_dump() and pcap_dump(), apart from the possibility to set limits, is performance. pcap_live_dump() exploits the ability of the WinPcap NPF driver (see \ref NPF) to write dumps from kernel level, minimizing the number of context switches and memory copies.
 
 Obviously, since this feature is currently not available on other operating systems, pcap_live_dump() is WinPcap specific and is present only under Win32.
+
+\ref wpcap_tut6 "<<< Previous" \ref wpcap_tut8 "Next >>>"
 
 @}*/
