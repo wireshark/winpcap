@@ -1096,6 +1096,9 @@ PADAPTER_INFO PacketFindAdInfo(PCHAR AdapterName)
 	//this function should NOT acquire the AdaptersInfoMutex, since it does return an ADAPTER_INFO structure
 	PADAPTER_INFO TAdInfo;
 	
+	if (AdaptersInfoList == NULL)
+		PacketPopulateAdaptersInfoList();
+
 	TAdInfo = AdaptersInfoList;
 	
 	while(TAdInfo != NULL)
@@ -1172,6 +1175,7 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 	// Gather all the available adapters from IPH API and dagc API
 	//
 	PacketGetAdaptersIPH();
+	PacketAddFakeNdisWanAdapter();
 #ifdef HAVE_DAG_API
 	if(p_dagc_open == NULL)	
 		return TRUE;	// dagc.dll not present on this system.
