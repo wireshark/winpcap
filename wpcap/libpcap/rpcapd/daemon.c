@@ -257,8 +257,14 @@ auth_again:
 				goto end;	// Do nothing; just exit from findalldevs; the error code is already into the errbuf
 
 			case -2:	// The other endpoint send a message that is not allowed here
+			{
+				rpcap_senderror(pars->sockctrl, "The RPCAP daemon received a message that is not valid", PCAP_ERR_WRONGMSG, errbuf);
+			}
 			case -1:	// The other endpoint has a version number that is not compatible with our
-				break;
+			{
+				rpcap_senderror(pars->sockctrl, "RPCAP version number mismatch", PCAP_ERR_WRONGVER, errbuf);
+			}
+			break;
 
 			case RPCAP_MSG_FINDALLIF_REQ:
 			{
@@ -869,7 +875,7 @@ struct rpcap_openreply *openreply;	// open reply message
 	// Open the selected device
 	// This is a fake open, since we do that only to get the needed parameters, then we close the device again
 	if ( (fp= pcap_open(source, 
-			1500 /* faks snaplen */,
+			1500 /* fake snaplen */,
 			0 /* no promis */, 
 			1000 /* fake timeout */,
 			NULL /* local device, so no auth */,
@@ -1185,43 +1191,48 @@ unsigned int i;
 
 	bf_prog.bf_len= ntohl(filter.nitems);
 
-	if (bf_prog.bf_len == 0)	// No filters have been specified; so, let's return back.
-		return 0;
-
-	if (ntohs(filter.filtertype) != RPCAP_UPDATEFILTER_BPF)
+	if (bf_prog.bf_len == 0)	// No filters have been specified; so, let's apply a "fake" filter
 	{
-		snprintf(errbuf, PCAP_ERRBUF_SIZE, "Only BPF/NPF filters are currently supported");
+		if (pcap_compile(fp, &bf_prog, NULL, 1, 0) == -1)
 		return -1;
 	}
-
-	bf_insn= (struct bpf_insn *) malloc ( sizeof(struct bpf_insn) * bf_prog.bf_len);
-	if (bf_insn == NULL)
+	else
 	{
-		snprintf(errbuf, PCAP_ERRBUF_SIZE, "malloc() failed: %s", pcap_strerror(errno));
-		return -1;
-	}
-
-	bf_prog.bf_insns= bf_insn;
-
-	for (i= 0; i < bf_prog.bf_len; i++)
-	{
-		if ( ( *nread+= sock_recv(fp->rmt_sockctrl, (char *) &insn, 
-			sizeof(struct rpcap_filterbpf_insn), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE)) == -1)
+		if (ntohs(filter.filtertype) != RPCAP_UPDATEFILTER_BPF)
+		{
+			snprintf(errbuf, PCAP_ERRBUF_SIZE, "Only BPF/NPF filters are currently supported");
 			return -1;
+		}
 
-		bf_insn->code= ntohs(insn.code);
-		bf_insn->jf= insn.jf;
-		bf_insn->jt= insn.jt;
-		bf_insn->k= ntohl(insn.k);
+		bf_insn= (struct bpf_insn *) malloc ( sizeof(struct bpf_insn) * bf_prog.bf_len);
+		if (bf_insn == NULL)
+		{
+			snprintf(errbuf, PCAP_ERRBUF_SIZE, "malloc() failed: %s", pcap_strerror(errno));
+			return -1;
+		}
 
-		bf_insn++;
+		bf_prog.bf_insns= bf_insn;
+
+		for (i= 0; i < bf_prog.bf_len; i++)
+		{
+			if ( ( *nread+= sock_recv(fp->rmt_sockctrl, (char *) &insn, 
+				sizeof(struct rpcap_filterbpf_insn), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE)) == -1)
+				return -1;
+
+			bf_insn->code= ntohs(insn.code);
+			bf_insn->jf= insn.jf;
+			bf_insn->jt= insn.jt;
+			bf_insn->k= ntohl(insn.k);
+
+			bf_insn++;
+		}
+
+		if (bpf_validate(bf_prog.bf_insns, bf_prog.bf_len) == 0)
+		{
+			snprintf(errbuf, PCAP_ERRBUF_SIZE, "The filter contains bogus instructions");
+			return -1;
+		}
 	}
-
-	if (bpf_validate(bf_prog.bf_insns, bf_prog.bf_len) == 0)
-	{
-		snprintf(errbuf, PCAP_ERRBUF_SIZE, "The filter contains bogus instructions");
-		return -1;
-    }
 
 	if (pcap_setfilter(fp, &bf_prog) )
 	{
