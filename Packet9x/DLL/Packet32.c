@@ -89,7 +89,7 @@ BOOLEAN StartPacketDriver (LPTSTR ServiceName);
 BOOLEAN StopPacketDriver (void);
 BOOLEAN PacketSetMaxLookaheadsize (LPADAPTER AdapterObject);
 
-char PacketLibraryVersion[] = "3.1 beta2"; 
+char PacketLibraryVersion[] = "3.1 beta3"; 
 
 //---------------------------------------------------------------------------
 
