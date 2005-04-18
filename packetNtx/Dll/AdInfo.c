@@ -109,7 +109,7 @@ BOOLEAN PacketGetLinkLayerFromRegistry(LPADAPTER AdapterObject, NetType *type)
 	type->LinkSpeed=*((UINT*)OidData->Data)*100;
     GlobalFreePtr (OidData);
 
-	ODSEx("Media:%d ",type->LinkType);
+	ODSEx("Media:%d\n",type->LinkType);
 	ODSEx("Speed=%d\n",type->LinkSpeed);
 
     return Status;
@@ -401,11 +401,13 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 	if(GetAdaptersAddressesPointer == NULL)	return TRUE;	// GetAdaptersAddresses() not present on this system,
 															// return immediately.
 
-	if(GetAdaptersAddressesPointer(AF_UNSPEC, 0, NULL, NULL, &BufLen) != ERROR_BUFFER_OVERFLOW)
+	if(GetAdaptersAddressesPointer(AF_UNSPEC, GAA_FLAG_SKIP_ANYCAST| GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_FRIENDLY_NAME| GAA_FLAG_SKIP_DNS_SERVER, NULL, NULL, &BufLen) != ERROR_BUFFER_OVERFLOW)
 	{
 		ODS("PacketAddIP6Addresses: GetAdaptersAddresses Failed\n");
 		return FALSE;
 	}
+
+	ODS("PacketAddIP6Addresses, retrieved needed storage for the call\n");
 
 	AdBuffer = GlobalAllocPtr(GMEM_MOVEABLE, BufLen);
 	if (AdBuffer == NULL) {
@@ -413,12 +415,14 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 		return FALSE;
 	}
 
-	if(GetAdaptersAddressesPointer(AF_UNSPEC, 0, NULL, AdBuffer, &BufLen) != ERROR_SUCCESS)
+	if(GetAdaptersAddressesPointer(AF_UNSPEC, GAA_FLAG_SKIP_ANYCAST| GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_FRIENDLY_NAME| GAA_FLAG_SKIP_DNS_SERVER, NULL, AdBuffer, &BufLen) != ERROR_SUCCESS)
 	{
 		ODS("PacketGetIP6AddressesIPH: GetAdaptersAddresses Failed\n");
 		GlobalFreePtr(AdBuffer);
 		return FALSE;
 	}
+
+	ODS("PacketAddIP6Addresses, retrieved addresses\n");
 
 	//
 	// Scan the list of adddresses obtained from the IP helper API
@@ -427,11 +431,14 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 	{
 		OrName = AdInfo->Name + sizeof("\\device\\npf_") - 1;
 
+		ODS("PacketAddIP6Addresses, external loop\n");
 		if(strcmp(TmpAddr->AdapterName, OrName) == 0)
 		{
 			// Found a corresponding adapter, scan its address list
 			for(UnicastAddr = TmpAddr->FirstUnicastAddress; UnicastAddr != NULL; UnicastAddr = UnicastAddr->Next)
 			{
+					ODS("PacketAddIP6Addresses, internal loop\n");
+
 					AddrLen = UnicastAddr->Address.iSockaddrLength;
 					Addr = (struct sockaddr_storage *)UnicastAddr->Address.lpSockaddr;
 					if(Addr->ss_family == AF_INET6)
@@ -451,6 +458,8 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 			}
 		}
 	}
+
+	ODS("PacketAddIP6Addresses, finished parsing the addresses\n");
 
 	GlobalFreePtr(AdBuffer);
 
@@ -623,7 +632,8 @@ BOOLEAN PacketGetAdaptersIPH()
 		ODS("IP Helper API not supported on this system!\n");
 		return FALSE;
 	}
-	
+
+	ODS("PacketGetAdaptersIPH: retrieved needed bytes for IPH\n");
 	// Allocate the buffer
 
 	AdList = GlobalAllocPtr(GMEM_MOVEABLE, OutBufLen);
@@ -635,6 +645,8 @@ BOOLEAN PacketGetAdaptersIPH()
 	// Retrieve the adapters information using the IP helper API
 	GetAdaptersInfo(AdList, &OutBufLen);
 	
+	ODS("PacketGetAdaptersIPH: retrieved list from IPH\n");
+
 	// Scan the list of adapters obtained from the IP helper API, create a new ADAPTER_INFO
 	// structure for every new adapter and put it in our global list
 	for(TmpAd = AdList; TmpAd != NULL; TmpAd = TmpAd->Next)
