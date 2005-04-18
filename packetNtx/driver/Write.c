@@ -71,15 +71,17 @@ NPF_Write(
 	if(Open->WriteInProgress)
 	{
 		// Another write operation is currently in progress
+		NdisReleaseSpinLock(&Open->WriteLock);
 		EXIT_FAILURE(0); 
 	}
 	else
 	{
 		Open->WriteInProgress = TRUE;
 	}
+
 	NdisReleaseSpinLock(&Open->WriteLock);
 
-	IF_LOUD(DbgPrint("Max frame size = %d\n", Open->MaxFrameSize);)
+	IF_LOUD(DbgPrint("Max frame size = %d, packet size = %d\n", Open->MaxFrameSize, IrpSp->Parameters.Write.Length);)
 
 
 	if(IrpSp->Parameters.Write.Length == 0 || 	// Check that the buffer provided by the user is not empty
