@@ -654,6 +654,7 @@ BOOLEAN PacketGetAdaptersIPH()
 		AddAdapterIPH(TmpAd);
 	}
 	
+	GlobalFreePtr(AdList);
 
 	return TRUE;
 }
