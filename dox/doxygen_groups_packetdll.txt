@@ -21,9 +21,18 @@
 
 /*!
 	\ingroup internals
-	\defgroup packetapi Packet.dll -- Packet Driver API
+	\defgroup packetapi Packet Driver API developer's manual
 	\htmlinclude packet.htm
 */
+
+
+/*!
+	\ingroup packetapi
+	\defgroup packetsamps Packet.dll samples
+	\htmlinclude packet_samp.htm
+*/
+
+
 
 /*!
 	\defgroup wpcap WinPcap user's manual

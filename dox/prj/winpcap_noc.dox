@@ -64,10 +64,8 @@ INPUT                  = ../../Common/Packet32.h \
                          ../../dox/libpcap/incs/pcap.h \
                          ../../dox/libpcap/funcs/pcap.h \
                          ../../wpcap/Win32-Extensions/Win32-Extensions.h \
-                         ../../../WPdpack/Examples/pcap_filter/pcap_filter.c \
-                         ../../../WPdpack/Examples/misc/basic_dump.c \
-                         ../../../WPdpack/Examples/TestApp/Testapp.c \
-                         ../../../WPdpack/Examples/TG/Tg.c \
+                         ../../Examples/pcap_filter/pcap_filter.c \
+                         ../../Examples/misc/basic_dump.c \
                          ../../dox/main.txt \
 	                     ../../dox/wpcap.txt \
                          ../../dox/language.txt \
@@ -216,13 +214,3 @@ MAX_DOT_GRAPH_WIDTH    = 1024
 MAX_DOT_GRAPH_HEIGHT   = 1024
 GENERATE_LEGEND        = YES
 DOT_CLEANUP            = YES
-#---------------------------------------------------------------------------
-# Configuration::addtions related to the search engine   
-#---------------------------------------------------------------------------
-SEARCHENGINE           = NO
-CGI_NAME               = 
-CGI_URL                = 
-DOC_URL                = 
-DOC_ABSPATH            = 
-BIN_ABSPATH            = 
-EXT_DOC_PATHS          = 

@@ -2,59 +2,52 @@
 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
-<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="GENERATOR" content="Microsoft FrontPage 6.0">
 <meta name="ProgId" content="FrontPage.Editor.Document">
 <title></title>
 </head>
 
 <body>
-<code>
-Packet.dll</code> is a dynamic link library that offers a set of low level functions
+Packet.dll is a dynamic link library that offers a set of low level functions
 to:
 <ul>
   <li>install, start and stop the NPF device driver</li>
-  <li>sniff the network traffic</li>
-  <li>send packets to the network</li>
+  <li>Receive packets from the NPF driver</li>
+  <li>send packets to the NPF driver</li>
   <li>obtain the list of the available network adapters</li>
   <li>retrieve various information about an adapter, like the description and
     the list of addresses and netmasks</li>
   <li>query and set various low-level parameters of an adapter</li>
 </ul>
-<p> There are two versions of packet.dll: the first one works in Windows 95/98/ME, the second in Windows
+<p> There are two versions of packet.dll: the first one runs under Windows 95/98/ME, the second 
+one is for&nbsp; Windows
 NT/2000/XP.</p>
-<p>Packet.dll was born to provide a layer granting access the low level
-functionalities of WinPcap in a system independent way. This library copes with
-the system dependent details (like managing the devices, interacting with the OS
-to handle the adapters, looking for the information in the registry and so on),
-and export an API that is the same on the different Win32 OSes. In this way,
-applications or libraries that use it can run without being recompiled
-under any Win32 operating system. </p>
-<p>However, currently this portability does not
-apply to the whole packet.dll API: some of the most recent features, like for
-example kernel-mode dump, are present only in the WinNTx version of WinPcap,
-therefore packet.dll for Win9x does not export them. On the other side, the NTx
+<p>Packet.dll was born to provide a layer to access the low level
+functionalities of WinPcap in a system independent way. This library handles all
+the system-dependent details (like managing the devices, interacting with the OS
+to manage the adapters, looking for the information in the registry and so on),
+and exports an API that is the same in all the different Windows OSes. In this way,
+applications or libraries based on it can run without being recompiled
+under any Windows operating system. </p>
+<p>However, not the the whole packet.dll API is totally portable: some advanced features, like kernel-mode dump, are present only in the WinNTx version of WinPcap, 
+while packet.dll for Win9x does not provide them. On the other side, the NTx
 version is a superset of the 9x one, in other words all the function present in
-the Win9x version are present also in WinNTx.</p>
-<p>The other important role of this library is the handling of the NPF driver.
+the Win9x version are granted to be present in WinNTx too.</p>
+<p>The other important feature of this library is the ability to handle NPF driver.
 Packet.dll transparently installs and starts the driver when an application
 attempts to access an adapter. This avoids the manual installation of the driver
 through the control panel.</p>
 <h2>Important note, read carefully!</h2>
-<p>If you are writing a capture application and you do not have particular/low
-level requirements, you are <b>recommended</b> to use the functions of wpcap, that are compatible
-with the ones of the Unix packet capture library (<i>libpcap</i>), instead of
-the API described in this chapter. wpcap.dll relies on packet.dll, but provides
-a more powerful, immediate and easy to use programming environment. With
-wpcap.dll, operations like capturing a packet, creating a capture filter or
-saving a dump on a file are safely implemented and intuitive to use.&nbsp; Moreover, the programs written to use libpcap are easily compiled on
-Unix thanks to the compatibility between Win32 and Unix versions of this
-library.</p>
+<p>The source code of Packet.dll is freely available and completely documented. 
+However, packet.dll should be considered an internal API, because its purpose 
+inside WinPcap is to be a foundation block for the real public API: wpcap.dll.</p>
 <p>As a consequence, since the <b>normal</b> and <b>suggested</b> way for an
-application to use WinPcap is through wpcap.dll, <b>we cannot guarantee that the
-packet.dll API will not be changed in the future releases</b>.</p>
-<p>However, since libpcap was written to be portable and to offer a
-system-independent capture API, it cannot exploit all the features offered by
-the driver. Use packet.dll only if you need one of these features.</p>
+application to use WinPcap is through wpcap.dll, <b>we don't guarantee that the packet.dll 
+API will not be changed in future releases of winpcap, and we don't provide 
+support for this API</b>. For the same reason, <b>this manual doesn't contain 
+any more the Doxygen-generated documentation of Packet.dll</b>: the user will 
+have to run Doxygen on his own to create it, or read the comments in the source 
+code.</p>
 
 </body>
 

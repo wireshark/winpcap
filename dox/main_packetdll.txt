@@ -39,6 +39,9 @@
   - \ref NPF_include
   - \ref NPF_code
  - \ref packetapi
+  - \ref packet32h
+  - \ref packet32
+  - \ref packetsamps
  - \ref compilation
 - \ref remote
  - \ref remote_struct

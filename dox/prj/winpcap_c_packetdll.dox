@@ -51,7 +51,9 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = ../../packetNtx/driver/Packet.h \
+INPUT                  = ../../Common/Packet32.h \
+                         ../../packetNtx/driver/Packet.h \
+                         ../../packetNtx/DLL/Packet32.c \
                          ../../packetNtx/driver/jitter.c \
                          ../../packetNtx/driver/jitter.h \
                          ../../packetNtx/driver/dump.c \
@@ -59,7 +61,7 @@ INPUT                  = ../../packetNtx/driver/Packet.h \
                          ../../packetNtx/driver/Packet.c \
                          ../../packetNtx/driver/Read.c \
                          ../../packetNtx/driver/Write.c \
-						 ../libpcap/incs/pcap.h \
+                         ../libpcap/incs/pcap.h \
                          ../libpcap/funcs/pcap.h \
                          ../../wpcap/libpcap/bpf_dump.c \
                          ../../wpcap/libpcap/bpf_image.c \
@@ -73,7 +75,9 @@ INPUT                  = ../../packetNtx/driver/Packet.h \
                          ../../wpcap/Win32-Extensions/Win32-Extensions.h \
                          ../../Examples/pcap_filter/pcap_filter.c \
                          ../../Examples/misc/basic_dump.c \
-                         ../main.txt \
+                         ../../Examples/PacketDriver/TestPacketCapture/TestPacketCapture.c \
+                         ../../Examples/PacketDriver/TestPacketSend/TestPacketSend.c \
+                         ../main_packetdll.txt \
                          ../wpcap_tut.txt \
                          ../wpcap_tut1.txt \
                          ../wpcap_tut2.txt \
@@ -84,7 +88,7 @@ INPUT                  = ../../packetNtx/driver/Packet.h \
                          ../wpcap_tut7.txt \
                          ../wpcap_tut8.txt \
                          ../wpcap_tut9.txt \
-                         ../doxygen_groups.txt \
+                         ../doxygen_groups_packetdll.txt \
                          ../wpcap_remote.htm \
                          ../../wpcap/libpcap/pcap-remote.h \
                          ../../wpcap/libpcap/remote-ext.h \
@@ -228,3 +232,13 @@ MAX_DOT_GRAPH_WIDTH    = 1024
 MAX_DOT_GRAPH_HEIGHT   = 1024
 GENERATE_LEGEND        = YES
 DOT_CLEANUP            = YES
+#---------------------------------------------------------------------------
+# Configuration::addtions related to the search engine   
+#---------------------------------------------------------------------------
+SEARCHENGINE           = NO
+CGI_NAME               = 
+CGI_URL                = 
+DOC_URL                = 
+DOC_ABSPATH            = 
+BIN_ABSPATH            = 
+EXT_DOC_PATHS          = 
