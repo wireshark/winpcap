@@ -468,6 +468,25 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 #endif // _WINNT4
 
 /*!
+  \brief Check if a string contains the "1394" substring
+
+	We prevent opening of firewire adapters since they have non standard behaviors that can cause
+	problems with winpcap
+
+  \param AdapterDesc NULL-terminated ASCII string with the adapter's description 
+  \return TRUE if the input string contains "1394"
+*/
+BOOLEAN IsFireWire(TCHAR *AdapterDesc)
+{
+	if(wcsstr(AdapterDesc, FIREWIRE_SUBSTR) != NULL)
+	{		
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+/*!
   \brief Adds an entry to the adapter description list, gathering its values from the IP Helper API.
   \param IphAd PIP_ADAPTER_INFO IP Helper API structure containing the parameters of the adapter that must be added to the list.
   \return If the function succeeds, the return value is TRUE.
@@ -492,7 +511,6 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	_snprintf(TName + 12, ADAPTER_NAME_LENGTH - 12, "%s", IphAd->AdapterName);
 	
 	// Scan the adapters list to see if this one is already present
-	
 	for(SAdInfo = AdaptersInfoList; SAdInfo != NULL; SAdInfo = SAdInfo->Next)
 	{
 		if(strcmp(TName, SAdInfo->Name) == 0)
@@ -516,6 +534,7 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 			ODS("AddAdapterIPH: unable to convert an ASCII string to UNICODE\n");
 			goto SkipAd;
 		}
+
 		adapter = PacketOpenAdapterNPF((PCHAR)UAdName);
 		GlobalFreePtr(UAdName);
 
@@ -634,8 +653,8 @@ BOOLEAN PacketGetAdaptersIPH()
 	}
 
 	ODS("PacketGetAdaptersIPH: retrieved needed bytes for IPH\n");
-	// Allocate the buffer
 
+	// Allocate the buffer
 	AdList = GlobalAllocPtr(GMEM_MOVEABLE, OutBufLen);
 	if (AdList == NULL) {
 		ODS("PacketGetAdaptersIPH: GlobalAlloc Failed\n");
@@ -668,7 +687,7 @@ BOOLEAN PacketGetAdaptersIPH()
 
   Used by PacketGetAdapters(). Queries the registry to fill the PADAPTER_INFO describing the new adapter.
 */
-BOOLEAN AddAdapter(PCHAR AdName)
+BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 {
 	//this function should acquire the AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
 	DWORD		RegKeySize=0;
@@ -681,9 +700,9 @@ BOOLEAN AddAdapter(PCHAR AdName)
 	PWCHAR		UAdName;
 	
 	ODS("AddAdapter\n");
-
+	
 	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
-
+	
 	for(TAdInfo = AdaptersInfoList; TAdInfo != NULL; TAdInfo = TAdInfo->Next)
 	{
 		if(strcmp(AdName, TAdInfo->Name) == 0)
@@ -693,31 +712,36 @@ BOOLEAN AddAdapter(PCHAR AdName)
 			return TRUE;
 		}
 	}
-
+	
 	UAdName = SChar2WChar(AdName);
-
+	
 	//here we could have released the mutex, but what happens if two threads try to add the same adapter? 
 	//The adapter would be duplicated on the linked list
 	
-	// Try to Open the adapter
-	adapter = PacketOpenAdapterNPF((PCHAR)UAdName);
-
-	GlobalFreePtr(UAdName);
-	
-	if(adapter == NULL)
+	if(flags != INFO_FLAG_DONT_EXPORT)
 	{
-		// We are not able to open this adapter. Skip to the next one.
-		ReleaseMutex(AdaptersInfoMutex);
-		return FALSE;
-	}
-
-	// Allocate a buffer to get the vendor description from the driver
-	OidData = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,512);
-	if (OidData == NULL) {
-		ODS("AddAdapter: GlobalAlloc Failed\n");
-		PacketCloseAdapter(adapter);
-		ReleaseMutex(AdaptersInfoMutex);
-		return FALSE;
+		
+		// Try to Open the adapter
+		adapter = PacketOpenAdapterNPF((PCHAR)UAdName);
+		
+		GlobalFreePtr(UAdName);
+		
+		if(adapter == NULL)
+		{
+			// We are not able to open this adapter. Skip to the next one.
+			ReleaseMutex(AdaptersInfoMutex);
+			return FALSE;
+		}
+		
+		// Allocate a buffer to get the vendor description from the driver
+		OidData = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,512);
+		if (OidData == NULL) 
+		{
+			ODS("AddAdapter: GlobalAlloc Failed\n");
+			PacketCloseAdapter(adapter);
+			ReleaseMutex(AdaptersInfoMutex);
+			return FALSE;
+		}
 	}
 	
 	//
@@ -738,86 +762,97 @@ BOOLEAN AddAdapter(PCHAR AdName)
 	// Copy the device name
 	strcpy(TmpAdInfo->Name, AdName);
 	
-	// Retrieve the adapter description querying the NIC driver
-	OidData->Oid = OID_GEN_VENDOR_DESCRIPTION;
-	OidData->Length = 256;
-	ZeroMemory(OidData->Data, 256);
-	
-	Status = PacketRequest(adapter, FALSE, OidData);
-	
-	if(Status==0 || ((char*)OidData->Data)[0]==0)
+	if(flags != INFO_FLAG_DONT_EXPORT)
 	{
-		ODS("AddAdapter: unable to get a valid adapter description from the NIC driver\n");
-	}
-	
-	ODSEx("Adapter Description=%s\n\n",OidData->Data);
-	
-	// Copy the description
-	strcpy(TmpAdInfo->Description, OidData->Data);
-	
-	PacketGetLinkLayerFromRegistry(adapter, &(TmpAdInfo->LinkLayer));
-	
-	// Retrieve the adapter description querying the NIC driver
-	OidData->Oid = OID_802_3_CURRENT_ADDRESS;	// XXX At the moment only Ethernet is supported.
-	// Waiting a patch to support other Link Layers
-	OidData->Length = 256;
-	ZeroMemory(OidData->Data, 256);
-	
-	Status = PacketRequest(adapter, FALSE, OidData);
-	if(Status)
-	{
-		memcpy(TmpAdInfo->MacAddress, OidData->Data, 6);
-		TmpAdInfo->MacAddressLen = 6;
+		// Retrieve the adapter description querying the NIC driver
+		OidData->Oid = OID_GEN_VENDOR_DESCRIPTION;
+		OidData->Length = 256;
+		ZeroMemory(OidData->Data, 256);
+		
+		Status = PacketRequest(adapter, FALSE, OidData);
+		
+		if(Status==0 || ((char*)OidData->Data)[0]==0)
+		{
+			ODS("AddAdapter: unable to get a valid adapter description from the NIC driver\n");
+		}
+		
+		ODSEx("Adapter Description=%s\n\n",OidData->Data);
+		
+		// Copy the description
+		strcpy(TmpAdInfo->Description, OidData->Data);
+		
+		PacketGetLinkLayerFromRegistry(adapter, &(TmpAdInfo->LinkLayer));
+		
+		// Retrieve the adapter MAC address querying the NIC driver
+		OidData->Oid = OID_802_3_CURRENT_ADDRESS;	// XXX At the moment only Ethernet is supported.
+													// Waiting a patch to support other Link Layers
+		OidData->Length = 256;
+		ZeroMemory(OidData->Data, 256);
+		
+		Status = PacketRequest(adapter, FALSE, OidData);
+		if(Status)
+		{
+			memcpy(TmpAdInfo->MacAddress, OidData->Data, 6);
+			TmpAdInfo->MacAddressLen = 6;
+		}
+		else
+		{
+			memset(TmpAdInfo->MacAddress, 0, 6);
+			TmpAdInfo->MacAddressLen = 0;
+		}
+		
+		// Retrieve IP addresses
+		TmpAdInfo->NetworkAddresses = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, MAX_NETWORK_ADDRESSES * sizeof(npf_if_addr));
+		if (TmpAdInfo->NetworkAddresses == NULL) {
+			ODS("AddAdapter: GlobalAlloc Failed\n");
+			PacketCloseAdapter(adapter);
+			GlobalFreePtr(OidData);
+			GlobalFreePtr(TmpAdInfo);
+			ReleaseMutex(AdaptersInfoMutex);
+			return FALSE;
+		}
+		
+		TmpAdInfo->NNetworkAddresses = MAX_NETWORK_ADDRESSES;
+		if(!PacketGetAddressesFromRegistry((LPTSTR)TmpAdInfo->Name, TmpAdInfo->NetworkAddresses, &TmpAdInfo->NNetworkAddresses))
+		{
+#ifndef _WINNT4
+			// Try to see if the interface has some IPv6 addresses
+			TmpAdInfo->NNetworkAddresses = 0; // We have no addresses because PacketGetAddressesFromRegistry() failed
+			
+			if(!PacketAddIP6Addresses(TmpAdInfo))
+			{
+#endif // _WINNT4
+				GlobalFreePtr(TmpAdInfo->NetworkAddresses);
+				TmpAdInfo->NetworkAddresses = NULL;
+				TmpAdInfo->NNetworkAddresses = 0;
+#ifndef _WINNT4
+			}
+#endif // _WINNT4
+		}
+		
+#ifndef _WINNT4
+		// Now Add IPv6 Addresses
+		PacketAddIP6Addresses(TmpAdInfo);
+#endif // _WINNT4
+		
+		TmpAdInfo->Flags = INFO_FLAG_NDIS_ADAPTER;	// NdisWan adapters are not exported by the NPF driver,
+													// therefore it's impossible to see them here
+		
+		// Free storage
+		PacketCloseAdapter(adapter);
+		GlobalFreePtr(OidData);
 	}
 	else
 	{
-		memset(TmpAdInfo->MacAddress, 0, 6);
-		TmpAdInfo->MacAddressLen = 0;
+		// Write in the flags that this adapter is firewire
+		// This will block it in all successive calls
+		TmpAdInfo->Flags = INFO_FLAG_DONT_EXPORT;
 	}
 	
-	TmpAdInfo->NetworkAddresses = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, MAX_NETWORK_ADDRESSES * sizeof(npf_if_addr));
-	if (TmpAdInfo->NetworkAddresses == NULL) {
-		ODS("AddAdapter: GlobalAlloc Failed\n");
-		PacketCloseAdapter(adapter);
-		GlobalFreePtr(OidData);
-		GlobalFreePtr(TmpAdInfo);
-		ReleaseMutex(AdaptersInfoMutex);
-		return FALSE;
-	}
-	
-	TmpAdInfo->NNetworkAddresses = MAX_NETWORK_ADDRESSES;
-	if(!PacketGetAddressesFromRegistry((LPTSTR)TmpAdInfo->Name, TmpAdInfo->NetworkAddresses, &TmpAdInfo->NNetworkAddresses))
-	{
-#ifndef _WINNT4
-		// Try to see if the interface has some IPv6 addresses
-		TmpAdInfo->NNetworkAddresses = 0; // We have no addresses because PacketGetAddressesFromRegistry() failed
-
-		if(!PacketAddIP6Addresses(TmpAdInfo))
-		{
-#endif // _WINNT4
-			GlobalFreePtr(TmpAdInfo->NetworkAddresses);
-			TmpAdInfo->NetworkAddresses = NULL;
-			TmpAdInfo->NNetworkAddresses = 0;
-#ifndef _WINNT4
-		}
-#endif // _WINNT4
-	}
-
-#ifndef _WINNT4
-	// Now Add IPv6 Addresses
-	PacketAddIP6Addresses(TmpAdInfo);
-#endif // _WINNT4
-
-	TmpAdInfo->Flags = INFO_FLAG_NDIS_ADAPTER;	// NdisWan adapters are not exported by the NPF driver,
-									// therefore it's impossible to see them here
-
 	// Update the AdaptersInfo list
 	TmpAdInfo->Next = AdaptersInfoList;
 	AdaptersInfoList = TmpAdInfo;
-
-	PacketCloseAdapter(adapter);
-	GlobalFreePtr(OidData);
-
+	
 	ReleaseMutex(AdaptersInfoMutex);
 	return TRUE;
 }
@@ -842,7 +877,7 @@ BOOLEAN PacketGetAdapters()
 	CHAR		TAName[256];
 	TCHAR		AdapName[256];
 	PTSTR		BpStr;
-
+	UINT		FireWireFlag;
 
 	ODS("PacketGetAdapters\n");
 	
@@ -869,7 +904,8 @@ BOOLEAN PacketGetAdapters()
 	{
 		i++;
 		ODSEx(" %d) ", i);
-		
+		FireWireFlag = 0;
+
 		// 
 		// Get the adapter name from the registry key
 		//
@@ -878,6 +914,28 @@ BOOLEAN PacketGetAdapters()
 		{
 			ODS("PacketGetAdapters: RegOpenKeyEx ( OneAdapKey ) Failed\n");
 			continue;			
+		}
+
+		//
+		//
+		// Check if this is a FireWire adapter, looking for "1394" in its ComponentId string. 
+		// We prevent listing FireWire adapters because winpcap can open them, but their interface
+		// with the OS is broken and they can cause blue screens.
+		//
+		dim = sizeof(TName);
+        Status = RegQueryValueEx(OneAdapKey, 
+			L"ComponentId",
+			NULL,
+			NULL,
+			(PBYTE)TName, 
+			&dim);
+
+		if(Status == ERROR_SUCCESS)
+		{
+			if(IsFireWire(TName))
+			{
+				FireWireFlag = INFO_FLAG_DONT_EXPORT;
+			}
 		}
 
 		Status=RegOpenKeyEx(OneAdapKey, L"Linkage", 0, KEY_READ, &LinkageKey);
@@ -908,8 +966,8 @@ BOOLEAN PacketGetAdapters()
 		WideCharToMultiByte(
 			CP_ACP,
 			0,
-			TName,			// wide-character string
-			-1,          // number of chars in string
+			TName,		// wide-character string
+			-1,			// number of chars in string
 			TAName + sizeof("\\Device\\NPF_") - sizeof("\\Device\\"),     // buffer for new string
 			sizeof(TAName) - sizeof("\\Device\\NPF_") + sizeof("\\Device\\"),          // size of buffer
 			NULL,
@@ -919,7 +977,7 @@ BOOLEAN PacketGetAdapters()
 		memcpy(TAName, "\\Device\\NPF_", sizeof("\\Device\\NPF_") - 1);
 
 		// If the adapter is valid, add it to the list.
-		AddAdapter(TAName);
+		AddAdapter(TAName, FireWireFlag);
 
 		RegCloseKey(OneAdapKey);
 		RegCloseKey(LinkageKey);
@@ -980,13 +1038,12 @@ nt4:
 			memcpy(TAName, "\\Device\\NPF_", sizeof("\\Device\\NPF_") - 1);
 
 			// If the adapter is valid, add it to the list.
-			AddAdapter(TAName);
+			AddAdapter(TAName, 0);
 
 			i += k + 1;
 		}
 	
  		GlobalFreePtr(BpStr);
-
 	}
 	
 	else{
@@ -1202,7 +1259,7 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 	//
 	// Now obtain the information about this adapter
 	//
-	if(AddAdapter(AdapterName) == TRUE)
+	if(AddAdapter(AdapterName, 0) == TRUE)
 		return TRUE;
 #ifndef _WINNT4
 	// 
@@ -1266,7 +1323,8 @@ void PacketPopulateAdaptersInfoList()
 		ODS("PacketPopulateAdaptersInfoList: registry scan for adapters failed!\n");
 	}
 #ifndef _WINNT4
-	if(!PacketGetAdaptersIPH()){
+	if(!PacketGetAdaptersIPH())
+	{
 		// IP Helper API not present. We are under WinNT 4 or TCP/IP is not installed
 		ODS("PacketPopulateAdaptersInfoList: failed to get adapters from the IP Helper API!\n");
 	}

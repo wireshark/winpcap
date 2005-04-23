@@ -538,12 +538,14 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 	ODS("PacketOpenAdapterNPF\n");
 	
 	scmHandle = OpenSCManager(NULL, NULL, GENERIC_READ);
-	
-	if(scmHandle == NULL){
+		
+	if(scmHandle == NULL)
+	{
 		error = GetLastError();
 		ODSEx("OpenSCManager failed! LastError=%d\n", error);
 	}
-	else{
+	else
+	{
 		// check if the NPF registry key is already present
 		// this means that the driver is already installed and that we don't need to call PacketInstallDriver
 		KeyRes=RegOpenKeyEx(HKEY_LOCAL_MACHINE,
@@ -943,7 +945,6 @@ BOOL PacketStopDriver()
 	}
 	
 	return FALSE;
-
 }
 
 /*! 
@@ -962,15 +963,23 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 #ifndef _WINNT4
 	PADAPTER_INFO TAdInfo;
 #endif // _WINNT4
+	ODSEx("PacketOpenAdapter: trying to open the adapter=%s\n",AdapterName)
 
-    ODSEx("PacketOpenAdapter: trying to open the adapter=%s\n",AdapterName)
+	if(AdapterName[1]!=0)
+	{ 
+		//
+		// ASCII
+		//
 
-	if(AdapterName[1]!=0){ //ASCII
-		
 		AdapterNameU = SChar2WChar(AdapterName);
 		AdapterNameA = AdapterName;
 		AdapterName = (PCHAR)AdapterNameU;
-	} else {			//Unicode
+	} 
+	else 
+	{	
+		//
+		// Unicode
+		//
 		AdapterNameU = NULL;
 		AdapterNameA = WChar2SChar((PWCHAR)AdapterName);
 	}
@@ -1002,19 +1011,20 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 		}
 	}
 	
+	//
+	// Check adapter type
+	//
 	if(TAdInfo->Flags != INFO_FLAG_NDIS_ADAPTER)
 	{
 		//
 		// Not a standard NDIS adapter, we must have specific handling
 		//
 		
-
 		if(TAdInfo->Flags & INFO_FLAG_NDISWAN_ADAPTER)
 		{
 			//
 			// This is a wan adapter. Open it using the netmon API
-			//
-			
+			//			
 			lpAdapter = (LPADAPTER) GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,
 				sizeof(ADAPTER));
 			if (lpAdapter == NULL)
@@ -1059,8 +1069,7 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 			{
 				//
 				// This is a Dag card. Open it using the dagc API
-				//
-								
+				//								
 				lpAdapter = PacketOpenAdapterDAG(AdapterNameA, FALSE);
 
 				if (AdapterNameU != NULL) 
@@ -1073,7 +1082,20 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 					SetLastError(ERROR_BAD_UNIT);
 				return lpAdapter;
 			}
-			
+		else
+			if(TAdInfo->Flags == INFO_FLAG_DONT_EXPORT)
+			{
+				//
+				// The adapter is flagged as not exported, probably because it's broken 
+				// or incompatible with WinPcap. We end here with an error.
+				//
+				ODSEx("The user openend the adapter %s which is flagged as not exported", AdapterNameA);
+				if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
+				else GlobalFreePtr(AdapterNameA);
+				ReleaseMutex(AdaptersInfoMutex);
+				SetLastError(ERROR_BAD_UNIT);
+				return NULL;
+			}
 	}
 	
 	ReleaseMutex(AdaptersInfoMutex);
@@ -1098,9 +1120,14 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 */
 VOID PacketCloseAdapter(LPADAPTER lpAdapter)
 {
+	if(!lpAdapter)
+	{
+        ODS("PacketCloseAdapter: attempt to close a NULL adapter\n");
+		return;
+	}
 
 #ifndef _WINNT4
-	if (lpAdapter->pWanAdapter != NULL)
+	if(lpAdapter->pWanAdapter != NULL)
 	{
 		WanPacketCloseAdapter(lpAdapter->pWanAdapter);
 		GlobalFreePtr(lpAdapter);
@@ -2053,12 +2080,15 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	//
 	for(TAdInfo = AdaptersInfoList; TAdInfo != NULL; TAdInfo = TAdInfo->Next)
 	{
-		// Update the size variables
-		SizeNeeded += strlen(TAdInfo->Name) + strlen(TAdInfo->Description) + 2;
-		SizeNames += strlen(TAdInfo->Name) + 1;		
+		if(TAdInfo->Flags != INFO_FLAG_DONT_EXPORT)
+		{
+			// Update the size variables
+			SizeNeeded += strlen(TAdInfo->Name) + strlen(TAdInfo->Description) + 2;
+			SizeNames += strlen(TAdInfo->Name) + 1;
+		}
 	}
 
-	// Chack that we don't overflow the buffer.
+	// Check that we don't overflow the buffer.
 	// Note: 2 is the number of additional separators needed inside the list
 	if(SizeNeeded + 2 >= *BufferSize || pStr == NULL)
 	{
@@ -2069,7 +2099,6 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 		return FALSE;
 	}
 
-
 	OffDescriptions = SizeNames;
 
 	// 
@@ -2077,15 +2106,18 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	//
 	for(TAdInfo = AdaptersInfoList, SizeNames = 0, SizeDesc = 0; TAdInfo != NULL; TAdInfo = TAdInfo->Next)
 	{
-		// Copy the data
-		strcpy(((PCHAR)pStr) + SizeNames, TAdInfo->Name);
-		strcpy(((PCHAR)pStr) + OffDescriptions + SizeDesc, TAdInfo->Description);
-
-		// Update the size variables
-		SizeNames += strlen(TAdInfo->Name) + 1;
-		SizeDesc += strlen(TAdInfo->Description) + 1;
+		if(TAdInfo->Flags != INFO_FLAG_DONT_EXPORT)
+		{
+			// Copy the data
+			strcpy(((PCHAR)pStr) + SizeNames, TAdInfo->Name);
+			strcpy(((PCHAR)pStr) + OffDescriptions + SizeDesc, TAdInfo->Description);
+			
+			// Update the size variables
+			SizeNames += strlen(TAdInfo->Name) + 1;
+			SizeDesc += strlen(TAdInfo->Description) + 1;
+		}
 	}
-
+	
 	// Separate the two lists
 	((PCHAR)pStr)[SizeNames] = 0;
 
