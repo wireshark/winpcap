@@ -132,7 +132,7 @@ $(BIN)\$(DEVICE).VXD: $(OBJS) $(DEVICE).def $(LIBNDIS) $(LIBWRAPS)
 -MAP:$(BIN)\$(DEVICE).map
 -VXD
 $(LIBNDIS)
-vxdwraps.clb
+$(LIBWRAPS)
 $(OBJS: =^
 )
 
