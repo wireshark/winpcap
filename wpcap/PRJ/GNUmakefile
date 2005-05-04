@@ -17,13 +17,8 @@ OPTFLAGS = -O
 LEX = flex -Ppcap_
 YACC = bison -y -p pcap_
 
-ifeq (${SYSTYPE}, "NT")
-	PACKET_DIR = packetNTx
-	INSTALL_DIR = ${SYSTEMROOT}\system32
-else
-	PACKET_DIR = packet9x
-	INSTALL_DIR = ${SYSTEMROOT}\system
-endif
+PACKET_DIR = packetNTx
+INSTALL_DIR = ${SYSTEMROOT}\system32
 
 CFLAGS = -I ../libpcap -I ../libpcap/bpf -I ../libpcap/lbl \
 	-I ../libpcap/Win32/Include -I../libpcap/Win32/Include/ipv6kit \
@@ -32,6 +27,7 @@ CFLAGS = -I ../libpcap -I ../libpcap/bpf -I ../libpcap/lbl \
 	-DHAVE_STRERROR -DNEED_ADDRINFO_H -DINET6 -DWIN32 \
 	-DSIZEOF_CHAR=1 -DSIZEOF_SHORT=2 -DSIZEOF_INT=4 -DWPCAP -D'_U_=' \
 	-DHAVE_SNPRINTF -DHAVE_VSNPRINTF \
+	-DSIZEOF_LONG_LONG=8 \
 	-mno-cygwin -shared ${OPTFLAGS}
 LDFLAGS = -Wl,--out-implib,../lib/libwpcap.a
 LIBS = -L ../../${PACKET_DIR}/DLL/Project -lPacket -lwsock32
