@@ -39,9 +39,6 @@ char PacketLibraryVersion[64];
 /// Current NPF.sys Version. It can be retrieved directly or through the PacketGetVersion() function.
 char PacketDriverVersion[64]; 
 
-//service handles
-SC_HANDLE scmHandle = NULL;
-SC_HANDLE srvHandle = NULL;
 LPCTSTR NPFServiceName = TEXT("NPF");
 LPCTSTR NPFServiceDesc = TEXT("Netgroup Packet Filter");
 LPCTSTR NPFRegistryLocation = TEXT("SYSTEM\\CurrentControlSet\\Services\\NPF");
@@ -343,21 +340,25 @@ BOOLEAN PacketSetReadEvt(LPADAPTER AdapterObject)
 
 /*! 
   \brief Installs the NPF device driver.
-  \param ascmHandle Handle to the service control manager.
-  \param ascmHandle A pointer to a handle that will receive the pointer to the driver's service.
   \return If the function succeeds, the return value is nonzero.
 
   This function installs the driver's service in the system using the CreateService function.
 */
 
-BOOL PacketInstallDriver(SC_HANDLE ascmHandle,SC_HANDLE *srvHandle)
+BOOL PacketInstallDriver()
 {
 	BOOL result = FALSE;
 	ULONG err = 0;
+	SC_HANDLE svcHandle;
+	SC_HANDLE scmHandle;
+	ODS("PacketInstallDriver\n");
 	
-	ODS("installdriver\n");
+	scmHandle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 	
-	*srvHandle = CreateService(ascmHandle, 
+	if(scmHandle == NULL)
+		return FALSE;
+
+	svcHandle = CreateService(scmHandle, 
 		NPFServiceName,
 		NPFServiceDesc,
 		SERVICE_ALL_ACCESS,
@@ -366,11 +367,13 @@ BOOL PacketInstallDriver(SC_HANDLE ascmHandle,SC_HANDLE *srvHandle)
 		SERVICE_ERROR_NORMAL,
 		NPFDriverPath,
 		NULL, NULL, NULL, NULL, NULL);
-	if (*srvHandle == NULL) 
+	if (svcHandle == NULL) 
 	{
-		if (GetLastError() == ERROR_SERVICE_EXISTS) 
+		err = GetLastError();
+		if (err == ERROR_SERVICE_EXISTS) 
 		{
 			//npf.sys already existed
+			err = 0;
 			result = TRUE;
 		}
 	}
@@ -379,16 +382,16 @@ BOOL PacketInstallDriver(SC_HANDLE ascmHandle,SC_HANDLE *srvHandle)
 		//Created service for npf.sys
 		result = TRUE;
 	}
-	if (result == TRUE) 
-		if (*srvHandle != NULL)
-			CloseServiceHandle(*srvHandle);
 
-	if(result == FALSE){
-		err = GetLastError();
-		if(err != 2)
-			ODSEx("PacketInstallDriver failed, Error=%d\n",err);
+	if (svcHandle != NULL)
+		CloseServiceHandle(svcHandle);
+
+	if(result == FALSE)
+	{
+		ODSEx("PacketInstallDriver failed, Error=%d\n",err);
 	}
 
+	CloseServiceHandle(scmHandle);
 	SetLastError(err);
 	return result;
 	
@@ -529,6 +532,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
     BOOLEAN Result;
 	DWORD error;
 	SC_HANDLE svcHandle = NULL;
+	SC_HANDLE scmHandle = NULL;
 	LONG KeyRes;
 	HKEY PathKey;
 	SERVICE_STATUS SStat;
@@ -556,7 +560,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 		
 		if(KeyRes != ERROR_SUCCESS)
 		{
-			Result = PacketInstallDriver(scmHandle,&svcHandle);
+			Result = PacketInstallDriver();
 		}
 		else
 		{
@@ -567,10 +571,10 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 		if (Result) 
 		{
 			
-			srvHandle = OpenService(scmHandle, NPFServiceName, SERVICE_START | SERVICE_QUERY_STATUS );
-			if (srvHandle != NULL)
+			svcHandle = OpenService(scmHandle, NPFServiceName, SERVICE_START | SERVICE_QUERY_STATUS );
+			if (svcHandle != NULL)
 			{
-				QuerySStat = QueryServiceStatus(srvHandle, &SStat);
+				QuerySStat = QueryServiceStatus(svcHandle, &SStat);
 				
 #if defined(_DBG) || defined(_DEBUG_TO_FILE)				
 				switch (SStat.dwCurrentState)
@@ -606,7 +610,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 				if(!QuerySStat || SStat.dwCurrentState != SERVICE_RUNNING)
 				{
 					ODS("Calling startservice\n");
-					if (StartService(srvHandle, 0, NULL)==0)
+					if (StartService(svcHandle, 0, NULL)==0)
 					{ 
 						error = GetLastError();
 						if(error!=ERROR_SERVICE_ALREADY_RUNNING && error!=ERROR_ALREADY_EXISTS)
@@ -622,8 +626,8 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 					}				
 				}
 
-				CloseServiceHandle( srvHandle );
-       			srvHandle = NULL;
+				CloseServiceHandle( svcHandle );
+       			svcHandle = NULL;
 
 			}
 			else
@@ -636,17 +640,17 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 		else
 		{
 			if(KeyRes != ERROR_SUCCESS)
-				Result = PacketInstallDriver(scmHandle,&svcHandle);
+				Result = PacketInstallDriver();
 			else
 				Result = TRUE;
 			
 			if (Result) {
 				
-				srvHandle = OpenService(scmHandle,NPFServiceName,SERVICE_START);
-				if (srvHandle != NULL)
+				svcHandle = OpenService(scmHandle,NPFServiceName,SERVICE_START);
+				if (svcHandle != NULL)
 				{
 					
-					QuerySStat = QueryServiceStatus(srvHandle, &SStat);
+					QuerySStat = QueryServiceStatus(svcHandle, &SStat);
 
 #if defined(_DBG) || defined(_DEBUG_TO_FILE)				
 					switch (SStat.dwCurrentState)
@@ -683,7 +687,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 						
 						ODS("Calling startservice\n");
 						
-						if (StartService(srvHandle, 0, NULL)==0){ 
+						if (StartService(svcHandle, 0, NULL)==0){ 
 							error = GetLastError();
 							if(error!=ERROR_SERVICE_ALREADY_RUNNING && error!=ERROR_ALREADY_EXISTS){
 								if (scmHandle != NULL) CloseServiceHandle(scmHandle);
@@ -694,8 +698,8 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 						}
 					}
 				    
-					CloseServiceHandle( srvHandle );
-					srvHandle = NULL;
+					CloseServiceHandle( svcHandle );
+					svcHandle = NULL;
 
 				}
 				else{
