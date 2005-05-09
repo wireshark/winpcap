@@ -49,8 +49,8 @@ BOOL PacketAddFakeNdisWanAdapter();
 PADAPTER_INFO AdaptersInfoList = NULL;	///< Head of the adapter information list. This list is populated when packet.dll is linked by the application.
 HANDLE AdaptersInfoMutex;		///< Mutex that protects the adapter information list. NOTE: every API that takes an ADAPTER_INFO as parameter assumes that it has been called with the mutex acquired.
 
-#define FAKE_NDISWAN_ADAPTER_NAME "\\Device\\NPF_GenericNdisWanAdapter"  ///< Name of a fake ndiswan adapter that is always available on 2000/XP/2003, used to capture NCP/LCP packets
-#define FAKE_NDISWAN_ADAPTER_DESCRIPTION "Generic NdisWan adapter"       ///< Description of a fake ndiswan adapter that is always available on 2000/XP/2003, used to capture NCP/LCP packets
+#define FAKE_NDISWAN_ADAPTER_NAME "\\Device\\NPF_GenericDialupAdapter"  ///< Name of a fake ndiswan adapter that is always available on 2000/XP/2003, used to capture NCP/LCP packets
+#define FAKE_NDISWAN_ADAPTER_DESCRIPTION "Generic dialup adapter"       ///< Description of a fake ndiswan adapter that is always available on 2000/XP/2003, used to capture NCP/LCP packets
 
 extern FARPROC GetAdaptersAddressesPointer;
 
@@ -401,7 +401,7 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 	if(GetAdaptersAddressesPointer == NULL)	return TRUE;	// GetAdaptersAddresses() not present on this system,
 															// return immediately.
 
-	if(GetAdaptersAddressesPointer(AF_UNSPEC, GAA_FLAG_SKIP_ANYCAST| GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_FRIENDLY_NAME| GAA_FLAG_SKIP_DNS_SERVER, NULL, NULL, &BufLen) != ERROR_BUFFER_OVERFLOW)
+ 	if(GetAdaptersAddressesPointer(AF_UNSPEC, GAA_FLAG_SKIP_ANYCAST| GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_FRIENDLY_NAME, NULL, NULL, &BufLen) != ERROR_BUFFER_OVERFLOW)
 	{
 		ODS("PacketAddIP6Addresses: GetAdaptersAddresses Failed\n");
 		return FALSE;
@@ -415,7 +415,7 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 		return FALSE;
 	}
 
-	if(GetAdaptersAddressesPointer(AF_UNSPEC, GAA_FLAG_SKIP_ANYCAST| GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_FRIENDLY_NAME| GAA_FLAG_SKIP_DNS_SERVER, NULL, AdBuffer, &BufLen) != ERROR_SUCCESS)
+ 	if(GetAdaptersAddressesPointer(AF_UNSPEC,  GAA_FLAG_SKIP_ANYCAST| GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_FRIENDLY_NAME, NULL, AdBuffer, &BufLen) != ERROR_SUCCESS)
 	{
 		ODS("PacketGetIP6AddressesIPH: GetAdaptersAddresses Failed\n");
 		GlobalFreePtr(AdBuffer);
@@ -643,9 +643,6 @@ BOOLEAN PacketGetAdaptersIPH()
 	ODS("PacketGetAdaptersIPH\n");
 
 	// Find the size of the buffer filled by GetAdaptersInfo
-
-	//NOTE: this function seems to be leaky, at least on 
-	//Windows XP Pro SP1.
 	if(GetAdaptersInfo(AdList, &OutBufLen) == ERROR_NOT_SUPPORTED)
 	{
 		ODS("IP Helper API not supported on this system!\n");
