@@ -62,7 +62,8 @@ int main()
 			"file://foldername     ==> lists all pcap files in the give folder\n\n"
 			"Enter your choice: ");
 
-  gets(source);
+  fgets(source, PCAP_ERRBUF_SIZE, stdin);
+  source[PCAP_ERRBUF_SIZE] = '\0';
 
   /* Retrieve the interfaces list */
   if (pcap_findalldevs_ex(source, NULL, &alldevs, errbuf) == -1)
@@ -76,6 +77,8 @@ int main()
   {
     ifprint(d);
   }
+
+  pcap_freealldevs(alldevs);
 
   return 1;
 }
