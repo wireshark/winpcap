@@ -17,6 +17,8 @@
 #include <packet32.h>
 #include "wanpacket.h"
 
+HMODULE g_hModule = NULL;
+
 /*!
   \brief Describes an opened wan (dialup, VPN...) network adapter using the NetMon API
 
@@ -51,13 +53,26 @@ struct WAN_ADAPTER_INT
 
 BOOLEAN WanPacketAddPacketToRingBuffer(PWAN_ADAPTER pWanAdapter, LPFRAME_DESCRIPTOR lpFrameDesc, DWORD SnapToCopy, struct timeval PacketTime);
 DWORD WanPacketRemovePacketsFromRingBuffer(PWAN_ADAPTER pWanAdapter, PUCHAR Buffer, DWORD BuffSize);
+BOOLEAN IsWindows2000();
 
 /*! 
   \brief The main dll function.
 */
-BOOLEAN APIENTRY DllMain( HANDLE hModule, DWORD  ul_reason_for_call, LPVOID lpReserved)
+BOOLEAN APIENTRY DllMain( HANDLE hModule, DWORD  Reason, LPVOID lpReserved)
 {
-    return TRUE;
+    switch(Reason)
+    {
+	case DLL_PROCESS_ATTACH:
+		g_hModule = LoadLibrary("npp\\ndisnpp.dll");
+		break;
+
+	case DLL_PROCESS_DETACH:
+		if (g_hModule != NULL)
+			FreeLibrary(g_hModule);
+		break;
+	}
+
+	return TRUE;
 }
 
 /*! 
@@ -157,25 +172,60 @@ BOOLEAN WanPacketTestAdapter()
 	HBLOB hFilterBlob = NULL;
 	BOOLEAN retVal;
 	DWORD i;
+	HRESULT hResult;
+
+	if ( g_hModule == NULL)
+	{
+		return FALSE;
+	}
+
+	hResult = CoInitialize(NULL);
+
+	//
+ 	// if  the calling thread has already initialized COM with a 
+ 	// different threading model, we have this error
+ 	// however, we are able to support another threading model,
+ 	// so we try to initialize COM with another threading model.
+ 	// This new call should succeed with S_FALSE.
+ 	//
+ 	if (hResult == RPC_E_CHANGED_MODE)
+	{
+		hResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+	
+		//MULTITHREADED threading is only supported on Windows 2000
+		if (hResult == RPC_E_CHANGED_MODE && IsWindows2000())
+		{
+			hResult = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+		}
+	}
+
+	if (hResult != S_OK && hResult != S_FALSE)
+		return FALSE;
 
 	if ( CreateBlob(&hFilterBlob) != NMERR_SUCCESS )
+	{
+		CoUninitialize();
 		return FALSE;
+	}
 	
 	if ( SetBoolInBlob(hFilterBlob, OWNER_NPP, CATEGORY_CONFIG, TAG_INTERFACE_REALTIME_CAPTURE, TRUE) != NMERR_SUCCESS )
 	{
 		DestroyBlob( hFilterBlob);
+		CoUninitialize();
 		return FALSE;
 	}
 
 	if ( SetBoolInBlob(hFilterBlob, OWNER_NPP, CATEGORY_LOCATION, TAG_RAS, TRUE) != NMERR_SUCCESS )
 	{
 		DestroyBlob( hFilterBlob);
+		CoUninitialize();
 		return FALSE;
 	}
 
 	if ( GetNPPBlobTable(hFilterBlob, &pBlobTable) != NMERR_SUCCESS )
 	{
 		DestroyBlob( hFilterBlob);
+		CoUninitialize();
 		return FALSE;
 	}
 
@@ -189,10 +239,40 @@ BOOLEAN WanPacketTestAdapter()
 	for ( i = 0 ; i < pBlobTable->dwNumBlobs ; i++ )
 		DestroyBlob(pBlobTable->hBlobs[i]);
 		
-	GlobalFree(pBlobTable);
+	GlobalFree(pBlobTable);	
+	CoUninitialize();
+			
 	return retVal;
 }
 
+/*!
+	\brief Returns true if the system is running windows 2000
+	\return TRUE if the system is running windows 2000. FALSE otherwise.
+*/
+BOOLEAN IsWindows2000()
+{
+	OSVERSIONINFOEX osvi;
+	BOOL bOsVersionInfoEx;
+
+	// Try calling GetVersionEx using the OSVERSIONINFOEX structure.
+	// If that fails, try using the OSVERSIONINFO structure.
+
+	ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
+	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+
+	if( !(bOsVersionInfoEx = GetVersionEx ((OSVERSIONINFO *) &osvi)) )
+	{
+		osvi.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
+		if (! GetVersionEx ( (OSVERSIONINFO *) &osvi) ) 
+			return FALSE;
+	}
+
+	if (osvi.dwPlatformId == VER_PLATFORM_WIN32_NT && osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 0 )
+		//windows 2000
+		return TRUE;
+	return FALSE;
+
+}
 
 /*! 
   \brief Opens the wan (dialup, vpn...) adapter.
@@ -201,42 +281,68 @@ BOOLEAN WanPacketTestAdapter()
 */
 PWAN_ADAPTER WanPacketOpenAdapter()
 {
-	PWAN_ADAPTER pWanAdapter;
+	PWAN_ADAPTER pWanAdapter = NULL;
 	PBLOB_TABLE pBlobTable = NULL;
 	HBLOB hFilterBlob = NULL;
 	HRESULT hResult;
 	DWORD i;
 
+	if ( g_hModule == NULL)
+	{
+		return NULL;
+	}
+
+	hResult = CoInitialize(NULL);
+
+	//
+ 	// if  the calling thread has already initialized COM with a 
+ 	// different threading model, we have this error
+ 	// however, we are able to support another threading model,
+ 	// so we try to initialize COM with another threading model.
+ 	// This new call should succeed with S_FALSE.
+ 	//
+ 	if (hResult == RPC_E_CHANGED_MODE)
+	{
+		hResult = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+	
+		//MULTITHREADED threading is only supported on Windows 2000
+		if (hResult == RPC_E_CHANGED_MODE && IsWindows2000())
+		{
+			hResult = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+		}
+	}
+
+	if (hResult != S_OK && hResult != S_FALSE)
+		return NULL;
+
 	pWanAdapter = (PWAN_ADAPTER)GlobalAlloc(GPTR, sizeof (WAN_ADAPTER));
 
 	if ( pWanAdapter == NULL )
-		return NULL;
+		goto error;
+	
+	memset(pWanAdapter, 0, sizeof(WAN_ADAPTER));
 	
 	if ( CreateBlob(&hFilterBlob) != NMERR_SUCCESS )
 	{
-		GlobalFree(pWanAdapter);
-		return NULL;
+		goto error;
 	}
 	
 	if ( SetBoolInBlob(hFilterBlob, OWNER_NPP, CATEGORY_CONFIG, TAG_INTERFACE_REALTIME_CAPTURE, TRUE) != NMERR_SUCCESS )
 	{
 		DestroyBlob( hFilterBlob);
-		GlobalFree(pWanAdapter);
-		return NULL;
+		goto error;
 	}
 
 	if ( SetBoolInBlob(hFilterBlob, OWNER_NPP, CATEGORY_LOCATION, TAG_RAS, TRUE) != NMERR_SUCCESS )
 	{
 		DestroyBlob( hFilterBlob);
-		GlobalFree(pWanAdapter);
-		return NULL;
+		goto error;
 	}
 
 	if ( GetNPPBlobTable(hFilterBlob, &pBlobTable) != NMERR_SUCCESS )
 	{
 		DestroyBlob( hFilterBlob);
-		GlobalFree(pWanAdapter);
-		return NULL;
+		goto error;
 	}
 
 	DestroyBlob (hFilterBlob);
@@ -248,8 +354,7 @@ PWAN_ADAPTER WanPacketOpenAdapter()
 			DestroyBlob(pBlobTable->hBlobs[i]);
 		
 		GlobalFree(pBlobTable);
-		GlobalFree(pWanAdapter);
-		return NULL;
+		goto error;
 	}
 
 	pWanAdapter->hCaptureBlob = pBlobTable->hBlobs[0];
@@ -258,7 +363,7 @@ PWAN_ADAPTER WanPacketOpenAdapter()
 
 	InitializeCriticalSection(&pWanAdapter->CriticalSection);
 
-	pWanAdapter->hReadEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	pWanAdapter->hReadEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
 	if ( pWanAdapter->hReadEvent == NULL )
 		goto error;
@@ -269,23 +374,6 @@ PWAN_ADAPTER WanPacketOpenAdapter()
 	
 	pWanAdapter->MemEx.size = DEFAULT_MEM_EX_SIZE;
 	pWanAdapter->Tme.active = TME_NONE_ACTIVE;
-
-	hResult = CoInitialize(NULL);
-
-	//
-	// if  the calling thread has already initialized COM with a 
-	// different threading model, we have this error
-	// however, we are able to support another threading model,
-	// so we try to initialize COM with another threading model.
-	// This new call should succeed with S_FALSE.
-	//
-	if (hResult == RPC_E_CHANGED_MODE)
-	{
-		hResult = CoInitializeEx(NULL, COINIT_MULTITHREADED);
-	}
-
-	if (hResult != S_OK && hResult != S_FALSE)
-		goto error;
 
 	if (CreateNPPInterface(pWanAdapter->hCaptureBlob, IID_IRTC, (void**) &pWanAdapter->pIRTC) == NMERR_SUCCESS && pWanAdapter->pIRTC != NULL) 
 	{
@@ -301,20 +389,17 @@ PWAN_ADAPTER WanPacketOpenAdapter()
 			{
 				pWanAdapter->pIRTC->Disconnect();
 				pWanAdapter->pIRTC->Release();
-				CoUninitialize();
 				goto error;
 			}
 		}
 		else
 		{
 			pWanAdapter->pIRTC->Release();
-			CoUninitialize();
 			goto error;
 		}
 	}
 	else
 	{
-		CoUninitialize();
 		goto error;
 	}
 
@@ -323,12 +408,20 @@ PWAN_ADAPTER WanPacketOpenAdapter()
 
 error:
 
-	if (pWanAdapter->hReadEvent != NULL)
-		CloseHandle(pWanAdapter->hReadEvent);
+	if (pWanAdapter != NULL)
+	{
+		if (pWanAdapter->hReadEvent != NULL)
+			CloseHandle(pWanAdapter->hReadEvent);
 
-	DeleteCriticalSection(&pWanAdapter->CriticalSection);
-	DestroyBlob(pWanAdapter->hCaptureBlob);
-	GlobalFree(pWanAdapter);
+		DeleteCriticalSection(&pWanAdapter->CriticalSection);
+		if (pWanAdapter->hCaptureBlob)
+			DestroyBlob(pWanAdapter->hCaptureBlob);
+
+		GlobalFree(pWanAdapter);
+	}
+
+	CoUninitialize();
+	
 	return NULL;
 }
 
@@ -348,8 +441,6 @@ BOOLEAN WanPacketCloseAdapter(PWAN_ADAPTER pWanAdapter)
 		OutputDebugString("WanPacketCloseAdapter: Severe error, IRTC::Release failed\n");
 	Sleep(0); //Just a stupid hack to make all the stuff work. I don't why it's necessary.
 
-	//uninitialize COM
-	CoUninitialize();
 
 	//setting a NULL filter will actually deallocate the in-use filter
 	WanPacketSetBpfFilter(pWanAdapter, NULL, 0);
@@ -368,6 +459,9 @@ BOOLEAN WanPacketCloseAdapter(PWAN_ADAPTER pWanAdapter)
 		GlobalFree(pWanAdapter->MemEx.buffer);
 
 	GlobalFree(pWanAdapter);
+	//uninitialize COM
+	CoUninitialize();
+
 	return TRUE;
 }
 
@@ -717,6 +811,8 @@ DWORD WanPacketRemovePacketsFromRingBuffer(PWAN_ADAPTER pWanAdapter, PUCHAR Buff
 	DWORD ToCopy;
 	DWORD Increment;
 
+	ResetEvent(pWanAdapter->hReadEvent);
+	
 	while (BuffSize > Copied)
 	{
 		if ( pWanAdapter->Free < pWanAdapter->Size )  
@@ -824,6 +920,7 @@ BOOLEAN WanPacketAddPacketToRingBuffer(PWAN_ADAPTER pWanAdapter, LPFRAME_DESCRIP
 	}
 
 	pWanAdapter->Free -= increment;
+
 	if( pWanAdapter-> Size - pWanAdapter->Free >= pWanAdapter->MinToCopy )
 	{
 		SetEvent(pWanAdapter->hReadEvent);	
