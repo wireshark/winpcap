@@ -402,8 +402,6 @@ struct pcap_samp *pcap_setsampling(pcap_t *p);
 
 
 /** \name Remote Capture functions
-
-	This section lists the functions that are specific for remote capture.
  */
 //\{ 
 SOCKET pcap_remoteact_accept(const char *address, const char *port, const char *hostlist, char *connectinghost, struct pcap_rmtauth *auth, char *errbuf);

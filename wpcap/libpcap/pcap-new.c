@@ -73,70 +73,6 @@ SOCKET sockmain;
  *                                                  *
  ****************************************************/
 
-
-/*! \ingroup wpcapfunc
-	\brief It creates a list of network devices that can be opened with pcap_open().
-	
-	This function is a superset of the old 'pcap_findalldevs()', which is obsolete, and which
-	allows listing only the devices present on the local machine.
-	Vice versa, pcap_findalldevs_ex() allows listing the devices present on a remote 
-	machine as well. Additionally, it can list all the pcap files available into a given folder.
-	Moreover, pcap_findalldevs_ex() is platform independent, since it
-	relies on the standard pcap_findalldevs() to get addresses on the local machine.
-
-	In case the function has to list the interfaces on a remote machine, it opens a new control
-	connection toward that machine, it retrieves the interfaces, and it drops the connection.
-	However, if this function detects that the remote machine is in 'active' mode,
-	the connection is not dropped and the existing socket is used.
-
-	The 'source' is a parameter that tells the function where the lookup has to be done and
-	it uses the same syntax of the pcap_open().
-
-	Differently from the pcap_findalldevs(), the interface names (pointed by the alldevs->name
-	and the other ones in the linked list) are already ready to be used in the pcap_open() call.
-	Vice versa, the output that comes from pcap_findalldevs() must be formatted with the new
-	pcap_createsrcstr() before passing the source identifier to the pcap_open().
-
-	\param source: a char* buffer that keeps the 'source localtion', according to the new WinPcap
-	syntax. This source will be examined looking for adapters (local or remote) (e.g. source
-	can be 'rpcap://' for local adapters or 'rpcap://host:port' for adapters on a remote host)
-	or pcap files (e.g. source can be 'file://c:/myfolder/').<br>
-	The strings that must be prepended to the 'source' in order to define if we want
-	local/remote adapters or files is defined in the new \link remote_source_string Source 
-	Specification Syntax \endlink.
-
-	\param auth: a pointer to a pcap_rmtauth structure. This pointer keeps the information
-	required to authenticate the RPCAP connection to the remote host.
-	This parameter is not meaningful in case of a query to the local host: in that case
-	it can be NULL.
-
-	\param alldevs: a 'struct pcap_if_t' pointer, which will be properly allocated inside
-	this function. When the function returns, it is set to point to the first element 
-	of the interface list; each element of the list is of type 'struct pcap_if_t'.
-
-	\param errbuf: a pointer to a user-allocated buffer (of size PCAP_ERRBUF_SIZE)
-	that will contain the error message (in case there is one).
-
-	\return '0' if everything is fine, '-1' if some errors occurred. The list of the devices 
-	is returned in the 'alldevs' variable.
-	When the function returns correctly, 'alldevs' cannot be NULL. In other words, this 
-	function returns '-1' also in case the system does not have any interface to list.
-
-	The error message is returned in the 'errbuf' variable. An error could be due to 
-	several reasons:
-	- libpcap/WinPcap was not installed on the local/remote host
-	- the user does not have enough privileges to list the devices / files
-	- a network problem
-	- the RPCAP version negotiation failed
-	- other errors (not enough memory and others).
-	
-	\warning There may be network devices that cannot be opened with pcap_open() by the process
-	calling pcap_findalldevs(), because, for example, that process might not have
-	sufficient privileges to open them for capturing; if so, those devices will not 
-	appear on the list.
-
-	\warning The interface list must be deallocated manually by using the pcap_freealldevs().
-*/
 int pcap_findalldevs_ex(char *source, struct pcap_rmtauth *auth, pcap_if_t **alldevs, char *errbuf) 
 {
 SOCKET sockctrl;			// socket descriptor of the control connection
@@ -710,52 +646,6 @@ error:
 }
 
 
-
-
-/*! \ingroup wpcapfunc
-	\brief Accepts a set of strings (host name, port, ...), and it returns the complete 
-	source string according to the new format (e.g. 'rpcap://1.2.3.4/eth0').
-
-	This function is provided in order to help the user creating the source string
-	according to the new format.
-	An unique source string is used in order to make easy for old applications to use the
-	remote facilities. Think about tcpdump, for example, which has only one way to specify
-	the interface on which the capture has to be started.
-	However, GUI-based programs can find more useful to specify hostname, port and
-	interface name separately. In that case, they can use this function to create the 
-	source string before passing it to the pcap_open() function.
-
-	\param source: a user-allocated buffer that will contain the complete source string
-	wen the function returns.<br>
-	The source will start with an identifier according to the new \link remote_source_string 
-	Source Specification Syntax	\endlink.<br>
-	This function assumes that the allocated buffer is at least PCAP_BUF_SIZE bytes.
-
-	\param type: its value tells the type of the source we want to create. It can assume 
-	the values defined in the \link remote_source_ID Source identification
-	Codes \endlink.<br>
-
-	\param host: an user-allocated buffer that keeps the host (e.g. "foo.bar.com") we 
-	want to connect to.
-	It can be NULL in case we want to open an interface on a local host.
-
-	\param port: an user-allocated buffer that keeps the network port (e.g. "2002") we 
-	want to use for the RPCAP protocol.
-	It can be NULL in case we want to open an interface on a local host.
-
-	\param name: an user-allocated buffer that keeps the interface name we want to use
-	(e.g. "eth0").
-	It can be NULL in case the return string (i.e. 'source') has to be used with the
-	pcap_findalldevs_ex(), which does not require the interface name.
-
-	\param errbuf: a pointer to a user-allocated buffer (of size PCAP_ERRBUF_SIZE)
-	that will contain the error message (in case there is one).
-
-	\return '0' if everything is fine, '-1' if some errors occurred. The string containing
-	the complete source is returned in the 'source' variable.
-
-	\warning If the source is longer than PCAP_BUF_SIZE, the excess characters are truncated.
-*/
 int pcap_createsrcstr(char *source, int type, const char *host, const char *port, const char *name, char *errbuf)
 {
 	switch (type)
@@ -830,64 +720,6 @@ int pcap_createsrcstr(char *source, int type, const char *host, const char *port
 }
 
 
-
-
-/*! \ingroup wpcapfunc
-	\brief Parses the source string and returns the pieces in which the source can be split.
-
-	This call is the other way round of pcap_createsrcstr().
-	It accepts a null-terminated string and it returns the parameters related 
-	to the source. This includes:
-	- the type of the source (file, winpcap on a remote adapter, winpcap on local adapter),
-	which is determined by the source prefix (PCAP_SRC_IF_STRING and so on)
-	- the host on which the capture has to be started (only for remote captures)
-	- the 'raw' name of the source (file name, name of the remote adapter, name 
-	of the local adapter), without the source prefix. The string returned does not 
-	include the type of the source itself (i.e. the string returned does not include "file://" 
-	or rpcap:// or such).
-
-	The user can omit some parameters in case it is not interested in them.
-
-	\param source: a null-terminated string containing the WinPcap source. This source starts
-	with an identifier according to the new \link remote_source_string Source Specification Syntax
-	\endlink.
-
-	\param type: pointer to an integer, which is used to return the code corrisponding to the 
-	selected source. The code will be one defined in the \link remote_source_ID Source identification
-	Codes \endlink.<br>
-	In case the source string does not exists (i.e. 'source == NULL') or it is empty
-	('*source == NULL'), it returns PCAP_SRC_IF_LOCAL (i.e. you are ready to 
-	call pcap_open_live() ). This behavior is kept only for compatibility with older 
-	applications (e.g. tcpdump); therefore we suggest to move to the new syntax for sources.<br>
-	This parameter can be NULL in case the user is not interested in that.
-
-	\param host: user-allocated buffer (of size PCAP_BUF_SIZE) that is used to return 
-	the host name on which the capture has to be started.
-	This value is meaningful only in case of remote capture; otherwise, the returned 
-	string will be empty ("").
-	This parameter can be NULL in case the user is not interested in that.
-
-	\param port: user-allocated buffer (of size PCAP_BUF_SIZE) that is used to return 
-	the port that has to be used by the RPCAP protocol to contact the other host.
-	This value is meaningful only in case of remote capture and if the user wants to use
-	a non-standard port; otherwise, the returned string will be empty ("").
-	In case of remote capture, an emply string means "use the standard RPCAP port".
-	This parameter can be NULL in case the user is not interested in that.
-
-	\param name: user-allocated buffer (of size PCAP_BUF_SIZE) that is used to return 
-	the source name, without the source prefix.
-	If the name does not exist (for example because source contains 'rpcap://' that means 
-	'default local adapter'), it returns NULL.
-	This parameter can be NULL in case the user is not interested in that.
-
-	\param errbuf: pointer to a user-allocated buffer (of size PCAP_ERRBUF_SIZE)
-	that will contain the error message (in case there is one).
-	This parameter can be NULL in case the user is not interested in that.
-
-	\return '0' if everything is fine, '-1' if some errors occurred. The requested values
-	(host name, network port, type of the source) are returned into the proper variables
-	passed by reference.
-*/
 int pcap_parsesrcstr(const char *source, int *type, char *host, char *port, char *name, char *errbuf)
 {
 char *ptr;
@@ -1037,74 +869,6 @@ int tmptype;
 };
 
 
-
-/*!	\ingroup wpcapfunc
-
-	\brief It opens a generic source in order to capture / send (WinPcap only) traffic.
-	
-	The pcap_open() replaces all the pcap_open_xxx() functions with a single call.
-
-	This function hides the differences between the different pcap_open_xxx() functions
-	so that the programmer does not have to manage different opening function.
-	In this way, the 'true' open function is decided according to the source type,
-	which is included into the source string (in the form of source prefix).
-
-	This function can rely on the pcap_createsrcstr() to create the string that keeps
-	the capture device according to	the new syntax, and the pcap_parsesrcstr() for the
-	other way round.
-
-	\param source: zero-terminated string containing the source name to open.
-	The source name has to include the format prefix according to the new
-	\link remote_source_string Source Specification Syntax\endlink and it cannot be NULL.<br>
-	On on Linux systems with 2.2 or later kernels, a device argument of "any"
-	(i.e. rpcap://any) can be used to capture packets from all interfaces.
-	<br>
-	In order to makes the source syntax easier, please remember that:
-	- the adapters returned by the pcap_findalldevs_ex() can be used immediately by the pcap_open()
-	- in case the user wants to pass its own source string to the pcap_open(), the 
-	pcap_createsrcstr() helps in creating the correct source identifier.
-	
-	\param snaplen: length of the packet that has to be retained.	
-	For each packet received by the filter, only the first 'snaplen' bytes are stored 
-	in the buffer and passed to the user application. For instance, snaplen equal to 
-	100 means that only the first 100 bytes of each packet are stored.
-
-  	\param flags: keeps several flags that can be needed for capturing packets.
-	The allowed flags are defined in the \link remote_open_flags pcap_open() flags \endlink.
-
-	\param read_timeout: read timeout in milliseconds.
-	The read timeout is used to arrange that the read not necessarily return
-	immediately when a packet is seen, but that it waits for some amount of 
-	time to allow more packets to arrive and to read multiple packets from 
-	the OS kernel in one operation. Not all platforms support a read timeout;
-	on platforms that don't, the read timeout is ignored.
-
-	\param auth: a pointer to a 'struct pcap_rmtauth' that keeps the information required to
-	authenticate the user on a remote machine. In case this is not a remote capture, this
-	pointer can be set to NULL.
-
-	\param errbuf: a pointer to a user-allocated buffer which will contain the error
-	in case this function fails. The pcap_open() and findalldevs() are the only two
-	functions which have this parameter, since they do not have (yet) a pointer to a
-	pcap_t structure, which reserves space for the error string. Since these functions
-	do not have (yet) a pcap_t pointer (the pcap_t pointer is NULL in case of errors),
-	they need an explicit 'errbuf' variable.
-	'errbuf' may also be set to warning text when pcap_open_live() succeds; 
-	to detect this case the caller should store a  zero-length string in  
-	'errbuf' before calling pcap_open_live() and display the warning to the user 
-	if 'errbuf' is no longer a zero-length string.
-
-	\return A pointer to a 'pcap_t' which can be used as a parameter to the following
-	calls (pcap_compile() and so on) and that specifies an opened WinPcap session. In case of 
-	problems, it returns NULL and the 'errbuf' variable keeps the error message.
-
-	\warning The source cannot be larger than PCAP_BUF_SIZE.
-
-	\warning The following formats are not allowed as 'source' strings:
-	- rpcap:// [to open the first local adapter]
-	- rpcap://hostname/ [to open the first remote adapter]
-
-*/
 pcap_t *pcap_open(const char *source, int snaplen, int flags, int read_timeout, struct pcap_rmtauth *auth, char *errbuf)
 {
 char host[PCAP_BUF_SIZE], port[PCAP_BUF_SIZE], name[PCAP_BUF_SIZE];
@@ -1158,92 +922,12 @@ pcap_t *fp;
 }
 
 
-/*!
-	\ingroup wpcapfunc
-
-	\brief It defines a sampling method for packet capture.
-
-	This function allows applying a sampling method to the packet capture process.
-	The currently sampling methods (and the way to set them) are described into the
-	struct pcap_samp. In other words, the user must set the appropriate parameters
-	into it; these will be applied as soon as the capture starts.
-
-	\warning Sampling parameters <strong>cannot</strong> be changed when a capture is 
-	active. These parameters must be applied <strong>before</strong> starting the capture.
-	If they are applied when the capture is in progress, the new settings are ignored.
-
-	\warning Sampling works only when capturing data on Win32 or reading from a file.
-	It has not been implemented on other platforms. Sampling works on remote machines
-	provided that the probe (i.e. the capturing device) is a Win32 workstation.
-*/
 struct pcap_samp *pcap_setsampling(pcap_t *p)
 {
 	return &(p->rmt_samp);
 }
 
 
-/*!
-	\ingroup wpcapfunc
-
-	\brief It blocks until a network connection is accepted (active mode only).
-
-	This function has been defined to allow the client dealing with the 'active mode'.
-	In other words, in the 'active mode' the server opens the connection toward the
-	client, so that the client has to open a socket in order to wait for connections.
-	When a new connection is accepted, the RPCAP protocol starts as usual; the only 
-	difference is that the connection is initiated by the server.
-
-	This function accepts only ONE connection, then it closes the waiting socket. This means
-	that if some error occurs, the application has to call it again in order to accept another
-	connection.
-
-	This function returns when a new connection (coming from a valid host 'connectinghost')
-	is accepted; it returns error otherwise.
-
-	\param address: a string that keeps the network address we have to bind to; 
-	usually it is NULL (it means 'bind on all local addresses').
-
-	\param port: a string that keeps the network port on which we have to bind to; usually
-	it is NULL (it means 'bind on the predefined port', i.e. RPCAP_DEFAULT_NETPORT_ACTIVE).
-
-	\param hostlist: a string that keeps the host name of the host from whom we are
-	expecting a connection; it can be NULL (it means 'accept connection from everyone').
-	Host names are separated by a whatever character in the RPCAP_HOSTLIST_SEP list.
-
-	\param connectinghost: a user-allocated buffer that will contain the name of the host
-	is trying to connect to us.
-	This variable must be at least RPCAP_HOSTLIST_SIZE bytes..
-
-	\param auth: a pointer to a pcap_rmtauth structure. This pointer keeps the information
-	required to authenticate the RPCAP connection to the remote host.
-
-	\param errbuf: a pointer to a user-allocated buffer (of size PCAP_ERRBUF_SIZE)
-	that will contain the error message (in case there is one).
-
-	\return The SOCKET identifier of the new control connection if everything is fine,
-	a negative number if some errors occurred. The error message is returned into the errbuf variable.
-	In case it returns '-1', this means 'everything is fine', but the host cannot be admitted.
-	In case it returns '-2', in means 'unrecoverable error' (for example it is not able to bind the 
-	socket, or something like that).
-	In case it returns '-3', it means 'authentication failed'. The authentication check is performed
-	only if the connecting host is among the ones that are allowed to connect to this host.
-
-	The host that is connecting to us is returned into the hostlist variable, which ust be allocated
-	by the user. This variable contains the host name both in case the host is allowed, 
-	and in case the connection is refused.
-
-	\warning Although this function returns the socket established by the new control connection,
-	this value should not be used. This value will be stored into some libpcap internal
-	variables and it will be managed automatically by the library. In other words, all the
-	following calls to findalldevs() and pcap_open() will check if the host is among one that
-	already has a control connection in place; if so, that one will be used.
-
-	\warning This function has several problems if used inside a thread, which is stopped
-	when this call is blocked into the accept(). In this case, the socket on which we accept
-	connections is not freed (thread termination is a very dirty job), so that we are no
-	longer able to accept other connections until the program (i.e. the process) stops.
-	In order to solve the problem, call the pcap_remoteact_cleanup().
-*/
 SOCKET pcap_remoteact_accept(const char *address, const char *port, const char *hostlist, char *connectinghost, struct pcap_rmtauth *auth, char *errbuf)
 {
 // socket-related variables
@@ -1378,26 +1062,6 @@ struct activehosts *temp, *prev;	// temp var needed to scan he host list chain
 }
 
 
-
-/*!
-	\ingroup wpcapfunc
-
-	\brief It drops an active connection (active mode only).
-
-	This function has been defined to allow the client dealing with the 'active mode'.
-	This function closes an active connection that is still in place and it purges
-	the host name from the 'activeHost' list.
-	From this point on, the client will not have any connection with that host in place.
-
-	\param host: a string that keeps the host name of the host for which we want to
-	close the active connection.
-
-	\param errbuf: a pointer to a user-allocated buffer (of size PCAP_ERRBUF_SIZE)
-	that will contain the error message (in case there is one).
-
-	\return '0' if everything is fine, '-1' if some errors occurred. The error message is 
-	returned into the errbuf variable.
-*/
 int pcap_remoteact_close(const char *host, char *errbuf)
 {
 struct activehosts *temp, *prev;	// temp var needed to scan the host list chain
@@ -1475,27 +1139,6 @@ int retval;
 }
 
 
-/*!
-	\ingroup wpcapfunc
-
-	\brief Cleans the socket that is currently used in waiting active connections.
-
-	This function does a very dirty job. The fact is that is the waiting socket is not
-	freed if the pcap_remoteaccept() is killed inside a new thread. This function is
-	able to clean the socket in order to allow the next calls to pcap_remoteact_accept() to work.
-	
-	This function is useful *only* if you launch pcap_remoteact_accept() inside a new thread,
-	and you stops (not very gracefully) the thread (for example because the user changed idea,
-	and it does no longer want to wait for an active connection).
-	So, basically, the flow should be the following:
-	- launch a new thread
-	- call the pcap_remoteact_accept
-	- if this new thread is killed, call pcap_remoteact_cleanup().
-	
-	This function has no effects in other cases.
-
-	\return None.
-*/
 void pcap_remoteact_cleanup()
 {
 	// Very dirty, but it works
@@ -1510,29 +1153,6 @@ void pcap_remoteact_cleanup()
 }
 
 
-/*!
-	\ingroup wpcapfunc
-
-	\brief Returns the hostname of the host that have an active connection with us (active mode only).
-
-	This function has been defined to allow the client dealing with the 'active mode'.
-	This function returns the list of hosts that are currently having an active connection
-	with us. This function is useful in order to delete an active connection that is still
-	in place.
-
-	\param hostlist: a user-allocated string that will keep the list of host that are 
-	currently connected with us.
-
-	\param sep: the character that has to be sued as a separator between the hosts (','  for example).
-
-	\param size: size of the hostlist buffer.
-
-	\param errbuf: a pointer to a user-allocated buffer (of size PCAP_ERRBUF_SIZE)
-	that will contain the error message (in case there is one).
-
-	\return '0' if everything is fine, '-1' if some errors occurred. The error message is 
-	returned into the errbuf variable.
-*/
 int pcap_remoteact_list(char *hostlist, char sep, int size, char *errbuf)
 {
 struct activehosts *temp;	// temp var needed to scan the host list chain
