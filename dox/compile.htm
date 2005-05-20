@@ -12,12 +12,11 @@
 the user-level portion, on the various Win32 platforms. The source code can be
 found on the WinPcap website, at <a href="http://winpcap.polito.it/install/">http://winpcap.polito.it/install/</a>.</p>
 <h2>Compiling the driver</h2>
-<p>Two main NPF sources are available for compilation: the Windows NTx one and
-the Windows 9x one. Note that, since the NPF Driver is platform dependent, it is
-STRONGLY suggested to compiled it on the OS where it will be used, in order to
+<p>Two main NPF sources are available for compilation:&nbsp; Windows NTx and Windows 9x. Note that, since the NPF Driver is platform-dependent, it is
+STRONGLY suggested to compile it on the OS where it will be used, in order to
 link the correct DDK libraries. For example, if you compile the
-driver with the Windows NT 4 DDK, it will not work properly in Windows 2000
-and vice versa, also if the source code tree is the same.</p>
+driver with the Windows NT 4 DDK, it will not work properly on Windows 2000 and 
+vice versa.</p>
 <h3>Co<a name="#NT40">mpili</a>ng the driver on Windows NTx</h3>
 <p>Software requirements:</p>
 <ul>
@@ -50,7 +49,7 @@ and vice versa, also if the source code tree is the same.</p>
 'last line incomplete' errors are generated. Ignore these errors and let the
 compilation process continue, they are due to bugs in some DDK versions.</p>
 <h3><a name="#95-98">Compili</a>ng the driver on Windows 9x</h3>
-<p>To compile the driver there are the following software requirements:</p>
+<p>To compile the driver for Windows 9x you will need:</p>
 <ul>
   <li><font size="3">Driver Developer Kit (DDK) for Windows 95/98/ME</font>
   <li>A recent version of the Microsoft Platform Software Development Kit (SDK).
@@ -58,9 +57,9 @@ compilation process continue, they are due to bugs in some DDK versions.</p>
     from <a href="http://www.microsoft.com/msdownload/platformsdk/sdkupdate/">http://www.microsoft.com/msdownload/platformsdk/sdkupdate/</a>
   <li><font size="3">Visual C++ 6.0</font></li>
 </ul>
-<p>the steps to follow are:</p>
+<p>The steps to follow are:</p>
 <ol>
-  <li>Open a dos shell
+  <li>Open a DOS shell
   <li>Go to the VisualC++ BIN directory (for example C:\DEVSTUDIO\VC\BIN) and
     execute the command<br>
     <br>
@@ -83,8 +82,8 @@ compilation process continue, they are due to bugs in some DDK versions.</p>
     <br>
     <em>nmake<br>
     <br>
-    </em>to obtain a debug version.<br>
-    The release version of <i>packet.vxd</i> will be placed in the <em>retail</em>
+    </em>to obtain a debug version.<br>The release version of <i>packet.vxd</i> will be placed in the 
+	<em>retail</em>
     directory, the debug version in the <em>debug</em> directory.</li>
 </ol>
 <p><strong>Warning</strong>: On some systems the NMAKE utility is not able to
@@ -121,52 +120,35 @@ files.</p>
 <p>wpcap.dll can be compiled on any Win32 platform and the generated dll is system independent.</p>
 <p>System Requirements:</p>
 <ul>
-  <li>Microsoft <font size="3">Visual C++ 6.0 compiler</font></li>
+  <li>Microsoft Visual C++ 6.0 compiler</li>
   <li>A recent version of the Microsoft Platform Software Development Kit (SDK).
     If you encounter compilation problems, try to download the latest version
-    from <a href="http://www.microsoft.com/msdownload/platformsdk/sdkupdate/">http://www.microsoft.com/msdownload/platformsdk/sdkupdate/</a></li>
+    from <a href="http://www.microsoft.com/msdownload/platformsdk/sdkupdate/">http://www.microsoft.com/msdownload/platformsdk/sdkupdate/</a>.
+	<b><br>
+	Note</b>: with Microsoft Visual Studio .Net you the platform SDK is <b>not</b> 
+	needed to compile WinPcap. </li>
+	<li>Project files are in the <i>directory winpcap\wpcap\prj</i> of the WinPcap source 
+code distribution. Load wpcap.dsw from the Visual C++ IDE and build the program.<br>There are six build project configurations:<b><br>
+	<br>
+&nbsp;No support for DAG cards and Remore Capture</b></li>
+	<li><i>Wpcap debug</i>: winpcap\wpcap\prj\Debug </li>
+	<li><i>Wpcap release</i>: winpcap\wpcap\prj\Release<br>
+	<br>
+	<b>Support for Remote capture, no support for DAG cards</b></li>
+	<li><i>Wpcap debug REMOTE</i>: winpcap\wpcap\prj\Debug_REMOTE</li>
+	<li><i>Wpcap release REMOTE</i>: winpcap\wpcap\prj\Release_REMOTE<br>
+	<b><br>
+	Support for DAG cards and Remote Capture</b></li>
+	<li><i>Wpcap debug REMOTE DAG</i>: winpcap\wpcap\prj\Debug_REMOTE_DAG</li>
+	<li><i>Wpcap release REMOTE DAG</i>: winpcap\wpcap\prj\Release_REMOTE_DAG</li>
 </ul>
-<p>Project files are in the <i>directory winpcap\wpcap\prj</i> of the WinPcap source 
-code distribution. Load wpcap.dsw from the Visual C++ IDE and build the program.<br>
-There are six build project configurations:</p>
-<ul>
-  <li><i>Wpcap debug</i>: no support for DAG cards and Remote capture, debug version</li>
-  <li><i>Wpcap release</i>: no support for DAG cards and Remote capture, release 
-  version</li>
-  <li><i>Wpcap debug REMOTE</i>: support for Remote capture, no support for DAG cards, 
-  debug version</li>
-  <li><i>Wpcap release REMOTE</i>: support for Remote capture, no support for DAG 
-  cards, release version</li>
-  <li><i>Wpcap debug REMOTE DAG</i>: support for both DAG cards and Remote capture, 
-  debug version</li>
-  <li><i>Wpcap release REMOTE DAG</i>: support for both DAG cards and Remote 
-  capture, release version</li>
-</ul>
-<p>Both wpcap.lib and wpcap.dll will be put in the output folder related to a 
-build configuration:</p>
-<ul>
-  <li><i>Wpcap debug</i>: winpcap\wpcap\prj\Debug </li>
-  <li><i>Wpcap release</i>: winpcap\wpcap\prj\Release </li>
-  <li><i>Wpcap debug REMOTE</i>: winpcap\wpcap\prj\Debug_REMOTE</li>
-  <li><i>Wpcap release REMOTE</i>: winpcap\wpcap\prj\Release_REMOTE</li>
-  <li><i>Wpcap debug REMOTE DAG</i>: winpcap\wpcap\prj\Debug_REMOTE_DAG</li>
-  <li><i>Wpcap release REMOTE DAG</i>: winpcap\wpcap\prj\Release_REMOTE_DAG</li>
-</ul>
-<p><i>Note 1</i>: wpcap.dll contains the source code of libpcap from
+<p><i>Note</i>: wpcap.dll contains the source code of libpcap from
 <a href="http://www.tcpdump.org">www.tcpdump.org</a>, with some modifications 
 for remote capture. You will be able to include and build a different libpcap 
 version simply copying it in the directory <i>winpcap\wpcap\prj</i> of the 
 WinPcap source code distribution, but you must use the &quot;Debug&quot; or &quot;Release&quot; 
 build configurations.<br>
-<br>
-<i>Note 2</i>: the default project does not contain support for Endace Dag cards 
-because, in order to compile wpcap.dll with Dag support, some include files from 
-Dag software distribution are needed. These files are not public and must be 
-requested to Endace (<a href="http://www.endace.com">http://www.endace.com</a>), 
-which provides a source code tree with all the Dag source code. This tree must 
-be put in a subfolder called <i>dag</i> of the winpcap folder. At this point, 
-you can compile wpcap.dll with Dag support using the build configurations &quot;Debug 
-REMOTE DAG&quot; and &quot;Release REMOTE DAG&quot;.</p>
+&nbsp;</p>
 
 </body>
 

@@ -5,15 +5,15 @@
 /** @defgroup wpcap_tut5 Filtering the traffic
  *  @{
 
-One of the most powerful features offered by WinPcap (and by libpcap as well) is the filtering engine. It provides a very efficient way to receive only subsets of the network traffic, and is (usually) integrated with the capture mechanism provided by the OS. The functions to use to filter the packets are pcap_compile() and pcap_setfilter().
+One of the most powerful features offered by WinPcap (and by libpcap as well) is the filtering engine. It provides a very efficient way to receive subsets of the network traffic, and is (usually) integrated with the capture mechanism provided by WinPcap. The functions used to filter packets are pcap_compile() and pcap_setfilter().
 
-pcap_compile() compiles a filter, i.e. takes a string with an high level boolean expression and produces a low-level filtering binary that can be interpreted by the packet driver. The syntax of the boolean expression can be found in the \ref language section of this documentation.
+pcap_compile() takes a string containing a high-level Boolean (filter) expression and produces a low-level byte code that can be interpreted by the fileter engine in the packet driver. The syntax of the boolean expression can be found in the \ref language section of this documentation.
 
-pcap_setfilter() associates a filter to a capture session in the kernel driver. From this moment, the filter will be applied to all the packets coming from the network, and all the conformant packets will be actually copied to the application.
+pcap_setfilter() associates a filter with a capture session in the kernel driver. Once pcap_setfilter() is called, the associated filter will be applied to all the packets coming from the network, and all the conformant packets (i.e., packets for which the Boolean expression evaluates to true) will be actually copied to the application.
 
 The following code shows how to compile and set a filter. Note that we must retrieve the netmask from the pcap_if structure that describes the adapter, because some filters created by pcap_compile() require it.
 
-The filter passed to pcap_compile() in this code snippet is "ip and tcp", that means "keep only the packets that are both IPv4 and TCP and deliver them to the application".
+The filter passed to pcap_compile() in this code snippet is "ip and tcp", which means to "keep only the packets that are both IPv4 and TCP and deliver them to the application".
 
 \code
 	if (d->addresses != NULL)
@@ -43,7 +43,7 @@ The filter passed to pcap_compile() in this code snippet is "ip and tcp", that m
 	}
 \endcode
 
-If you want to see some code that uses the filtering functions showed in this lesson, look at the example presented in the next step, \ref wpcap_tut6.
+If you want to see some code that uses the filtering functions shown in this lesson, look at the example presented in the next Lesson, \ref wpcap_tut6.
 
 \ref wpcap_tut4 "<<< Previous" \ref wpcap_tut6 "Next >>>"
 

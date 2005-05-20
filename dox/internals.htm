@@ -2,13 +2,16 @@
 
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
-<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="GENERATOR" content="Microsoft FrontPage 6.0">
 <meta name="ProgId" content="FrontPage.Editor.Document">
 <title></title>
 </head>
 
 <body>
-This Portion of the manual documents the internal structure and interfaces of WinPcap, starting from the lowest-level module. It is targeted to people that must extend or modify this software, or to the ones interested in how it works. Therefore, developers that want to use WinPcap in their software don't need to read it.
+This portion of the manual describes the internal structure and interfaces of WinPcap, 
+starting from the lowest-level module. It is targeted at people that must extend 
+or modify this software, or to the ones interested in how it works. Therefore, 
+developers who just want to use WinPcap in their software don't need to read it.
 
 <h2>WinPcap structure</h2>
 <p>Quoted from the home page of winpcap:</p>
@@ -25,11 +28,12 @@ library is not sufficient.</p>
 <img src="internals-arch.gif" width="280" height="355">
 <p align="center">
 <b>Main components of WinPcap.</b>
-<p>First, a capture system needs to bypass the protocol stack in order to access
+<p>First, a capture system needs to bypass the operating systems's protocol stack in order to access
 the raw data transiting on the network. This requires a portion
 running inside the kernel of OS, interacting directly with the network interface
 drivers. This portion is very system dependent, and in
-our solution it is realized as a device driver, called Netgroup Packet Filter (NPF); we provide currently different versions of the driver for Windows 95, Windows 98, Windows ME,
+our solution it is realized as a device driver, called Netgroup Packet Filter (NPF); 
+we provide different versions of the driver for Windows 95, Windows 98, Windows ME,
 Windows NT 4,
 Windows 2000 and Windows XP. These drivers offer both basic features like packet capture
 and injection, as well as more advanced ones like a programmable filtering system and a
@@ -46,8 +50,9 @@ The first one offers a low-level API that can be used to directly access the
 functions of the driver, with a programming interface independent from the
 Microsoft OS.&nbsp;</p>
 <p> The second one exports a more powerful set of high level capture
-primitives that are compatible with libpcap, the well known Unix capture library.
-These functions allow to capture packets in a way independent from the
+primitives that are compatible with libpcap, the well known Unix capture 
+library. These functions enable packet capture in a manner that is independent 
+of the
 underlying network hardware and operating system.</p>
 <p>Throughout this documentation we will refer to the <b>Packet Driver API </b>or
 <b>packet.dll</b> as the first set of functions, whereas <b>wpcap</b>, <b>wpcap.dll</b> or <b>libpcap</b>
