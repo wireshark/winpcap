@@ -4,8 +4,9 @@ cd dox\prj\
 del /q docs\*.*
 @echo #### Create new documentation
 doxygen winpcap_c.dox
-@echo #### Copy 'winpcap_small.gif' file, since it is not copied
-copy ..\pics\winpcap_small.gif docs\.
+@echo #### Copy all gif files
+copy ..\pics\*.gif docs\. /v /y /q
+copy ..\*.gif docs\. /v /y /q
 cd ..
 cd ..
 

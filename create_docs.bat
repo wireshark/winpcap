@@ -18,7 +18,8 @@ popd
 
 xcopy /v /Y %WINPCAPSOURCEDIR%\dox\WinPcap_docs.html	%WPDPACKDESTDIR%\docs\
 xcopy /v /Y %WINPCAPSOURCEDIR%\dox\prj\docs\*.*		%WPDPACKDESTDIR%\docs\html\
-xcopy /v /Y %WINPCAPSOURCEDIR%\dox\internals-arch.gif	%WPDPACKDESTDIR%\docs\html\
+xcopy /v /Y %WINPCAPSOURCEDIR%\dox\*.gif		%WPDPACKDESTDIR%\docs\html\
+xcopy /v /Y %WINPCAPSOURCEDIR%\dox\pics\*.gif		%WPDPACKDESTDIR%\docs\html\
 echo Folder \docs created successfully
 set WPDPACKDESTDIR=
 set WINPCAPSOURCEDIR=
