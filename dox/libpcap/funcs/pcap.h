@@ -82,20 +82,9 @@ pcap_t *pcap_open_dead(int linktype, int snaplen);
   errbuf is used to return error text and is only  set  when
   pcap_open_offline() fails and returns NULL.
 
-\sa pcap_open_live(), pcap_dump_open(), pcap_findalldevs(), pcap_close(), pcap_fopen_offline()
+\sa pcap_open_live(), pcap_dump_open(), pcap_findalldevs(), pcap_close()
 */
 pcap_t *pcap_open_offline(const char *fname, char *errbuf);
-
-/*! \brief Read dumped data from an existing open stream.
-
-  This function is analogous to \ref pcap_open_offline(),
-  but uses a FILE pointer instead of a name. 
-  
-  \note the stream should be opened in binary mode.
-
-\sa pcap_open_offline()
-*/
-pcap_t *pcap_fopen_offline(FILE *fp, char *errbuf);
 
 /*! \brief Open a file to write packets.
 
@@ -103,22 +92,9 @@ pcap_t *pcap_fopen_offline(FILE *fp, char *errbuf);
   writing. fname  is the  name  of  the  file  to  open. 
   The name "-" in a synonym for  stdout. If NULL is returned,
   pcap_geterr() can be used to get the error text. 
-  Alternatively, you may call \ref pcap_dump_fopen() to write data 
-  to an existing open stream 
-
-\sa pcap_dump_close(), pcap_file(), pcap_dump(), pcap_dump_fopen()
+\sa pcap_dump_close(), pcap_file(), pcap_dump()
 */
 pcap_dumper_t *pcap_dump_open(pcap_t *p, const char *fname);
-
-/*! \brief Use an existing open stream to write packets.
-
-  This function is analogous to \ref pcap_dump_open(),
-  but uses a FILE pointer instead of a name. 
-  
-  \note the stream should be opened in binary mode.
-
-\sa pcap_dump_open()
-*/pcap_dumper_t *pcap_dump_fopen(pcap_t *p, FILE *fp);
 
 /*! \brief Switch between blocking and nonblocking mode.
 
@@ -341,6 +317,16 @@ int pcap_sendpacket(pcap_t *p, u_char *buf, int size);
 \sa pcap_dump_open(), pcap_dump_close(), pcap_dispatch(), pcap_loop()
 */
 void pcap_dump(u_char *user, const struct pcap_pkthdr *h, const u_char *sp);
+
+/*! \brief Return the file position for a "savefile".
+
+	pcap_dump_ftell() returns the current file position for the "savefile", representing the number of bytes written by
+	pcap_dump_open() and pcap_dump() .
+	-1 is returned on error.
+
+\sa pcap_dump_open(), pcap_dump()
+*/
+long pcap_dump_ftell(pcap_dumper_t *);
 
 /*! \brief Compile a packet filter, converting an high level filtering expression 
 (see \ref language) in a program that can be interpreted by the kernel-level
