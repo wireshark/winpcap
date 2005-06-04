@@ -119,7 +119,7 @@ LINK32=link.exe
 OutDir=.\Debug_REMOTE
 SOURCE="$(InputPath)"
 PostBuild_Desc=copy wpcap.lib file
-PostBuild_Cmds=copy     $(OutDir)\wpcap.lib     $(OutDir)\..\..\LIB\ 
+PostBuild_Cmds=copy       $(OutDir)\wpcap.lib       $(OutDir)\..\..\LIB\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "wpcap - Win32 Debug REMOTE DAG"
@@ -154,7 +154,7 @@ LINK32=link.exe
 OutDir=.\Debug_REMOTE_DAG
 SOURCE="$(InputPath)"
 PostBuild_Desc=copy wpcap.lib file
-PostBuild_Cmds=copy     $(OutDir)\wpcap.lib     $(OutDir)\..\..\LIB\ 
+PostBuild_Cmds=copy       $(OutDir)\wpcap.lib       $(OutDir)\..\..\LIB\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "wpcap - Win32 Release REMOTE"
@@ -189,7 +189,7 @@ LINK32=link.exe
 OutDir=.\Release_REMOTE
 SOURCE="$(InputPath)"
 PostBuild_Desc=copy wpcap.lib file
-PostBuild_Cmds=copy     $(OutDir)\wpcap.lib     $(OutDir)\..\..\LIB\ 
+PostBuild_Cmds=copy       $(OutDir)\wpcap.lib       $(OutDir)\..\..\LIB\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "wpcap - Win32 Release REMOTE DAG"
@@ -224,7 +224,7 @@ LINK32=link.exe
 OutDir=.\Release_REMOTE_DAG
 SOURCE="$(InputPath)"
 PostBuild_Desc=copy wpcap.lib file
-PostBuild_Cmds=copy     $(OutDir)\wpcap.lib     $(OutDir)\..\..\LIB\ 
+PostBuild_Cmds=copy       $(OutDir)\wpcap.lib       $(OutDir)\..\..\LIB\ 
 # End Special Build Tool
 
 !ENDIF 

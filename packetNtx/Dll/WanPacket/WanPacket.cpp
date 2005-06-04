@@ -156,7 +156,6 @@ DWORD WINAPI WanPacketReceiverCallback(UPDATE_EVENT Event)
 		}
 
 		LeaveCriticalSection( &pWanAdapter->CriticalSection );
-
 	}
 	
 	return NOERROR;

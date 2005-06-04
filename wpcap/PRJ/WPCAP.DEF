@@ -7,7 +7,6 @@ EXPORTS
 		pcap_lookupnet
 		pcap_open_live
 		pcap_open_offline
-		pcap_fopen_offline
 		pcap_close
 		pcap_getnonblock
 		pcap_setnonblock
@@ -34,7 +33,6 @@ EXPORTS
 		pcap_file
 		pcap_fileno
 		pcap_dump_open
-		pcap_dump_fopen
 		pcap_dump_close
 		pcap_dump_flush
 		pcap_dump
@@ -84,3 +82,4 @@ EXPORTS
 		pcap_datalink_val_to_description
 		pcap_lib_version
 		pcap_dump_file
+		pcap_dump_ftell
