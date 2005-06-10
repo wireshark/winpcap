@@ -465,45 +465,53 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 
 		case BPF_LD|BPF_W|BPF_ABS:
 			k = pc->k;
-			if (k + sizeof(int32) > buflen) {
+			if (k + 4 > (int)buflen) {
 				return 0;
 			}
 			
-			if(k + (int)sizeof(int32) < headersize) A = EXTRACT_LONG(&p[k]);
-			else if(k + 2 == headersize){
-				A=(u_int32)*((u_char *)p+k)<<24|
+			if(k + 4 <= headersize) 
+				A = EXTRACT_LONG(&p[k]);
+			else if(k + 3 == headersize)
+			{
+				A=	(u_int32)*((u_char *)p+k)<<24|
 					(u_int32)*((u_char *)p+k+1)<<16|
 					(u_int32)*((u_char *)p+k+2)<<8|
 					(u_int32)*((u_char *)pd+k-headersize);
 			}
-			else if(k == headersize-1){
-				A=(u_int32)*((u_char *)p+k)<<24|
+			else if(k + 2 == headersize)
+			{
+				A=	(u_int32)*((u_char *)p+k)<<24|
 					(u_int32)*((u_char *)p+k+1)<<16|
 					(u_int32)*((u_char *)pd+k-headersize)<<8|
 					(u_int32)*((u_char *)pd+k-headersize+1);
 			}
-			else if(k == headersize){
-				A=(u_int32)*((u_char *)p+k)<<24|
+			else if(k + 1 == headersize){
+				A=	(u_int32)*((u_char *)p+k)<<24|
 					(u_int32)*((u_char *)pd+k-headersize+1)<<16|
 					(u_int32)*((u_char *)pd+k-headersize+2)<<8|
 					(u_int32)*((u_char *)pd+k-headersize+3);
 			}
-			A = EXTRACT_LONG(&pd[k-headersize]);
+			else
+				A = EXTRACT_LONG(&pd[k-headersize]);
 			
 			continue;
 			
 		case BPF_LD|BPF_H|BPF_ABS:
 			k = pc->k;
-			if (k + sizeof(short) > buflen) {
+			if (k + sizeof(short) > buflen) 
+			{
 				return 0;
 			}
 			
-			if(k + (int)sizeof(short) < headersize) A = EXTRACT_SHORT(&p[k]);
-			else if(k == headersize){
-				A=(u_short)*((u_char *)p+k)<<8|
+			if(k + 2 <= headersize) 
+				A = EXTRACT_SHORT(&p[k]);
+			else if(k + 1 == headersize)
+			{
+				A=	(u_short)*((u_char *)p+k)<<8|
 					(u_short)*((u_char *)pd+k-headersize);
 			}
-			A = EXTRACT_SHORT(&pd[k-headersize]);
+			else
+				A = EXTRACT_SHORT(&pd[k-headersize]);
 			
 			continue;
 
@@ -513,8 +521,10 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 				return 0;
 			}
 
-			if(k<headersize) A = p[k];
-			 else A = pd[k-headersize];
+			if(k +(int) sizeof(char) <= headersize) 
+				A = p[k];
+			 else 
+				 A = pd[k-headersize];
 
 			continue;
 
@@ -532,41 +542,49 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 				return 0;
 			}
 
-			if(k + (int)sizeof(int32) < headersize) A = EXTRACT_LONG(&p[k]);
-			else if(k + (int)sizeof(int32) == headersize+2){
-				A=(u_int32)*((u_char *)p+k)<<24|
+			if(k + 4 <= headersize) 
+				A = EXTRACT_LONG(&p[k]);
+			else if(k + 3 == headersize)
+			{
+				A=	(u_int32)*((u_char *)p+k)<<24|
 					(u_int32)*((u_char *)p+k+1)<<16|
 					(u_int32)*((u_char *)p+k+2)<<8|
 					(u_int32)*((u_char *)pd+k-headersize);
 			}
-			else if(k + (int)sizeof(int32) == headersize+3){
-				A=(u_int32)*((u_char *)p+k)<<24|
+			else if(k + 2 == headersize)
+			{
+				A=	(u_int32)*((u_char *)p+k)<<24|
 					(u_int32)*((u_char *)p+k+1)<<16|
 					(u_int32)*((u_char *)pd+k-headersize)<<8|
 					(u_int32)*((u_char *)pd+k-headersize+1);
 			}
-			else if(k + (int)sizeof(int32) == headersize+4){
-				A=(u_int32)*((u_char *)p+k)<<24|
+			else if(k + 1 == headersize)
+			{
+				A=	(u_int32)*((u_char *)p+k)<<24|
 					(u_int32)*((u_char *)pd+k-headersize+1)<<16|
 					(u_int32)*((u_char *)pd+k-headersize+2)<<8|
 					(u_int32)*((u_char *)pd+k-headersize+3);
 			}
-			A = EXTRACT_LONG(&pd[k-headersize]);
+			else
+				A = EXTRACT_LONG(&pd[k-headersize]);
 			
 			continue;
 			
 		case BPF_LD|BPF_H|BPF_IND:
 			k = X + pc->k;
-			if (k + sizeof(short) > buflen) {
+			if (k + 2 > (int)buflen) {
 				return 0;
 			}
 			
-			if(k + (int)sizeof(short) < headersize) A = EXTRACT_SHORT(&p[k]);
-			else if(k == headersize){
-				A=(u_short)*((u_char *)p+k)<<8|
+			if(k + 2 <= headersize) 
+				A = EXTRACT_SHORT(&p[k]);
+			else if(k +1 == headersize)
+			{
+				A=	(u_short)*((u_char *)p+k)<<8|
 					(u_short)*((u_char *)pd+k-headersize);
 			}
-			A = EXTRACT_SHORT(&pd[k-headersize]);
+			else
+				A = EXTRACT_SHORT(&pd[k-headersize]);
 
 			continue;
 
@@ -576,8 +594,10 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 				return 0;
 			}
 
-			if(k<headersize) A = p[k];
-			 else A = pd[k-headersize];
+			if(k <= headersize) 
+				A = p[k];
+			 else 
+				A = pd[k-headersize];
 
 			continue;
 
@@ -587,8 +607,10 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 				return 0;
 			}
 			
-			if((pc->k)<headersize) X = (p[pc->k] & 0xf) << 2;
-			 else X = (pd[(pc->k)-headersize] & 0xf) << 2;
+			if((pc->k) <= headersize) 
+				X = (p[pc->k] & 0xf) << 2;
+			 else 
+				X = (pd[(pc->k)-headersize] & 0xf) << 2;
 
 			continue;
 
