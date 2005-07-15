@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002 - 2003
- * NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2003 - 2005 NetGroup, Politecnico di Torino (Italy).
+ * Copyright (c) 2005 CACE Technologies, Davis (California).
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,9 +12,10 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the Politecnico di Torino nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ * 3. Neither the name of the Politecnico di Torino, CACE Technologies
+ * nor the names of its contributors may be used to endorse or promote 
+ * products derived from this software without specific prior written 
+ * permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -51,9 +52,10 @@ int main(int argc, char **argv)
 	FILE *log;
 
 	log=stdout;
+	ShowHelp();
+
 	if (argc<2)
 	{
-		ShowHelp();
 		return -1;
 	}
 
@@ -583,7 +585,11 @@ void DisplayErrorText(DWORD dwLastError,FILE* output)
 
 void ShowHelp()
 {
-	printf("NPF Management - Written by Gianluca Varenni (varenni@polito.it)\n\n");
+	printf("******************************************************************************\n");
+	printf("NPF driver Management\n\n");
+	printf("Copyright (C) 2003-2005  NetGroup, Politecnico di Torino\n");
+	printf("Copyright (C) 2005  CACE Technologies, Davis, California\n");
+	printf("******************************************************************************\n\n");
 	printf("syntax: npf_mgm -s -x -u -i -r -a -d\n\n");
 	printf("	-s starts NPF driver\n");
 	printf("	-x stops NPF driver\n");
