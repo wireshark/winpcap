@@ -10,26 +10,52 @@
 <body>
 <p>This section explains how to compile WinPcap, both the kernel level and
 the user-level portion, on the various Win32 platforms. The source code can be
-found on the WinPcap website, at <a href="http://winpcap.polito.it/install/">http://winpcap.polito.it/install/</a>.</p>
+found on the WinPcap website, at <a href="http://www.winpcap.org/install/">http://www.winpcap.org/install/</a>.</p>
 <h2>Compiling the driver</h2>
-<p>Two main NPF sources are available for compilation:&nbsp; Windows NTx and Windows 9x. Note that, since the NPF Driver is platform-dependent, it is
+<p>Two main NPF source trees are available for compilation:&nbsp; Windows NTx and Windows 9x. Note that, since the NPF Driver is platform-dependent, it is
 STRONGLY suggested to compile it on the OS where it will be used, in order to
 link the correct DDK libraries. For example, if you compile the
 driver with the Windows NT 4 DDK, it will not work properly on Windows 2000 and 
 vice versa.</p>
-<h3>Co<a name="#NT40">mpili</a>ng the driver on Windows NTx</h3>
+<h3>Co<a name="#NT40">mpili</a>ng the driver on Windows NT4</h3>
 <p>Software requirements:</p>
 <ul>
-  <li>Microsoft Driver Developer Kit (DDK) for NT for Windows 2000 or Windows
-    XP
-  <li>A recent version of the Microsoft Platform Software Development Kit (SDK).
-    If you encounter compilation problems, try to download the latest version
-    from <a href="http://www.microsoft.com/msdownload/platformsdk/sdkupdate/">http://www.microsoft.com/msdownload/platformsdk/sdkupdate/</a>
-  <li>Microsoft Visual C++ 6.0</li>
+	<li>Microsoft Driver Developer Kit (DDK) for Windows NT4</li>
+	<li>A recent version of the Microsoft Platform Software Development Kit (SDK) 
+	that is compatible with Visual Studio 6 (the latest compatible one is 
+	Platform SDK February 2003). This version of the PSDK is no longer available 
+	on the Microsoft web site. It can be ordered online at
+	<a href="http://www.qmedia.ca/launch/psdk.htm">
+	http://www.qmedia.ca/launch/psdk.htm</a>, and it's also available to 
+	Microsoft MSDN subscribers on the Subscribers Downloads web site.<li>Microsoft Visual C++ 6.0 
+	with Service Pack 5 or 6 (both the service packs are available online on the 
+	Microsoft web site).</ul>
+<p>If your system satisfies these requirements, follow these steps:</p>
+<ol>
+  <li>From the Windows NT Start menu, select the folder <em>Programs</em> and
+    then <i>Development Kits</i>, then <em>Windows NT4 DDK.</em> From here select the voice <em>Checked Build
+    Environment</em> if you want to build a debug version, or <em>Free Build
+    Environment</em> if you want to build a release version.
+  <li>A command prompt will be opened. Move to the directory PacketNTx inside the
+    WinPcap source folder and type the command<br>
+    <br>
+    <i>CompileNT4</i>, to build the driver for Windows NT 4<i><br>
+    </i><br>
+    This script will generate the driver (npf.sys), that will be put in the
+    DDK output directory (usually \i386).
+  </ol>
+<p><b>Warning</b>: sometimes, during the compilation of the driver, a lot of
+'last line incomplete' errors are generated. Ignore these errors and let the
+compilation process continue, they are due to bugs in some DDK versions.</p>
+<h3>Co<a name="#NT41">mpili</a>ng the driver on Windows 2000/XP/2003</h3>
+<p>Software requirements:</p>
+<ul>
+	<li>Microsoft Driver Developer Kit (DDK) for Windows 2000, Windows
+    XP or Windows Server 2003</li>
 </ul>
 <p>If your system satisfies these requirements, follow these steps:</p>
 <ol>
-  <li>From the Window NT Start menu, select the folder <em>Programs</em> and
+  <li>From the Windows Start menu, select the folder <em>Programs</em> and
     then <i>Development Kits</i>, then <em>Windows XXX DDK</em>, where XXX is
     the target system<em>.</em> From here select the voice <em>Checked Build
     Environment</em> if you want to build a debug version, or <em>Free Build
@@ -37,26 +63,25 @@ vice versa.</p>
   <li>A command prompt will be opened. Move to the directory PacketNTx inside the
     WinPcap source folder and type the command<br>
     <br>
-    <i>CompileNT4</i>, to build the driver for Windows NT 4<i><br>
-    </i>or<i><br>
-    Compile2k</i>, to build the driver for Windows NT 5 OSes, (like Windows 2000
+    <i>Compile2k</i>, to build the driver for Windows NT 5 OSes, (like Windows 2000
     or Windows XP)<i><br>
     </i><br>
-    This commands will generate the driver (packet.sys), that will be put in the
+    This script will generate the driver (npf.sys), that will be put in the
     DDK output directory (usually \i386).
   </ol>
-<p><b>Warning</b>: sometimes, during the compilation of the driver, a lot of
-'last line incomplete' errors are generated. Ignore these errors and let the
-compilation process continue, they are due to bugs in some DDK versions.</p>
 <h3><a name="#95-98">Compili</a>ng the driver on Windows 9x</h3>
 <p>To compile the driver for Windows 9x you will need:</p>
 <ul>
   <li><font size="3">Driver Developer Kit (DDK) for Windows 95/98/ME</font>
-  <li>A recent version of the Microsoft Platform Software Development Kit (SDK).
-    If you encounter compilation problems, try to download the latest version
-    from <a href="http://www.microsoft.com/msdownload/platformsdk/sdkupdate/">http://www.microsoft.com/msdownload/platformsdk/sdkupdate/</a>
-  <li><font size="3">Visual C++ 6.0</font></li>
-</ul>
+  <li>A recent version of the Microsoft Platform Software Development Kit (SDK) 
+	that is compatible with Visual Studio 6 (the latest compatible one is 
+	Platform SDK February 2003). This version of the PSDK is no longer available 
+	on the Microsoft web site. It can be ordered online at
+	<a href="http://www.qmedia.ca/launch/psdk.htm">
+	http://www.qmedia.ca/launch/psdk.htm</a>, and it's also available to 
+	Microsoft MSDN subscribers on the Subscribers Downloads web site.<li>Microsoft Visual C++ 6.0 
+	with Service Pack 5 or 6 (both the service packs are available online on the 
+	Microsoft web site).</ul>
 <p>The steps to follow are:</p>
 <ol>
   <li>Open a DOS shell
@@ -90,15 +115,21 @@ compilation process continue, they are due to bugs in some DDK versions.</p>
 launch ADRC2VXD, this means that the driver binary is generated correctly, but
 without the copyright information. We don't know the cause of this problem.</p>
 <h2>Compiling packet.dll</h2>
-<p>Like for NPF, two sources are available for compilation: the Windows NTx one
+<p>Like the NPF driver, two source trees are available for compilation: the Windows NTx one
 and the Windows 9x one. They are located in PacketNTx\dll\ and in Packet9x\dll\.</p>
 <p>Software requirements:</p>
 <ul>
-  <li>A recent version of the Microsoft Platform Software Development Kit (SDK).
-    If you encounter compilation problems, try to download the latest version
-    from <a href="http://www.microsoft.com/msdownload/platformsdk/sdkupdate/">http://www.microsoft.com/msdownload/platformsdk/sdkupdate/</a></li>
-  <li>Microsoft Visual C++ 6.0</li>
-</ul>
+	<li>A recent version of the Microsoft Platform Software Development Kit (SDK) 
+	that is compatible with Visual Studio 6 (the latest compatible one is 
+	Platform SDK February 2003). This version of the PSDK is no longer available 
+	on the Microsoft web site. It can be ordered online at
+	<a href="http://www.qmedia.ca/launch/psdk.htm">
+	http://www.qmedia.ca/launch/psdk.htm</a>, and it's also available to 
+	Microsoft MSDN subscribers on the Subscribers Downloads web site.<br>
+	<b>Note</b>: if you use Microsoft Visual Studio .NET the platform SDK is <b>not</b> 
+	needed to compile packet.dll.<li>Microsoft Visual C++ 6.0 with Service Pack 
+	5 or 6 (both the service packs are available online on the Microsoft web 
+	site).</ul>
 <p>To compile the PACKET.DLL, load the project contained in the directory PacketNTx\dll\project
 (or Packet9x\dll\project) in the Visual C++ IDE. There are four project 
 configurations:</p>
@@ -120,25 +151,24 @@ files.</p>
 <p>wpcap.dll can be compiled on any Win32 platform and the generated dll is system independent.</p>
 <p>System Requirements:</p>
 <ul>
-  <li>Microsoft Visual C++ 6.0 compiler</li>
-  <li>A recent version of the Microsoft Platform Software Development Kit (SDK).
-    If you encounter compilation problems, try to download the latest version
-    from <a href="http://www.microsoft.com/msdownload/platformsdk/sdkupdate/">http://www.microsoft.com/msdownload/platformsdk/sdkupdate/</a>.
-	<b><br>
-	Note</b>: with Microsoft Visual Studio .Net you the platform SDK is <b>not</b> 
-	needed to compile WinPcap. </li>
+  <li>Microsoft Visual C++ 6.0 with Service Pack 5 or 6 (both the service packs 
+	are available online on the Microsoft web site).</li>
+	<li>A recent version of the Microsoft Platform Software Development Kit (SDK) 
+	that is compatible with Visual Studio 6 (the latest compatible one is 
+	Platform SDK February 2003). This version of the PSDK is no longer available 
+	on the Microsoft web site. It can be ordered online at
+	<a href="http://www.qmedia.ca/launch/psdk.htm">
+	http://www.qmedia.ca/launch/psdk.htm</a>, and it's also available to 
+	Microsoft MSDN subscribers on the Subscribers Downloads web site.<br>
+	<b>Note</b>: if you use Microsoft Visual Studio .Net the platform SDK is <b>not</b> 
+	needed to compile wpcap.dll.</li>
 	<li>Project files are in the <i>directory winpcap\wpcap\prj</i> of the WinPcap source 
 code distribution. Load wpcap.dsw from the Visual C++ IDE and build the program.<br>There are six build project configurations:<b><br>
-	<br>
-&nbsp;No support for DAG cards and Remore Capture</b></li>
+	<br>No support for DAG cards and Remore Capture</b></li>
 	<li><i>Wpcap debug</i>: winpcap\wpcap\prj\Debug </li>
-	<li><i>Wpcap release</i>: winpcap\wpcap\prj\Release<br>
-	<br>
-	<b>Support for Remote capture, no support for DAG cards</b></li>
+	<li><i>Wpcap release</i>: winpcap\wpcap\prj\Release<br><br><b>Support for Remote capture, no support for DAG cards</b></li>
 	<li><i>Wpcap debug REMOTE</i>: winpcap\wpcap\prj\Debug_REMOTE</li>
-	<li><i>Wpcap release REMOTE</i>: winpcap\wpcap\prj\Release_REMOTE<br>
-	<b><br>
-	Support for DAG cards and Remote Capture</b></li>
+	<li><i>Wpcap release REMOTE</i>: winpcap\wpcap\prj\Release_REMOTE<br><b><br>Support for DAG cards and Remote Capture</b></li>
 	<li><i>Wpcap debug REMOTE DAG</i>: winpcap\wpcap\prj\Debug_REMOTE_DAG</li>
 	<li><i>Wpcap release REMOTE DAG</i>: winpcap\wpcap\prj\Release_REMOTE_DAG</li>
 </ul>
