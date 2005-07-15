@@ -43,7 +43,6 @@
  - \ref remote_struct
  - Exported Functions. For a reference of the functions that support remote capture, see the "Windows-specific Extensions" in the WinPcap \ref wpcapfunc section.
  - \ref remote_pri_struct
- - \ref remote_pri_struct
 
 \htmlinclude intro.htm
 

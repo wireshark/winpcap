@@ -61,7 +61,7 @@ Let's try to compile and run the code of this first sample. In order to compile 
   gcc -o testaprog testprog.c -lpcap
 </pre>
 
-On Windows, you will need to create a project, following the instructions in the \ref wpcapsamps section of this manual. However, we suggest that you use the WinPcap developer's pack (available at the WinPcap website, http://winpcap.polito.it ), since it provides many examples already configured as projects including all the code presented in this tutorial and the \e includes and \e libraries needed to compile and run the examples. 
+On Windows, you will need to create a project, following the instructions in the \ref wpcapsamps section of this manual. However, we suggest that you use the WinPcap developer's pack (available at the WinPcap website, http://www.winpcap.org ), since it provides many examples already configured as projects including all the code presented in this tutorial and the \e includes and \e libraries needed to compile and run the examples. 
 
 Assuming we have compiled the program, let's try to run it. On a particular WinXP workstation, the result we optained is
 

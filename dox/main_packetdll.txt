@@ -8,10 +8,9 @@
 
 <dl>
   <dt><strong>Authors:</strong></dt>
-  <dd>The <a href="http://netgroup.polito.it/">NetGroup</a> at 
-      <a href="http://www.polito.it/">Politecnico di Torino</a></dd>
+  <dd>The WinPcap Team</dd>
   <dt><strong>Home page:</strong></dt>
-  <dd><a href="http://winpcap.polito.it">http://winpcap.polito.it</a></dd>
+  <dd><a href="http://www.winpcap.org">http://www.winpcap.org</a></dd>
 </dl>
 <hr>
 
