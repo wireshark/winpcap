@@ -29,32 +29,34 @@ typedef void (*pcap_handler)(u_char *user, const struct pcap_pkthdr *pkt_header,
 
 /*!	\brief Open a live capture from the network.
 
-  pcap_open_live()  is  used  to  obtain  a  packet  capture
-  descriptor to look at packets on the network.  device is a
-  string that specifies the network device to open; on Linux
-  systems  with  2.2  or later kernels, a device argument of
-  "any" or NULL can be used  to  capture  packets  from  all
-  interfaces.  snaplen specifies the maximum number of bytes
-  to capture.  promisc specifies if the interface is  to  be
-  put into promiscuous mode.  (Note that even if this parameter 
-  is false, the interface could well be in  promiscuous
-  mode  for  some other reason.)  For now, this doesn't work
-  on the "any" device; if an argument of "any"  or  NULL  is
-  supplied,  the  promisc  flag is ignored.  to_ms specifies
-  the read timeout in milliseconds.   The  read  timeout  is
-  used to arrange that the read not necessarily return immediately 
-  when a packet is seen, but that it wait  for  some
-  amount of time to allow more packets to arrive and to read
-  multiple packets from the OS kernel in one operation.  Not
-  all  platforms  support  a read timeout; on platforms that
-  don't, the read timeout is ignored.   errbuf  is  used  to
-  return  error  or  warning  text.  It will be set to error
-  text when pcap_open_live() fails and returns NULL.  errbuf
-  may also be set to warning text when pcap_open_live() succeds; 
-  to detect this case the caller should store a  zero
-  length  string  in  errbuf before calling pcap_open_live()
-  and display the warning to the user if errbuf is no longer
-  a zero-length string.
+	pcap_open_live()  is  used  to  obtain a packet capture descriptor to
+	look at packets on the network.  device is a  string  that  specifies
+	the  network  device to open; on Linux systems with 2.2 or later kernels, 
+	a device argument of "any" or NULL can be used to capture packets  
+	from  all  interfaces.   snaplen specifies the maximum number of
+	bytes to capture.  If this value is less than the size  of  a  packet
+	that is captured, only the first snaplen bytes of that packet will be
+	captured and provided as packet data.  A value  of  65535  should  be
+	sufficient,  on  most  if  not  all networks, to capture all the data
+	available from the packet.  promisc specifies if the interface is  to
+	be  put  into promiscuous mode.  (Note that even if this parameter is
+	false, the interface could well be in promiscuous mode for some other
+	reason.)  For now, this doesn't work on the "any" device; if an argument 
+	of "any" or NULL is  supplied,  the  promisc  flag  is  ignored.
+	to_ms  specifies  the read timeout in milliseconds.  The read timeout
+	is used to arrange that the read not necessarily  return  immediately
+	when  a  packet  is seen, but that it wait for some amount of time to
+	allow more packets to arrive and to read multiple packets from the OS
+	kernel  in  one operation.  Not all platforms support a read timeout;
+	on platforms that don't, the read timeout is ignored.  A  zero  value
+	for  to_ms,  on  platforms  that support a read timeout, will cause a
+	read to wait forever to allow enough packets to arrive, with no timeout.  
+	errbuf is used to return error or warning text.  It will be set
+	to error text when pcap_open_live() fails and returns  NULL.   errbuf
+	may  also  be  set  to warning text when pcap_open_live() succeds; to
+	detect this case the caller should  store  a  zero-length  string  in
+	errbuf before calling pcap_open_live() and display the warning to the
+	user if errbuf is no longer a zero-length string.
 
 \sa pcap_open_offline(), pcap_open_dead(), pcap_findalldevs(), pcap_close()
 */
@@ -75,12 +77,14 @@ pcap_t *pcap_open_dead(int linktype, int snaplen);
 
 /*!	\brief Open a savefile in the tcpdump/libpcap format to read packets.
 
-  pcap_open_offline() is called to open a  "savefile"  for
-  reading.   fname  specifies  the name of the file to open.
-  The file has the same format as those used  by  tcpdump(1)
-  and  tcpslice(1).   The  name  "-" in a synonym for stdin.
-  errbuf is used to return error text and is only  set  when
-  pcap_open_offline() fails and returns NULL.
+	pcap_open_offline() is called to open  a  "savefile"  for  reading.
+	fname  specifies  the name of the file to open. The file has the same
+	format as those used by tcpdump(1) and tcpslice(1).  The name "-"  in
+	a    synonym    for    stdin.     Alternatively,    you    may   call
+	pcap_fopen_offline() to read dumped data from an existing open stream
+	fp.   Note  that  on  Windows, that stream should be opened in binary
+	mode.  errbuf is used to return error  text  and  is  only  set  when
+	pcap_open_offline() or pcap_fopen_offline() fails and returns NULL.
 
 \sa pcap_open_live(), pcap_dump_open(), pcap_findalldevs(), pcap_close()
 */
@@ -88,11 +92,15 @@ pcap_t *pcap_open_offline(const char *fname, char *errbuf);
 
 /*! \brief Open a file to write packets.
 
-  pcap_dump_open()  is  called  to  open  a "savefile" for
-  writing. fname  is the  name  of  the  file  to  open. 
-  The name "-" in a synonym for  stdout. If NULL is returned,
-  pcap_geterr() can be used to get the error text. 
-\sa pcap_dump_close(), pcap_file(), pcap_dump()
+	pcap_dump_open()  is  called  to open a "savefile" for writing. The
+	name "-" in a synonym for stdout.  NULL is returned on failure.  p is
+	a pcap struct as returned by pcap_open_offline() or pcap_open_live().
+	fname specifies the name of the file to open. Alternatively, you  may
+	call  pcap_dump_fopen()  to write data to an existing open stream fp.
+	Note that on Windows, that stream should be opened  in  binary  mode.
+	If NULL is returned, pcap_geterr() can be used to get the error text.
+
+\sa pcap_dump_close(), pcap_dump()
 */
 pcap_dumper_t *pcap_dump_open(pcap_t *p, const char *fname);
 
@@ -538,16 +546,6 @@ int pcap_major_version(pcap_t *p);
 */
 int pcap_minor_version(pcap_t *p);
 
-/*! \brief Return the stdio stream of an offile capture.
-
-       pcap_file() returns the standard I/O stream of the "savefile",
-	   if    a    "savefile"    was    opened   with
-       pcap_open_offline(), or NULL,  if  a  network  device  was
-       opened with pcap_open_live().
-
-\sa pcap_open_offline(), pcap_open_live()
-*/
-FILE *pcap_file(pcap_t *p);
 
 /*! \brief Return statistics on current capture.
 
