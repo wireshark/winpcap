@@ -30,7 +30,6 @@ EXPORTS
 		pcap_is_swapped
 		pcap_major_version
 		pcap_minor_version
-		pcap_file
 		pcap_fileno
 		pcap_dump_open
 		pcap_dump_close
