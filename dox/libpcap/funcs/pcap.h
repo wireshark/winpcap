@@ -546,6 +546,21 @@ int pcap_major_version(pcap_t *p);
 */
 int pcap_minor_version(pcap_t *p);
 
+/*! \brief Return the standard stream of an offline capture.
+ 
+       pcap_file() returns the standard I/O stream of the "savefile",
+       if    a    "savefile"    was    opened   with
+       pcap_open_offline(), or NULL,  if  a  network  device  was
+       opened with pcap_open_live().
+       \deprecated Due to incompatibilities between the C Runtime (CRT) used to
+       compile WinPcap and the one used by WinPcap-based applications, this function 
+       may return an invalid FILE pointer, i.e. a descriptor that causes all the standard I/O stream 
+       functions (ftell, fseek, fclose...) to fail. The function is still available for 
+       backwards binary compatibility, only.
+
+\sa pcap_open_offline(), pcap_open_live()
+*/
+FILE *pcap_file(pcap_t *p);
 
 /*! \brief Return statistics on current capture.
 
