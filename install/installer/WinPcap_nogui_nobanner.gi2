@@ -2,10 +2,10 @@
 
 <variables>
    <var name="AppID" value="WinPcapInst"/>
-   <var name="AppName" value="WinPcap 3.1 beta4"/>
+   <var name="AppName" value="WinPcap 3.1"/>
    <var name="InstallPath" value="%ProgramFiles%\WinPcap"/>
    <var name="Uninstall" value="1"/>
-   <var name="CompanyName" value="Politecnico di Torino"/>
+   <var name="CompanyName" value="CACE Technologies"/>
    <var name="OutputPath" value=""/>
    <var name="Password" value=""/>
    <var name="CompressionLevel" value="7"/>
@@ -19,7 +19,7 @@
 </variables>
 
 <packages>
-   <package filename="WinPcap_3_1_beta4_nogui_nobanner" main="1">
+   <package filename="WinPcap_3_1_nogui_nobanner" main="1">
 
 	<presetup>
 		<file src="distribution\readme.txt"/>
