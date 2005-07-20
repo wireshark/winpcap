@@ -13,11 +13,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Italian (Italy) resources
+// Neutral resources
 
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ITA)
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
 #ifdef _WIN32
-LANGUAGE LANG_ITALIAN, SUBLANG_ITALIAN
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 #pragma code_page(1252)
 #endif //_WIN32
 
@@ -71,16 +71,16 @@ BEGIN
         BLOCK "000004b0"
         BEGIN
             VALUE "Comments", "\0"
-            VALUE "CompanyName", "NetGroup - Politecnico di Torino\0"
+            VALUE "CompanyName", "CACE Technologies\0"
             VALUE "FileDescription", "npf\0"
-            VALUE "FileVersion", "3, 1, 0, 24\0"
+            VALUE "FileVersion", "3, 1, 0, 25\0"
             VALUE "InternalName", "NPF + TME \0"
-            VALUE "LegalCopyright", "Copyright © 1999-2004\0"
+            VALUE "LegalCopyright", "Copyright © 2005 CACE Technologies. Copyright © 2003-2005 NetGroup, Politecnico di Torino.\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "npf.sys\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "WinPcap Netgroup Packet Filter Driver\0"
-            VALUE "ProductVersion", "3, 1, 0, 24\0"
+            VALUE "ProductVersion", "3, 1, 0, 25\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -92,7 +92,7 @@ END
 
 #endif    // !_MAC
 
-#endif    // Italian (Italy) resources
+#endif    // Neutral resources
 /////////////////////////////////////////////////////////////////////////////
 
 
