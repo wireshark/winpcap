@@ -142,7 +142,7 @@ int main(int argc, char **argv)
 			fprintf(stderr,"\nError opening output file\n");
 
 			pcap_close(fp);
-			return;
+			return -5;
 		}
 	}
 	else usage();
