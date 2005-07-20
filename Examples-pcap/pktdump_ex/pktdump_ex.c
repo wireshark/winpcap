@@ -39,7 +39,7 @@
 #define LINE_LEN 16
 
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {	
 	pcap_if_t *alldevs, *d;
 	pcap_t *fp;
@@ -47,7 +47,7 @@ main(int argc, char **argv)
 	char errbuf[PCAP_ERRBUF_SIZE];
 	int res;
 	struct pcap_pkthdr *header;
-	u_char *pkt_data;
+	const u_char *pkt_data;
 	
 	printf("pktdump_ex: prints the packets of the network using WinPcap.\n");
 	printf("   Usage: pktdump_ex [-s source]\n\n"
@@ -153,5 +153,6 @@ main(int argc, char **argv)
 		return -1;
 	}
 
+	pcap_close(fp);
 	return 0;
 }

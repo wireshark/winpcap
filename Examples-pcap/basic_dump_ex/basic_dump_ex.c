@@ -1,7 +1,7 @@
 #include "pcap.h"
 
 
-main()
+int main()
 {
 	pcap_if_t *alldevs;
 	pcap_if_t *d;
@@ -13,14 +13,14 @@ main()
 	struct tm *ltime;
 	char timestr[16];
 	struct pcap_pkthdr *header;
-	u_char *pkt_data;
-	
+	const u_char *pkt_data;
+		
     
 	/* Retrieve the device list */
 	if(pcap_findalldevs(&alldevs, errbuf) == -1)
 	{
 		fprintf(stderr,"Error in pcap_findalldevs: %s\n", errbuf);
-		exit(1);
+		return -1;
 	}
     
     /* Print the list */
@@ -92,5 +92,6 @@ main()
 		return -1;
 	}
 	
-    return 0;
+   pcap_close(adhandle);  
+   return 0;
 }

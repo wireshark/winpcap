@@ -91,6 +91,7 @@ main(int argc, char **argv)
     /* start the capture */
     pcap_loop(adhandle, 0, packet_handler, (unsigned char *)dumpfile);
 
+    pcap_close(adhandle);
     return 0;
 }
 

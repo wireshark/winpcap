@@ -73,6 +73,7 @@ main()
 	/* start the capture */
 	pcap_loop(adhandle, 0, packet_handler, NULL);
 	
+	pcap_close(adhandle);
 	return 0;
 }
 

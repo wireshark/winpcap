@@ -29,6 +29,7 @@ main(int argc, char **argv)
 	/* read and dispatch packets until EOF is reached */
 	pcap_loop(fp, 0, dispatcher_handler, NULL);
 
+	pcap_close(fp);
 	return 0;
 }
 

@@ -3,12 +3,12 @@
 
 #define LINE_LEN 16
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	pcap_t *fp;
 	char errbuf[PCAP_ERRBUF_SIZE];
 	struct pcap_pkthdr *header;
-	u_char *pkt_data;
+	const u_char *pkt_data;
 	u_int i=0;
 	int res;
 	
@@ -50,6 +50,7 @@ main(int argc, char **argv)
 		printf("Error reading the packets: %s\n", pcap_geterr(fp));
 	}
 	
+	pcap_close(fp);
 	return 0;
 }
 

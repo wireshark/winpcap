@@ -4,7 +4,7 @@
 #include <pcap.h>
 
 
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	pcap_t *fp;
 	char errbuf[PCAP_ERRBUF_SIZE];
@@ -15,7 +15,7 @@ void main(int argc, char **argv)
 	if (argc != 2)
 	{
 		printf("usage: %s interface", argv[0]);
-		return;
+		return 1;
 	}
     
 	/* Open the adapter */
@@ -27,7 +27,7 @@ void main(int argc, char **argv)
 							 )) == NULL)
 	{
 		fprintf(stderr,"\nUnable to open the adapter. %s is not supported by WinPcap\n", argv[1]);
-		return;
+		return 2;
 	}
 
 	/* Supposing to be on ethernet, set mac destination to 1:1:1:1:1:1 */
@@ -59,8 +59,10 @@ void main(int argc, char **argv)
 		) != 0)
 	{
 		fprintf(stderr,"\nError sending the packet: \n", pcap_geterr(fp));
-		return;
+		return 3;
 	}
 
-	return;
+	pcap_close(fp);	
+	return 0;
 }
+

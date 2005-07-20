@@ -43,7 +43,7 @@
 void usage();
 
 
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	pcap_t *fp;
 	char errbuf[PCAP_ERRBUF_SIZE];
@@ -56,12 +56,12 @@ void main(int argc, char **argv)
 	bpf_u_int32 NetMask;
 	int res;
 	struct pcap_pkthdr *header;
-	u_char *pkt_data;
+	const u_char *pkt_data;
 	
 	if (argc == 1)
 	{
 		usage();
-		return;
+		return -1;
 	}
 
 	/* Parse parameters */
@@ -99,7 +99,7 @@ void main(int argc, char **argv)
 		)) == NULL)
 	{
 		fprintf(stderr,"\nUnable to open the adapter.\n");
-		return;
+		return -2;
 	}
 	
 	else usage();
@@ -116,14 +116,18 @@ void main(int argc, char **argv)
 		if(pcap_compile(fp, &fcode, filter, 1, NetMask) < 0)
 		{
 			fprintf(stderr,"\nError compiling filter: wrong syntax.\n");
-			return;
+
+			pcap_close(fp);
+			return -3;
 		}
 
 		//set the filter
 		if(pcap_setfilter(fp, &fcode)<0)
 		{
 			fprintf(stderr,"\nError setting the filter\n");
-			return;
+
+			pcap_close(fp);
+			return -4;
 		}
 
 	}
@@ -136,6 +140,8 @@ void main(int argc, char **argv)
 		if (dumpfile == NULL)
 		{
 			fprintf(stderr,"\nError opening output file\n");
+
+			pcap_close(fp);
 			return;
 		}
 	}
@@ -153,6 +159,11 @@ void main(int argc, char **argv)
 		pcap_dump((unsigned char *) dumpfile, header, pkt_data);
 
 	}
+
+	pcap_close(fp);
+	pcap_dump_close(dumpfile);
+
+	return 0;
 }
 
 
