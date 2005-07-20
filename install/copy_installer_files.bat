@@ -13,8 +13,8 @@ copy ..\packetNtx\Dll\WanPacket\Release\WanPacket.dll installer\distribution\200
 echo REMEMBER TO COPY npf.vxd
 pause
 copy ..\packet9x\DLL\Project\Release\Packet.dll installer\distribution\9x\
-copy ..\wpcap\PRJ\Release_REMOTE_DAG\wpcap.dll installer\distribution\
-copy ..\wpcap\PRJ\Release_REMOTE_DAG\rpcapd.exe installer\distribution\2000\
+copy ..\wpcap\PRJ\Release_REMOTE\wpcap.dll installer\distribution\
+copy ..\wpcap\PRJ\Release_REMOTE\rpcapd.exe installer\distribution\2000\
 copy daemon_mgm\Release\daemon_mgm.exe installer\distribution\2000\
 copy NetMonInstaller\objfre_w2k_x86\i386\NetMonInstaller.exe installer\distribution\2000\
 copy npf_mgm\Release\npf_mgm.exe installer\distribution\2000\
