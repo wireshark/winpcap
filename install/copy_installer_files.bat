@@ -18,6 +18,8 @@ copy ..\wpcap\PRJ\Release_REMOTE\rpcapd.exe installer\distribution\2000\
 copy daemon_mgm\Release\daemon_mgm.exe installer\distribution\2000\
 copy NetMonInstaller\objfre_w2k_x86\i386\NetMonInstaller.exe installer\distribution\2000\
 copy npf_mgm\Release\npf_mgm.exe installer\distribution\2000\
-copy ..\wpcap\libpcap\rpcapd\win32-pthreads\pthreadVC.dll installer\distribution\
 
+copy ..\wpcap\libpcap\rpcapd\win32-pthreads\pthreadVC.dll installer\distribution\
+rem this nasty hack is needed to fix some time zone issues with the CVS...
+touch installer\distribution\pthreadVC.dll
 
