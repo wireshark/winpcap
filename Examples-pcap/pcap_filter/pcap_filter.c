@@ -90,18 +90,20 @@ int main(int argc, char **argv)
 	}
 	
 	// open a capture from the network
-	if ((fp = pcap_open_live(source,		// name of the device
-		65536,								// portion of the packet to capture. 
-											// 65536 grants that the whole packet will be captured on all the MACs.
-		1,									// promiscuous mode (nonzero means promiscuous)
-		1000,								// read timeout
-		errbuf								// error buffer
-		)) == NULL)
+	if (source != NULL)
 	{
-		fprintf(stderr,"\nUnable to open the adapter.\n");
-		return -2;
+		if ((fp = pcap_open_live(source,		// name of the device
+			65536,								// portion of the packet to capture. 
+												// 65536 grants that the whole packet will be captured on all the MACs.
+			1,									// promiscuous mode (nonzero means promiscuous)
+			1000,								// read timeout
+			errbuf								// error buffer
+			)) == NULL)
+		{
+			fprintf(stderr,"\nUnable to open the adapter.\n");
+			return -2;
+		}
 	}
-	
 	else usage();
 
 	if (filter != NULL)
