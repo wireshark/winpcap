@@ -14,6 +14,9 @@ xcopy /s/e/v /Y %WINPCAPSOURCEDIR%\Examples		%WPDPACKDESTDIR%\Examples-remote
 rem *** Delete Netmeter since it's no more part of the Developer's pack *** 
 rd /S /Q %WPDPACKDESTDIR%\Examples-remote\NetMeter\
 
+rem *** Delete kdump since the feature is not available at the moment *** 
+rd /S /Q %WPDPACKDESTDIR%\Examples-remote\kdump\
+
 xcopy /s/e/v /Y %WINPCAPSOURCEDIR%\Examples-pcap		%WPDPACKDESTDIR%\Examples-pcap
 
 echo Folder \Examples created successfully
