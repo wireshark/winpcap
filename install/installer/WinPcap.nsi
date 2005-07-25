@@ -36,10 +36,15 @@
 ;
 
 ;--------------------------------
-;Include Modern UI
+;Project definitions
 
-  !define PRJ_NAME "WinPcap 3.1"
+  !define PRJ_MAJOR "3"
+  !define PRJ_MINOR "1"
+  
+  ;Default installation folder
+  InstallDir "$PROGRAMFILES\WinPcap"
 
+  ;This includes the modern user interface
   !include "MUI.nsh"
 
   ;the following two lines include the "Locate" function to find files
@@ -59,51 +64,43 @@
 
   ShowInstDetails nevershow
   ShowUninstDetails nevershow
-;  ShowInstDetails show
-;  ShowUninstDetails show
   XPStyle off
 
   Var WINPCAP_UNINSTALL ;declare variable for holding the value of a registry key 
   Var WINPCAP_30_OR_LATER ;versions of WinPcap older than 3.0 don't have uninstaller. We use this variable to manage this and call the uninstaller only if present 
 
 ;--------------------------------
-;Things that need to be extracted on startup (keep these lines before any File command!)
-;Only useful for BZIP2 compression
-;Use ReserveFile for your own InstallOptions INI files too!
-
-  ReserveFile "${NSISDIR}\Plugins\nsWeb.dll"
-
-;--------------------------------
 ;General
 
-  ;Name and file
-  Name "WinPcap 3.1"
-;${PRJ_NAME}
-  OutFile "WinPcap_3_1.exe"
+  ;Names
+  !define PRJ_NAME "WinPcap ${PRJ_MAJOR}.${PRJ_MINOR}"
+  !define PRJ_FILE_NAME "WinPcap_${PRJ_MAJOR}_${PRJ_MINOR}.exe"
 
-  ;Default installation folder
-  InstallDir "$PROGRAMFILES\WinPcap"
+  ;Name and file
+  Name "${PRJ_NAME}"
+  OutFile "${PRJ_FILE_NAME}"
   
   ;Get installation folder from registry if available
   InstallDirRegKey HKCU "Software\WinPcap" ""
 
 ;--------------------------------
-;Interface Configuration
+;User interface Configuration
 
   !define MUI_HEADERIMAGE
-  !define MUI_HEADERIMAGE_BITMAP "distribution\winpcap_nsis.bmp" ; optional
+  !define MUI_HEADERIMAGE_BITMAP "distribution\winpcap_nsis.bmp"
   !define MUI_ABORTWARNING
 
 ;--------------------------------
-;Pages
+;Installer Pages
 
+  ;Installer
   Page custom "ShowHtmlPage" "" ""
-
   !insertmacro MUI_PAGE_LICENSE "distribution\license.txt"
   !insertmacro MUI_PAGE_INSTFILES
   !define MUI_FINISHPAGE_TEXT_REBOOT "An old version of WinPcap was present on the system.\nIn case it was older than 2.3, you MUST reboot the system in order for the new version to work properly."
   !insertmacro MUI_PAGE_FINISH
 
+  ;Uninstaller
   !insertmacro MUI_UNPAGE_CONFIRM
   !insertmacro MUI_UNPAGE_INSTFILES
   
@@ -113,17 +110,17 @@
   !insertmacro MUI_LANGUAGE "English"
 
 ;--------------------------------
-;Init function: copy the files we need
+;Init function: copy the files we need during the installer
 
   Function .onInit
 	 InitPluginsDir
-	  # Drop everything into the $PLUGINSDIR on init.
+	  # Drop everything into the $INSTDIR on init.
 	  # For quick calling at its time
-	  File /oname=$PLUGINSDIR\nsWeb.dll "${NSISDIR}\Plugins\nsWeb.dll"
-	  File /oname=$PLUGINSDIR\Internet.dll "${NSISDIR}\Plugins\Internet.dll"
-	  File /oname=$PLUGINSDIR\ExecDos.dll "${NSISDIR}\Plugins\ExecDos.dll"
-	  File /oname=$PLUGINSDIR\WpBann.htm WpBann.htm
-	  File /oname=$PLUGINSDIR\winpcap_nsis.bmp distribution\winpcap_nsis.bmp
+	  File /oname=$INSTDIR\nsWeb.dll "${NSISDIR}\Plugins\nsWeb.dll"
+	  File /oname=$INSTDIR\Internet.dll "${NSISDIR}\Plugins\Internet.dll"
+	  File /oname=$INSTDIR\ExecDos.dll "${NSISDIR}\Plugins\ExecDos.dll"
+	  File /oname=$INSTDIR\WpBann.htm WpBann.htm
+	  File /oname=$INSTDIR\winpcap_nsis.bmp distribution\winpcap_nsis.bmp
   FunctionEnd
 
 ;--------------------------------
@@ -148,14 +145,28 @@ end:
   FunctionEnd
 
 
+;--------------------------------
+;Small function used to detect when a pre 3.0 version is present
 Function UninstallerFound
   StrCpy $WINPCAP_30_OR_LATER "yes"
 FunctionEnd
 
 ;--------------------------------
-;Main Installer Sections
-
+;Main Installer Section
 Section "Dummy Section" SecDummy
+
+  ;
+  ; First of all, we delete the intermediate files used only by the installer
+  ;
+  Delete $INSTDIR\nsWeb.dll
+  Delete $INSTDIR\Internet.dll
+  Delete $INSTDIR\ExecDos.dll
+  Delete $INSTDIR\WpBann.htm
+  Delete $INSTDIR\winpcap_nsis.bmp
+
+  ;
+  ; Now we check if an old WinPcap version is pesent, and we try to remove it
+  ;
 
   ;Assume no reboot by default
   SetRebootFlag false
@@ -192,8 +203,10 @@ RemoveOld:
 WinpcapNotDetected:
 
 
+  ;
   ;tell the installer to put the start menu stuff under "all users"
   ;this prevents NSIS from having craziness during uninstallation
+  ;
   SetShellVarContext all 
 
   SetOutPath "$INSTDIR"
@@ -218,7 +231,6 @@ WinpcapNotDetected:
   ;Get OS version with the GetWindowsVersion function included at the end of the script
   Call GetWindowsVersion
   Pop $R0
-;  Messagebox MB_OK|MB_ICONINFORMATION $R0
 
   ;Now jump to the copy functions related to this OS
   StrCmp $3 "95" CopyFiles9x
@@ -258,10 +270,14 @@ CopyFiles9x:
 
 EndCopy:
 
+  ;
   ;Store installation folder
+  ;
   WriteRegStr HKCU "Software\WinPcap" "" $INSTDIR
  
+  ;
   ;Create an "add/remove programs" entry
+  ;
   WriteRegStr HKLM \ 
 	"Software\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
 	"DisplayName" "WinPcap 3.1" 
@@ -317,8 +333,7 @@ EndInstallation:
 SectionEnd
 
 ;--------------------------------
-;Descriptions
-
+;Language-related stuff
   ;Language strings
   LangString DESC_SecDummy ${LANG_ENGLISH} "WinPcap installation section. No panels"
 
@@ -329,7 +344,6 @@ SectionEnd
  
 ;--------------------------------
 ;Uninstaller Section
-
 Section "Uninstall"
 
   SetShellVarContext all 
@@ -396,7 +410,9 @@ EndRm:
   SetOutPath "$SMPROGRAMS"
   RMDir /r "$SMPROGRAMS\WinPcap" 
 
-  ; delete the installation directory
+  ; 
+  ;delete the installation directory
+  ;
   RMDir "$INSTDIR"
 
   ;
