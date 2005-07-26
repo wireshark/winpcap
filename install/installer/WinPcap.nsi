@@ -114,13 +114,13 @@
 
   Function .onInit
 	 InitPluginsDir
-	  # Drop everything into the $INSTDIR on init.
+	  # Drop everything into the $TEMP on init.
 	  # For quick calling at its time
-	  File /oname=$INSTDIR\nsWeb.dll "${NSISDIR}\Plugins\nsWeb.dll"
-	  File /oname=$INSTDIR\Internet.dll "${NSISDIR}\Plugins\Internet.dll"
-	  File /oname=$INSTDIR\ExecDos.dll "${NSISDIR}\Plugins\ExecDos.dll"
-	  File /oname=$INSTDIR\WpBann.htm WpBann.htm
-	  File /oname=$INSTDIR\winpcap_nsis.bmp distribution\winpcap_nsis.bmp
+	  File /oname=$TEMP\nsWeb.dll "${NSISDIR}\Plugins\nsWeb.dll"
+	  File /oname=$TEMP\Internet.dll "${NSISDIR}\Plugins\Internet.dll"
+	  File /oname=$TEMP\ExecDos.dll "${NSISDIR}\Plugins\ExecDos.dll"
+	  File /oname=$TEMP\WpBann.htm WpBann.htm
+	  File /oname=$TEMP\winpcap_nsis.bmp distribution\winpcap_nsis.bmp
   FunctionEnd
 
 ;--------------------------------
@@ -158,11 +158,11 @@ Section "Dummy Section" SecDummy
   ;
   ; First of all, we delete the intermediate files used only by the installer
   ;
-  Delete $INSTDIR\nsWeb.dll
-  Delete $INSTDIR\Internet.dll
-  Delete $INSTDIR\ExecDos.dll
-  Delete $INSTDIR\WpBann.htm
-  Delete $INSTDIR\winpcap_nsis.bmp
+  Delete $TEMP\nsWeb.dll
+  Delete $TEMP\Internet.dll
+  Delete $TEMP\ExecDos.dll
+  Delete $TEMP\WpBann.htm
+  Delete $TEMP\winpcap_nsis.bmp
 
   ;
   ; Now we check if an old WinPcap version is pesent, and we try to remove it
