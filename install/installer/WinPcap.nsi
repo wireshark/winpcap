@@ -819,7 +819,7 @@ SameVersion:
 
 NsisInstallerCheck:
 
-; we started using nsis from version 3.1.0.25
+; we started using nsis from version 3.1.0.26
 
     IntCmp $WINPCAP_OLD_PRJ_MAJOR "3" NsisSameVer1 NoNsisInst NsisInst
 NsisSameVer1:
@@ -827,7 +827,7 @@ NsisSameVer1:
 NsisSameVer2:
     IntCmp $WINPCAP_OLD_PRJ_REV "0" NsisSameVer3 NoNsisInst NsisInst
 NsisSameVer3:
-    IntCmp $WINPCAP_OLD_PRJ_BUILD "25" NsisInst NoNsisInst NsisInst
+    IntCmp $WINPCAP_OLD_PRJ_BUILD "26" NsisInst NoNsisInst NsisInst
     
 NoNsisInst:
     StrCpy $WINPCAP_OLD_INSTALLER "ghost"
