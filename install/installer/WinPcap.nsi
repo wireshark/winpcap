@@ -79,11 +79,19 @@
   XPStyle on
 
 
-  Var WINPCAP_UNINSTALL ;declare variable for holding the value of a registry key 
-  Var WINPCAP_30_OR_LATER ;versions of WinPcap older than 3.0 don't have uninstaller. We use this variable to manage this and call the uninstaller only if present 
+  Var WINPCAP_OLD_FOUND
+  Var WINPCAP_UNINSTALL_EXEC
   Var WINPCAP_OLD_PROJ_VERSION_DOTTED
   Var WINPCAP_TARGET_OS
-
+  Var WINPCAP_OLD_PRJ_MAJOR
+  Var WINPCAP_OLD_PRJ_MINOR
+  Var WINPCAP_OLD_PRJ_REV
+  Var WINPCAP_OLD_PRJ_BUILD
+  Var WINPCAP_OLD_PRJ_SAME_VERSION
+  Var WINPCAP_OLD_INSTALLER
+  Var WINPCAP_OLD_REBOOT_NEEDED
+  Var VARIABLE_1
+  
 ;--------------------------------
 ;General
 
@@ -92,15 +100,21 @@
   Name "${WINPCAP_PRODUCT_NAME}"
   OutFile "${WINPCAP_FILE_NAME}"
   
-  ;Get installation folder from registry if available
-  InstallDirRegKey HKCU "Software\WinPcap" ""
-
+;Get Installation folder from registry if available
+  InstallDirRegKey HKLM "Software\WinPcap" ""
+  
 ;--------------------------------
 ;User interface Configuration
 
   !define MUI_HEADERIMAGE
   !define MUI_HEADERIMAGE_BITMAP "distribution\winpcap_nsis.bmp"
   !define MUI_ABORTWARNING
+  !define MUI_CUSTOMFUNCTION_GUIINIT myGuiInit
+
+; This is needed to give focus to the main window after the initial "installer loading..." dialog is shown.
+  Function myGUIInit
+    ShowWindow $HWNDPARENT 2
+  FunctionEnd
 
 ;--------------------------------
 ;Installer Pages
@@ -109,7 +123,7 @@
   Page custom "ShowHtmlPage" "" ""
   !insertmacro MUI_PAGE_LICENSE "distribution\license.txt"
   !insertmacro MUI_PAGE_INSTFILES
-  !define MUI_FINISHPAGE_TEXT_REBOOT "An old version of WinPcap was present on the system.\nIn case it was older than 2.3, you MUST reboot the system in order for the new version to work properly."
+  !define MUI_FINISHPAGE_TEXT_REBOOT "An old version of WinPcap was present on the system.$\nYou should reboot the system in order for the new version to work properly."
   !insertmacro MUI_PAGE_FINISH
 
   ;Uninstaller
@@ -125,290 +139,348 @@
 ;Init function: copy the files we need during the installer
 
   Function .onInit
+
+; Initialize the plugin directorty. Needed??
     InitPluginsDir
+
+; Deny any attempt to start a silent installation of WinPcap
     SetSilent normal
+
+;Detect all parameters of a previous installation of WinPcap
+;after this call, all the WINPCAP_OLD_xxx variables are correctly set
     Call IsWinPcapInstalled
+
+;Detect the current Windows version
     Call GetWindowsVersion
     Pop $WINPCAP_TARGET_OS
 
-    StrCmp $WINPCAP_OLD_PROJ_VERSION_DOTTED "${WINPCAP_PROJ_VERSION_DOTTED}" SameVersionExit
+;   If no previous installations of winpcap were found, skip to the normal installer checks
+    StrCmp $WINPCAP_OLD_FOUND "false" CheckAdmin
 
-    Call IsUserAdmin
-    Pop $R0
-    StrCmp $R0 "true" NormalInstallation
+; some winpcap version has been found. check if it's the same one or a newer one and abort.
+    StrCmp $WINPCAP_OLD_PRJ_SAME_VERSION "same" SameVersionExit
+    StrCmp $WINPCAP_OLD_PRJ_SAME_VERSION "newer" NewerVersionExit
 
-    MessageBox MB_ICONEXCLAMATION|MB_OK "${WINPCAP_PRODUCT_NAME} requires administrator privileges to be installed. The installation will be aborted."
+; if we reach this point, an older installation has been found, skip to the normal installer checks
+    goto CheckAdmin
+
+NewerVersionExit:
+; A newer version was found. Abort
+    MessageBox MB_ICONEXCLAMATION|MB_OK "A newer version of WinPcap (internal version $WINPCAP_OLD_PROJ_VERSION_DOTTED) is already installed on this machine.$\nThe installation will be aborted."
     Quit
 
 SameVersionExit:
-    MessageBox MB_ICONEXCLAMATION|MB_OK "${WINPCAP_PRODUCT_NAME} is already installed on this machine. The installation will be aborted."
+; WinPcap has already been installed
+    MessageBox MB_ICONEXCLAMATION|MB_OK "${WINPCAP_PRODUCT_NAME} is already installed on this machine.$\nThe installation will be aborted."
+    Quit
+
+CheckAdmin:
+; Only admins can install winpcap
+    Call IsUserAdmin
+    Pop $R0
+    StrCmp $R0 "true" CheckX86
+
+    MessageBox MB_ICONEXCLAMATION|MB_OK "${WINPCAP_PRODUCT_NAME} requires administrator privileges to be installed.n\$\nThe installation will be aborted."
+    Quit
+
+CheckX86:
+; Check that the target platform is x86. On 9x/ME, this check can be skipped.
+    StrCmp $WINPCAP_TARGET_OS "95" NormalInstallation
+    StrCmp $WINPCAP_TARGET_OS "98" NormalInstallation
+    StrCmp $WINPCAP_TARGET_OS "ME" NormalInstallation
+
+    ReadRegStr $R0 HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+    StrCmp $R0 "x86" NormalInstallation
+    
+    MessageBox MB_ICONEXCLAMATION|MB_OK "${WINPCAP_PRODUCT_NAME} can be installed on 32-bit x86 systems, only.$\nThe installation will be aborted."
     Quit
 
 NormalInstallation:
 
-    # Drop everything into the $INSTDIR on init.
-    # For quick calling at its time
-    CreateDirectory $INSTDIR
-;    File /oname=$INSTDIR\nsWeb.dll "${NSISDIR}\Plugins\nsWeb.dll"
-;    File /oname=$INSTDIR\Internet.dll "${NSISDIR}\Plugins\Internet.dll"
-;    File /oname=$INSTDIR\ExecDos.dll "${NSISDIR}\Plugins\ExecDos.dll"
-;    File /oname=$INSTDIR\UserInfo.dll "${NSISDIR}\Plugins\UserInfo.dll"
-    File /oname=$INSTDIR\WpBann.htm WpBann.htm
-;    File /oname=$INSTDIR\winpcap_nsis.bmp distribution\winpcap_nsis.bmp
+; if the OS is windows 2000/XP/2003 or similar, the installer will download the winpcap banner from the website.
+; on OT windows, downloading that banner is not working properly: when no internet connection is available, the timeout in NSISdl::download is ignored
+; As a consequence, we use our local copy.
+    StrCmp $WINPCAP_TARGET_OS "95" WindowsOTBanner
+    StrCmp $WINPCAP_TARGET_OS "98" WindowsOTBanner
+    StrCmp $WINPCAP_TARGET_OS "ME" WindowsOTBanner
+    StrCmp $WINPCAP_TARGET_OS "NT" WindowsOTBanner  ; on NT4 the timeout of download quiet is ignored, and it usually takes 30 seconds to retrun
+    StrCmp $WINPCAP_TARGET_OS "2000" WindowsNTBanner
+    StrCmp $WINPCAP_TARGET_OS "XP" WindowsNTBanner
+    StrCmp $WINPCAP_TARGET_OS "2003" WindowsNTBanner
 
-    # we always set the installer mode to normal to use the page
-    # callback functions
+WindowsNTBanner:
+; Meantime the installer is downloading the banner, we should a "wait" dialog to the user, so that he doesn't think the
+; installer is not working.
+    nxs::Show /NOUNLOAD  "${WINPCAP_PRODUCT_NAME} Installer" /top "The installer is loading into memory. Please wait..." /end
+    nxs::Update /NOUNLOAD /sub "0% complete" /pos 0 /end
+
+; this approach does not work on win95/98/me, since the timeout is not respected, and the installer seems to be hanged.
+    NSISdl::download_quiet /TIMEOUT=3000 "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/banner.htm" "$TEMP\WpBann.htm"
+    pop $R0
+    StrCmp $R0 "success"  WindowsNTBannerEnded
+
+; We reach this point if the download failed. Use our local copy.
+    File /oname=$TEMP\WpBann.htm WpBann.htm
+
+WindowsNTBannerEnded:
+    nxs::Update /NOUNLOAD /sub "100% complete" /pos 100 /end
+; we sleep a bit to allow the user to see our "wait" dialog at 100% for a little bit.
+    Sleep 500
+    nxs::Destroy
+
+    goto Ended
+
+WindowsOTBanner:
+; Windows OT. Simply use our local copy of the banner.
+    File /oname=$TEMP\WpBann.htm WpBann.htm
+Ended:
+
   FunctionEnd
+
 
 ;--------------------------------
 ;Init function for the uninstaller: disable support for silent removal
   Function un.onInit
     InitPluginsDir
+; Deny any attempt to start a silent uninstallation of WinPcap
     SetSilent normal
+
+;Detect the current Windows version
     Call un.GetWindowsVersion
     Pop $WINPCAP_TARGET_OS
 
+; Only admins can uninstall winpcap
     Call un.IsUserAdmin
     Pop $R0
     StrCmp $R0 "true" NormalUninstallation
 
-    MessageBox MB_ICONEXCLAMATION|MB_OK "${WINPCAP_PRODUCT_NAME} requires administrator privileges to be uninstalled. The uninstallation will be aborted."
+    MessageBox MB_ICONEXCLAMATION|MB_OK "${WINPCAP_PRODUCT_NAME} requires administrator privileges to be uninstalled.$\nThe uninstallation will be aborted."
     Quit
 
 NormalUninstallation:
+; go with the installation
   FunctionEnd
 
-
-
+;--------------------------------
+;Called when the installation fails. Just remove any temp file on the machine.
   Function .onInstFailed
-    call RollBackInstallation
+    call CleanupTempFiles
   FunctionEnd
 
+;--------------------------------
+;Called when the installation succeeds. Just remove any temp file on the machine.
   Function .onInstSuccess
     call CleanupTempFiles
   FunctionEnd
 
-  Function RollBackInstallation
-    call CleanupTempFiles
-  FunctionEnd
-
-
+;--------------------------------
+;Remove any temp file used during the installation
   Function CleanupTempFiles
-;    Delete /REBOOTOK $INSTDIR\nsWeb.dll
-;    Delete /REBOOTOK $INSTDIR\Internet.dll
-;    Delete /REBOOTOK $INSTDIR\ExecDos.dll
-;    Delete /REBOOTOK $INSTDIR\UserInfo.dll
-    Delete /REBOOTOK $INSTDIR\WpBann.htm
-;    Delete /REBOOTOK $INSTDIR\winpcap_nsis.bmp
+    Delete /REBOOTOK $TEMP\WpBann.htm
   FunctionEnd
-
-
-
 
 ;--------------------------------
-;web-pages functions
-
+;Called to show the initial web page with the banneer.
   Function "ShowHtmlPage"
 
-    push $R0
-    push $1
+!insertmacro MUI_HEADER_TEXT "${WINPCAP_PRODUCT_NAME} Installer" "Welcome to the ${WINPCAP_PRODUCT_NAME} Installation Wizard"
 
-    ;Now jump to the copy functions related to this OS
-    StrCmp WINPCAP_TARGET_OS "95" LocalBanner
-    StrCmp WINPCAP_TARGET_OS "98" LocalBanner
-    StrCmp WINPCAP_TARGET_OS "ME" LocalBanner
-    StrCmp WINPCAP_TARGET_OS "NT" RemoteBanner
-    StrCmp WINPCAP_TARGET_OS "2000" RemoteBanner
-    StrCmp WINPCAP_TARGET_OS "XP" RemoteBanner
-    StrCmp WINPCAP_TARGET_OS "2003" RemoteBanner
- 
-RemoteBanner:
-	
-    Internet::GetUrlCode "www.winpcap.org" "" ${VAR_1}
+    nsWeb::ShowWebInPage "$TEMP\WpBann.htm"
 
-!insertmacro MUI_HEADER_TEXT "WinPcap Installer" "Welcome to the WinPcap 3.1 Installation Wizard"
-
-    StrCmp $1 "200" remote
-
-LocalBanner:
-    nsWeb::ShowWebInPage "$INSTDIR\WpBann.htm"
-    Goto end
-
-remote:
-    nsWeb::ShowWebInPage "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/banner.htm"
-
-end:
-
-    pop $1
-    pop $R0
   FunctionEnd
-
 
 ;--------------------------------
 ;Main Installer Section
-Section "Dummy Section" SecDummy
+Section "Main Installer Section" MainInstall
 
-  ;
-  ; First of all, we delete the intermediate files used only by the installer
-  ;
-  Call CleanupTempFiles
-  ;
-  ; Now we check if an old WinPcap version is pesent, and we try to remove it
-  ;
+;
+; First of all, we delete the intermediate files used only by the installer
+;
+    Call CleanupTempFiles
 
-  ;Assume no reboot by default
-  SetRebootFlag false
+;Assume no reboot by default
+    SetRebootFlag false
 
-  ReadRegStr $WINPCAP_UNINSTALL HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" "UninstallString"
-  IfErrors WinpcapNotDetected ;if RegKey is unavailable, WinPcap is not present
+; if no previous version of WinPcap is installed, skip to the copy procedure.
+    StrCmp $WINPCAP_OLD_FOUND "false" MainInstallationProcedure
 
-  StrCpy $WINPCAP_30_OR_LATER "no"
+; ok, some version of WinPcap has been detected. Let's see if we can remove it.
+; Uninstallation heuristic:
+; First, we check if WinPcap is detected (packet.dll)
+; if it's not detected, ok
+; if it's detected, check if some app is still using it: try to rename packet.dll.
+; If it fails, then maybe some user is using it. Warn the user (stop the app and restart the installation), and abort the installation.
+; If it succeeds, if the unisntaller is present, warn the user and call the uninstaller (advising to choose not to reboot). Then continue.
+; If rename succeeds and the uninstaller is not present, ask the user what to do (abort, continue+reboot).
+    CopyFiles "$SYSDIR\packet.dll" "$SYSDIR\_packet.dlluninstall"
+    Delete "$SYSDIR\packet.dll"
+    IfErrors WinPcapIsInUse
 
-  StrCmp $WINPCAP_30_OR_LATER "no" RemoveOld
+;first of all, revert the file name change
+    Rename "$SYSDIR\_packet.dlluninstall" "$SYSDIR\packet.dll"
 
-  ;3.0 or more recent version detected. Ask the user what to do.
-  Messagebox MB_YESNO|MB_ICONINFORMATION "A previous version of WinPcap has been detected on this system and needs to be removed before proceeding. Do you want to uninstall it? (Note: if you click 'No', this installer will abort.)" IDYES RemoveRecent
+; now let's check if an uninstaller is available
+    ReadRegStr $WINPCAP_UNINSTALL_EXEC HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" "UninstallString"
+    IfErrors WinpcapUninstallerNotDetected
+  
+;An uninstaller has been detected. Ask the user if he wants to remove it.
+    Messagebox MB_YESNO|MB_ICONINFORMATION "A previous version of WinPcap has been detected on this system and needs to be removed before proceeding.$\nDo you want to uninstall it? (Note: if you click 'No', this installer will abort.)" IDYES RemoveRecent IDNO AbortInstallation
 
-  Abort "Installation aborted. The old version of WinPcap has not been removed. Click Cancel to Exit."
-  Goto EndInstallation
+; Winpcap is still used. Abor the installation.
+WinPcapIsInUse:
+    Messagebox MB_OK|MB_ICONEXCLAMATION "A previous version of WinPcap has been detected on this system and cannot be removed because in use by another application. Please close all the WinPcap-based applications and run the installer again.$\n$\nThis installation will now abort." IDOK AbortInstallation
 
 RemoveRecent:
-;  ExecWait '$WINPCAP_UNINSTALL' 
-  ExecWait '"$INSTDIR\uninstall.exe" _?=$INSTDIR' 
-  Goto WinpcapNotDetected
+    MessageBox MB_ICONINFORMATION|MB_OK "The uninstaller for a previous version of WinPcap will now run.$\n$\nNOTE: if the unistaller asks you to reboot at the end of the procedure, please choose to NOT reboot."
+; look if it's a NSIS based installation, or a GHOST one. they have different uninstall command lines.
+    StrCmp $WINPCAP_OLD_INSTALLER "nsis"  NSISSetupRemoval
 
-RemoveOld:
-  ;If WinPcap is detected, but it's older than 3.0, we overwrite and ask a reboot
-  SetRebootFlag true
-  Messagebox MB_YESNO|MB_ICONINFORMATION "A version of WinPcap older than 3.0 has been detected on this system and needs to be removed before proceeding. Do you want to uninstall it? (Note: if you click 'No', this installer will abort.)" IDYES WinpcapNotDetected
+;OldSetupremoval
+    ExecWait "$WINPCAP_UNINSTALL_EXEC"
+    goto EndRemoval
 
-  SetRebootFlag false
-  Abort "Installation aborted. The old version of WinPcap has not been removed. Click Cancel to Exit."
-  Goto EndInstallation
+NSISSetupRemoval:
+     ExecWait '"$INSTDIR\uninstall.exe" _?=$INSTDIR'
 
-WinpcapNotDetected:
+; look if we need a reboot after the uninstallation
+; basically, we do not need a reboot if the previous version was >= 3.0.0.14
+EndRemoval:
 
+     SetRebootFlag true
+     StrCmp $$WINPCAP_OLD_REBOOT_NEEDED "true" MainInstallationProcedure
+     SetRebootFlag false
+     Goto MainInstallationProcedure
 
-  ;
-  ;tell the installer to put the start menu stuff under "all users"
-  ;this prevents NSIS from having craziness during uninstallation
-  ;
-  SetShellVarContext all 
+WinPcapUninstallerNotDetected:
+    Messagebox MB_YESNO|MB_ICONINFORMATION "A previous version of WinPcap has been detected on this system. Unfortunately, this installer is not able to remove it.$\nDo you want to continue with the installation?" IDYES OldWinPcapNotUninstalled IDNO AbortInstallation
 
-  SetOutPath "$INSTDIR"
-  
-  ;
-  ;Copy Files
-  ;
+OldWinPcapNotUninstalled:
+; We detected an OLD version of winpcap, and we were not able to remove it. Just force a reboot at the end.
+    SetRebootFlag true
+    Goto MainInstallationProcedure
 
-  ;Common Files
-  File "Distribution\2000\daemon_mgm.exe"
-  File "Distribution\2000\NetMonInstaller.exe"
-  File "Distribution\2000\npf_mgm.exe"
-  File "Distribution\2000\rpcapd.exe"
+AbortInstallation:
+    Abort "Installation aborted. The old version of WinPcap has not been removed. Click Cancel to Exit."
+    Goto EndInstallation
 
-  ;Move to the system folder, whatever system we are
-  SetOutPath "$SYSDIR"
+MainInstallationProcedure:
 
-  ;Copy wpcap
-  File "Distribution\wpcap.dll"
-  File "Distribution\pthreadVC.dll"
+;
+;tell the installer to put the start menu stuff under "all users"
+;this prevents NSIS from having craziness during uninstallation
+;
+; The best should be to have it on the admin (=current) user, but
+; the link to winpcap is useful, as well.
+    SetShellVarContext all
 
-  ;Now jump to the copy functions related to this OS
-  StrCmp WINPCAP_TARGET_OS "95" CopyFiles9x
-  StrCmp WINPCAP_TARGET_OS "98" CopyFiles9x
-  StrCmp WINPCAP_TARGET_OS "ME" CopyFiles9x
-  StrCmp WINPCAP_TARGET_OS "NT" CopyFilesNT4
-  StrCmp WINPCAP_TARGET_OS "2000" CopyFilesNT5
-  StrCmp WINPCAP_TARGET_OS "XP" CopyFilesNT5
-  StrCmp WINPCAP_TARGET_OS "2003" CopyFilesNT5
+    SetOutPath "$INSTDIR"
+
+;
+;Copy Files
+;
+
+;Common Files
+    File "Distribution\2000\daemon_mgm.exe"
+    File "Distribution\2000\NetMonInstaller.exe"
+    File "Distribution\2000\npf_mgm.exe"
+    File "Distribution\2000\rpcapd.exe"
+
+;Move to the system folder, whatever system we are
+    SetOutPath "$SYSDIR"
+
+;Copy wpcap and the pthreads
+    File "Distribution\wpcap.dll"
+    File "Distribution\pthreadVC.dll"
+
+;Now jump to the copy functions related to this OS
+    StrCmp $WINPCAP_TARGET_OS "95" CopyFiles9x
+    StrCmp $WINPCAP_TARGET_OS "98" CopyFiles9x
+    StrCmp $WINPCAP_TARGET_OS "ME" CopyFiles9x
+    StrCmp $WINPCAP_TARGET_OS "NT" CopyFilesNT4
+    StrCmp $WINPCAP_TARGET_OS "2000" CopyFilesNT5
+    StrCmp $WINPCAP_TARGET_OS "XP" CopyFilesNT5
+    StrCmp $WINPCAP_TARGET_OS "2003" CopyFilesNT5
   
 CopyFilesNT5:
-  File "Distribution\2000\packet.dll"
-  File "Distribution\2000\wanpacket.dll"
-  File /oname=drivers\npf.sys Distribution\2000\npf.sys
+    File "Distribution\2000\packet.dll"
+    File "Distribution\2000\wanpacket.dll"
+    File /oname=drivers\npf.sys "Distribution\2000\npf.sys"
   
-  ;Run install commands
-  ExecDos::exec '$INSTDIR\npf_mgm.exe -r'
-  ExecDos::exec '$INSTDIR\daemon_mgm.exe -r'
-  ExecDos::exec '$INSTDIR\NetMonInstaller.exe i'
+;Run install commands
+    ExecDos::exec '$INSTDIR\npf_mgm.exe -r'
+    ExecDos::exec '$INSTDIR\daemon_mgm.exe -r'
+    ExecDos::exec '$INSTDIR\NetMonInstaller.exe i'
 
-  Goto EndCopy
+    Goto EndCopy
 
 CopyFilesNT4:
-  File "Distribution\NT\packet.dll"
-  File /oname=drivers\npf.sys Distribution\NT\npf.sys
+    File "Distribution\NT\packet.dll"
+    File /oname=drivers\npf.sys Distribution\NT\npf.sys
 
-  ;Run install commands
-  ExecDos::exec '"$INSTDIR\npf_mgm.exe" "-r"'
-  ExecDos::exec '"$INSTDIR\daemon_mgm.exe" "-r"'
+;Run install commands
+    ExecDos::exec '"$INSTDIR\npf_mgm.exe" "-r"'
+    ExecDos::exec '"$INSTDIR\daemon_mgm.exe" "-r"'
 
-  Goto EndCopy
+    Goto EndCopy
 
 CopyFiles9x:
-  File "Distribution\9x\packet.dll"
-  File "Distribution\9x\npf.vxd"
-  Goto EndCopy
+    File "Distribution\9x\packet.dll"
+    File "Distribution\9x\npf.vxd"
+    Goto EndCopy
 
 EndCopy:
 
-  ;
-  ;Store installation folder
-  ;
-  WriteRegStr HKCU "Software\WinPcap" "" $INSTDIR
+;
+;Store installation folder
+;
+    WriteRegStr HKLM "SOFTWARE\WinPcap" "" $INSTDIR
  
-  ;
-  ;Create an "add/remove programs" entry
-  ;
-  WriteRegStr HKLM \ 
+;
+;Create an "add/remove programs" entry
+;
+    WriteRegStr HKLM \
 	"Software\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
-	"DisplayName" "WINPCAP_PRODUCT_NAME" 
-	
-  WriteRegStr HKLM \ 
+	"DisplayName" "${WINPCAP_PRODUCT_NAME}"
+
+    WriteRegStr HKLM \
 	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
 	"UninstallString" "$INSTDIR\uninstall.exe"  
 
-  WriteRegStr HKLM \ 
+    WriteRegStr HKLM \
 	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
 	"Publisher" "CACE Technologies"  
 
-  WriteRegStr HKLM \ 
+    WriteRegStr HKLM \
 	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
-	"HelpLink" "http://www.cacetech.com"  
-
-  WriteRegStr HKLM \ 
-	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
-	"URLInfoAbout" "http://www.winpcap.org"  
+	"URLInfoAbout" "http://www.cacetech.com"
   
-  WriteRegStr HKLM \ 
+    WriteRegStr HKLM \
 	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
-	"URLUpdateInfo" "http://www.winpcap.org"  
+	"URLUpdateInfo" "http://www.winpcap.org"
 
-  WriteRegStr HKLM \ 
+    WriteRegStr HKLM \
 	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
 	"VersionMajor" "${WINPCAP_PRJ_MAJOR}"  
 
-  WriteRegStr HKLM \ 
+    WriteRegStr HKLM \
 	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
 	"VersionMinor" "${WINPCAP_PRJ_MINOR}"  
 
-  WriteRegStr HKLM \ 
+    WriteRegStr HKLM \
 	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
-	"DisplayVersion" "${WINPCAP_PRJ_MAJOR}.${WINPCAP_PRJ_MINOR}"  
+	"DisplayVersion" "${WINPCAP_PROJ_VERSION_DOTTED}"
 
-  SetOutPath $PROFILE
-  CreateDirectory "$SMPROGRAMS\WinPcap"
+    CreateDirectory "$SMPROGRAMS\WinPcap"
 
-  ;
-  ;Create start menu shortcuts
-  ;
-  Delete "$SMPROGRAMS\WinPcap\WinPcap Web Site.lnk"
-  WriteINIStr "$SMPROGRAMS\WinPcap\WinPcap Web Site.url" \
+;
+;Create start menu shortcuts
+;
+    WriteINIStr "$SMPROGRAMS\WinPcap\WinPcap Web Site.url" \
           "InternetShortcut" "URL" "http://www.winpcap.org/"
-  CreateShortCut "$SMPROGRAMS\WinPcap\Uninstall WinPcap.lnk" "$INSTDIR\uninstall.exe"
+    CreateShortCut "$SMPROGRAMS\WinPcap\Uninstall ${WINPCAP_PRODUCT_NAME}.lnk" "$INSTDIR\uninstall.exe"
 
-  ;Create uninstaller
-  WriteUninstaller "$INSTDIR\Uninstall.exe"
+;Create uninstaller
+    WriteUninstaller "$INSTDIR\Uninstall.exe"
 
 EndInstallation:
 
@@ -416,93 +488,94 @@ SectionEnd
 
 ;--------------------------------
 ;Language-related stuff
-  ;Language strings
-  LangString DESC_SecDummy ${LANG_ENGLISH} "WinPcap installation section. No panels"
+;Language strings
+  LangString DESC_MainInstall ${LANG_ENGLISH} "WinPcap installation section. No panels"
 
   ;Assign language strings to sections
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-  !insertmacro MUI_DESCRIPTION_TEXT ${SecDummy} $(DESC_SecDummy)
+  !insertmacro MUI_DESCRIPTION_TEXT ${MainInstall} $(DESC_MainInstall)
   !insertmacro MUI_FUNCTION_DESCRIPTION_END
  
 ;--------------------------------
 ;Uninstaller Section
-Section "Uninstall"
+Section "Uninstall" MainUnistall
 
-  SetShellVarContext all 
+    SetShellVarContext all
 
-  ;
-  ;Delete files
-  ;
 
-  ;Get OS version with the GetWindowsVersion function included at the end of the script
-  Call un.GetWindowsVersion
-  Pop $R0
+;Get OS version with the GetWindowsVersion function included at the end of the script
+    Call un.GetWindowsVersion
+    Pop $R0
 
-  ;Move to the system folder, whatever system we are
-  SetOutPath "$SYSDIR"
+;Move to the system folder, whatever system we are
+    SetOutPath "$SYSDIR"
 
-  ;Now jump to the copy functions related to this OS
-  StrCmp $3 "95" RmFiles9x
-  StrCmp $3 "98" RmFiles9x
-  StrCmp $3 "ME" RmFiles9x
-  StrCmp $3 "NT" RmFilesNT4
-  StrCmp $3 "2000" RmFilesNT5
-  StrCmp $3 "XP" RmFilesNT5
-  StrCmp $3 "2003" RmFilesNT5
+;
+;Delete files
+;
+;Now jump to the remove functions related to this OS
+    StrCmp $3 "95" RmFiles9x
+    StrCmp $3 "98" RmFiles9x
+    StrCmp $3 "ME" RmFiles9x
+    StrCmp $3 "NT" RmFilesNT4
+    StrCmp $3 "2000" RmFilesNT5
+    StrCmp $3 "XP" RmFilesNT5
+    StrCmp $3 "2003" RmFilesNT5
   
 RmFilesNT5:
-  ;Run uninstall commands
-  ExecDos::exec '"$INSTDIR\npf_mgm.exe" "-u"'
-  ExecDos::exec '"$INSTDIR\daemon_mgm.exe" "-u"'
+;Run uninstall commands
+    ExecDos::exec '"$INSTDIR\npf_mgm.exe" "-u"'
+    ExecDos::exec '"$INSTDIR\daemon_mgm.exe" "-u"'
 
-  ;Delete files
-  Delete /REBOOTOK "$SYSDIR\packet.dll"
-  Delete /REBOOTOK "$SYSDIR\wanpacket.dll"
-  Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
+;Delete files
+; The rebootok is used to delete the files on reboot if they are in use.
+    Delete /REBOOTOK "$SYSDIR\packet.dll"
+    Delete /REBOOTOK "$SYSDIR\wanpacket.dll"
+    Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
 
-  Goto EndRm
+    Goto EndRm
 
 RmFilesNT4:
-  ;Run uninstall commands
-  ExecDos::exec '"$INSTDIR\npf_mgm.exe" "-u"'
-  ExecDos::exec '"$INSTDIR\daemon_mgm.exe" "-u"'
+;Run uninstall commands
+    ExecDos::exec '"$INSTDIR\npf_mgm.exe" "-u"'
+    ExecDos::exec '"$INSTDIR\daemon_mgm.exe" "-u"'
 
-  Delete /REBOOTOK "$SYSDIR\packet.dll"
-  Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
-  Goto EndRm
+    Delete /REBOOTOK "$SYSDIR\packet.dll"
+    Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
+    Goto EndRm
 
 RmFiles9x:
-  Delete "$SYSDIR\packet.dll"
-  Delete "$SYSDIR\npf.vxd"
-  Goto EndRm
+    Delete "$SYSDIR\packet.dll"
+    Delete "$SYSDIR\npf.vxd"
+    Goto EndRm
 
 EndRm:
 
-  ;Delete common files
-  Delete /REBOOTOK "$INSTDIR\INSTALL.LOG" ;may be present after removing winpcap 2.3
-  Delete /REBOOTOK "$INSTDIR\Uninstall.exe"
-  Delete /REBOOTOK "$INSTDIR\daemon_mgm.exe"
-  Delete /REBOOTOK "$INSTDIR\NetMonInstaller.exe"
-  Delete /REBOOTOK "$INSTDIR\npf_mgm.exe"
-  Delete /REBOOTOK "$INSTDIR\rpcapd.exe"
-  Delete /REBOOTOK "$SYSDIR\wpcap.dll"
+;Delete common files
+    Delete /REBOOTOK "$INSTDIR\INSTALL.LOG" ;may be present after removing winpcap 2.3
+    Delete /REBOOTOK "$INSTDIR\daemon_mgm.exe"
+    Delete /REBOOTOK "$INSTDIR\NetMonInstaller.exe"
+    Delete /REBOOTOK "$INSTDIR\npf_mgm.exe"
+    Delete /REBOOTOK "$INSTDIR\rpcapd.exe"
+    Delete /REBOOTOK "$SYSDIR\wpcap.dll"
 
-  ;
-  ;remove start menu entries
-  ;
-  SetOutPath "$SMPROGRAMS"
-  RMDir /r "$SMPROGRAMS\WinPcap" 
+;
+;remove start menu entries
+;
 
-  ; 
-  ;delete the installation directory
-  ;
-  RMDir "$INSTDIR"
+    SetOutPath "$SMPROGRAMS"
+    RMDir /r "$SMPROGRAMS\WinPcap"
 
-  ;
-  ;remove registry entries
-  ;
-  DeleteRegKey /ifempty HKCU "Software\WinPcap"
-  DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst"
+;
+;delete the installation directory
+;
+    RMDir /r "$INSTDIR"
+
+;
+;remove registry entries
+;
+    DeleteRegKey /ifempty HKLM "Software\WinPcap"
+    DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst"
 
 SectionEnd
 
@@ -518,8 +591,11 @@ SectionEnd
   VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${WINPCAP_PROJ_VERSION_DOTTED}"
 
 
-
-
+;--------------------------------
+;--------------------------------
+;--------------------------------
+;--------------------------------
+; EXTERNAL FUNCTIONS TAKEN ON THE WEB
 ;--------------------------------
 ;--------------------------------
 ;--------------------------------
@@ -694,62 +770,107 @@ SectionEnd
  FunctionEnd
 
 ;--------------------------------
-;this function checks if WinPcap is installed, and stores the internal version
-; into WINPCAP_OLD_PROJ_VERSION_DOTTED. 0.0.0.0 means no older version, and
-; 1.0.0.0 means very old version (< 2.3)
+;this function checks if WinPcap is installed, and stores all the information into the WINPCAP_OLD_xxx variable
 Function IsWinPcapInstalled
 
+  StrCpy $WINPCAP_OLD_FOUND "false"
   ${Locate} "$SYSDIR" "/M=packet.dll" 'PacketFound'
-  IfErrors NoPacket
 
-  goto IWINT_End
- 
-NoPacket:
-; this means no old version.
-  StrCpy $WINPCAP_OLD_PROJ_VERSION_DOTTED "0.0.0.0"
-  goto IWINT_End
-
-IWINT_EnD: 
-
-FunctionEnd  
+FunctionEnd
 
 ; this callback is called when packet.dll is found. It stores the version of the dll 
 ; into  WINPCAP_OLD_PROJ_VERSION_DOTTED
 Function PacketFound
 
-  Push $R0
-  Push $R1
-  Push $R2
-  Push $R3
-  Push $R4
-  Push $R5
+  StrCpy $WINPCAP_OLD_FOUND "true"
 
   GetDLLVersion "$SYSDIR\packet.dll" $R0 $R1
   IfErrors IWINT_Exit 
  
-  IntOp $R2 $R0 / 0x00010000
-  IntOp $R3 $R0 & 0x0000FFFF
-  IntOp $R4 $R1 / 0x00010000
-  IntOp $R5 $R1 & 0x0000FFFF
+  IntOp $WINPCAP_OLD_PRJ_MAJOR $R0 / 0x00010000
+  IntOp $WINPCAP_OLD_PRJ_MINOR $R0 & 0x0000FFFF
+  IntOp $WINPCAP_OLD_PRJ_REV $R1 / 0x00010000
+  IntOp $WINPCAP_OLD_PRJ_BUILD $R1 & 0x0000FFFF
 
-  StrCpy $WINPCAP_OLD_PROJ_VERSION_DOTTED "$R2.$R3.$R4.R5"
+  StrCpy $WINPCAP_OLD_PROJ_VERSION_DOTTED "$WINPCAP_OLD_PRJ_MAJOR.$WINPCAP_OLD_PRJ_MINOR.$WINPCAP_OLD_PRJ_REV.$WINPCAP_OLD_PRJ_BUILD"
 
-  Goto PF_End
+;
+;   Check if a newer version is already running
+;   we look at the version of the files, rather at the times.
+    IntCmp $WINPCAP_OLD_PRJ_MAJOR ${WINPCAP_PRJ_MAJOR} SameVer1 Older Newer
+SameVer1:
+    IntCmp $WINPCAP_OLD_PRJ_MINOR ${WINPCAP_PRJ_MINOR} SameVer2 Older Newer
+SameVer2:
+    IntCmp $WINPCAP_OLD_PRJ_REV ${WINPCAP_PRJ_REV} SameVer3 Older Newer
+SameVer3:
+    IntCmp $WINPCAP_OLD_PRJ_BUILD ${WINPCAP_PRJ_BUILD} SameVersion Older Newer
+
+Older:
+   StrCpy $WINPCAP_OLD_PRJ_SAME_VERSION "older"
+   Goto NsisInstallerCheck
+
+Newer:
+   StrCpy $WINPCAP_OLD_PRJ_SAME_VERSION "newer"
+   Goto NsisInstallerCheck
+
+SameVersion:
+   StrCpy $WINPCAP_OLD_PRJ_SAME_VERSION "same"
+   Goto NsisInstallerCheck
+
+NsisInstallerCheck:
+
+; we started using nsis from version 3.1.0.25
+
+    IntCmp $WINPCAP_OLD_PRJ_MAJOR "3" NsisSameVer1 NoNsisInst NsisInst
+NsisSameVer1:
+    IntCmp $WINPCAP_OLD_PRJ_MINOR "1" NsisSameVer2 NoNsisInst NsisInst
+NsisSameVer2:
+    IntCmp $WINPCAP_OLD_PRJ_REV "0" NsisSameVer3 NoNsisInst NsisInst
+NsisSameVer3:
+    IntCmp $WINPCAP_OLD_PRJ_BUILD "25" NsisInst NoNsisInst NsisInst
+    
+NoNsisInst:
+    StrCpy $WINPCAP_OLD_INSTALLER "ghost"
+    Goto CheckForReboot
+
+NsisInst:
+    StrCpy $WINPCAP_OLD_INSTALLER "nsis"
+    Goto PF_End
+
+CheckForReboot:
+
+  StrCmp $WINPCAP_OLD_PROJ_VERSION_DOTTED "3.0.0.14" NoRebootNeeded
+  StrCmp $WINPCAP_OLD_PROJ_VERSION_DOTTED "3.0.0.15" NoRebootNeeded
+  StrCmp $WINPCAP_OLD_PROJ_VERSION_DOTTED "3.0.0.16" NoRebootNeeded
+  StrCmp $WINPCAP_OLD_PROJ_VERSION_DOTTED "3.0.0.17" NoRebootNeeded
+  StrCmp $WINPCAP_OLD_PROJ_VERSION_DOTTED "3.0.0.18" NoRebootNeeded
+  StrCmp $WINPCAP_OLD_PROJ_VERSION_DOTTED "3.0.0.19" NoRebootNeeded
+  StrCpy $VARIABLE_1 $WINPCAP_OLD_PROJ_VERSION_DOTTED 3
+  StrCmp $VARIABLE_1 "3.1" NoRebootNeeded
+
+  goto RebootNeeded
+
+NoRebootNeeded:
+  
+  StrCpy $WINPCAP_OLD_REBOOT_NEEDED "false"
+  goto PF_End
+
+RebootNeeded:
+  StrCpy $WINPCAP_OLD_REBOOT_NEEDED "true"
+  goto PF_End
 
 IWINT_Exit:
-  StrCpy $WINPCAP_OLD_PROJ_VERSION_DOTTED "1.0.0.0"
+; this means "old version"
+  StrCpy $WINPCAP_OLD_PROJ_VERSION_DOTTED  "0.0.0.0"
+  StrCpy $WINPCAP_OLD_PRJ_MAJOR            "0"
+  StrCpy $WINPCAP_OLD_PRJ_MINOR            "0"
+  StrCpy $WINPCAP_OLD_PRJ_REV              "0"
+  StrCpy $WINPCAP_OLD_PRJ_BUILD            "0"
 
 
 PF_End:
 
-  pop $R5
-  pop $R4
-  pop $R3
-  pop $R2
-  pop $R1
-  pop $R0
-
-FunctionEnd  
+FunctionEnd
 
 ; Author: Lilla (lilla@earthlink.net) 2003-06-13
 ; function IsUserAdmin uses plugin \NSIS\PlusgIns\UserInfo.dll
