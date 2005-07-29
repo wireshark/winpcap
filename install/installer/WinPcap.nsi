@@ -558,6 +558,7 @@ EndRm:
     Delete /REBOOTOK "$INSTDIR\npf_mgm.exe"
     Delete /REBOOTOK "$INSTDIR\rpcapd.exe"
     Delete /REBOOTOK "$SYSDIR\wpcap.dll"
+    Delete /REBOOTOK "$SYSDIR\pthreadVC.dll"
 
 ;
 ;remove start menu entries
