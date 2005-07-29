@@ -502,11 +502,6 @@ Section "Uninstall" MainUnistall
 
     SetShellVarContext all
 
-
-;Get OS version with the GetWindowsVersion function included at the end of the script
-    Call un.GetWindowsVersion
-    Pop $R0
-
 ;Move to the system folder, whatever system we are
     SetOutPath "$SYSDIR"
 
@@ -514,13 +509,13 @@ Section "Uninstall" MainUnistall
 ;Delete files
 ;
 ;Now jump to the remove functions related to this OS
-    StrCmp $3 "95" RmFiles9x
-    StrCmp $3 "98" RmFiles9x
-    StrCmp $3 "ME" RmFiles9x
-    StrCmp $3 "NT" RmFilesNT4
-    StrCmp $3 "2000" RmFilesNT5
-    StrCmp $3 "XP" RmFilesNT5
-    StrCmp $3 "2003" RmFilesNT5
+    StrCmp $WINPCAP_TARGET_OS "95" RmFiles9x
+    StrCmp $WINPCAP_TARGET_OS "98" RmFiles9x
+    StrCmp $WINPCAP_TARGET_OS "ME" RmFiles9x
+    StrCmp $WINPCAP_TARGET_OS "NT" RmFilesNT4
+    StrCmp $WINPCAP_TARGET_OS "2000" RmFilesNT5
+    StrCmp $WINPCAP_TARGET_OS "XP" RmFilesNT5
+    StrCmp $WINPCAP_TARGET_OS "2003" RmFilesNT5
   
 RmFilesNT5:
 ;Run uninstall commands
@@ -545,8 +540,8 @@ RmFilesNT4:
     Goto EndRm
 
 RmFiles9x:
-    Delete "$SYSDIR\packet.dll"
-    Delete "$SYSDIR\npf.vxd"
+    Delete /REBOOTOK "$SYSDIR\packet.dll"
+    Delete /REBOOTOK "$SYSDIR\npf.vxd"
     Goto EndRm
 
 EndRm:
