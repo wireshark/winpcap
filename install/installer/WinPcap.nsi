@@ -110,7 +110,8 @@
   !define MUI_HEADERIMAGE_BITMAP "distribution\winpcap_nsis.bmp"
   !define MUI_ABORTWARNING
   !define MUI_CUSTOMFUNCTION_GUIINIT myGuiInit
-
+  !define MUI_CUSTOMFUNCTION_ABORT .onInstFailed
+  
 ; This is needed to give focus to the main window after the initial "installer loading..." dialog is shown.
   Function myGUIInit
     ShowWindow $HWNDPARENT 2
@@ -123,7 +124,7 @@
   Page custom "ShowHtmlPage" "" ""
   !insertmacro MUI_PAGE_LICENSE "distribution\license.txt"
   !insertmacro MUI_PAGE_INSTFILES
-  !define MUI_FINISHPAGE_TEXT_REBOOT "An old version of WinPcap was present on the system.$\nYou should reboot the system in order for the new version to work properly."
+  !define MUI_FINISHPAGE_TEXT_REBOOT "An old version of WinPcap was present on the system. You should reboot the system in order for the new version to work properly."
   !insertmacro MUI_PAGE_FINISH
 
   ;Uninstaller
@@ -154,6 +155,23 @@
     Call GetWindowsVersion
     Pop $WINPCAP_TARGET_OS
 
+;check that the OS is supported....
+    StrCmp $WINPCAP_TARGET_OS "95" SupportedOsOk
+    StrCmp $WINPCAP_TARGET_OS "98" SupportedOsOk
+    StrCmp $WINPCAP_TARGET_OS "ME" SupportedOsOk
+    StrCmp $WINPCAP_TARGET_OS "NT" SupportedOsOk
+    StrCmp $WINPCAP_TARGET_OS "2000" SupportedOsOk
+    StrCmp $WINPCAP_TARGET_OS "XP" SupportedOsOk
+    StrCmp $WINPCAP_TARGET_OS "2003" SupportedOsOk
+    StrCmp $WINPCAP_TARGET_OS "vista" SupportedOsOk
+
+; if we reach this point, the OS is not supported. Simply exit.
+    MessageBox MB_ICONEXCLAMATION|MB_OK "This version of Windows is not supported by ${WINPCAP_PRODUCT_NAME}.$\nThe installation will be aborted."
+    Quit
+   
+
+SupportedOsOk:
+
 ;   If no previous installations of winpcap were found, skip to the normal installer checks
     StrCmp $WINPCAP_OLD_FOUND "false" CheckAdmin
 
@@ -180,7 +198,7 @@ CheckAdmin:
     Pop $R0
     StrCmp $R0 "true" CheckX86
 
-    MessageBox MB_ICONEXCLAMATION|MB_OK "${WINPCAP_PRODUCT_NAME} requires administrator privileges to be installed.n\$\nThe installation will be aborted."
+    MessageBox MB_ICONEXCLAMATION|MB_OK "${WINPCAP_PRODUCT_NAME} requires administrator privileges to be installed.$\nThe installation will be aborted."
     Quit
 
 CheckX86:
@@ -207,6 +225,7 @@ NormalInstallation:
     StrCmp $WINPCAP_TARGET_OS "2000" WindowsNTBanner
     StrCmp $WINPCAP_TARGET_OS "XP" WindowsNTBanner
     StrCmp $WINPCAP_TARGET_OS "2003" WindowsNTBanner
+    StrCmp $WINPCAP_TARGET_OS "vista" WindowsNTBanner
 
 WindowsNTBanner:
 ; Meantime the installer is downloading the banner, we should a "wait" dialog to the user, so that he doesn't think the
@@ -310,7 +329,7 @@ Section "Main Installer Section" MainInstall
 ; if it's not detected, ok
 ; if it's detected, check if some app is still using it: try to rename packet.dll.
 ; If it fails, then maybe some user is using it. Warn the user (stop the app and restart the installation), and abort the installation.
-; If it succeeds, if the unisntaller is present, warn the user and call the uninstaller (advising to choose not to reboot). Then continue.
+; If it succeeds, if the uninsntaller is present, warn the user and call the uninstaller (advising to choose not to reboot). Then continue.
 ; If rename succeeds and the uninstaller is not present, ask the user what to do (abort, continue+reboot).
     CopyFiles "$SYSDIR\packet.dll" "$SYSDIR\_packet.dlluninstall"
     Delete "$SYSDIR\packet.dll"
@@ -331,7 +350,7 @@ WinPcapIsInUse:
     Messagebox MB_OK|MB_ICONEXCLAMATION "A previous version of WinPcap has been detected on this system and cannot be removed because in use by another application. Please close all the WinPcap-based applications and run the installer again.$\n$\nThis installation will now abort." IDOK AbortInstallation
 
 RemoveRecent:
-    MessageBox MB_ICONINFORMATION|MB_OK "The uninstaller for a previous version of WinPcap will now run.$\n$\nNOTE: if the unistaller asks you to reboot at the end of the procedure, please choose to NOT reboot."
+    MessageBox MB_ICONINFORMATION|MB_OK "The uninstaller for a previous version of WinPcap will now run.$\n$\nNOTE: if the uninstaller asks you to reboot at the end of the procedure, please choose to NOT reboot."
 ; look if it's a NSIS based installation, or a GHOST one. they have different uninstall command lines.
     StrCmp $WINPCAP_OLD_INSTALLER "nsis"  NSISSetupRemoval
 
@@ -347,7 +366,7 @@ NSISSetupRemoval:
 EndRemoval:
 
      SetRebootFlag true
-     StrCmp $$WINPCAP_OLD_REBOOT_NEEDED "true" MainInstallationProcedure
+     StrCmp $WINPCAP_OLD_REBOOT_NEEDED "true" MainInstallationProcedure
      SetRebootFlag false
      Goto MainInstallationProcedure
 
@@ -400,16 +419,23 @@ MainInstallationProcedure:
     StrCmp $WINPCAP_TARGET_OS "2000" CopyFilesNT5
     StrCmp $WINPCAP_TARGET_OS "XP" CopyFilesNT5
     StrCmp $WINPCAP_TARGET_OS "2003" CopyFilesNT5
+    StrCmp $WINPCAP_TARGET_OS "vista" CopyFilesNT4  ; vista (beta1) seems not to have the netmon stuff...
   
+	
+
 CopyFilesNT5:
     File "Distribution\2000\packet.dll"
     File "Distribution\2000\wanpacket.dll"
     File /oname=drivers\npf.sys "Distribution\2000\npf.sys"
   
 ;Run install commands
+; Todo add error checking for these apps
     ExecDos::exec '$INSTDIR\npf_mgm.exe -r'
+    Pop $R0
     ExecDos::exec '$INSTDIR\daemon_mgm.exe -r'
+    Pop $R0
     ExecDos::exec '$INSTDIR\NetMonInstaller.exe i'
+    Pop $R0
 
     Goto EndCopy
 
@@ -418,8 +444,11 @@ CopyFilesNT4:
     File /oname=drivers\npf.sys Distribution\NT\npf.sys
 
 ;Run install commands
-    ExecDos::exec '"$INSTDIR\npf_mgm.exe" "-r"'
-    ExecDos::exec '"$INSTDIR\daemon_mgm.exe" "-r"'
+; Todo add error checking for these apps
+    ExecDos::exec '$INSTDIR\npf_mgm.exe -r'
+    Pop $R0
+    ExecDos::exec '$INSTDIR\daemon_mgm.exe -r'
+    Pop $R0
 
     Goto EndCopy
 
@@ -470,6 +499,20 @@ EndCopy:
 	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
 	"DisplayVersion" "${WINPCAP_PROJ_VERSION_DOTTED}"
 
+;this is a sort of hack: on windows 2000 for some strange reason it puts an ugly icon in the control panel
+;for this OS, since we don't have a winpcap icon, yet, we use the uninstall icon, better than nothing....
+
+    StrCmp $WINPCAP_TARGET_OS "2000" AddWinpcapIcon  
+    goto NoWinpcapIcon
+
+AddWinpcapIcon:
+
+    WriteRegStr HKLM \
+	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
+	"DisplayIcon" "$INSTDIR\uninstall.exe"  
+
+NoWinpcapIcon:
+
     CreateDirectory "$SMPROGRAMS\WinPcap"
 
 ;
@@ -516,11 +559,15 @@ Section "Uninstall" MainUnistall
     StrCmp $WINPCAP_TARGET_OS "2000" RmFilesNT5
     StrCmp $WINPCAP_TARGET_OS "XP" RmFilesNT5
     StrCmp $WINPCAP_TARGET_OS "2003" RmFilesNT5
+    StrCmp $WINPCAP_TARGET_OS "vista" RmFilesNT4 ; vista (beta1) seems not to have the netmon stuff...
   
 RmFilesNT5:
 ;Run uninstall commands
+; Todo add error checking for these apps
     ExecDos::exec '"$INSTDIR\npf_mgm.exe" "-u"'
+    Pop $R0
     ExecDos::exec '"$INSTDIR\daemon_mgm.exe" "-u"'
+    Pop $R0
 
 ;Delete files
 ; The rebootok is used to delete the files on reboot if they are in use.
@@ -532,8 +579,11 @@ RmFilesNT5:
 
 RmFilesNT4:
 ;Run uninstall commands
+; Todo add error checking for these apps
     ExecDos::exec '"$INSTDIR\npf_mgm.exe" "-u"'
+    Pop $R0
     ExecDos::exec '"$INSTDIR\daemon_mgm.exe" "-u"'
+    Pop $R0
 
     Delete /REBOOTOK "$SYSDIR\packet.dll"
     Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
@@ -660,7 +710,8 @@ SectionEnd
  
    StrCmp $R1 '5.0' lbl_winnt_2000
    StrCmp $R1 '5.1' lbl_winnt_XP
-   StrCmp $R1 '5.2' lbl_winnt_2003 lbl_error
+   StrCmp $R1 '5.2' lbl_winnt_2003
+   StrCmp $R1 '6.0' lbl_vista lbl_error
  
    lbl_winnt_x:
      StrCpy $R0 'NT'
@@ -678,6 +729,10 @@ SectionEnd
      Strcpy $R0 '2003'
    Goto lbl_done
  
+   lbl_vista:
+     Strcpy $R0 'vista'
+   Goto lbl_done
+
    lbl_error:
      Strcpy $R0 ''
    lbl_done:
@@ -738,7 +793,8 @@ SectionEnd
  
    StrCmp $R1 '5.0' lbl_winnt_2000
    StrCmp $R1 '5.1' lbl_winnt_XP
-   StrCmp $R1 '5.2' lbl_winnt_2003 lbl_error
+   StrCmp $R1 '5.2' lbl_winnt_2003
+   StrCmp $R1 '6.0' lbl_vista lbl_error
  
    lbl_winnt_x:
      StrCpy $R0 'NT'
@@ -756,6 +812,10 @@ SectionEnd
      Strcpy $R0 '2003'
    Goto lbl_done
  
+   lbl_vista:
+     Strcpy $R0 'vista'
+   Goto lbl_done
+
    lbl_error:
      Strcpy $R0 ''
    lbl_done:
