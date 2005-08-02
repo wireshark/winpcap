@@ -419,7 +419,7 @@ MainInstallationProcedure:
     StrCmp $WINPCAP_TARGET_OS "2000" CopyFilesNT5
     StrCmp $WINPCAP_TARGET_OS "XP" CopyFilesNT5
     StrCmp $WINPCAP_TARGET_OS "2003" CopyFilesNT5
-    StrCmp $WINPCAP_TARGET_OS "vista" CopyFilesNT4  ; vista (beta1) seems not to have the netmon stuff...
+    StrCmp $WINPCAP_TARGET_OS "vista" CopyFilesVista  ; vista (beta1) seems not to have the netmon stuff...
   
 	
 
@@ -456,6 +456,23 @@ CopyFiles9x:
     File "Distribution\9x\packet.dll"
     File "Distribution\9x\npf.vxd"
     Goto EndCopy
+
+CopyFilesVista:
+    File "Distribution\nt\packet.dll"
+    File /oname=drivers\npf.sys "Distribution\2000\npf.sys"
+  
+;Run install commands
+; Todo add error checking for these apps
+    ExecDos::exec '$INSTDIR\npf_mgm.exe -r'
+    Pop $R0
+    ExecDos::exec '$INSTDIR\daemon_mgm.exe -r'
+    Pop $R0
+
+    Goto EndCopy
+
+
+
+
 
 EndCopy:
 
@@ -559,7 +576,7 @@ Section "Uninstall" MainUnistall
     StrCmp $WINPCAP_TARGET_OS "2000" RmFilesNT5
     StrCmp $WINPCAP_TARGET_OS "XP" RmFilesNT5
     StrCmp $WINPCAP_TARGET_OS "2003" RmFilesNT5
-    StrCmp $WINPCAP_TARGET_OS "vista" RmFilesNT4 ; vista (beta1) seems not to have the netmon stuff...
+    StrCmp $WINPCAP_TARGET_OS "vista" RmFilesVista ; vista (beta1) seems not to have the netmon stuff...
   
 RmFilesNT5:
 ;Run uninstall commands
@@ -593,6 +610,22 @@ RmFiles9x:
     Delete /REBOOTOK "$SYSDIR\packet.dll"
     Delete /REBOOTOK "$SYSDIR\npf.vxd"
     Goto EndRm
+
+RmFilesVista:
+;Run uninstall commands
+; Todo add error checking for these apps
+    ExecDos::exec '"$INSTDIR\npf_mgm.exe" "-u"'
+    Pop $R0
+    ExecDos::exec '"$INSTDIR\daemon_mgm.exe" "-u"'
+    Pop $R0
+
+;Delete files
+; The rebootok is used to delete the files on reboot if they are in use.
+    Delete /REBOOTOK "$SYSDIR\packet.dll"
+    Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
+
+    Goto EndRm
+
 
 EndRm:
 
