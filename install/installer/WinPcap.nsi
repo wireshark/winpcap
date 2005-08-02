@@ -155,9 +155,10 @@
 
 ContinueVistaInstallation:
 ;NSIS seems to crash calling {Locate} on VISTA.
-    Messagebox MB_YESNO|MB_ICONINFORMATION "This machine is running Microsoft Windows Vista/Longhorn. WinPcap has not been tested on this platform.$\nDo you want to continue with the installation? (Note: if you click 'No', this installer will abort.)" IDYES SkipWinPcapVersionCheck
+    Messagebox MB_YESNO|MB_ICONINFORMATION "This machine is running Microsoft Windows Vista/Longhorn. WinPcap has not been tested on this platform.$\nDo you want to continue with the installation? (Note: if you click 'No', this installer will abort.)" IDYES ForceVistaInstallation
     Abort
 
+ForceVistaInstallation:
     StrCpy $WINPCAP_OLD_FOUND "false"
     goto SkipWinPcapVersionCheck
 	
