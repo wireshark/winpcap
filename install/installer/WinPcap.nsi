@@ -163,7 +163,7 @@
     StrCmp $WINPCAP_TARGET_OS "2000" SupportedOsOk
     StrCmp $WINPCAP_TARGET_OS "XP" SupportedOsOk
     StrCmp $WINPCAP_TARGET_OS "2003" SupportedOsOk
-    StrCmp $WINPCAP_TARGET_OS "vista" SupportedOsOk
+;    StrCmp $WINPCAP_TARGET_OS "vista" SupportedOsOk NSIS seems to crash calling {Locate} on VISTA.
 
 ; if we reach this point, the OS is not supported. Simply exit.
     MessageBox MB_ICONEXCLAMATION|MB_OK "This version of Windows is not supported by ${WINPCAP_PRODUCT_NAME}.$\nThe installation will be aborted."
