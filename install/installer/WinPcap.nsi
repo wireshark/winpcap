@@ -147,13 +147,28 @@
 ; Deny any attempt to start a silent installation of WinPcap
     SetSilent normal
 
+;Detect the current Windows version
+    Call GetWindowsVersion
+    Pop $WINPCAP_TARGET_OS
+    StrCmp $WINPCAP_TARGET_OS "vista" ContinueVistaInstallation
+    goto NoVistaInstallation
+
+ContinueVistaInstallation:
+;NSIS seems to crash calling {Locate} on VISTA.
+    Messagebox MB_YESNO|MB_ICONINFORMATION "This machine is running Microsoft Windows Vista/Longhorn. WinPcap has not been tested on this platform.$\nDo you want to continue with the installation? (Note: if you click 'No', this installer will abort.)" IDYES SkipWinPcapVersionCheck
+    Abort
+
+    StrCpy $WINPCAP_OLD_FOUND "false"
+    goto SkipWinPcapVersionCheck
+	
+
+NoVistaInstallation:
+
 ;Detect all parameters of a previous installation of WinPcap
 ;after this call, all the WINPCAP_OLD_xxx variables are correctly set
     Call IsWinPcapInstalled
 
-;Detect the current Windows version
-    Call GetWindowsVersion
-    Pop $WINPCAP_TARGET_OS
+SkipWinPcapVersionCheck:
 
 ;check that the OS is supported....
     StrCmp $WINPCAP_TARGET_OS "95" SupportedOsOk
@@ -163,8 +178,9 @@
     StrCmp $WINPCAP_TARGET_OS "2000" SupportedOsOk
     StrCmp $WINPCAP_TARGET_OS "XP" SupportedOsOk
     StrCmp $WINPCAP_TARGET_OS "2003" SupportedOsOk
-;    StrCmp $WINPCAP_TARGET_OS "vista" SupportedOsOk NSIS seems to crash calling {Locate} on VISTA.
+    StrCmp $WINPCAP_TARGET_OS "vista" SupportedOsOk 
 
+UnsupportedOs:
 ; if we reach this point, the OS is not supported. Simply exit.
     MessageBox MB_ICONEXCLAMATION|MB_OK "This version of Windows is not supported by ${WINPCAP_PRODUCT_NAME}.$\nThe installation will be aborted."
     Quit
