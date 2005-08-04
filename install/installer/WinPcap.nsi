@@ -181,7 +181,6 @@ SkipWinPcapVersionCheck:
     StrCmp $WINPCAP_TARGET_OS "2003" SupportedOsOk
     StrCmp $WINPCAP_TARGET_OS "vista" SupportedOsOk 
 
-UnsupportedOs:
 ; if we reach this point, the OS is not supported. Simply exit.
     MessageBox MB_ICONEXCLAMATION|MB_OK "This version of Windows is not supported by ${WINPCAP_PRODUCT_NAME}.$\nThe installation will be aborted."
     Quit
@@ -251,11 +250,49 @@ WindowsNTBanner:
     nxs::Update /NOUNLOAD /sub "0% complete" /pos 0 /end
 
 ; this approach does not work on win95/98/me, since the timeout is not respected, and the installer seems to be hanged.
-    NSISdl::download_quiet /TIMEOUT=3000 "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/banner.htm" "$TEMP\WpBann.htm"
+    NSISdl::download_quiet /TIMEOUT=5000 "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/banner.htm" "$TEMP\WpBann.htm"
     pop $R0
+    nxs::Update /NOUNLOAD /sub "12% complete" /pos 0 /end
+    StrCmp $R0 "success"  WindowsNTBannerDlImageG1 WindowsNTBannerFailed
+
+WindowsNTBannerDlImageG1:
+    NSISdl::download_quiet /TIMEOUT=2000 "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/1.gif" "$TEMP\1.gif"
+    pop $R0
+    nxs::Update /NOUNLOAD /sub "25% complete" /pos 0 /end
+    StrCmp $R0 "success"  WindowsNTBannerDlImageG2 WindowsNTBannerDlImageJ1
+
+WindowsNTBannerDlImageG2:
+    NSISdl::download_quiet /TIMEOUT=2000 "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/2.gif" "$TEMP\2.gif"
+    pop $R0
+    nxs::Update /NOUNLOAD /sub "37% complete" /pos 0 /end
+    StrCmp $R0 "success"  WindowsNTBannerDlImageG3 WindowsNTBannerDlImageJ1
+
+WindowsNTBannerDlImageG3:
+    NSISdl::download_quiet /TIMEOUT=2000 "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/3.gif" "$TEMP\3.gif"
+    pop $R0
+    nxs::Update /NOUNLOAD /sub "50% complete" /pos 0 /end
+    StrCmp $R0 "success"  WindowsNTBannerDlImageJ1
+
+WindowsNTBannerDlImageJ1:
+    NSISdl::download_quiet /TIMEOUT=2000 "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/1.jpg" "$TEMP\1.jpg"
+    pop $R0
+    nxs::Update /NOUNLOAD /sub "62% complete" /pos 0 /end
+    StrCmp $R0 "success"  WindowsNTBannerDlImageJ2 WindowsNTBannerEnded
+
+WindowsNTBannerDlImageJ2:
+    NSISdl::download_quiet /TIMEOUT=2000 "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/2.jpg" "$TEMP\2.jpg"
+    pop $R0
+    nxs::Update /NOUNLOAD /sub "75% complete" /pos 0 /end
+    StrCmp $R0 "success"  WindowsNTBannerDlImageJ3 WindowsNTBannerEnded
+
+WindowsNTBannerDlImageJ3:
+    NSISdl::download_quiet /TIMEOUT=2000 "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/3.jpg" "$TEMP\3.jpg"
+    pop $R0
+    nxs::Update /NOUNLOAD /sub "88% complete" /pos 0 /end
     StrCmp $R0 "success"  WindowsNTBannerEnded
 
 ; We reach this point if the download failed. Use our local copy.
+WindowsNTBannerFailed:
     File /oname=$TEMP\WpBann.htm WpBann.htm
 
 WindowsNTBannerEnded:
@@ -313,6 +350,12 @@ NormalUninstallation:
 ;Remove any temp file used during the installation
   Function CleanupTempFiles
     Delete /REBOOTOK $TEMP\WpBann.htm
+    Delete /REBOOTOK $TEMP\1.gif
+    Delete /REBOOTOK $TEMP\1.jpg
+    Delete /REBOOTOK $TEMP\2.gif
+    Delete /REBOOTOK $TEMP\2.jpg
+    Delete /REBOOTOK $TEMP\3.gif
+    Delete /REBOOTOK $TEMP\3.jpg
   FunctionEnd
 
 ;--------------------------------
