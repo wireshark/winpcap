@@ -1,0 +1,6 @@
+Put here the binaries that will be linked as resources to the winpcap OEM packet.dll:
+
+Packet2k.dll: Windows 2k/XP/2003 packet.dll
+Packetnt.dll: Windows NT packet.dll
+npf2k.sys: Windows 2k/XP/2003 driver
+npfnt.sys: Windows NT driver
