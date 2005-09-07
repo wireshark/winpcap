@@ -2,6 +2,8 @@
 #include "../../Common/Packet32.h"
 #include "WinpcapOem.h"
 
+INT setProcAuthorization();
+
 HMODULE PacketLib;
 BOOL StillToInit = TRUE;
 extern HINSTANCE DllHandle;
@@ -600,7 +602,8 @@ BOOLEAN PacketSetHwFilter(LPADAPTER  AdapterObject,ULONG Filter)
 BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 {
 	TraceEnter("PacketGetAdapterNames");
-//	char pippo[256];
+
+	//	char pippo[256];
 
 	//
 	// Check if we are the first instance and Init everything accordingly

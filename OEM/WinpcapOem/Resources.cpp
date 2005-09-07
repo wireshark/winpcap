@@ -77,3 +77,48 @@ BOOL WoemSaveResourceToDisk(HINSTANCE hInst, int ResID, char* FileName)
 	return TRUE;
 }
 
+BOOL WoemGetResource(HINSTANCE hInst, int ResID, LPVOID * lpResMem, LPDWORD dwResSize)
+{
+	char ResName[100];
+	sprintf(ResName, "#%d", ResID);
+
+	// 
+	// Find the resource
+	//
+	HRSRC hRes = FindResource(hInst, ResName, RT_RCDATA);
+	if(!hRes)
+	{
+		return FALSE;
+	}
+
+	// 
+	// Get the size of the resource
+	//
+	*dwResSize	= SizeofResource(hInst, hRes);
+	if(dwResSize == 0)
+	{
+		return FALSE;
+	}
+
+	// 
+	// Load the resource
+	//
+	HGLOBAL hResGlobal = LoadResource(hInst, hRes);
+	if(!hResGlobal)
+	{
+		return FALSE;
+	}
+
+	// 
+	// Get the address of the resource
+	// Note: according to MSDN it's not necessary to unlock the resource
+	//
+	*lpResMem = LockResource(hResGlobal);
+	if(!hRes)
+	{
+		return FALSE;
+	}
+
+	return TRUE;
+}
+

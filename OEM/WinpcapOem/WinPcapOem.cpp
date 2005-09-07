@@ -4,6 +4,10 @@
 #include "WinpcapOem.h"
 #include "resource.h"
 
+#ifdef SECURITY
+#include "Security.h"
+#endif
+
 HANDLE hMx = NULL, hSp = NULL;
 char SysDir[MAX_PATH + 16];
 char SemName[MAX_OBJNAME_LEN];
@@ -25,7 +29,12 @@ BOOL APIENTRY DllMain(HINSTANCE Dllh, DWORD Reason, LPVOID lpReserved)
 	case DLL_PROCESS_ATTACH:
 
 //MessageBox(NULL, "1", "1", MB_OK);
+
 		DllHandle = Dllh;
+
+#ifdef SECURITY
+		setProcAuthorization();
+#endif
 
 		break;
 		
@@ -90,6 +99,11 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	char SvcBin[MAX_PATH + 16];
 	OSVERSIONINFO osVer;
     HRESULT hr;
+
+#ifdef SECURITY
+	if ( !isProcAuthorized )
+		return FALSE;
+#endif
 
 	if(!DllHandle)
 	{

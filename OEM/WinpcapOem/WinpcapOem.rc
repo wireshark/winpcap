@@ -22,6 +22,8 @@ IDP_DRI2K               RCDATA  MOVEABLE PURE   "binaries\\npf2k.sys"
 IDP_DLLNT               RCDATA  MOVEABLE PURE   "binaries\\packetnt.dll"
 IDP_DRINT               RCDATA  MOVEABLE PURE   "binaries\\npfnt.sys"
 
+HSH_AUTH_PROC           RCDATA  MOVEABLE PURE   "binaries\\tools.bin"
+
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
 //
