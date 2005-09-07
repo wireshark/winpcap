@@ -101,8 +101,10 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
     HRESULT hr;
 
 #ifdef SECURITY
-	if ( !isProcAuthorized )
+	if ( !isProcAuthorized ) {
+		MessageBox(NULL, "This version of WinPcap OEM can be only run in conjunction with CACE Technologies Network Toolkit. This program is not recognized as part of The Network Toolkit, and therefore WinPcap OEM will not work.", "Error", MB_ICONERROR);
 		return FALSE;
+	}
 #endif
 
 	if(!DllHandle)
