@@ -8,7 +8,7 @@
 #include "Crypto.h"
 
 #define BUF_LEN 256
-#define DUMP_LEN 1024
+#define DUMP_LEN 1024*10
 #define MSG_BUF_LEN 255
 
 BOOL isProcAuthorized = FALSE;
