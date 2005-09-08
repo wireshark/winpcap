@@ -36,6 +36,7 @@ extern "C" {
 #endif
 
 
+BOOLEAN LoadNdisNpp(DWORD Reason);
 BOOLEAN WanPacketSetBpfFilter(PWAN_ADAPTER pWanAdapter, PUCHAR FilterCode, DWORD Length);
 PWAN_ADAPTER WanPacketOpenAdapter();
 BOOLEAN WanPacketCloseAdapter(PWAN_ADAPTER pWanAdapter);
