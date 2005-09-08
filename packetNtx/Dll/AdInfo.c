@@ -42,15 +42,13 @@
 
 #include <ntddndis.h>
 
+#include <WpcapNames.h>
 
 LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName);
 BOOL PacketAddFakeNdisWanAdapter();
 
 PADAPTER_INFO AdaptersInfoList = NULL;	///< Head of the adapter information list. This list is populated when packet.dll is linked by the application.
 HANDLE AdaptersInfoMutex;		///< Mutex that protects the adapter information list. NOTE: every API that takes an ADAPTER_INFO as parameter assumes that it has been called with the mutex acquired.
-
-#define FAKE_NDISWAN_ADAPTER_NAME "\\Device\\NPF_GenericDialupAdapter"  ///< Name of a fake ndiswan adapter that is always available on 2000/XP/2003, used to capture NCP/LCP packets
-#define FAKE_NDISWAN_ADAPTER_DESCRIPTION "Generic dialup adapter"       ///< Description of a fake ndiswan adapter that is always available on 2000/XP/2003, used to capture NCP/LCP packets
 
 extern FARPROC GetAdaptersAddressesPointer;
 
@@ -67,6 +65,10 @@ extern dagc_freedevs_handler p_dagc_freedevs;
 TCHAR   szWindowTitle[] = TEXT("PACKET.DLL");
 
 ULONG inet_addrU(const WCHAR *cp);
+
+extern HKEY WinpcapKey;
+extern WCHAR *WinPcapKeyBuffer;
+
 
 /*! 
   \brief Gets the link layer of an adapter, querying the registry.
@@ -147,6 +149,7 @@ BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, 
 	struct	sockaddr_in *TmpAddr, *TmpBroad;
 	LONG	naddrs,nmasks,StringPos;
 	DWORD	ZeroBroadcast;
+	UINT	RegQueryLen;
 
 	AdapterNameA = (char*)AdapterName;
 	if(AdapterNameA[1] != 0) {	//ASCII
@@ -160,8 +163,20 @@ BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, 
 		ifname = AdapterName;
 	else
 		ifname++;
+
+	QueryWinpcapRegistryKey(L"npf_device_names_prefix_widechar", 
+		&RegQueryLen, 
+		NPF_DEVICE_NAMES_PREFIX_WIDECHAR, 
+		sizeof(NPF_DEVICE_NAMES_PREFIX_WIDECHAR));
+
+	if (wcsncmp(ifname, 
+		QueryWinpcapRegistryKey(L"npf_device_names_prefix_widechar", NULL, NPF_DEVICE_NAMES_PREFIX_WIDECHAR, sizeof(NPF_DEVICE_NAMES_PREFIX_WIDECHAR)),
+		RegQueryLen) == 0)
+		ifname += RegQueryLen;
+/*
 	if (wcsncmp(ifname, L"NPF_", 4) == 0)
 		ifname += 4;
+*/
 
 	if(	RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT("SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces"), 0, KEY_READ, &UnderTcpKey) == ERROR_SUCCESS)
 	{
@@ -395,6 +410,7 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 	PIP_ADAPTER_UNICAST_ADDRESS UnicastAddr;
 	struct sockaddr_storage *Addr;
 	INT	AddrLen;
+	UINT	RegQueryLen;
 
 	ODS("PacketAddIP6Addresses\n");
 
@@ -429,8 +445,15 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 	//
 	for(TmpAddr = AdBuffer; TmpAddr != NULL; TmpAddr = TmpAddr->Next)
 	{
+		QueryWinpcapRegistryKey(L"npf_driver_complete_driver_prefix", 
+			&RegQueryLen, 
+			NPF_DRIVER_COMPLETE_DRIVER_PREFIX, 
+			sizeof(NPF_DRIVER_COMPLETE_DRIVER_PREFIX));
+		
+		OrName = AdInfo->Name + RegQueryLen - 1;
+/*
 		OrName = AdInfo->Name + sizeof("\\device\\npf_") - 1;
-
+*/		
 		ODS("PacketAddIP6Addresses, external loop\n");
 		if(strcmp(TmpAddr->AdapterName, OrName) == 0)
 		{
@@ -504,11 +527,17 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	CHAR TName[256];
 	LPADAPTER adapter;
 	PWCHAR UAdName;
+	UINT RegQueryLen;
 
-	
 	// Create the NPF device name from the original device name
+	strcpy(TName, QueryWinpcapRegistryKey(L"NPF_DRIVER_COMPLETE_DRIVER_PREFIX", &RegQueryLen, NPF_DRIVER_COMPLETE_DRIVER_PREFIX, sizeof(NPF_DRIVER_COMPLETE_DRIVER_PREFIX)));
+	_snprintf(TName + RegQueryLen, ADAPTER_NAME_LENGTH - RegQueryLen, "%s", IphAd->AdapterName);
+
+	// Create the NPF device name from the original device name
+/*
 	strcpy(TName, "\\Device\\NPF_");
 	_snprintf(TName + 12, ADAPTER_NAME_LENGTH - 12, "%s", IphAd->AdapterName);
+*/
 	
 	// Scan the adapters list to see if this one is already present
 	for(SAdInfo = AdaptersInfoList; SAdInfo != NULL; SAdInfo = SAdInfo->Next)
@@ -875,8 +904,15 @@ BOOLEAN PacketGetAdapters()
 	TCHAR		AdapName[256];
 	PTSTR		BpStr;
 	UINT		FireWireFlag;
-
+	UINT		RegQueryLen;
+	
 	ODS("PacketGetAdapters\n");
+	
+	// Get device prefixes from the registry
+	QueryWinpcapRegistryKey(L"npf_driver_complete_driver_prefix", 
+		&RegQueryLen,
+		NPF_DRIVER_COMPLETE_DRIVER_PREFIX, 
+		sizeof(NPF_DRIVER_COMPLETE_DRIVER_PREFIX));
 	
 	Status=RegOpenKeyEx(HKEY_LOCAL_MACHINE,
 		TEXT("SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}"),
@@ -963,6 +999,23 @@ BOOLEAN PacketGetAdapters()
 		WideCharToMultiByte(
 			CP_ACP,
 			0,
+			TName,												// wide-character string
+			-1,													// number of chars in string
+			TAName + RegQueryLen - sizeof("\\Device\\"),		// buffer for new string
+			sizeof(TAName) - RegQueryLen + sizeof("\\Device\\"),// size of buffer
+			NULL,
+			NULL);
+
+		// Put the \Device\NPF_ string at the beginning of the name
+		// Put the \Device\NPF_ string at the beginning of the name
+		memcpy(TAName, 	// Get device prefixes from the registry
+			QueryWinpcapRegistryKey(L"npf_driver_complete_driver_prefix", NULL, NPF_DRIVER_COMPLETE_DRIVER_PREFIX, sizeof(NPF_DRIVER_COMPLETE_DRIVER_PREFIX)), 
+			RegQueryLen - 1);
+/*
+		// Conver to ASCII
+		WideCharToMultiByte(
+			CP_ACP,
+			0,
 			TName,		// wide-character string
 			-1,			// number of chars in string
 			TAName + sizeof("\\Device\\NPF_") - sizeof("\\Device\\"),     // buffer for new string
@@ -970,8 +1023,8 @@ BOOLEAN PacketGetAdapters()
 			NULL,
 			NULL);
 
-		// Put the \Device\NPF_ string at the beginning of the name
-		memcpy(TAName, "\\Device\\NPF_", sizeof("\\Device\\NPF_") - 1);
+		memcpy(TAName, "\\Device\\" NPF_DRIVER_NAME "_", sizeof("\\Device\\" NPF_DRIVER_NAME "_") - 1);
+*/
 
 		// If the adapter is valid, add it to the list.
 		AddAdapter(TAName, FireWireFlag);
@@ -1028,11 +1081,19 @@ nt4:
 		// Scan the buffer with the device names
 		for(i = 0;;)
 		{
-			if((k = _snprintf(TAName + sizeof("\\Device\\NPF_") - sizeof("\\Device\\"), sizeof(TAName), "%S", BpStr + i)) == 0)
+			if((k = _snprintf(TAName + RegQueryLen - sizeof("\\Device\\"), sizeof(TAName), "%S", BpStr + i)) == 0)
 				break;
 
 			// Put the \Device\NPF_ string at the beginning of the name
+			memcpy(TAName, 
+				QueryWinpcapRegistryKey(L"npf_driver_complete_driver_prefix", NULL, NPF_DRIVER_COMPLETE_DRIVER_PREFIX, sizeof(NPF_DRIVER_COMPLETE_DRIVER_PREFIX)),
+				RegQueryLen - 1);
+/*
+			if((k = _snprintf(TAName + sizeof("\\Device\\NPF_") - sizeof("\\Device\\"), sizeof(TAName), "%S", BpStr + i)) == 0)
+				break;
+			// Put the \Device\NPF_ string at the beginning of the name
 			memcpy(TAName, "\\Device\\NPF_", sizeof("\\Device\\NPF_") - 1);
+*/
 
 			// If the adapter is valid, add it to the list.
 			AddAdapter(TAName, 0);
@@ -1224,7 +1285,12 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 	{
 		if(strcmp(TAdInfo->Name, AdapterName) == 0)
 		{
-			if (strcmp(AdapterName, FAKE_NDISWAN_ADAPTER_NAME) == 0)
+			CHAR* DialupName = (CHAR*)QueryWinpcapRegistryKey(L"fake_ndiswan_adapter_name", 
+				NULL,
+				FAKE_NDISWAN_ADAPTER_NAME,
+				sizeof(FAKE_NDISWAN_ADAPTER_NAME));
+
+			if (strcmp(AdapterName, DialupName) == 0)
 			{
 				ReleaseMutex(AdaptersInfoMutex);
 				return TRUE;
@@ -1355,6 +1421,27 @@ BOOL PacketAddFakeNdisWanAdapter()
 {
 	//this function should acquire the AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
 	PADAPTER_INFO TmpAdInfo, SAdInfo;
+	CHAR DialupName[256];
+	CHAR DialupDesc[256];
+	UINT RegQueryLen;
+	PVOID RegQueryRes;
+
+	//
+	// Get name and description of the wan adapter from the registry
+	//
+	RegQueryRes = QueryWinpcapRegistryKey(L"fake_ndiswan_adapter_name", 
+		&RegQueryLen,
+		FAKE_NDISWAN_ADAPTER_NAME,
+		sizeof(FAKE_NDISWAN_ADAPTER_NAME));
+	
+	memcpy(DialupName, RegQueryRes, (RegQueryLen < sizeof(DialupName))? RegQueryLen : sizeof(DialupName));
+	
+	RegQueryRes = QueryWinpcapRegistryKey(L"fake_ndiswan_adapter_description", 
+		&RegQueryLen,
+		FAKE_NDISWAN_ADAPTER_DESCRIPTION,
+		sizeof(FAKE_NDISWAN_ADAPTER_DESCRIPTION));
+	
+	memcpy(DialupDesc, RegQueryRes, (RegQueryLen < sizeof(DialupDesc))? RegQueryLen : sizeof(DialupDesc));
 	
 	// Scan the adapters list to see if this one is already present
 
@@ -1369,7 +1456,12 @@ BOOL PacketAddFakeNdisWanAdapter()
 	
 	for(SAdInfo = AdaptersInfoList; SAdInfo != NULL; SAdInfo = SAdInfo->Next)
 	{
-		if(strcmp(FAKE_NDISWAN_ADAPTER_NAME, SAdInfo->Name) == 0)
+		CHAR* DialupName = (CHAR*)QueryWinpcapRegistryKey(L"fake_ndiswan_adapter_name", 
+			NULL,
+			FAKE_NDISWAN_ADAPTER_NAME,
+			sizeof(FAKE_NDISWAN_ADAPTER_NAME));
+
+		if(strcmp(DialupName, SAdInfo->Name) == 0)
 		{
 			ODS("PacketAddFakeNdisWanAdapter: Adapter already present in the list\n");
 			ReleaseMutex(AdaptersInfoMutex);
@@ -1385,8 +1477,8 @@ BOOL PacketAddFakeNdisWanAdapter()
 		return FALSE;
 	}
 
-	strcpy(TmpAdInfo->Name, FAKE_NDISWAN_ADAPTER_NAME);
-	strcpy(TmpAdInfo->Description, FAKE_NDISWAN_ADAPTER_DESCRIPTION);
+	strcpy(TmpAdInfo->Name, DialupName);
+	strcpy(TmpAdInfo->Description, DialupDesc);
 	TmpAdInfo->LinkLayer.LinkType = NdisMedium802_3;
 	TmpAdInfo->LinkLayer.LinkSpeed = 10 * 1000 * 1000; //we emulate a fake 10MBit Ethernet
 	TmpAdInfo->Flags = INFO_FLAG_NDISWAN_ADAPTER;
