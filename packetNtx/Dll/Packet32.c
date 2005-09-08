@@ -33,17 +33,18 @@
 
 #include <ntddndis.h>
 
+#include <WpcapNames.h>
 
 /// Current packet.dll Version. It can be retrieved directly or through the PacketGetVersion() function.
 char PacketLibraryVersion[64]; 
 /// Current NPF.sys Version. It can be retrieved directly or through the PacketGetVersion() function.
 char PacketDriverVersion[64]; 
 
-LPCTSTR NPFServiceName = TEXT("NPF");
-LPCTSTR NPFServiceDesc = TEXT("Netgroup Packet Filter");
-LPCTSTR NPFRegistryLocation = TEXT("SYSTEM\\CurrentControlSet\\Services\\NPF");
-LPCTSTR NPFDriverPath = TEXT("system32\\drivers\\npf.sys");
+/// WinPcap global registry key
+HKEY WinpcapKey = NULL;
+WCHAR WinPcapKeyBuffer[MAX_WINPCAP_KEY_CHARS];
 
+// Global adapters list
 extern PADAPTER_INFO AdaptersInfoList;
 extern HANDLE AdaptersInfoMutex;
 #ifndef _WINNT4
@@ -94,13 +95,26 @@ BOOL APIENTRY DllMain (HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 
 		ODS("************Packet32: DllMain************\n");
 		
+#ifdef PACKET_AND_WAN 
+		LoadNdisNpp(Reason);
+#endif // PACKET_AND_WAN 
+
+		//
+		// Open, if present, the WinPcap registry key
+		//
+		RegOpenKeyEx(HKEY_LOCAL_MACHINE, 
+			WINPCAP_GLOBAL_KEY_WIDECHAR,
+			0,
+			KEY_ALL_ACCESS,
+			&WinpcapKey);
+
 #ifdef _DEBUG_TO_FILE
 		// dump a bunch of registry keys useful for debug to file
 		PacketDumpRegistryKey("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}",
 			"adapters.reg");
 		PacketDumpRegistryKey("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\Tcpip",
 			"tcpip.reg");
-		PacketDumpRegistryKey("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\NPF",
+		PacketDumpRegistryKey(QueryWinpcapRegistryKey(L"npf_complete_service_registry_location", NULL, NPF_COMPLETE_SERVICE_REGISTRY_LOCATION, sizeof(NPF_COMPLETE_SERVICE_REGISTRY_LOCATION)),
 			"npf.reg");
 		PacketDumpRegistryKey("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services",
 			"services.reg");
@@ -112,12 +126,14 @@ BOOL APIENTRY DllMain (HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 		//
 		// Retrieve packet.dll version information from the file
 		//
-		PacketGetFileVersion(TEXT("packet.dll"), PacketLibraryVersion, sizeof(PacketLibraryVersion));
+		// XXX We want to replace this with a constant. We leave it out for the moment
+//		PacketGetFileVersion(TEXT("packet.dll"), PacketLibraryVersion, sizeof(PacketLibraryVersion));
 
 		//
 		// Retrieve NPF.sys version information from the file
 		//
-		PacketGetFileVersion(TEXT("drivers\\npf.sys"), PacketDriverVersion, sizeof(PacketDriverVersion));
+		// XXX We want to replace this with a constant. We leave it out for the moment
+//		PacketGetFileVersion(TEXT("drivers\\" NPF_DRIVER_BINARY_WIDECHAR), PacketDriverVersion, sizeof(PacketDriverVersion));
 
 		//
 		// Locate GetAdaptersAddresses dinamically since it is not present in Win2k
@@ -152,32 +168,85 @@ BOOL APIENTRY DllMain (HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 #endif /* HAVE_DAG_API */
 
 		break;
+		
+	case DLL_PROCESS_DETACH:
 
-        case DLL_PROCESS_DETACH:
-
-			CloseHandle(AdaptersInfoMutex);
-
- 			AdaptersInfoList;
- 			
- 			while(AdaptersInfoList != NULL)
- 			{
- 					
- 				NewAdInfo = AdaptersInfoList->Next;
- 				if (AdaptersInfoList->NetworkAddresses != NULL)
- 					GlobalFreePtr(AdaptersInfoList->NetworkAddresses);
- 				GlobalFreePtr(AdaptersInfoList);
- 					
- 				AdaptersInfoList = NewAdInfo;
- 			}
-
-
-			break;
-
-		default:
-            break;
+		if(WinpcapKey)
+			RegCloseKey(WinpcapKey);
+		
+		CloseHandle(AdaptersInfoMutex);
+		
+		AdaptersInfoList;
+		
+		while(AdaptersInfoList != NULL)
+		{
+			
+			NewAdInfo = AdaptersInfoList->Next;
+			if (AdaptersInfoList->NetworkAddresses != NULL)
+				GlobalFreePtr(AdaptersInfoList->NetworkAddresses);
+			GlobalFreePtr(AdaptersInfoList);
+			
+			AdaptersInfoList = NewAdInfo;
+		}
+		
+		
+		break;
+		
+	default:
+		break;
     }
-
+	
     return Status;
+}
+
+/*!
+\brief Query the global WinPcap registry key.
+*/
+PVOID QueryWinpcapRegistryKey(WCHAR *SubKeyName,
+							  PUINT ResultLen,
+							  PVOID DefaultVal,
+							  UINT DefaultLen)
+{
+	DWORD Type;
+	DWORD Len = sizeof(WinPcapKeyBuffer) - 2;
+	LONG QveRes;
+
+	if(WinpcapKey)
+	{
+		//
+		// Query the requested value
+		//
+		if((QveRes = RegQueryValueEx(WinpcapKey,
+			SubKeyName,
+			NULL,
+			&Type,
+			(LPBYTE)WinPcapKeyBuffer,
+			&Len)) == ERROR_SUCCESS)	// We include two bytes for string termination
+		{
+			if(ResultLen)
+				*ResultLen = Len;
+			
+			//
+			// Zero-terminate the resulting string for security
+			//
+			((PCHAR)WinPcapKeyBuffer)[Len] = 0;
+			((PCHAR)WinPcapKeyBuffer)[Len + 1] = 0;
+			
+			return WinPcapKeyBuffer;
+		}
+		else
+		{
+			DWORD err = GetLastError();
+			ODSEx("QueryWinpcapRegistryKey, RegQueryValueEx failed, code %d\n",err);
+		}
+	}
+		
+	if(ResultLen)
+		*ResultLen = DefaultLen;
+
+	ODS("QueryWinpcapRegistryKey, failure\n");
+
+	return DefaultVal;
 }
 
 /*! 
@@ -301,25 +370,43 @@ BOOLEAN PacketSetMaxLookaheadsize (LPADAPTER AdapterObject)
 BOOLEAN PacketSetReadEvt(LPADAPTER AdapterObject)
 {
 	DWORD BytesReturned;
-	TCHAR EventName[39];
+	TCHAR EventName[30 + sizeof(NPF_USER_EVENTS_NAMES)];
 
  	if (LOWORD(GetVersion()) == 4)
 	{
 		// retrieve the name of the shared event from the driver without the "Global\\" prefix
-		if(DeviceIoControl(AdapterObject->hFile,pBIOCEVNAME,NULL,0,EventName,13*sizeof(TCHAR),&BytesReturned,NULL)==FALSE) 
+		if(DeviceIoControl(AdapterObject->hFile,
+			pBIOCEVNAME,NULL,
+			0,
+			EventName,
+			sizeof(EventName),
+			&BytesReturned,
+			NULL)==FALSE) 
+		{
 			return FALSE;
+		}
 
-		EventName[BytesReturned/sizeof(TCHAR)]=0; // terminate the string
+		EventName[BytesReturned / sizeof(TCHAR)]=0; // null-terminate the string
 	}
 	else
 	{
-		// this tells the terminal service to retrieve the event from the global namespace
+		// this tells Terminal Services to retrieve the event from the global namespace
 		wcsncpy(EventName,L"Global\\",sizeof(L"Global\\"));
-		// retrieve the name of the shared event from the driver with the "Global\\" prefix
-		if(DeviceIoControl(AdapterObject->hFile,pBIOCEVNAME,NULL,0,EventName + 7,13*sizeof(TCHAR),&BytesReturned,NULL)==FALSE) 
-			return FALSE;
 
-		EventName[BytesReturned/sizeof(TCHAR) + 7]=0; // terminate the string
+		// retrieve the name of the shared event from the driver with the "Global\\" prefix
+		if(DeviceIoControl(AdapterObject->hFile,
+			pBIOCEVNAME,
+			NULL,
+			0,
+			EventName + 7,
+			sizeof(EventName),
+			&BytesReturned,
+			NULL)==FALSE)
+		{
+			return FALSE;
+		}
+
+		EventName[BytesReturned/sizeof(TCHAR) + 7]=0; // null-terminate the string
 	}
 
 	// open the shared event
@@ -352,20 +439,20 @@ BOOL PacketInstallDriver()
 	SC_HANDLE svcHandle;
 	SC_HANDLE scmHandle;
 	ODS("PacketInstallDriver\n");
-	
+
 	scmHandle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 	
 	if(scmHandle == NULL)
 		return FALSE;
 
 	svcHandle = CreateService(scmHandle, 
-		NPFServiceName,
-		NPFServiceDesc,
+		QueryWinpcapRegistryKey(L"npf_driver_name_widechar", NULL, NPF_DRIVER_NAME_WIDECHAR, sizeof(NPF_DRIVER_NAME_WIDECHAR)),
+		QueryWinpcapRegistryKey(L"npf_service_desc_widechar", NULL, NPF_SERVICE_DESC_WIDECHAR, sizeof(NPF_SERVICE_DESC_WIDECHAR)),
 		SERVICE_ALL_ACCESS,
 		SERVICE_KERNEL_DRIVER,
 		SERVICE_DEMAND_START,
 		SERVICE_ERROR_NORMAL,
-		NPFDriverPath,
+		QueryWinpcapRegistryKey(L"npf_driver_complete_widechar", NULL, NPF_DRIVER_COMPLETE_WIDECHAR, sizeof(NPF_DRIVER_COMPLETE_WIDECHAR)),
 		NULL, NULL, NULL, NULL, NULL);
 	if (svcHandle == NULL) 
 	{
@@ -553,7 +640,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 		// check if the NPF registry key is already present
 		// this means that the driver is already installed and that we don't need to call PacketInstallDriver
 		KeyRes=RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-			NPFRegistryLocation,
+			QueryWinpcapRegistryKey(L"npf_service_registry_location_widechar", NULL, NPF_SERVICE_REGISTRY_LOCATION_WIDECHAR, sizeof(NPF_SERVICE_REGISTRY_LOCATION_WIDECHAR)),
 			0,
 			KEY_READ,
 			&PathKey);
@@ -571,7 +658,9 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 		if (Result) 
 		{
 			
-			svcHandle = OpenService(scmHandle, NPFServiceName, SERVICE_START | SERVICE_QUERY_STATUS );
+			svcHandle = OpenService(scmHandle, 
+				QueryWinpcapRegistryKey(L"npf_driver_name_widechar", NULL, NPF_DRIVER_NAME_WIDECHAR, sizeof(NPF_DRIVER_NAME_WIDECHAR)), 
+				SERVICE_START | SERVICE_QUERY_STATUS );
 			if (svcHandle != NULL)
 			{
 				QuerySStat = QueryServiceStatus(svcHandle, &SStat);
@@ -646,7 +735,9 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 			
 			if (Result) {
 				
-				svcHandle = OpenService(scmHandle,NPFServiceName,SERVICE_START);
+				svcHandle = OpenService(scmHandle,
+					QueryWinpcapRegistryKey(L"npf_driver_name_widechar", NULL, NPF_DRIVER_NAME_WIDECHAR, sizeof(NPF_DRIVER_NAME_WIDECHAR)),
+					SERVICE_START);
 				if (svcHandle != NULL)
 				{
 					
@@ -925,7 +1016,7 @@ BOOL PacketStopDriver()
 	if(scmHandle != NULL){
 		
 		schService = OpenService (scmHandle,
-			NPFServiceName,
+			QueryWinpcapRegistryKey(L"npf_driver_name_widechar", NULL, NPF_DRIVER_NAME_WIDECHAR, sizeof(NPF_DRIVER_NAME_WIDECHAR)),
 			SERVICE_ALL_ACCESS
 			);
 		

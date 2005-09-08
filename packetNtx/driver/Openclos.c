@@ -36,6 +36,7 @@
 
 #include "debug.h"
 #include "packet.h"
+#include "..\..\Common\WpcapNames.h"
 
 static NDIS_MEDIUM MediumArray[] = {
 	NdisMedium802_3,
@@ -77,18 +78,17 @@ NDIS_SPIN_LOCK Opened_Instances_Lock;
 NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 {
 
-    PDEVICE_EXTENSION DeviceExtension;
-
-    POPEN_INSTANCE    Open;
-
+    PDEVICE_EXTENSION	DeviceExtension;
+    POPEN_INSTANCE		Open;
     PIO_STACK_LOCATION  IrpSp;
-
-    NDIS_STATUS     Status;
-    NDIS_STATUS     ErrorStatus;
-    UINT            i;
-	PUCHAR			tpointer;
-    PLIST_ENTRY     PacketListEntry;
-	PCHAR			EvName;
+    NDIS_STATUS			Status;
+    NDIS_STATUS			ErrorStatus;
+    UINT				i;
+	PUCHAR				tpointer;
+    PLIST_ENTRY			PacketListEntry;
+	PCHAR				EvName;
+	WCHAR				TmpNameBuff[128];
+	UINT				RegStrLen;
 
     IF_LOUD(DbgPrint("NPF: OpenAdapter\n");)
 
@@ -111,8 +111,18 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
         sizeof(OPEN_INSTANCE)
         );
 
+	//
+	// Get the Event names base from the registry
+	//
+	RegStrLen = sizeof(TmpNameBuff);
 
-	EvName=ExAllocatePoolWithTag(NonPagedPool, sizeof(L"\\BaseNamedObjects\\NPF0000000000"), '1OWA');
+	NPF_QueryWinpcapRegistryKey(L"npf_kernel_events_names",
+		TmpNameBuff, 
+		&RegStrLen,
+		NPF_KERNEL_EVENTS_NAMES, 
+		sizeof(NPF_KERNEL_EVENTS_NAMES));
+
+	EvName=ExAllocatePoolWithTag(NonPagedPool, RegStrLen, '1OWA');
 
     if (EvName==NULL) {
         // no memory
@@ -150,8 +160,9 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
-
-	RtlCopyBytes(EvName,L"\\BaseNamedObjects\\NPF0000000000",sizeof(L"\\BaseNamedObjects\\NPF0000000000"));
+	RtlCopyBytes(EvName,
+		TmpNameBuff,
+		RegStrLen);
 
 	//Create the string containing the name of the read event
 	RtlInitUnicodeString(&Open->ReadEventName,(PCWSTR) EvName);

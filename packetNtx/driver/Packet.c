@@ -43,6 +43,7 @@
 #include "win_bpf_filter_init.h"
 
 #include "tme.h"
+#include "..\..\Common\WpcapNames.h"
 
 #if DBG
 // Declare the global debug flag for this driver.
@@ -55,7 +56,8 @@ PDEVICE_EXTENSION GlobalDeviceExtension;
 //
 // Global strings
 //
-NDIS_STRING NPF_Prefix = NDIS_STRING_CONST("NPF_");
+NDIS_STRING NPF_Prefix;
+//NDIS_STRING NPF_Prefix = NDIS_STRING_CONST("" NPF_DRIVER_NAME_WIDECHAR L"_");
 NDIS_STRING devicePrefix = NDIS_STRING_CONST("\\Device\\");
 NDIS_STRING symbolicLinkPrefix = NDIS_STRING_CONST("\\DosDevices\\");
 NDIS_STRING tcpLinkageKeyName = NDIS_STRING_CONST("\\Registry\\Machine\\System"
@@ -63,6 +65,8 @@ NDIS_STRING tcpLinkageKeyName = NDIS_STRING_CONST("\\Registry\\Machine\\System"
 NDIS_STRING AdapterListKey = NDIS_STRING_CONST("\\Registry\\Machine\\System"
 								L"\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}");
 NDIS_STRING bindValueName = NDIS_STRING_CONST("Bind");
+NDIS_STRING WinpcapGlobalKey = NDIS_STRING_CONST("\\Registry\\Machine\\" WINPCAP_GLOBAL_KEY_WIDECHAR);
+
 
 /// Global variable that points to the names of the bound adapters
 WCHAR* bindP = NULL;
@@ -84,7 +88,6 @@ DriverEntry(
     IN PUNICODE_STRING RegistryPath
     )
 {
-
     NDIS_PROTOCOL_CHARACTERISTICS  ProtocolChar;
     UNICODE_STRING MacDriverName;
     UNICODE_STRING UnicodeDeviceName;
@@ -102,18 +105,41 @@ DriverEntry(
 	WCHAR* bindT;
 	PKEY_VALUE_PARTIAL_INFORMATION tcpBindingsP;
 	UNICODE_STRING macName;
+	CHAR TmpNameBuff[128];
+	UINT RegStrLen;
 	
-	
+	//
+	// Set timestamp gathering method getting it from the registry
+	//
 	ReadTimeStampModeFromRegistry(RegistryPath);
 
 /**/DbgPrint("%ws",RegistryPath->Buffer);
 
+	//
+	// Get the device names prefix from the registry
+	//
+	RegStrLen = sizeof(TmpNameBuff);
+
+	NPF_QueryWinpcapRegistryKey(L"npf_device_names_prefix",
+		TmpNameBuff, 
+		&RegStrLen,
+		NPF_DRIVER_NAME "_", 
+		sizeof(NPF_DRIVER_NAME "_"));
+
+	NdisInitializeString(&NPF_Prefix, TmpNameBuff);
+
+	//
+	// Get number of CPUs and save it
+	//
 	NCpu = NdisSystemProcessorCount();
 
     IF_LOUD(DbgPrint("\n\nPacket: DriverEntry\n");)
 
 	RtlZeroMemory(&ProtocolChar,sizeof(NDIS_PROTOCOL_CHARACTERISTICS));
 
+	//
+	// Register as a protocol with NDIS
+	//
 #ifdef NDIS50
     ProtocolChar.MajorNdisVersion            = 5;
 #else
@@ -155,7 +181,9 @@ DriverEntry(
 	
     NdisAllocateSpinLock(&Opened_Instances_Lock);
 
-    // Set up the device driver entry points.
+    // 
+	// Standard device driver entry points stuff.
+	//
     DriverObject->MajorFunction[IRP_MJ_CREATE] = NPF_Open;
     DriverObject->MajorFunction[IRP_MJ_CLOSE]  = NPF_Close;
     DriverObject->MajorFunction[IRP_MJ_READ]   = NPF_Read;
@@ -574,6 +602,9 @@ VOID NPF_Unload(IN PDRIVER_OBJECT DriverObject)
 
 	// Free the adapters names
 	ExFreePool( bindP );
+
+	// Free the device names string that was allocated in the DriverEntry 
+	NdisFreeString(NPF_Prefix);
 }
 
 //-------------------------------------------------------------------
@@ -603,8 +634,9 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	ULONG				insns;
 	ULONG				cnt;
 	BOOLEAN				IsExtendedFilter=FALSE;
-
 	BOOLEAN				Flag;
+	WCHAR				TmpNameBuff[128];
+	UINT				RegStrLen;
 
     IF_LOUD(DbgPrint("NPF: IoControl\n");)
 		
@@ -642,15 +674,36 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		break;
 		
 	case BIOCGEVNAME: //function to get the name of the event associated with the current instance
+		
+		//
+		// Get the Event names base from the registry
+		//
+		RegStrLen = sizeof(TmpNameBuff);
+		
+		NPF_QueryWinpcapRegistryKey(L"npf_kernel_events_names",
+			TmpNameBuff, 
+			&RegStrLen,
+			NPF_KERNEL_EVENTS_NAMES, 
+			sizeof(NPF_KERNEL_EVENTS_NAMES));
 
-		if(IrpSp->Parameters.DeviceIoControl.OutputBufferLength<26){			
+		//
+		// Check input
+		//
+		if(IrpSp->Parameters.DeviceIoControl.OutputBufferLength < 
+			RegStrLen - sizeof(WCHAR))	// The string we pass to user-level is not 0-termianted
+		{
 			EXIT_FAILURE(0);
 		}
 
-		RtlCopyMemory(Irp->UserBuffer,(Open->ReadEventName.Buffer)+18,26);
+		//
+		// Copy the name of the event associated with this open instance
+		//
+		RtlCopyMemory(Irp->UserBuffer, 
+			(Open->ReadEventName.Buffer) + 18, 
+			RegStrLen - sizeof(WCHAR));
 
-		EXIT_SUCCESS(26);
-
+		EXIT_SUCCESS(RegStrLen - sizeof(WCHAR));
+		
 		break;
 
 	case BIOCSENDPACKETSSYNC:
@@ -1431,4 +1484,109 @@ NPF_QueryRegistryRoutine(
 
     return STATUS_SUCCESS;
 
+}
+
+//-------------------------------------------------------------------
+
+VOID NPF_QueryWinpcapRegistryKey(PWSTR SubKeyToQuery,
+								 PVOID ResultStorage,
+								 PUINT ResultLen, 
+								 PVOID DefaultVal, 
+								 UINT DefaultLen)
+{
+	PKEY_VALUE_PARTIAL_INFORMATION result = NULL;
+	OBJECT_ATTRIBUTES objAttrs;
+	NTSTATUS status;
+	HANDLE keyHandle;
+	UNICODE_STRING SubKeyToQueryU;
+	CHAR valueInfo[MAX_WINPCAP_KEY_CHARS];
+	ULONG QvkResultLength;
+	
+	//
+	// Create subkey string
+	//
+	RtlInitUnicodeString(&SubKeyToQueryU, SubKeyToQuery);
+
+	//
+	// Init Attributes
+	//
+	InitializeObjectAttributes(&objAttrs,
+		&WinpcapGlobalKey,
+		OBJ_CASE_INSENSITIVE, 
+		NULL, 
+		NULL);
+
+	//
+	// Open the key
+	//
+	status = ZwOpenKey(&keyHandle, 
+		KEY_QUERY_VALUE, 
+		&objAttrs);
+	
+	if(!NT_SUCCESS(status)) 
+	{
+		IF_LOUD(DbgPrint("NPF_QueryWinpcapRegistryKey: ZwOpenKey error %x\n", status);)
+		ResultStorage = DefaultVal;
+		*ResultLen = DefaultLen;
+		return;
+	}
+
+	//
+	// Query the requested value
+	//
+	status = ZwQueryValueKey(keyHandle, 
+		&SubKeyToQueryU,
+		KeyValuePartialInformation, 
+		(KEY_VALUE_PARTIAL_INFORMATION*)&valueInfo,
+		sizeof(valueInfo),
+		&QvkResultLength);
+
+	if(!NT_SUCCESS(status))
+	{
+		IF_LOUD(DbgPrint("NPF_QueryWinpcapRegistryKey: Status of %x querying key value %ws\n", 
+			status,
+			SubKeyToQueryU.Buffer);)
+		
+		ZwClose(keyHandle);
+		
+		ResultStorage = DefaultVal;
+		*ResultLen = DefaultLen;
+	}
+		
+	//
+	// Check we have enough space for the result. We include two bytes for string termination
+	//
+	if(((KEY_VALUE_PARTIAL_INFORMATION*)valueInfo)->DataLength > *ResultLen - 2)
+	{
+		IF_LOUD(DbgPrint("NPF_QueryWinpcapRegistryKey: storage buffer too small\n", 
+			status,
+			SubKeyToQueryU.Buffer);)
+		
+		ZwClose(keyHandle);
+		
+		ResultStorage = DefaultVal;
+		*ResultLen = DefaultLen;
+	}
+	
+	//
+	// Copy the value to the user-provided values
+	//
+	RtlCopyMemory(ResultStorage,
+		((KEY_VALUE_PARTIAL_INFORMATION*)valueInfo)->Data,
+		((KEY_VALUE_PARTIAL_INFORMATION*)valueInfo)->DataLength);
+
+	*ResultLen = ((KEY_VALUE_PARTIAL_INFORMATION*)valueInfo)->DataLength;
+
+	//
+	// Zero-terminate the resulting string for security
+	//
+	((PCHAR)ResultStorage)[*ResultLen] = 0;
+	((PCHAR)ResultStorage)[(*ResultLen) + 1] = 0;
+				
+	//
+	// Free the key
+	//
+	ZwClose(keyHandle);
+
+	return;
 }
