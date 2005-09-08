@@ -95,7 +95,7 @@ __inline void ReadTimeStampModeFromRegistry(PUNICODE_STRING RegistryPath)
 		Queries[0].DefaultData = &DefaultTimestampMode;
 		Queries[0].DefaultLength = sizeof(ULONG);
 
-		if (RtlQueryRegistryValues(RTL_REGISTRY_ABSOLUTE, NullTerminatedString, Queries, NULL, NULL) != STATUS_SUCCESS)
+		if(RtlQueryRegistryValues(RTL_REGISTRY_ABSOLUTE, NullTerminatedString, Queries, NULL, NULL) != STATUS_SUCCESS)
 		{
 			TimestampMode = DEFAULT_TIMESTAMPMODE;
 		}
