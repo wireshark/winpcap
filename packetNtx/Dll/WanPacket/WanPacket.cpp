@@ -9,6 +9,8 @@
 #include <crtdbg.h>
 #include <eh.h>
 
+HMODULE g_hModule = NULL;
+
 #include <netmon.h>
 
 #include "win_bpf.h"
@@ -16,8 +18,6 @@
 
 #include <packet32.h>
 #include "wanpacket.h"
-
-HMODULE g_hModule = NULL;
 
 /*!
   \brief Describes an opened wan (dialup, VPN...) network adapter using the NetMon API
@@ -58,7 +58,11 @@ BOOLEAN IsWindows2000();
 /*! 
   \brief The main dll function.
 */
+#ifdef PACKET_AND_WAN 
+BOOLEAN LoadNdisNpp(DWORD Reason)
+#else
 BOOLEAN APIENTRY DllMain( HANDLE hModule, DWORD  Reason, LPVOID lpReserved)
+#endif // PACKET_AND_WAN
 {
     switch(Reason)
     {
