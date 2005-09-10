@@ -941,22 +941,22 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 // Unload the packet.dll binary we loaded on startup, and delete
 // the file on disk.
 ////////////////////////////////////////////////////////////////////
-void UnloadAndDeleteDll(char *PacketDllFileName)
+void DeleteDll(char *DllFileName)
 {
-//	BOOL FRes;
+	//	BOOL FRes;
 	
 	//
 	// We don't check return values because in every case we want to go on with cleanup
 	//
 
-//	FRes = FreeLibrary(PacketLib);
+	//	FRes = FreeLibrary(PacketLib);
 	
 	//
-	// We cannot delete the library, because we're using it. Therefore, we delay its deletion to
-	// the next reboot.
+	// We cannot delete the library immediately, because we're using it. Therefore, we delay 
+	// its deletion to the next reboot.
 	//
 	MoveFileEx(
-		PacketDllFileName,
+		DllFileName,
 		NULL,
 		MOVEFILE_DELAY_UNTIL_REBOOT);
 }
