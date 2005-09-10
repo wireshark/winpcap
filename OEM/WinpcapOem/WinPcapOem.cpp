@@ -28,8 +28,6 @@ BOOL APIENTRY DllMain(HINSTANCE Dllh, DWORD Reason, LPVOID lpReserved)
 
 	case DLL_PROCESS_ATTACH:
 
-//MessageBox(NULL, "1", "1", MB_OK);
-
 		DllHandle = Dllh;
 
 #ifdef SECURITY
@@ -39,8 +37,6 @@ BOOL APIENTRY DllMain(HINSTANCE Dllh, DWORD Reason, LPVOID lpReserved)
 		break;
 		
 	case DLL_PROCESS_DETACH:
-
-		UnloadAndDeleteDll(DllFullPath);
 
 		WoemLeaveDll();
 		
@@ -358,6 +354,9 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			delete_service(NpfDrNameWhId);
 		}
 		
+		//
+		// Now perform system-dependent operations
+		//
 		if(osVer.dwMajorVersion == 4)
 		{
 			//
@@ -738,7 +737,12 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	}
 	
 	//
-	// Now we can release the MUTEX
+	// Schedule the deletion of the dll. It will go away at the next reboot
+	//
+	DeleteDll(DllFullPath);	
+	
+	//
+	// Done. We can release the MUTEX
 	//
 	ReleaseMutex(hMx);
 
