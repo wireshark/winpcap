@@ -738,15 +738,14 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 			return TRUE;
 		}
 	}
-	
-	UAdName = SChar2WChar(AdName);
-	
+		
 	//here we could have released the mutex, but what happens if two threads try to add the same adapter? 
 	//The adapter would be duplicated on the linked list
 	
 	if(flags != INFO_FLAG_DONT_EXPORT)
-	{
-		
+	{	
+		UAdName = SChar2WChar(AdName);
+	
 		// Try to Open the adapter
 		adapter = PacketOpenAdapterNPF((PCHAR)UAdName);
 		
@@ -779,8 +778,13 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 	if (TmpAdInfo == NULL) 
 	{
 		ODS("AddAdapter: GlobalAlloc Failed\n");
-		GlobalFreePtr(OidData);
-		PacketCloseAdapter(adapter);
+	
+		if(flags != INFO_FLAG_DONT_EXPORT)
+		{ 
+			GlobalFreePtr(OidData);
+			PacketCloseAdapter(adapter);
+		}
+		
 		ReleaseMutex(AdaptersInfoMutex);
 		return FALSE;
 	}
