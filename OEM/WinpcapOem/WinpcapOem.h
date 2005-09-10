@@ -25,7 +25,7 @@ HRESULT HrUninstallNetMonProtocol();
 // Packet.dll wrapper prototypes
 ////////////////////////////////////////////////////////////////////
 BOOL LoadPacketDll(char *PacketDllFileName);
-void UnloadAndDeleteDll(char *PacketDllFileName);
+void DeleteDll(char *DllFileName);
 BOOL WoemEnterDll(HINSTANCE DllHandle);
 BOOL WoemLeaveDll();
 
@@ -44,7 +44,7 @@ BOOL WoemCreateBinaryNames();
 // Debug definitions
 ////////////////////////////////////////////////////////////////////
 
-#define DEBUGTRACE
+//#define DEBUGTRACE
 //#define TRACE_OUTPUTDEBUGSTRING
 
 #ifdef DEBUGTRACE
