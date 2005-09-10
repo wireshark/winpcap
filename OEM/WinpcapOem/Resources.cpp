@@ -17,6 +17,10 @@ BOOL WoemSaveResourceToDisk(HINSTANCE hInst, int ResID, char* FileName)
 	sprintf(ResName, "#%d", ResID);
 	FILE* OutFile;
 
+#ifdef STATIC_LIB
+	hInst = NULL;
+#endif
+
 	// 
 	// Find the resource
 	//
@@ -81,6 +85,10 @@ BOOL WoemGetResource(HINSTANCE hInst, int ResID, LPVOID * lpResMem, LPDWORD dwRe
 {
 	char ResName[100];
 	sprintf(ResName, "#%d", ResID);
+
+#ifdef STATIC_LIB
+	hInst = NULL;
+#endif
 
 	// 
 	// Find the resource
