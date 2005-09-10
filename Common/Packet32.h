@@ -94,10 +94,9 @@
 /// Alignment macro. Rounds up to the next even multiple of Packet_ALIGNMENT. 
 #define Packet_WORDALIGN(x) (((x)+(Packet_ALIGNMENT-1))&~(Packet_ALIGNMENT-1))
 
-
-#define NdisMediumNull	-1		// Custom linktype: NDIS doesn't provide an equivalent
-#define NdisMediumCHDLC	-2		// Custom linktype: NDIS doesn't provide an equivalent
-#define NdisMediumPPPSerial	-3	// Custom linktype: NDIS doesn't provide an equivalent
+#define NdisMediumNull	-1		///< Custom linktype: NDIS doesn't provide an equivalent
+#define NdisMediumCHDLC	-2		///< Custom linktype: NDIS doesn't provide an equivalent
+#define NdisMediumPPPSerial	-3	///< Custom linktype: NDIS doesn't provide an equivalent
 
 /*!
   \brief Network type structure.
@@ -380,7 +379,10 @@ BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLe
 PADAPTER_INFO PacketFindAdInfo(PCHAR AdapterName);
 BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName);
 BOOLEAN IsFireWire(TCHAR *AdapterDesc);
-
+PVOID QueryWinpcapRegistryKey(WCHAR *SubKeyName,
+							  PUINT ResultLen,
+							  PVOID DefaultVal,
+							  UINT DefaultLen);
 
 //---------------------------------------------------------------------------
 // EXPORTED FUNCTIONS
@@ -415,6 +417,7 @@ BOOLEAN PacketSetDumpLimits(LPADAPTER AdapterObject, UINT maxfilesize, UINT maxn
 BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync);
 BOOL PacketStopDriver();
 VOID PacketCloseAdapter(LPADAPTER lpAdapter);
+PCHAR PacketGetLastOemError();
 
 #ifdef __cplusplus
 }
