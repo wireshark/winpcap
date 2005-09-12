@@ -58,11 +58,11 @@ BOOLEAN IsWindows2000();
 /*! 
   \brief The main dll function.
 */
-#ifdef PACKET_AND_WAN 
+#ifdef WPCAP_OEM 
 BOOLEAN LoadNdisNpp(DWORD Reason)
 #else
 BOOLEAN APIENTRY DllMain( HANDLE hModule, DWORD  Reason, LPVOID lpReserved)
-#endif // PACKET_AND_WAN
+#endif // WPCAP_OEM
 {
     switch(Reason)
     {

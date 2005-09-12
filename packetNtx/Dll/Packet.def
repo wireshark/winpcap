@@ -31,3 +31,4 @@ EXPORTS
 		PacketSetDumpName
 		PacketSetDumpLimits
 		PacketIsDumpEnded
+		PacketRegWoemLeaveHandler
