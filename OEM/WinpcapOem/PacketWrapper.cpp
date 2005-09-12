@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "../../Common/Packet32.h"
+#include "Packet32.h"
 #include "WinpcapOem.h"
 
 INT setProcAuthorization();
@@ -7,7 +7,7 @@ INT setProcAuthorization();
 HMODULE PacketLib;
 BOOL StillToInit = TRUE;
 extern HINSTANCE DllHandle;
-extern char *LastWoemError;
+extern char LastWoemError[];
 
 //---------------------------------------------------------------------------
 // PUBLIC PACKET.DLL API WRAPPERS - HANDLERS
@@ -41,6 +41,7 @@ typedef BOOLEAN (*PacketSetHwFilterHandler)(LPADAPTER  AdapterObject,ULONG Filte
 typedef BOOLEAN (*PacketGetAdapterNamesHandler)(PTSTR pStr,PULONG  BufferSize);
 typedef BOOLEAN (*PacketGetNetInfoExHandler)(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntries);
 typedef BOOLEAN (*PacketGetNetTypeHandler)(LPADAPTER AdapterObject, NetType *type);
+typedef VOID (*PacketRegWoemLeaveHandlerHandler) (PVOID Handler);
 
 PacketGetVersionHandler			PacketGetVersionH = NULL;
 PacketGetDriverVersionHandler	PacketGetDriverVersionH = NULL;
@@ -71,6 +72,8 @@ PacketSetHwFilterHandler		PacketSetHwFilterH = NULL;
 PacketGetAdapterNamesHandler	PacketGetAdapterNamesH = NULL;
 PacketGetNetInfoExHandler		PacketGetNetInfoExH = NULL;
 PacketGetNetTypeHandler			PacketGetNetTypeH = NULL;
+
+PacketRegWoemLeaveHandlerHandler PacketRegWoemLeaveHandlerH = NULL;
 
 //---------------------------------------------------------------------------
 // PUBLIC PACKET.DLL API WRAPPERS - IMPLEMENTATIONS
@@ -933,9 +936,30 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 		WoemReportError();
 		return FALSE;
 	}
+
+#ifdef STATIC_LIB
+	PacketRegWoemLeaveHandlerH = (PacketRegWoemLeaveHandlerHandler) GetProcAddress(PacketLib, "PacketRegWoemLeaveHandler");		
+	if(!PacketRegWoemLeaveHandlerH)
+	{
+		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 29)");
+		WoemReportError();
+		return FALSE;
+	}
+#endif
 	
 	return TRUE;
 }
+
+#ifdef STATIC_LIB
+////////////////////////////////////////////////////////////////////
+// Register an unload handler that will be called by packet.dll 
+// DllMain.
+////////////////////////////////////////////////////////////////////
+void RegisterPacketUnloadHandler(void* Handler)
+{
+	PacketRegWoemLeaveHandlerH(Handler);
+}
+#endif // STATIC_LIB
 
 ////////////////////////////////////////////////////////////////////
 // Unload the packet.dll binary we loaded on startup, and delete

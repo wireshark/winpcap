@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "../../Common/Packet32.h"
-#include "../../Common/WpcapNames.h"
+#include "Packet32.h"
+#include "WpcapNames.h"
 #include "WinpcapOem.h"
 #include "resource.h"
 
@@ -15,7 +15,7 @@ char DllFullPath[MAX_PATH + 16];
 char DriverFullPath[MAX_PATH + 16];
 char NpfDrNameWhId[32];
 WCHAR NpfDrNameWhIdW[32];
-HINSTANCE DllHandle;
+HINSTANCE DllHandle = NULL;
 char LastWoemError[PACKET_ERRSTR_SIZE];
 
 ////////////////////////////////////////////////////////////////////
@@ -103,12 +103,17 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	}
 #endif
 
+#ifndef STATIC_LIB
+	//
+	// This should REALLY never happen
+	//
 	if(!DllHandle)
 	{
 		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "NULL DLL Handle");
 		WoemReportError();
 		return FALSE;
 	}
+#endif
 
 	if(hMx)
 	{
@@ -736,6 +741,13 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		return FALSE;
 	}
 	
+	//
+	// Register an unload handler with packet.dll
+	//
+#ifdef STATIC_LIB
+	RegisterPacketUnloadHandler(WoemLeaveDll);
+#endif // STATIC_LIB
+
 	//
 	// Schedule the deletion of the dll. It will go away at the next reboot
 	//

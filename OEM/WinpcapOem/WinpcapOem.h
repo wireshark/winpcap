@@ -28,6 +28,9 @@ BOOL LoadPacketDll(char *PacketDllFileName);
 void DeleteDll(char *DllFileName);
 BOOL WoemEnterDll(HINSTANCE DllHandle);
 BOOL WoemLeaveDll();
+#ifdef STATIC_LIB
+void RegisterPacketUnloadHandler(void* Handler);
+#endif // STATIC_LIB
 
 ////////////////////////////////////////////////////////////////////
 // Resources handling prototypes
@@ -44,7 +47,7 @@ BOOL WoemCreateBinaryNames();
 // Debug definitions
 ////////////////////////////////////////////////////////////////////
 
-//#define DEBUGTRACE
+#define DEBUGTRACE
 //#define TRACE_OUTPUTDEBUGSTRING
 
 #ifdef DEBUGTRACE
