@@ -74,10 +74,10 @@ dagc_freedevs_handler p_dagc_freedevs = NULL;
 
 BOOLEAN PacketAddAdapterDag(PCHAR name, PCHAR description, BOOLEAN IsAFile);
 
-#ifdef WPCAP_OEM_UNLOAD_H
 //
 // Additions for WinPcap OEM
 //
+#ifdef WPCAP_OEM_UNLOAD_H
 typedef BOOL (*WoemLeaveDllHandler)(void);
 WoemLeaveDllHandler	WoemLeaveDllH = NULL;
 
@@ -1925,6 +1925,30 @@ BOOLEAN PacketSetBpf(LPADAPTER AdapterObject, struct bpf_program *fp)
 #endif // _WINNT4
 
    return DeviceIoControl(AdapterObject->hFile,pBIOCSETF,(char*)fp->bf_insns,fp->bf_len*sizeof(struct bpf_insn),NULL,0,&BytesReturned,NULL);
+}
+
+/*!
+  \brief Sets the behavior of the NPF driver with packets sent by itself: capture or drop.
+  \param AdapterObject Pointer to an _ADAPTER structure.
+  \param LoopbackBehavior Can be one of the following:
+	- \ref (default) NPF_ENABLE_LOOPBACK
+	- \ref NPF_DISABLE_LOOPBACK
+  \return If the function succeeds, the return value is nonzero.
+
+  \note: after being open, every adapter has loopback capture \b enabled.
+*/
+BOOLEAN PacketSetLoopbackBehavior(LPADAPTER  AdapterObject, UINT LoopbackBehavior)
+{
+	DWORD BytesReturned;
+	
+	return DeviceIoControl(AdapterObject->hFile,
+		pBIOCISETLOBBEH,
+		&LoopbackBehavior,
+		sizeof(UINT),
+		NULL,
+		0,
+		&BytesReturned,
+		NULL);
 }
 
 /*!
