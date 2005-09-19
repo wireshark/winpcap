@@ -30,5 +30,6 @@ EXPORTS
 		PacketSetDumpName
 		PacketSetDumpLimits
 		PacketIsDumpEnded
+		PacketSetLoopbackBehavior
 
 		PacketGetLastOemError

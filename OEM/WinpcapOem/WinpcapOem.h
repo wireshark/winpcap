@@ -47,7 +47,7 @@ BOOL WoemCreateBinaryNames();
 // Debug definitions
 ////////////////////////////////////////////////////////////////////
 
-#define DEBUGTRACE
+//#define DEBUGTRACE
 //#define TRACE_OUTPUTDEBUGSTRING
 
 #ifdef DEBUGTRACE

@@ -42,36 +42,38 @@ typedef BOOLEAN (*PacketGetAdapterNamesHandler)(PTSTR pStr,PULONG  BufferSize);
 typedef BOOLEAN (*PacketGetNetInfoExHandler)(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntries);
 typedef BOOLEAN (*PacketGetNetTypeHandler)(LPADAPTER AdapterObject, NetType *type);
 typedef VOID (*PacketRegWoemLeaveHandlerHandler) (PVOID Handler);
+typedef BOOLEAN (*PacketSetLoopbackBehaviorHandler)(LPADAPTER  AdapterObject, UINT LoopbackBehavior);
 
-PacketGetVersionHandler			PacketGetVersionH = NULL;
-PacketGetDriverVersionHandler	PacketGetDriverVersionH = NULL;
-PacketStopDriverHandler			PacketStopDriverH = NULL;
-PacketOpenAdapterHandler		PacketOpenAdapterH = NULL;
-PacketCloseAdapterHandler		PacketCloseAdapterH = NULL;
-PacketAllocatePacketHandler		PacketAllocatePacketH = NULL;
-PacketFreePacketHandler			PacketFreePacketH = NULL;
-PacketInitPacketHandler			PacketInitPacketH = NULL;
-PacketReceivePacketHandler		PacketReceivePacketH = NULL;
-PacketSendPacketHandler			PacketSendPacketH = NULL;
-PacketSendPacketsHandler		PacketSendPacketsH = NULL;
-PacketSetMinToCopyHandler		PacketSetMinToCopyH = NULL;
-PacketSetModeHandler			PacketSetModeH = NULL;
-PacketSetDumpNameHandler		PacketSetDumpNameH = NULL;
-PacketSetDumpLimitsHandler		PacketSetDumpLimitsH = NULL;
-PacketIsDumpEndedHandler		PacketIsDumpEndedH = NULL;
-PacketGetReadEventHandler		PacketGetReadEventH = NULL;
-PacketSetNumWritesHandler		PacketSetNumWritesH = NULL;
-PacketSetReadTimeoutHandler		PacketSetReadTimeoutH = NULL;
-PacketSetBuffHandler			PacketSetBuffH = NULL;
-PacketSetBpfHandler				PacketSetBpfH = NULL;
-PacketSetSnapLenHandler			PacketSetSnapLenH = NULL;
-PacketGetStatsHandler			PacketGetStatsH = NULL;
-PacketGetStatsExHandler			PacketGetStatsExH = NULL;
-PacketRequestHandler			PacketRequestH = NULL;
-PacketSetHwFilterHandler		PacketSetHwFilterH = NULL;
-PacketGetAdapterNamesHandler	PacketGetAdapterNamesH = NULL;
-PacketGetNetInfoExHandler		PacketGetNetInfoExH = NULL;
-PacketGetNetTypeHandler			PacketGetNetTypeH = NULL;
+PacketGetVersionHandler				PacketGetVersionH = NULL;
+PacketGetDriverVersionHandler		PacketGetDriverVersionH = NULL;
+PacketStopDriverHandler				PacketStopDriverH = NULL;
+PacketOpenAdapterHandler			PacketOpenAdapterH = NULL;
+PacketCloseAdapterHandler			PacketCloseAdapterH = NULL;
+PacketAllocatePacketHandler			PacketAllocatePacketH = NULL;
+PacketFreePacketHandler				PacketFreePacketH = NULL;
+PacketInitPacketHandler				PacketInitPacketH = NULL;
+PacketReceivePacketHandler			PacketReceivePacketH = NULL;
+PacketSendPacketHandler				PacketSendPacketH = NULL;
+PacketSendPacketsHandler			PacketSendPacketsH = NULL;
+PacketSetMinToCopyHandler			PacketSetMinToCopyH = NULL;
+PacketSetModeHandler				PacketSetModeH = NULL;
+PacketSetDumpNameHandler			PacketSetDumpNameH = NULL;
+PacketSetDumpLimitsHandler			PacketSetDumpLimitsH = NULL;
+PacketIsDumpEndedHandler			PacketIsDumpEndedH = NULL;
+PacketGetReadEventHandler			PacketGetReadEventH = NULL;
+PacketSetNumWritesHandler			PacketSetNumWritesH = NULL;
+PacketSetReadTimeoutHandler			PacketSetReadTimeoutH = NULL;
+PacketSetBuffHandler				PacketSetBuffH = NULL;
+PacketSetBpfHandler					PacketSetBpfH = NULL;
+PacketSetSnapLenHandler				PacketSetSnapLenH = NULL;
+PacketGetStatsHandler				PacketGetStatsH = NULL;
+PacketGetStatsExHandler				PacketGetStatsExH = NULL;
+PacketRequestHandler				PacketRequestH = NULL;
+PacketSetHwFilterHandler			PacketSetHwFilterH = NULL;
+PacketGetAdapterNamesHandler		PacketGetAdapterNamesH = NULL;
+PacketGetNetInfoExHandler			PacketGetNetInfoExH = NULL;
+PacketGetNetTypeHandler				PacketGetNetTypeH = NULL;
+PacketSetLoopbackBehaviorHandler	PacketSetLoopbackBehaviorH = NULL;
 
 PacketRegWoemLeaveHandlerHandler PacketRegWoemLeaveHandlerH = NULL;
 
@@ -500,6 +502,26 @@ BOOLEAN PacketSetBpf(LPADAPTER AdapterObject, struct bpf_program *fp)
 	}
 
 	return PacketSetBpfH(AdapterObject, fp);
+}
+
+BOOLEAN PacketSetLoopbackBehavior(LPADAPTER  AdapterObject, UINT LoopbackBehavior)
+{
+	TraceEnter("PacketSetLoopbackBehavior");
+
+	//
+	// Check if we are the first instance and Init everything accordingly
+	//
+	if(StillToInit)
+	{
+		if(!WoemEnterDll(DllHandle))
+		{
+			return FALSE;
+		}
+
+		StillToInit = FALSE;
+	}
+
+	return PacketSetLoopbackBehaviorH(AdapterObject, LoopbackBehavior);
 }
 
 INT PacketSetSnapLen(LPADAPTER AdapterObject, int snaplen)
