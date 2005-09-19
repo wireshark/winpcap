@@ -85,6 +85,7 @@
 #define  pBIOCSENDPACKETSSYNC 9033		///< IOCTL code: Send a buffer containing multiple packets to the network, respecting the timestamps associated with the packets.
 #define  pBIOCSETDUMPLIMITS 9034		///< IOCTL code: Set the dump file limits. See the PacketSetDumpLimits() function.
 #define  pBIOCISDUMPENDED 7411			///< IOCTL code: Get the status of the kernel dump process. See the PacketIsDumpEnded() function.
+#define  pBIOCISETLOBBEH 7410			///< IOCTL code: Set the loopback behavior of the driver with packets sent by itself: capture or drop.
 
 #define  pBIOCSTIMEZONE 7471			///< IOCTL code: set time zone. Used in Win9x only.
 
@@ -97,6 +98,10 @@
 #define NdisMediumNull	-1		///< Custom linktype: NDIS doesn't provide an equivalent
 #define NdisMediumCHDLC	-2		///< Custom linktype: NDIS doesn't provide an equivalent
 #define NdisMediumPPPSerial	-3	///< Custom linktype: NDIS doesn't provide an equivalent
+
+// Loopback behaviour definitions
+#define NPF_DISABLE_LOOPBACK	1	///< Drop the packets sent by the NPF driver
+#define NPF_ENABLE_LOOPBACK		2	///< Capture the packets sent by the NPF driver
 
 /*!
   \brief Network type structure.
@@ -395,6 +400,7 @@ BOOLEAN PacketSetNumWrites(LPADAPTER AdapterObject,int nwrites);
 BOOLEAN PacketSetMode(LPADAPTER AdapterObject,int mode);
 BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout);
 BOOLEAN PacketSetBpf(LPADAPTER AdapterObject,struct bpf_program *fp);
+BOOLEAN PacketSetLoopbackBehavior(LPADAPTER  AdapterObject, UINT LoopbackBehavior);
 INT PacketSetSnapLen(LPADAPTER AdapterObject,int snaplen);
 BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s);
 BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s);
