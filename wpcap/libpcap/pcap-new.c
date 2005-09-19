@@ -911,7 +911,16 @@ pcap_t *fp;
 			break;
 
 		case PCAP_SRC_IFLOCAL:
-			fp= pcap_open_live(name, snaplen, (flags & PCAP_OPENFLAG_PROMISCUOUS), read_timeout, errbuf);
+			fp = pcap_open_live(name, snaplen, (flags & PCAP_OPENFLAG_PROMISCUOUS), read_timeout, errbuf);
+
+			if(flags & PCAP_OPENFLAG_NOCAPTURE_LOCAL)
+			{
+				if(!PacketSetLoopbackBehavior(fp->adapter, NPF_ENABLE_LOOPBACK))
+				{
+					pcap_close(fp);
+					return NULL;
+				}
+			}
 			break;
 
 		default:

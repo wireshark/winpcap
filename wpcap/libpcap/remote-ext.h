@@ -215,7 +215,7 @@ extern "C" {
 
 
 /*!
-	\brief It defines if the remote probe has to capture its own generated traffic.
+	\brief It defines if the remote probe will capture its own generated traffic.
 
 	In case the remote probe uses the same interface to capture traffic and to send
 	data back to the caller, the captured traffic includes the RPCAP traffic as well.
@@ -223,6 +223,16 @@ extern "C" {
 	the trace returned back to the collector is does not include this traffic.
 */
 #define PCAP_OPENFLAG_NOCAPTURE_RPCAP	4
+
+/*!
+	\brief It defines if the local adapter will capture its own generated traffic.
+
+	This flag tells the underlying capture driver to drop the packets that were sent by itself. 
+	This is usefult when building applications like bridges, that should ignore the traffic
+	they just sent.
+*/
+#define PCAP_OPENFLAG_NOCAPTURE_LOCAL	8
+
 /*!
 	\}
 */
