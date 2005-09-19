@@ -74,18 +74,18 @@ dagc_freedevs_handler p_dagc_freedevs = NULL;
 
 BOOLEAN PacketAddAdapterDag(PCHAR name, PCHAR description, BOOLEAN IsAFile);
 
-#ifdef WPCAP_OEM
+#ifdef WPCAP_OEM_UNLOAD_H
 //
 // Additions for WinPcap OEM
 //
 typedef BOOL (*WoemLeaveDllHandler)(void);
 WoemLeaveDllHandler	WoemLeaveDllH = NULL;
 
-VOID PacketRegWoemLeaveHandler(PVOID Handler)
+__declspec (dllexport) VOID PacketRegWoemLeaveHandler(PVOID Handler)
 {
 	WoemLeaveDllH = Handler;
 }
-#endif // WPCAP_OEM
+#endif // WPCAP_OEM_UNLOAD_H
 
 //---------------------------------------------------------------------------
 
@@ -202,12 +202,12 @@ BOOL APIENTRY DllMain(HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 			AdaptersInfoList = NewAdInfo;
 		}
 
-#ifdef WPCAP_OEM 
+#ifdef WPCAP_OEM_UNLOAD_H 
 		if(WoemLeaveDllH)
 		{
 			WoemLeaveDllH();
 		}
-#endif // WPCAP_OEM
+#endif // WPCAP_OEM_UNLOAD_H
 
 		break;
 		
