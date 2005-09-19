@@ -37,3 +37,4 @@ EXPORTS
 		PacketIsDumpEnded
 		PacketSendPackets
 		PacketSetSnapLen
+		PacketSetLoopbackBehavior

@@ -1204,6 +1204,12 @@ BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync)
 	return FALSE;
 }
 
+// not supported in Win9x
+BOOLEAN PacketSetLoopbackBehavior(LPADAPTER  AdapterObject, UINT LoopbackBehavior)
+{
+	return FALSE;
+}
+
 //---------------------------------------------------------------------------
 
 #ifdef __cplusplus
