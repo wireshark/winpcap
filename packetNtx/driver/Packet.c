@@ -79,6 +79,12 @@ ULONG NCpu;
 
 ULONG TimestampMode;
 
+// OS version. We use it to properly set the packet flags when transmitting
+RTL_OSVERSIONINFOW OsVersion; 
+UINT SendPacketFlags = 0;
+// NDIS_FLAGS_DONT_LOOPBACK | NDIS_FLAGS_SKIP_LOOPBACK
+
+
 //
 //  Packet Driver's entry routine.
 //
@@ -108,6 +114,13 @@ DriverEntry(
 	CHAR TmpNameBuff[128];
 	UINT RegStrLen;
 	
+	//
+	// Get OS version and store it in a global variable. 
+	// Note: RtlGetVersion() is documented to always return success.
+	//
+	OsVersion.dwOSVersionInfoSize = sizeof(OsVersion);
+	RtlGetVersion(&OsVersion);
+
 	//
 	// Set timestamp gathering method getting it from the registry
 	//
@@ -999,6 +1012,71 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		*((UINT*)Irp->UserBuffer) = (Open->DumpLimitReached)?1:0;
 
 		EXIT_SUCCESS(4);
+
+		break;
+
+	case BIOCISETLOBBEH:
+
+		if (IrpSp->Parameters.DeviceIoControl.InputBufferLength < sizeof(INT))
+		{
+			EXIT_FAILURE(0);
+		}
+
+		if(*(PINT)Irp->AssociatedIrp.SystemBuffer == NPF_DISABLE_LOOPBACK)
+		{
+			if(OsVersion.dwMajorVersion < 5)
+			{
+				// NT4 doesn't support loopback inhibition / activation
+				EXIT_FAILURE(0);
+			}
+			else 
+			{
+				if((OsVersion.dwMajorVersion == 5) && (OsVersion.dwMinorVersion == 0))
+				{
+					// Windows 2000 wants both NDIS_FLAGS_DONT_LOOPBACK and NDIS_FLAGS_SKIP_LOOPBACK
+					SendPacketFlags = NDIS_FLAGS_DONT_LOOPBACK | NDIS_FLAGS_SKIP_LOOPBACK;
+				}
+				else
+				{
+					// Windows XP, 2003 and follwing want only  NDIS_FLAGS_DONT_LOOPBACK
+					SendPacketFlags =  NDIS_FLAGS_DONT_LOOPBACK;
+				}
+				
+				// Reset the capture buffers, since they could contain loopbacked packets
+				Open->SkipProcessing = 1;
+				for (i=0;i<NCpu;i++)
+				{
+					Open->CpuData[i].C = 0;
+					Open->CpuData[i].P = 0;
+					Open->CpuData[i].Free = Open->Size;
+				}
+				Open->SkipProcessing = 0;
+			}
+		}
+		else
+		if(*(PINT)Irp->AssociatedIrp.SystemBuffer == NPF_ENABLE_LOOPBACK)
+		{
+			if(OsVersion.dwMajorVersion < 5)
+			{
+				// NT4 doesn't support loopback inhibition / activation
+				EXIT_FAILURE(0);
+			}
+			else 
+			{
+				// Reset SendPacketFlags
+				SendPacketFlags = 0;
+			}
+		}
+		else
+		{
+			// Unknown operation
+			EXIT_FAILURE(0);
+		}
+
+		Open->ReaderSN=0;
+		Open->WriterSN=0;
+
+		EXIT_SUCCESS(0);
 
 		break;
 

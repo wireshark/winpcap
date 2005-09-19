@@ -38,6 +38,7 @@
 #include "debug.h"
 #include "packet.h"
 
+extern UINT SendPacketFlags;
 
 //-------------------------------------------------------------------
 
@@ -109,7 +110,17 @@ NPF_Write(
 			&pPacket,
 			Open->PacketPool
 			);
-		
+
+		// If asked, set the flags for this packet.
+		// Currently, the only situation in which we set the flags is to disable the reception of loopback
+		// packets, i.e. of the packets sent by us.
+		if(SendPacketFlags)
+		{
+			NdisSetPacketFlags(
+				pPacket,
+				SendPacketFlags);
+		}
+
 		if (Status != NDIS_STATUS_SUCCESS) {
 			
 			//  No free packets
@@ -258,7 +269,18 @@ NPF_BufferedWrite(
 		// Allocate a packet from our free list
 		NdisAllocatePacket( &Status, &pPacket, Open->PacketPool);
 		
-		if (Status != NDIS_STATUS_SUCCESS) {
+		// If asked, set the flags for this packet.
+		// Currently, the only situation in which we set the flags is to disable the reception of loopback
+		// packets, i.e. of the packets sent by us.
+		if(SendPacketFlags)
+		{
+			NdisSetPacketFlags(
+				pPacket,
+				SendPacketFlags);
+		}
+
+		if (Status != NDIS_STATUS_SUCCESS) 
+		{
 			//  No more free packets
 			IF_LOUD(DbgPrint("NPF_BufferedWrite: no more free packets, returning.\n");)
 
@@ -269,7 +291,15 @@ NPF_BufferedWrite(
 			// Try again to allocate a packet
 			NdisAllocatePacket( &Status, &pPacket, Open->PacketPool);
 
-			if (Status != NDIS_STATUS_SUCCESS) {
+			if(SendPacketFlags)
+			{
+				NdisSetPacketFlags(
+					pPacket,
+					SendPacketFlags);
+			}
+			
+			if (Status != NDIS_STATUS_SUCCESS) 
+			{
 				// Second failure, report an error
 				IoFreeMdl(TmpMdl);
 				return -1;

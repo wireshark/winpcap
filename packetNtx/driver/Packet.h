@@ -182,6 +182,13 @@
 */
 #define BIOCISDUMPENDED 7411
 
+/*!
+  \brief IOCTL code: set the loopback behavior.
+
+  This IOCTL sets the loopback behavior of the driver with packets sent by itself: capture or drop.
+*/
+#define  BIOCISETLOBBEH 7410			
+
 // Working modes
 #define MODE_CAPT 0x0		///< Capture working mode
 #define MODE_STAT 0x1		///< Statistical working mode
@@ -197,6 +204,10 @@
 #define TCPDUMP_MAGIC 0xa1b2c3d4	///< Libpcap magic number. Used by programs like tcpdump to recognize a driver's generated dump file.
 #define PCAP_VERSION_MAJOR 2		///< Major libpcap version of the dump file. Used by programs like tcpdump to recognize a driver's generated dump file.
 #define PCAP_VERSION_MINOR 4		///< Minor libpcap version of the dump file. Used by programs like tcpdump to recognize a driver's generated dump file.
+
+// Loopback behaviour definitions
+#define NPF_DISABLE_LOOPBACK	1	///< Tells the driver to drop the packets sent by itself. This is usefult when building applications like bridges.
+#define NPF_ENABLE_LOOPBACK		2	///< Tells the driver to capture the packets sent by itself.
 
 /*!
   \brief Header of a libpcap dump file.
