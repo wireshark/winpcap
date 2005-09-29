@@ -3,7 +3,7 @@
 ////////////////////////////////////////////////////////////////////
 
 #define MUTEX_NAME "WinPcapOEM-MutexProtectMultipleInstances"
-#define SEMAPHORE_NAME "WinPcapOEM-SemaphoreProtectMultipleInstances"
+#define SEMAPHORE_NAME "WinPcapOEM-SemaphoreProtectMultipleInstances-" NPF_DRIVER_NAME
 #define MAX_VALUE_SEMAPHORE 65535
 #define MAX_OBJNAME_LEN 1024
 #define PACKET_ERRSTR_SIZE 1024
