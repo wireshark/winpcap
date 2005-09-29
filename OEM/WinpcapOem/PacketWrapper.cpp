@@ -628,8 +628,6 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 {
 	TraceEnter("PacketGetAdapterNames");
 
-	//	char pippo[256];
-
 	//
 	// Check if we are the first instance and Init everything accordingly
 	//
@@ -643,17 +641,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 
 		StillToInit = FALSE;
 	}
-/*
-_snprintf(pippo, 
-		  PACKET_ERRSTR_SIZE - 1, 
-		  "PacketGetAdapterNames: (handle:%x) fnpointer:%x str:%x bufsize%d\n", 
-		  DllHandle,
-		  PacketGetAdapterNamesH,
-		  pStr,
-		  BufferSize);
 
-OutputDebugString(pippo);
-*/
 	return PacketGetAdapterNamesH(pStr,  BufferSize);
 }
 
