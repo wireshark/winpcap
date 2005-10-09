@@ -117,7 +117,7 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	RegStrLen = sizeof(TmpNameBuff);
 
 	NPF_QueryWinpcapRegistryKey(L"npf_kernel_events_names",
-		TmpNameBuff, 
+		TmpNameBuff,
 		&RegStrLen,
 		NPF_KERNEL_EVENTS_NAMES, 
 		sizeof(NPF_KERNEL_EVENTS_NAMES));
