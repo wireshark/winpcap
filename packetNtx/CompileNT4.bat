@@ -4,6 +4,7 @@ if NOT "%NPF_COMPILED%" == "1" (
 		set NPF_COMPILED=1
 			)
 set NDISVERSION=NDIS30
+set OEM=NO_WPCAP_OEM
 md \i386\free >nul 2>nul
 md \i386\checked >nul 2>nul
 build -cefw
