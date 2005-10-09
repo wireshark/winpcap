@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <io.h>
 #include "Packet32.h"
 #include "WpcapNames.h"
 #include "WinpcapOem.h"
@@ -17,6 +18,8 @@ char NpfDrNameWhId[32];
 WCHAR NpfDrNameWhIdW[32];
 HINSTANCE DllHandle = NULL;
 char LastWoemError[PACKET_ERRSTR_SIZE];
+BOOL InitError = FALSE;
+extern BOOL OemActive;
 
 ////////////////////////////////////////////////////////////////////
 // DLL Entry point
@@ -31,6 +34,10 @@ BOOL APIENTRY DllMain(HINSTANCE Dllh, DWORD Reason, LPVOID lpReserved)
 		DllHandle = Dllh;
 
 #ifdef SECURITY
+		//
+		// the version with security enabled doesn't need to be activated with PacketStartOem()
+		//
+		OemActive = TRUE;
 		setProcAuthorization();
 #endif
 
@@ -401,7 +408,7 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			{
 				_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", DllFullPath);
 
-				unlink(DllFullPath);
+				_unlink(DllFullPath);
 				
 				ReleaseMutex(hMx);
 
@@ -478,7 +485,7 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			{
 				_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", DllFullPath);
 
-				unlink(DllFullPath);
+				_unlink(DllFullPath);
 				
 				ReleaseMutex(hMx);
 				
@@ -538,7 +545,7 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			{
 				_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", DllFullPath);
 
-				unlink(DllFullPath);
+				_unlink(DllFullPath);
 
 				WoemReportError();
 				
@@ -580,8 +587,8 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		{
 			_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create the packet driver service");
 
-			unlink(DllFullPath);
-			unlink(DriverFullPath);
+			_unlink(DllFullPath);
+			_unlink(DriverFullPath);
 			
 			ReleaseMutex(hMx);
 
@@ -610,8 +617,8 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to start the packet driver service");
 
 			delete_service(NpfDrNameWhId);
-			unlink(DllFullPath);
-			unlink(DriverFullPath);
+			_unlink(DllFullPath);
+			_unlink(DriverFullPath);
 			
 			ReleaseMutex(hMx);
 
@@ -649,8 +656,8 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 				_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "timeout while starting the packet driver");
 	
 				delete_service(NpfDrNameWhId);
-				unlink(DllFullPath);
-				unlink(DriverFullPath);
+				_unlink(DllFullPath);
+				_unlink(DriverFullPath);
 				
 				ReleaseMutex(hMx);
 
@@ -678,7 +685,7 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		//
 		// We've loaded the driver, we can delete its binary
 		//
-		unlink(DriverFullPath);
+		_unlink(DriverFullPath);
 	}
 		
 	//
@@ -689,8 +696,8 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create binary names");
 
 		delete_service(NpfDrNameWhId);
-		unlink(DllFullPath);
-		unlink(DriverFullPath);
+		_unlink(DllFullPath);
+		_unlink(DriverFullPath);
 		
 		ReleaseMutex(hMx);
 
@@ -719,8 +726,8 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to load packet.dll");
 
 		delete_service(NpfDrNameWhId);
-		unlink(DllFullPath);
-		unlink(DriverFullPath);
+		_unlink(DllFullPath);
+		_unlink(DriverFullPath);
 		
 		ReleaseMutex(hMx);
 
