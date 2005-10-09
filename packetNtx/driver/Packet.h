@@ -198,6 +198,7 @@
 
 #define IMMEDIATE 1			///< Immediate timeout. Forces a read call to return immediately.
 
+#define NDIS_FLAGS_SKIP_LOOPBACK_W2K    0x400 ///< This is an undocumented flag for NdisSetPacketFlags() that allows to disable loopback reception.
 
 // The following definitions are used to provide compatibility 
 // of the dump files with the ones of libpcap
