@@ -113,20 +113,26 @@ DriverEntry(
 	UNICODE_STRING macName;
 	CHAR TmpNameBuff[128];
 	UINT RegStrLen;
-	
+
+    IF_LOUD(DbgPrint("\n\nPacket: DriverEntry\n");)
+
 	//
 	// Get OS version and store it in a global variable. 
-	// Note: RtlGetVersion() is documented to always return success.
+	// For the moment we use the deprecated PsGetVersion() because the suggested
+	// RtlGetVersion() doesn't seem to exist in Windows 2000, and we don't want
+	// to have two separated drivers just for this call.
 	//
-	OsVersion.dwOSVersionInfoSize = sizeof(OsVersion);
-	RtlGetVersion(&OsVersion);
+	// Note: both RtlGetVersion() and PsGetVersion() are documented to always return success.
+	//
+	//	OsVersion.dwOSVersionInfoSize = sizeof(OsVersion);
+	//	RtlGetVersion(&OsVersion);
+	PsGetVersion(&(OsVersion.dwMajorVersion), &(OsVersion.dwMinorVersion), NULL, NULL);
+    IF_LOUD(DbgPrint("\n\nOS Version: %d.%d\n", OsVersion.dwMajorVersion, OsVersion.dwMinorVersion);)
 
 	//
 	// Set timestamp gathering method getting it from the registry
 	//
 	ReadTimeStampModeFromRegistry(RegistryPath);
-
-/**/DbgPrint("%ws",RegistryPath->Buffer);
 
 	//
 	// Get the device names prefix from the registry
@@ -134,7 +140,7 @@ DriverEntry(
 	RegStrLen = sizeof(TmpNameBuff);
 
 	NPF_QueryWinpcapRegistryKey(L"npf_device_names_prefix",
-		TmpNameBuff, 
+		TmpNameBuff,
 		&RegStrLen,
 		NPF_DRIVER_NAME "_", 
 		sizeof(NPF_DRIVER_NAME "_"));
@@ -145,8 +151,6 @@ DriverEntry(
 	// Get number of CPUs and save it
 	//
 	NCpu = NdisSystemProcessorCount();
-
-    IF_LOUD(DbgPrint("\n\nPacket: DriverEntry\n");)
 
 	RtlZeroMemory(&ProtocolChar,sizeof(NDIS_PROTOCOL_CHARACTERISTICS));
 
@@ -244,8 +248,7 @@ RegistryError:
 
     Status=STATUS_UNSUCCESSFUL;
 
-    return(Status);
-
+	return(Status);
 }
 
 //-------------------------------------------------------------------
@@ -694,7 +697,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		RegStrLen = sizeof(TmpNameBuff);
 		
 		NPF_QueryWinpcapRegistryKey(L"npf_kernel_events_names",
-			TmpNameBuff, 
+			TmpNameBuff,
 			&RegStrLen,
 			NPF_KERNEL_EVENTS_NAMES, 
 			sizeof(NPF_KERNEL_EVENTS_NAMES));
@@ -1034,7 +1037,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 				if((OsVersion.dwMajorVersion == 5) && (OsVersion.dwMinorVersion == 0))
 				{
 					// Windows 2000 wants both NDIS_FLAGS_DONT_LOOPBACK and NDIS_FLAGS_SKIP_LOOPBACK
-					SendPacketFlags = NDIS_FLAGS_DONT_LOOPBACK | NDIS_FLAGS_SKIP_LOOPBACK;
+					SendPacketFlags = NDIS_FLAGS_DONT_LOOPBACK | NDIS_FLAGS_SKIP_LOOPBACK_W2K;
 				}
 				else
 				{
@@ -1572,6 +1575,7 @@ VOID NPF_QueryWinpcapRegistryKey(PWSTR SubKeyToQuery,
 								 PVOID DefaultVal, 
 								 UINT DefaultLen)
 {
+#ifdef WPCAP_OEM
 	PKEY_VALUE_PARTIAL_INFORMATION result = NULL;
 	OBJECT_ATTRIBUTES objAttrs;
 	NTSTATUS status;
@@ -1604,8 +1608,10 @@ VOID NPF_QueryWinpcapRegistryKey(PWSTR SubKeyToQuery,
 	if(!NT_SUCCESS(status)) 
 	{
 		IF_LOUD(DbgPrint("NPF_QueryWinpcapRegistryKey: ZwOpenKey error %x\n", status);)
-		ResultStorage = DefaultVal;
-		*ResultLen = DefaultLen;
+		
+
+		RtlCopyMemory(ResultStorage, DefaultVal, (*ResultLen < DefaultLen)? *ResultLen:DefaultLen);
+		*ResultLen = (*ResultLen < DefaultLen)? *ResultLen:DefaultLen;
 		return;
 	}
 
@@ -1627,8 +1633,8 @@ VOID NPF_QueryWinpcapRegistryKey(PWSTR SubKeyToQuery,
 		
 		ZwClose(keyHandle);
 		
-		ResultStorage = DefaultVal;
-		*ResultLen = DefaultLen;
+		RtlCopyMemory(ResultStorage, DefaultVal, (*ResultLen < DefaultLen)? *ResultLen:DefaultLen);
+		*ResultLen = (*ResultLen < DefaultLen)? *ResultLen:DefaultLen;
 	}
 		
 	//
@@ -1642,8 +1648,8 @@ VOID NPF_QueryWinpcapRegistryKey(PWSTR SubKeyToQuery,
 		
 		ZwClose(keyHandle);
 		
-		ResultStorage = DefaultVal;
-		*ResultLen = DefaultLen;
+		RtlCopyMemory(ResultStorage, DefaultVal, (*ResultLen < DefaultLen)? *ResultLen:DefaultLen);
+		*ResultLen = (*ResultLen < DefaultLen)? *ResultLen:DefaultLen;
 	}
 	
 	//
@@ -1667,4 +1673,11 @@ VOID NPF_QueryWinpcapRegistryKey(PWSTR SubKeyToQuery,
 	ZwClose(keyHandle);
 
 	return;
+
+#else // WPCAP_OEM
+
+	RtlCopyMemory(ResultStorage, DefaultVal, (*ResultLen < DefaultLen)? *ResultLen:DefaultLen);
+	*ResultLen = (*ResultLen < DefaultLen)? *ResultLen:DefaultLen;
+
+#endif // WPCAP_OEM
 }
