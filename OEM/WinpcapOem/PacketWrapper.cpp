@@ -6,8 +6,10 @@ INT setProcAuthorization();
 
 HMODULE PacketLib;
 BOOL StillToInit = TRUE;
+BOOL OemActive = FALSE;
 extern HINSTANCE DllHandle;
 extern char LastWoemError[];
+extern BOOL InitError;
 
 //---------------------------------------------------------------------------
 // PUBLIC PACKET.DLL API WRAPPERS - HANDLERS
@@ -151,17 +153,24 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 	//
 	// Check if we are the first instance and Init everything accordingly
 	//
-	if(StillToInit)
+	if(OemActive)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(StillToInit)
 		{
-			return NULL;
+			if(!WoemEnterDll(DllHandle))
+			{
+				return NULL;
+			}
+			
+			StillToInit = FALSE;
 		}
-
-		StillToInit = FALSE;
+		
+		return PacketOpenAdapterH(AdapterName);
 	}
-
-	return PacketOpenAdapterH(AdapterName);
+	else
+	{
+		return NULL;
+	}
 }
 
 VOID PacketCloseAdapter(LPADAPTER lpAdapter)
@@ -627,22 +636,28 @@ BOOLEAN PacketSetHwFilter(LPADAPTER  AdapterObject,ULONG Filter)
 BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 {
 	TraceEnter("PacketGetAdapterNames");
-
-	//
-	// Check if we are the first instance and Init everything accordingly
-	//
-	if(StillToInit)
+	
+	if(OemActive)
 	{
-		if(!WoemEnterDll(DllHandle))
+		//
+		// Check if we are the first instance and Init everything accordingly
+		//
+		if(StillToInit)
 		{
-			*BufferSize = 0;
-			return FALSE;
+			if(!WoemEnterDll(DllHandle))
+			{
+				*BufferSize = 0;
+				return FALSE;
+			}
+			
+			StillToInit = FALSE;
 		}
-
-		StillToInit = FALSE;
+		return PacketGetAdapterNamesH(pStr,  BufferSize);
 	}
-
-	return PacketGetAdapterNamesH(pStr,  BufferSize);
+	else
+	{
+		return FALSE;
+	}
 }
 
 BOOLEAN PacketGetNetInfoEx(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntries)
@@ -688,6 +703,25 @@ BOOLEAN PacketGetNetType(LPADAPTER AdapterObject, NetType *type)
 //---------------------------------------------------------------------------
 // ADDITIONAL EXPORTS NOT PRESENT IN STANDARD PACKET.DLL
 //---------------------------------------------------------------------------
+
+// This public function enables winpcap oem
+LONG PacketStartOem(PCHAR* ErrorString)
+{
+	if(InitError)
+	{
+		if(ErrorString)
+		{
+			*ErrorString = LastWoemError;
+		}
+
+		return 0;
+	}
+
+	OemActive = TRUE;
+	return 1;
+}
+
+// Return the last WinPcap OEM error
 PCHAR PacketGetLastOemError()
 {
 	return LastWoemError;
