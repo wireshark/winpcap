@@ -1,6 +1,15 @@
 #include <windows.h>
 #include <stdio.h>
 
+//
+// The following include files contain the drivers and dlls that are converted
+// during the custom build step.
+//
+//#include "Packet2k.h"
+//#include "Packetnt.h"
+//#include "Npf2k.h"
+//#include "NpfNt.h"
+
 char* ResourceNames[] =
 {
 	"packet2k.dll",
