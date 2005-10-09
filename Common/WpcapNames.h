@@ -32,8 +32,8 @@
 //
 // Original names
 //
-#define NPF_DRIVER_NAME							"WTB"
-#define NPF_DRIVER_NAME_WIDECHAR				L"WTB"
+#define NPF_DRIVER_NAME							"WOM"
+#define NPF_DRIVER_NAME_WIDECHAR				L"WOM"
 
 //
 // Derived strings
