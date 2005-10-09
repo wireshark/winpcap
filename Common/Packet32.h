@@ -424,6 +424,7 @@ BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync);
 BOOL PacketStopDriver();
 VOID PacketCloseAdapter(LPADAPTER lpAdapter);
 PCHAR PacketGetLastOemError();
+LONG PacketStartOem(PVOID);
 
 #ifdef __cplusplus
 }
