@@ -226,6 +226,7 @@ PVOID QueryWinpcapRegistryKey(WCHAR *SubKeyName,
 							  PVOID DefaultVal,
 							  UINT DefaultLen)
 {
+#ifdef WPCAP_OEM
 	DWORD Type;
 	DWORD Len = sizeof(WinPcapKeyBuffer) - 2;
 	LONG QveRes;
@@ -260,10 +261,12 @@ PVOID QueryWinpcapRegistryKey(WCHAR *SubKeyName,
 		}
 	}
 		
+	ODS("QueryWinpcapRegistryKey, failure\n");
+
+#endif // WPCAP_OEM
+
 	if(ResultLen)
 		*ResultLen = DefaultLen;
-
-	ODS("QueryWinpcapRegistryKey, failure\n");
 
 	return DefaultVal;
 }
