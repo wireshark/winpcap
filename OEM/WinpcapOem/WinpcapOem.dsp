@@ -59,7 +59,7 @@ LINK32=link.exe
 # ADD LINK32 npptools.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386 /out:"Release/Packet.dll" /libpath:"..\..\WinpcapOem\Release\\"
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
-PostBuild_Cmds=postbuild.bat
+PostBuild_Cmds=postbuild_release.bat
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "WinpcapOem - Win32 Debug"
