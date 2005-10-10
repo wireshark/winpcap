@@ -705,8 +705,10 @@ BOOLEAN PacketGetNetType(LPADAPTER AdapterObject, NetType *type)
 //---------------------------------------------------------------------------
 
 // This public function enables winpcap oem
-LONG PacketStartOem(PCHAR* ErrorString)
+LONG PacketStartOem(PVOID Param)
 {
+	PCHAR* ErrorString = (PCHAR*)Param;
+
 	if(InitError)
 	{
 		if(ErrorString)
