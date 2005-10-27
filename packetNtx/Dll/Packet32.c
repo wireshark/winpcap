@@ -108,8 +108,10 @@ BOOL APIENTRY DllMain(HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 
 		ODS("************Packet32: DllMain************\n");
 		
-#ifdef WPCAP_OEM 
+#ifdef WPCAP_OEM
+#ifndef _WINNT4
 		LoadNdisNpp(Reason);
+#endif // _WINNT4
 #endif // WPCAP_OEM 
 
 		//
