@@ -32,8 +32,8 @@
 //
 // Original names
 //
-#define NPF_DRIVER_NAME							"WOM"
-#define NPF_DRIVER_NAME_WIDECHAR				L"WOM"
+#define NPF_DRIVER_NAME							"NPF"
+#define NPF_DRIVER_NAME_WIDECHAR				L"NPF"
 
 //
 // Derived strings
@@ -63,6 +63,8 @@
 //
 // WinPcap Global Registry Key
 //
-#define WINPCAP_GLOBAL_KEY "SOFTWARE\\CaceWinPcap"
+#define WINPCAP_GLOBAL_KEY "SOFTWARE\\CaceTech\\WinPcapOem"
 #define WINPCAP_GLOBAL_KEY_WIDECHAR L"SOFTWARE\\CaceWinPcap"
+#define WINPCAP_INSTANCE_KEY WINPCAP_GLOBAL_KEY "\\" NPF_DRIVER_NAME
+#define WINPCAP_INSTANCE_KEY_WIDECHAR WINPCAP_GLOBAL_KEY_WIDECHAR L"\\" NPF_DRIVER_NAME_WIDECHAR
 #define MAX_WINPCAP_KEY_CHARS 512

@@ -118,7 +118,7 @@ BOOL APIENTRY DllMain(HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 		// Open, if present, the WinPcap registry key
 		//
 		RegOpenKeyEx(HKEY_LOCAL_MACHINE, 
-			WINPCAP_GLOBAL_KEY_WIDECHAR,
+			WINPCAP_INSTANCE_KEY_WIDECHAR,
 			0,
 			KEY_ALL_ACCESS,
 			&WinpcapKey);

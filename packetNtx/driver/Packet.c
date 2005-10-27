@@ -65,7 +65,7 @@ NDIS_STRING tcpLinkageKeyName = NDIS_STRING_CONST("\\Registry\\Machine\\System"
 NDIS_STRING AdapterListKey = NDIS_STRING_CONST("\\Registry\\Machine\\System"
 								L"\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}");
 NDIS_STRING bindValueName = NDIS_STRING_CONST("Bind");
-NDIS_STRING WinpcapGlobalKey = NDIS_STRING_CONST("\\Registry\\Machine\\" WINPCAP_GLOBAL_KEY_WIDECHAR);
+NDIS_STRING WinpcapKey = NDIS_STRING_CONST("\\Registry\\Machine\\" WINPCAP_INSTANCE_KEY_WIDECHAR);
 
 
 /// Global variable that points to the names of the bound adapters
@@ -1593,7 +1593,7 @@ VOID NPF_QueryWinpcapRegistryKey(PWSTR SubKeyToQuery,
 	// Init Attributes
 	//
 	InitializeObjectAttributes(&objAttrs,
-		&WinpcapGlobalKey,
+		&WinpcapKey,
 		OBJ_CASE_INSENSITIVE, 
 		NULL, 
 		NULL);
