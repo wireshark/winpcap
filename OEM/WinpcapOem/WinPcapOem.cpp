@@ -933,7 +933,7 @@ BOOL WoemCreateNameRegistryEntries()
 	// if yes retrieve the id of the last loaded instance
 	//
 	if(RegOpenKeyEx(HKEY_LOCAL_MACHINE, 
-		WINPCAP_GLOBAL_KEY,
+		WINPCAP_INSTANCE_KEY,
 		0,
 		KEY_ALL_ACCESS,
 		&WinpcapKey) == ERROR_SUCCESS)
@@ -958,13 +958,13 @@ BOOL WoemCreateNameRegistryEntries()
 	//
 	// Do a cleanup, just to be sure
 	//
-	RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_GLOBAL_KEY);
+	RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 
 	//
 	// Create the global WinPcap key
 	//
 	if(RegCreateKeyEx(HKEY_LOCAL_MACHINE,
-		WINPCAP_GLOBAL_KEY,
+		WINPCAP_INSTANCE_KEY,
 		0,
 		NULL,
 		REG_OPTION_NON_VOLATILE,
@@ -1376,7 +1376,7 @@ BOOL WoemCreateBinaryNames()
 	// if yes retrieve the id of the last loaded instance
 	//
 	if(RegOpenKeyEx(HKEY_LOCAL_MACHINE, 
-		WINPCAP_GLOBAL_KEY,
+		WINPCAP_INSTANCE_KEY,
 		0,
 		KEY_ALL_ACCESS,
 		&WinpcapKey) == ERROR_SUCCESS)
@@ -1446,7 +1446,7 @@ BOOL WoemCreateBinaryNames()
 ////////////////////////////////////////////////////////////////////
 BOOL WoemDeleteNameRegistryEntries()
 {
-	if(RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_GLOBAL_KEY) != ERROR_SUCCESS)
+	if(RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY) != ERROR_SUCCESS)
 		return FALSE;
 	else
 		return TRUE;

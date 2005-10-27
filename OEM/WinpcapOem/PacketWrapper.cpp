@@ -6,7 +6,7 @@ INT setProcAuthorization();
 
 HMODULE PacketLib;
 BOOL StillToInit = TRUE;
-BOOL OemActive = FALSE;
+BOOL OemActive = FALSE;	
 extern HINSTANCE DllHandle;
 extern char LastWoemError[];
 extern BOOL InitError;
