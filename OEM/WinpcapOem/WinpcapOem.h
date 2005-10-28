@@ -1,3 +1,8 @@
+#ifndef __WINPCAP_OEM_H_E4C69242_4757_4139_A7E4_CA06F37A5B73
+#define __WINPCAP_OEM_H_E4C69242_4757_4139_A7E4_CA06F37A5B73
+
+
+
 ////////////////////////////////////////////////////////////////////
 // Constants and names
 ////////////////////////////////////////////////////////////////////
@@ -33,9 +38,17 @@ void RegisterPacketUnloadHandler(void* Handler);
 #endif // STATIC_LIB
 
 ////////////////////////////////////////////////////////////////////
+// Global variables
+///////////////////////////////////////////////////////////////////
+extern HINSTANCE g_DllHandle;
+extern char g_LastWoemError[];
+extern BOOL g_InitError;
+
+////////////////////////////////////////////////////////////////////
 // Resources handling prototypes
 ////////////////////////////////////////////////////////////////////
 BOOL WoemSaveResourceToDisk(HINSTANCE hInst, int ResID, char* FileName);
+BOOL WoemGetResource(HINSTANCE hInst, int ResID, LPVOID * lpResMem, LPDWORD dwResSize);
 
 ////////////////////////////////////////////////////////////////////
 // Registry and names-related functions
@@ -47,24 +60,20 @@ BOOL WoemCreateBinaryNames();
 // Debug definitions
 ////////////////////////////////////////////////////////////////////
 
-//#define DEBUGTRACE
-//#define TRACE_OUTPUTDEBUGSTRING
+#define DEBUGTRACE
+#define TRACE_OUTPUTDEBUGSTRING
 
 #ifdef DEBUGTRACE
 #define TracePrint printf
-#define WoemReportError() {MessageBox(NULL, LastWoemError, "WinPcap OEM error", MB_OK); InitError = TRUE;}
+#define WoemReportError() do{MessageBox(NULL, g_LastWoemError, "WinPcap OEM error", MB_OK); g_InitError = TRUE;} while(0)
 #else
 #define TracePrint
-#define WoemReportError() {InitError = TRUE;}
+#define WoemReportError() do{g_InitError = TRUE;}while(0)
 #endif // DEBUGTRACE
 
 #ifdef TRACE_MBOXES
 #define TraceEnter(X) MessageBox(NULL, X, "WinPcap OEM trace", MB_OK)
-#else
-#define TraceEnter(X)
-#endif
-
-#ifdef TRACE_OUTPUTDEBUGSTRING
+#elif defined TRACE_OUTPUTDEBUGSTRING
 #define TraceEnter(X) OutputDebugString(X)
 #else
 #define TraceEnter(X)
@@ -73,3 +82,6 @@ BOOL WoemCreateBinaryNames();
 ////////////////////////////////////////////////////////////////////
 // Error codes
 ////////////////////////////////////////////////////////////////////
+
+
+#endif //__WINPCAP_OEM_H_E4C69242_4757_4139_A7E4_CA06F37A5B73
