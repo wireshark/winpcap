@@ -7,136 +7,245 @@
 #include "resource.h"
 #include "Crypto.h"
 
+#include "WinPcapOem.h"
+#include "WoemDebug.h"
+
 #define BUF_LEN 256
 #define DUMP_LEN 1024*10
-#define MSG_BUF_LEN 255
 
-BOOL isProcAuthorized = FALSE;
+extern HINSTANCE g_DllHandle;
 
-extern HINSTANCE DllHandle;
+static BOOL GetFileCredential(LPCSTR lpFilename, LPBYTE credential, DWORD credentialLength, char* errString);
+static INT IsCredentialValid(LPBYTE credential, DWORD credentialLength);
+static BOOL GetFileDump(LPCSTR lpFilename, LPBYTE dump, INT *pMaxDumpLen);
 
-INT getFileCredential(LPCSTR lpFilename, LPBYTE credential);
-INT isCredentialValid(LPBYTE Credential);
-INT getFileDump(LPCSTR lpFilename, LPBYTE dump, INT maxDumpLen);
+/*!
+	\brief verify if the current process is authorized to use WOEM
 
+	\param errString A caller allocated string (with a minimum size of
+	\ref PACKET_ERRSTR_SIZE bytes), that will return a meaningful error
+	message in case the function returns WOEM_PROC_AUTHORIZATION_FAILURE.
 
-VOID ShowMessage(LPCSTR lpCaption, LPCSTR lpText) {
-	CHAR buf[MSG_BUF_LEN+1];
-	_snprintf(buf, MSG_BUF_LEN, "%s: %s", lpCaption, lpText);
-	OutputDebugString(buf);
-}
-
-INT Error(LPCSTR lpCaption, LPCSTR lpText, DWORD errorCode) {
-	CHAR buf[MSG_BUF_LEN+1];
-	_snprintf(buf, MSG_BUF_LEN, "%s (errorcode: %d)", lpText, errorCode);
-	ShowMessage(lpCaption, lpText);
-	return errorCode;
-}
-
-
-// set the authorization flag for the current process
-INT setProcAuthorization() {
-	CHAR filename[BUF_LEN];
+	\return Possible return values are
+	- \ref WOEM_PROC_AUTHORIZATION_FAILURE An error occurred verifying the 
+	authoerization. A more detailed error is detailed in errString
+	- \ref WOEM_PROC_AUTHORIZATION_OK	The current process is authorized
+	- \ref WOEM_PROC_AUTHORIZATION_DENIED The current process is not authorized
+*/
+INT WoemGetCurrentProcessAuthorization(char *errString) 
+{
+	CHAR filename[MAX_PATH];
 	HMODULE procHandle;
 	BYTE credential[CREDENTIAL_LEN];
+	INT result;
 
-	ShowMessage("Security.setProcAuthorization", "--> START");
+	TRACE_ENTER("WoemGetCurrentProcessAuthorization");
 	
-	// get the handle of the current process (NULL for the current process)
+	//handle of the process, NULL means "this process"
 	procHandle = NULL;
 
 	// get the name of the process image file
-	if ( GetModuleFileName(procHandle, filename, BUF_LEN) == FALSE ) {
-		return Error("Security.setProcAuthorization", "Error in GetModuleFileName!", GetLastError());
+	if ( GetModuleFileName(procHandle, filename, MAX_PATH) == FALSE ) 
+	{
+		_snprintf(errString, PACKET_ERRSTR_SIZE - 1,"WoemGetCurrentProcessAuthorization, Error retrieving the module filename with GetModuleFileName [%d].", GetLastError());
+		errString[PACKET_ERRSTR_SIZE - 1] = 0;
+
+		TRACE_MESSAGE(errString);
+
+		TRACE_EXIT("WoemGetCurrentProcessAuthorization");
+		return WOEM_PROC_AUTHORIZATION_FAILURE;
 	}
 
 	// get the credential of the process
-	getFileCredential(filename, credential);
+	if (GetFileCredential(filename, credential, sizeof(credential), errString) == FALSE)
+	{
+		TRACE_EXIT("WoemGetCurrentProcessAuthorization");
+		return WOEM_PROC_AUTHORIZATION_FAILURE;
+	}
 
 	// set the authorization flag
-	isCredentialValid(credential);
+	result = IsCredentialValid(credential, sizeof(credential));
 
-	ShowMessage("Security.setProcAuthorization", "--> END");
+	if (result == WOEM_PROC_AUTHORIZATION_FAILURE)
+	{
+		_snprintf(errString, PACKET_ERRSTR_SIZE - 1,"WoemGetCurrentProcessAuthorization, Error verifying the credentials of the current process");
+		errString[PACKET_ERRSTR_SIZE - 1] = 0;
+	}
 
-	return TRUE;
+	TRACE_EXIT("WoemGetCurrentProcessAuthorization");
+
+	return result;
 }
 
 // get file credential
-INT getFileCredential(LPCSTR lpFilename, LPBYTE credential) {
-	CHAR buf[MSG_BUF_LEN+1];
+BOOL GetFileCredential(LPCSTR lpFilename, LPBYTE credential, DWORD credentialLength, char* errString) 
+{
 	BYTE dump[DUMP_LEN];
+	INT dumpSize;
 
-	_snprintf(buf, MSG_BUF_LEN, "Getting the dump of the file %s...", lpFilename);
-	ShowMessage("Security.getFileCredential", buf);
+	TRACE_ENTER("GetFileCredential");
+	TRACE_MESSAGE("Getting the dump of the file %s...", lpFilename);
 
 	// get the dump of the file
-	if ( getFileDump(lpFilename, dump, DUMP_LEN) == FALSE)
-		return Error("Security.getFileCredential", "Error in getFileDump!", GetLastError());
+	dumpSize = sizeof(dump);
+	
+	if (GetFileDump(lpFilename, dump, &dumpSize) == FALSE)
+	{
+		_snprintf(errString, PACKET_ERRSTR_SIZE - 1,"GetFileCredential, error analyzing the process file.");
+		errString[PACKET_ERRSTR_SIZE - 1] = 0;
+	
+		TRACE_MESSAGE("GetFileCredential, error getting the file dump.");
+		TRACE_EXIT("GetFileCredential");
+		return FALSE;
+	}
 
-	ShowMessage("Security.getFileCredential", "Getting the hash of the dump...");
+	TRACE_MESSAGE("GetFileCredential, Getting the hash of the dump...");
+
 	// get the hash of the dump
-	if ( getHash(dump, DUMP_LEN, credential) == FALSE )
-		return Error("Security.getFileCredential", "Error in getHash!", GetLastError());
+	if ( GetHash(dump, dumpSize, credential, credentialLength) == FALSE )
+	{
+		_snprintf(errString, PACKET_ERRSTR_SIZE - 1,"GetFileCredential, error analyzing the process file.");
+		errString[PACKET_ERRSTR_SIZE - 1] = 0;
+	
+		TRACE_MESSAGE("GetFileCredential, error in getHash!");
+		TRACE_EXIT("GetFileCredential");
+		return FALSE;
+	}
+	
+	TRACE_MESSAGE("GetFileCredential, Got the hash %.08x... of the file %s!", *((DWORD*)credential), lpFilename);
 
-	_snprintf(buf, MSG_BUF_LEN, "Got the hash %.08x... of the file %s!", *((DWORD*)credential), lpFilename);
-	ShowMessage("Security.getFileCredential", buf);
-
+	TRACE_EXIT("GetFileCredential");
 	return TRUE;
 }
 
-// check the credential of the file
-INT isCredentialValid(LPBYTE credential) {
-	CHAR buf[MSG_BUF_LEN+1];
+/*!
+	\brief Verify that the given credential is valid, i.e. it's in the list
+	of valid ones in the resource file.
+
+	\param credential Caller allocated buffer containing the credential to be verified
+	\param credentialLength Length of the credential to be verified
+
+	\return Possible return values are
+	- \ref WOEM_PROC_AUTHORIZATION_FAILURE An error occurred verifying the 
+	authoerization.
+	- \ref WOEM_PROC_AUTHORIZATION_OK	The credential is authorized
+	- \ref WOEM_PROC_AUTHORIZATION_DENIED The credential is not authorized
+*/
+INT IsCredentialValid(LPBYTE credential, DWORD credentialLength) 
+{
 	LPBYTE lpResMem;
 	DWORD dwResSize;
-	DWORD dwResIndex=0;
+	
+	DWORD numCredentials;
+	DWORD credentialIndex;
+
+	TRACE_ENTER("IsCredentialValid");
+
+	if (credentialLength != CREDENTIAL_LEN)
+	{
+		TRACE_MESSAGE("Security.IsCredentialValid, the credential does not have the right length!");
+		TRACE_EXIT("IsCredentialValid");
+		
+		return WOEM_PROC_AUTHORIZATION_FAILURE;
+	}
 
 	// get the stored credential of the file
-	if ( WoemGetResource(DllHandle, HSH_AUTH_PROC, (void**)&lpResMem, &dwResSize) == FALSE )
-		return Error("Security.isCredentialValid", "Error in WoemGetResource!", GetLastError());
+	if (WoemGetResource(g_DllHandle, HSH_AUTH_PROC, (void**)&lpResMem, &dwResSize) == FALSE )
+	{
+		TRACE_MESSAGE("Security.IsCredentialValid, Error in WoemGetResource [%.08x]!\n", GetLastError());
+		TRACE_EXIT("IsCredentialValid");
+		
+		return WOEM_PROC_AUTHORIZATION_FAILURE;
+	}
 
-	dwResSize=dwResSize/CREDENTIAL_LEN;
+	numCredentials = dwResSize/CREDENTIAL_LEN;
 
-	_snprintf(buf, MSG_BUF_LEN, "Read %d credentials (%d bytes) from resources!", dwResSize, dwResSize*CREDENTIAL_LEN);
-	ShowMessage("Security.isCredentialValid", buf);
+	TRACE_MESSAGE("Read %d credentials (%d bytes) from resources!", numCredentials, dwResSize);
 
 	// compare the two credentials
-	for (dwResIndex=0; dwResIndex < dwResSize; dwResIndex++) {
-		_snprintf(buf, MSG_BUF_LEN, "Analyzing credential #%d (%.08x)...", dwResIndex+1, *((DWORD*)(lpResMem+dwResIndex*CREDENTIAL_LEN)));
-		ShowMessage("Security.isCredentialValid", buf);
-		if ( memcmp(credential, lpResMem+(dwResIndex*CREDENTIAL_LEN), CREDENTIAL_LEN) ==0 ) {
-			isProcAuthorized=TRUE;
-			ShowMessage("Security.isCredentialValid", "Found equal credential!");
-			break;
+	for (credentialIndex = 0; credentialIndex < numCredentials; credentialIndex++) 
+	{
+		TRACE_MESSAGE("IsCredentialValie, Analyzing credential #%d (%.08x)...", credentialIndex, *((DWORD*)(lpResMem+credentialIndex*CREDENTIAL_LEN)));
+		
+		if ( memcmp(credential, lpResMem+(credentialIndex * CREDENTIAL_LEN), CREDENTIAL_LEN) == 0 ) 
+		{
+			TRACE_MESSAGE("Security.isCredentialValid, Found equal credential!");
+			
+			TRACE_EXIT("IsCredentialValid");
+			return WOEM_PROC_AUTHORIZATION_OK;
 		}
 	}
 
-	return TRUE;
+	TRACE_EXIT("IsCredentialValid");
+	return WOEM_PROC_AUTHORIZATION_DENIED;
 }
 
 // get the dump of the file
-INT getFileDump(LPCSTR lpFilename, LPBYTE dump, INT maxDumpLen) {
-	CHAR buf[MSG_BUF_LEN+1];
+BOOL GetFileDump(LPCSTR lpFilename, LPBYTE dump, INT *pMaxDumpLen) 
+{
 	FILE * fileHandle;
 	INT byteRead;
+	BOOL fileError;
 
-	_snprintf(buf, MSG_BUF_LEN, "Opening the file %s...", lpFilename);
-	ShowMessage("Security.getFileDump", buf);
+	TRACE_ENTER("GetFileDump");
+
+	if (*pMaxDumpLen <= 0)
+	{
+		TRACE_MESSAGE("GetFileDump, MacDumpLen <= 0");
+		TRACE_EXIT("GetFileDump");
+
+		return FALSE;
+	}
+	
+	TRACE_MESSAGE("Opening the file %s...", lpFilename);
 
 	if ( (fileHandle = fopen(lpFilename, "rb")) == FALSE)
-		return Error("Security.getFileDump", "Error in _open!", GetLastError());
+	{
+		TRACE_MESSAGE("GetFileDump, Error in fopen [%.08x]!", GetLastError());
+		TRACE_EXIT("GetFileDump");
 
-	_snprintf(buf, MSG_BUF_LEN, "Reading the file %s...", lpFilename);
-	ShowMessage("Security.getFileDump", buf);
+		return FALSE;
+	}
 
-	byteRead=fread(dump, 1, maxDumpLen, fileHandle);
+	byteRead = 0;
+	fileError = FALSE;
 
-	_snprintf(buf, MSG_BUF_LEN, "Read %d bytes from the file...", byteRead);
-	ShowMessage("Security.getFileDump", buf);
+	TRACE_MESSAGE("Reading the file %s...", lpFilename);
 
-	if ( byteRead < maxDumpLen )
-		if ( feof(fileHandle) == FALSE )
-			return Error("Security.getFileDump", "Error in ReadFile!", GetLastError());
+	do
+	{
+		INT localBytesRead = fread(dump + byteRead, 1, *pMaxDumpLen - byteRead, fileHandle);
+		byteRead += localBytesRead;
+
+		if (localBytesRead == 0)
+		{
+			if (feof(fileHandle))
+				fileError = FALSE;
+			else
+				fileError = TRUE;
+
+			break;
+		}
+		
+	}
+	while (byteRead < *pMaxDumpLen);
+
+	fclose(fileHandle);
+
+	TRACE_MESSAGE("GetFileDump, Read %d bytes from the file...", byteRead);
+
+	if (fileError)
+	{
+		TRACE_MESSAGE("Error reading the bytes from the file.");
+
+		TRACE_EXIT("GetFileDump");
+
+		return FALSE;
+	}
+
+	*pMaxDumpLen = byteRead;
+
+	TRACE_EXIT("GetFileDump");
 
 	return TRUE;
 }
