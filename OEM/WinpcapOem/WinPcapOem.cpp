@@ -9,42 +9,43 @@
 #include "Security.h"
 #endif
 
-HANDLE hMx = NULL, hSp = NULL;
-char SysDir[MAX_PATH + 16];
-char SemName[MAX_OBJNAME_LEN];
-char DllFullPath[MAX_PATH + 16];
-char DriverFullPath[MAX_PATH + 16];
-char NpfDrNameWhId[32];
-WCHAR NpfDrNameWhIdW[32];
-HINSTANCE DllHandle = NULL;
-char LastWoemError[PACKET_ERRSTR_SIZE];
-BOOL InitError = FALSE;
+HANDLE g_hGlobalMutex = NULL;
+HANDLE g_hGlobalSemaphore = NULL;
+char g_SysDir[MAX_PATH + 16];
+char g_GlobalSemaphoreName[MAX_OBJNAME_LEN];
+char g_DllFullPath[MAX_PATH + 16];
+char g_DriverFullPath[MAX_PATH + 16];
+char g_NpfDriverNameId[32];
+WCHAR g_NpfDriverNameIdW[32];
+HINSTANCE g_DllHandle = NULL;
+char g_LastWoemError[PACKET_ERRSTR_SIZE];
+BOOL g_InitError = FALSE;
 extern BOOL OemActive;
+BOOL g_IsProcAuthorized = FALSE;
 
 ////////////////////////////////////////////////////////////////////
 // DLL Entry point
 ////////////////////////////////////////////////////////////////////
 BOOL APIENTRY DllMain(HINSTANCE Dllh, DWORD Reason, LPVOID lpReserved)
 {
-    switch(Reason)
+	switch(Reason)
     {
-
+		
 	case DLL_PROCESS_ATTACH:
-
-		DllHandle = Dllh;
-
+		
+		g_DllHandle = Dllh;
+		
 #ifdef SECURITY
 		//
 		// the version with security enabled doesn't need to be activated with PacketStartOem()
 		//
 		OemActive = TRUE;
-		setProcAuthorization();
 #endif
-
+		
 		break;
 		
 	case DLL_PROCESS_DETACH:
-
+		
 		WoemLeaveDll();
 		
 		break;
@@ -102,32 +103,56 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	char SvcBin[MAX_PATH + 16];
 	OSVERSIONINFO osVer;
     HRESULT hr;
+#ifdef SECURITY
+	DWORD Result;
+#endif 
 
 #ifdef SECURITY
-	if ( !isProcAuthorized ) {
-		MessageBox(NULL, "This version of WinPcap OEM can be only run in conjunction with CACE Technologies Network Toolkit. This program is not recognized as part of The Network Toolkit, and therefore WinPcap OEM will not work.", "Error", MB_ICONERROR);
-		return FALSE;
-	}
+	if (!g_IsProcAuthorized)
+	{
+	//
+		// the version with security enabled doesn't need to be activated with PacketStartOem()
+		//
+		OemActive = TRUE;
+		Result = WoemGetCurrentProcessAuthorization(g_LastWoemError);
+		
+		if (Result == WOEM_PROC_AUTHORIZATION_FAILURE)
+		{
+			g_InitError = TRUE;
+			g_IsProcAuthorized = FALSE;
+		}
+		else
+			if (Result == WOEM_PROC_AUTHORIZATION_OK)
+			{
+				g_IsProcAuthorized = TRUE;
+			}
+			else
+			{
+				g_IsProcAuthorized = FALSE;
+				MessageBox(NULL, "This version of WinPcap OEM can be only run in conjunction with CACE Technologies Network Toolkit. This program is not recognized as part of The Network Toolkit, and therefore WinPcap OEM will not work.", "Error", MB_ICONERROR);
+				return FALSE;
+			}
+	}		
 #endif
 
 #ifndef STATIC_LIB
 	//
 	// This should REALLY never happen
 	//
-	if(!DllHandle)
+	if(!g_DllHandle)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "NULL DLL Handle");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "NULL DLL Handle");
 		WoemReportError();
 		return FALSE;
 	}
 #endif
 
-	if(hMx)
+	if(g_hGlobalMutex)
 	{
 		//
 		// This should never happen, but better to be sure...
 		//
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Double initialization");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Double initialization");
 		WoemReportError();
 		return FALSE;
 	}
@@ -146,15 +171,15 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	// Get the MUTEX
 	//
 	_snprintf(ObjName, MAX_OBJNAME_LEN, MUTEX_NAME);
-	hMx = CreateMutex(&sa, FALSE, getObjectName(ObjName, MAX_OBJNAME_LEN));
-	if (hMx == NULL)
+	g_hGlobalMutex = CreateMutex(&sa, FALSE, getObjectName(ObjName, MAX_OBJNAME_LEN));
+	if (g_hGlobalMutex == NULL)
 	{
 		if (GetLastError()==5) 
 		{
-			_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "not enough priviles to start the packet driver");
+			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "not enough priviles to start the packet driver");
 		}
 		
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create the global mutex");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create the global mutex");
 
 		WoemReportError();
 
@@ -168,30 +193,30 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	
 	do 
 	{
-		DWORD result=WaitForSingleObject(hMx,10000);
+		DWORD result=WaitForSingleObject(g_hGlobalMutex,10000);
 		switch(result) 
 		{
 		case WAIT_FAILED:
 			
-			ReleaseMutex(hMx);
+			ReleaseMutex(g_hGlobalMutex);
 			
-			if(hMx!=0)
+			if(g_hGlobalMutex!=0)
 			{
-				CloseHandle(hMx);
-				hMx = NULL;
+				CloseHandle(g_hGlobalMutex);
+				g_hGlobalMutex = NULL;
 				
 			}
-			if (hSp!=0)
+			if (g_hGlobalSemaphore!=0)
 			{
-				CloseHandle(hSp);
-				hSp = NULL;
+				CloseHandle(g_hGlobalSemaphore);
+				g_hGlobalSemaphore = NULL;
 			}
 			
 			return FALSE;
 			
 		case WAIT_TIMEOUT:
 			
-			_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Timeout on the global mutex");
+			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Timeout on the global mutex");
 			WoemReportError();
 			
 			break;
@@ -215,33 +240,33 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	//
 	// Get the semaphore
 	//
-	_snprintf(SemName, MAX_OBJNAME_LEN, SEMAPHORE_NAME);
-	hSp = CreateSemaphore(&sa, 0, MAX_VALUE_SEMAPHORE, getObjectName(SemName, MAX_OBJNAME_LEN));
-	if (hSp == NULL) 
+	_snprintf(g_GlobalSemaphoreName, MAX_OBJNAME_LEN, SEMAPHORE_NAME);
+	g_hGlobalSemaphore = CreateSemaphore(&sa, 0, MAX_VALUE_SEMAPHORE, getObjectName(g_GlobalSemaphoreName, MAX_OBJNAME_LEN));
+	if (g_hGlobalSemaphore == NULL) 
 	{
 		if (GetLastError()==5) 
 		{
-			_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "not enough priviles to start the packet driver");
+			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "not enough priviles to start the packet driver");
 		}
 		else
 		{			
-			_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create the global semaphore");
+			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create the global semaphore");
 		}
 		
-		ReleaseMutex(hMx);
+		ReleaseMutex(g_hGlobalMutex);
 		
 		WoemReportError();
 
-		if(hMx!=0)
+		if(g_hGlobalMutex!=0)
 		{
-			CloseHandle(hMx);
-			hMx = NULL;
+			CloseHandle(g_hGlobalMutex);
+			g_hGlobalMutex = NULL;
 			
 		}
-		if (hSp!=0)
+		if (g_hGlobalSemaphore!=0)
 		{
-			CloseHandle(hSp);
-			hSp = NULL;
+			CloseHandle(g_hGlobalSemaphore);
+			g_hGlobalSemaphore = NULL;
 		}
 		
 		return FALSE;
@@ -250,24 +275,24 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	//
 	// Check the value of the semaphore
 	//
-	if(ReleaseSemaphore(hSp, 1, &lold)==FALSE)
+	if(ReleaseSemaphore(g_hGlobalSemaphore, 1, &lold)==FALSE)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to release the semaphore");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to release the semaphore");
 		
-		ReleaseMutex(hMx);
+		ReleaseMutex(g_hGlobalMutex);
 		
 		WoemReportError();
 
-		if(hMx!=0)
+		if(g_hGlobalMutex!=0)
 		{
-			CloseHandle(hMx);
-			hMx = NULL;
+			CloseHandle(g_hGlobalMutex);
+			g_hGlobalMutex = NULL;
 			
 		}
-		if (hSp!=0)
+		if (g_hGlobalSemaphore!=0)
 		{
-			CloseHandle(hSp);
-			hSp = NULL;
+			CloseHandle(g_hGlobalSemaphore);
+			g_hGlobalSemaphore = NULL;
 		}
 		
 		return FALSE;
@@ -287,22 +312,22 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		
 		if (GetVersionEx(&osVer)==0) 
 		{
-			_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to determine OS version");
+			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to determine OS version");
 	
-			ReleaseMutex(hMx);
+			ReleaseMutex(g_hGlobalMutex);
 			
 			WoemReportError();
 	
-			if(hMx!=0)
+			if(g_hGlobalMutex!=0)
 			{
-				CloseHandle(hMx);
-				hMx = NULL;
+				CloseHandle(g_hGlobalMutex);
+				g_hGlobalMutex = NULL;
 
 			}
-			if (hSp!=0)
+			if (g_hGlobalSemaphore!=0)
 			{
-				CloseHandle(hSp);
-				hSp = NULL;
+				CloseHandle(g_hGlobalSemaphore);
+				g_hGlobalSemaphore = NULL;
 			}
 			
 			return FALSE;
@@ -313,22 +338,22 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		//
 		if(!WoemCreateNameRegistryEntries())
 		{
-			_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create registry entries. Administrator provileges are required for this operation");
+			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create registry entries. Administrator provileges are required for this operation");
 
-			ReleaseMutex(hMx);
+			ReleaseMutex(g_hGlobalMutex);
 			
 			WoemReportError();
 
-			if(hMx!=0)
+			if(g_hGlobalMutex!=0)
 			{
-				CloseHandle(hMx);
-				hMx = NULL;
+				CloseHandle(g_hGlobalMutex);
+				g_hGlobalMutex = NULL;
 
 			}
-			if (hSp!=0)
+			if (g_hGlobalSemaphore!=0)
 			{
-				CloseHandle(hSp);
-				hSp = NULL;
+				CloseHandle(g_hGlobalSemaphore);
+				g_hGlobalSemaphore = NULL;
 			}
 			
 			return FALSE;
@@ -336,34 +361,34 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 
 		if(!WoemCreateBinaryNames())
 		{
-			_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create binary names");
+			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create binary names");
 	
-			ReleaseMutex(hMx);
+			ReleaseMutex(g_hGlobalMutex);
 
 			WoemReportError();
 			
-			if(hMx!=0)
+			if(g_hGlobalMutex!=0)
 			{
-				CloseHandle(hMx);
-				hMx = NULL;
+				CloseHandle(g_hGlobalMutex);
+				g_hGlobalMutex = NULL;
 
 			}
-			if (hSp!=0)
+			if (g_hGlobalSemaphore!=0)
 			{
-				CloseHandle(hSp);
-				hSp = NULL;
+				CloseHandle(g_hGlobalSemaphore);
+				g_hGlobalSemaphore = NULL;
 			}
 			
 			return FALSE;
 		}
 		
-		if(check_if_service_is_running(NpfDrNameWhId) == 0)
+		if(check_if_service_is_running(g_NpfDriverNameId) == 0)
 		{
 			//
 			// If we are here and the service is running, it's almost surely the result 
 			// of some mess. We try to cleanup.
 			//
-			delete_service(NpfDrNameWhId);
+			delete_service(g_NpfDriverNameId);
 		}
 		
 		//
@@ -378,24 +403,24 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			//
 			// Extract packet.dll to disk
 			//
-			if(!WoemSaveResourceToDisk(DllHandle, IDP_DLLNT, DllFullPath))
+			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLLNT, g_DllFullPath))
 			{
-				_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", DllFullPath);
+				_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", g_DllFullPath);
 
-				ReleaseMutex(hMx);
+				ReleaseMutex(g_hGlobalMutex);
 
 				WoemReportError();
 				
-				if(hMx!=0)
+				if(g_hGlobalMutex!=0)
 				{
-					CloseHandle(hMx);
-					hMx = NULL;
+					CloseHandle(g_hGlobalMutex);
+					g_hGlobalMutex = NULL;
 					
 				}
-				if (hSp!=0)
+				if (g_hGlobalSemaphore!=0)
 				{
-					CloseHandle(hSp);
-					hSp = NULL;
+					CloseHandle(g_hGlobalSemaphore);
+					g_hGlobalSemaphore = NULL;
 				}
 				
 				return FALSE;
@@ -404,26 +429,26 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			//
 			// Extract the driver to disk
 			//
-			if(!WoemSaveResourceToDisk(DllHandle, IDP_DRINT, DriverFullPath))
+			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DRINT, g_DriverFullPath))
 			{
-				_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", DllFullPath);
+				_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", g_DllFullPath);
 
-				_unlink(DllFullPath);
+				_unlink(g_DllFullPath);
 				
-				ReleaseMutex(hMx);
+				ReleaseMutex(g_hGlobalMutex);
 
 				WoemReportError();
 				
-				if(hMx!=0)
+				if(g_hGlobalMutex!=0)
 				{
-					CloseHandle(hMx);
-					hMx = NULL;
+					CloseHandle(g_hGlobalMutex);
+					g_hGlobalMutex = NULL;
 					
 				}
-				if (hSp!=0)
+				if (g_hGlobalSemaphore!=0)
 				{
-					CloseHandle(hSp);
-					hSp = NULL;
+					CloseHandle(g_hGlobalSemaphore);
+					g_hGlobalSemaphore = NULL;
 				}
 				
 				return FALSE;
@@ -443,7 +468,7 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 				hr = HrInstallNetMonProtocol();
 				if (hr != S_OK)
 				{
-					_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Warning: unable to load the netmon driver, ndiswan captures will not be available");
+					_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Warning: unable to load the netmon driver, ndiswan captures will not be available");
 					WoemReportError();
 				}
 			}
@@ -455,24 +480,24 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			//
 			// Extract packet.dll to disk
 			//
-			if(!WoemSaveResourceToDisk(DllHandle, IDP_DLL2K, DllFullPath))
+			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLL2K, g_DllFullPath))
 			{
-				_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", DllFullPath);
+				_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.");
 
-				ReleaseMutex(hMx);
+				ReleaseMutex(g_hGlobalMutex);
 				
 				WoemReportError();
 				
-				if(hMx!=0)
+				if(g_hGlobalMutex!=0)
 				{
-					CloseHandle(hMx);
-					hMx = NULL;
+					CloseHandle(g_hGlobalMutex);
+					g_hGlobalMutex = NULL;
 					
 				}
-				if (hSp!=0)
+				if (g_hGlobalSemaphore!=0)
 				{
-					CloseHandle(hSp);
-					hSp = NULL;
+					CloseHandle(g_hGlobalSemaphore);
+					g_hGlobalSemaphore = NULL;
 				}
 				
 				return FALSE;
@@ -481,26 +506,26 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			//
 			// Extract the driver to disk
 			//
-			if(!WoemSaveResourceToDisk(DllHandle, IDP_DRI2K, DriverFullPath))
+			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DRI2K, g_DriverFullPath))
 			{
-				_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", DllFullPath);
+				_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", g_DllFullPath);
 
-				_unlink(DllFullPath);
+				_unlink(g_DllFullPath);
 				
-				ReleaseMutex(hMx);
+				ReleaseMutex(g_hGlobalMutex);
 				
 				WoemReportError();
 
-				if(hMx!=0)
+				if(g_hGlobalMutex!=0)
 				{
-					CloseHandle(hMx);
-					hMx = NULL;
+					CloseHandle(g_hGlobalMutex);
+					g_hGlobalMutex = NULL;
 					
 				}
-				if (hSp!=0)
+				if (g_hGlobalSemaphore!=0)
 				{
-					CloseHandle(hSp);
-					hSp = NULL;
+					CloseHandle(g_hGlobalSemaphore);
+					g_hGlobalSemaphore = NULL;
 				}
 				
 				return FALSE;
@@ -515,24 +540,24 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			//
 			// Extract packet.dll to disk
 			//
-			if(!WoemSaveResourceToDisk(DllHandle, IDP_DLL2K, DllFullPath))
+			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLL2K, g_DllFullPath))
 			{
-				_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", DllFullPath);
+				_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", g_DllFullPath);
 
-				ReleaseMutex(hMx);
+				ReleaseMutex(g_hGlobalMutex);
 
 				WoemReportError();
 				
-				if(hMx!=0)
+				if(g_hGlobalMutex!=0)
 				{
-					CloseHandle(hMx);
-					hMx = NULL;
+					CloseHandle(g_hGlobalMutex);
+					g_hGlobalMutex = NULL;
 					
 				}
-				if (hSp!=0)
+				if (g_hGlobalSemaphore!=0)
 				{
-					CloseHandle(hSp);
-					hSp = NULL;
+					CloseHandle(g_hGlobalSemaphore);
+					g_hGlobalSemaphore = NULL;
 				}
 				
 				return FALSE;
@@ -541,26 +566,26 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			//
 			// Extract the driver to disk
 			//
-			if(!WoemSaveResourceToDisk(DllHandle, IDP_DRI2K, DriverFullPath))
+			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DRI2K, g_DriverFullPath))
 			{
-				_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", DllFullPath);
+				_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.");
 
-				_unlink(DllFullPath);
+				_unlink(g_DllFullPath);
 
 				WoemReportError();
 				
-				ReleaseMutex(hMx);
+				ReleaseMutex(g_hGlobalMutex);
 				
-				if(hMx!=0)
+				if(g_hGlobalMutex!=0)
 				{
-					CloseHandle(hMx);
-					hMx = NULL;
+					CloseHandle(g_hGlobalMutex);
+					g_hGlobalMutex = NULL;
 					
 				}
-				if (hSp!=0)
+				if (g_hGlobalSemaphore!=0)
 				{
-					CloseHandle(hSp);
-					hSp = NULL;
+					CloseHandle(g_hGlobalSemaphore);
+					g_hGlobalSemaphore = NULL;
 				}
 				
 				return FALSE;
@@ -574,36 +599,36 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		_snprintf(SvcDesc, 
 			sizeof(SvcDesc) - 1, 
 			"WinPcap Packet Driver (%s)",
-			NpfDrNameWhId);
+			g_NpfDriverNameId);
 		
 		_snprintf(SvcBin, 
 			sizeof(SvcDesc) - 1, 
 			"system32\\drivers\\%s.sys",
-			NpfDrNameWhId);
+			g_NpfDriverNameId);
 		
-		if(create_driver_service(NpfDrNameWhId, 
+		if(create_driver_service(g_NpfDriverNameId, 
 			SvcDesc, 
 			SvcBin) == -1)
 		{
-			_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create the packet driver service");
+			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create the packet driver service");
 
-			_unlink(DllFullPath);
-			_unlink(DriverFullPath);
+			_unlink(g_DllFullPath);
+			_unlink(g_DriverFullPath);
 			
-			ReleaseMutex(hMx);
+			ReleaseMutex(g_hGlobalMutex);
 
 			WoemReportError();
 			
-			if(hMx!=0)
+			if(g_hGlobalMutex!=0)
 			{
-				CloseHandle(hMx);
-				hMx = NULL;
+				CloseHandle(g_hGlobalMutex);
+				g_hGlobalMutex = NULL;
 				
 			}
-			if (hSp!=0)
+			if (g_hGlobalSemaphore!=0)
 			{
-				CloseHandle(hSp);
-				hSp = NULL;
+				CloseHandle(g_hGlobalSemaphore);
+				g_hGlobalSemaphore = NULL;
 			}
 			
 			return FALSE;
@@ -612,28 +637,28 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		//
 		// Load the driver
 		//
-		if(start_service(NpfDrNameWhId) == -1)
+		if(start_service(g_NpfDriverNameId) == -1)
 		{
-			_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to start the packet driver service");
+			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to start the packet driver service");
 
-			delete_service(NpfDrNameWhId);
-			_unlink(DllFullPath);
-			_unlink(DriverFullPath);
+			delete_service(g_NpfDriverNameId);
+			_unlink(g_DllFullPath);
+			_unlink(g_DriverFullPath);
 			
-			ReleaseMutex(hMx);
+			ReleaseMutex(g_hGlobalMutex);
 
 			WoemReportError();
 			
-			if(hMx!=0)
+			if(g_hGlobalMutex!=0)
 			{
-				CloseHandle(hMx);
-				hMx = NULL;
+				CloseHandle(g_hGlobalMutex);
+				g_hGlobalMutex = NULL;
 				
 			}
-			if (hSp!=0)
+			if (g_hGlobalSemaphore!=0)
 			{
-				CloseHandle(hSp);
-				hSp = NULL;
+				CloseHandle(g_hGlobalSemaphore);
+				g_hGlobalSemaphore = NULL;
 			}
 			
 			return FALSE;
@@ -645,7 +670,7 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		i = 0;
 		while(TRUE)
 		{
-			if(check_if_service_is_running(NpfDrNameWhId) == 0)
+			if(check_if_service_is_running(g_NpfDriverNameId) == 0)
 			{
 				break;
 			}
@@ -653,26 +678,26 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			i++;
 			if(i == 300)
 			{
-				_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "timeout while starting the packet driver");
+				_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "timeout while starting the packet driver");
 	
-				delete_service(NpfDrNameWhId);
-				_unlink(DllFullPath);
-				_unlink(DriverFullPath);
+				delete_service(g_NpfDriverNameId);
+				_unlink(g_DllFullPath);
+				_unlink(g_DriverFullPath);
 				
-				ReleaseMutex(hMx);
+				ReleaseMutex(g_hGlobalMutex);
 
 				WoemReportError();
 				
-				if(hMx!=0)
+				if(g_hGlobalMutex!=0)
 				{
-					CloseHandle(hMx);
-					hMx = NULL;
+					CloseHandle(g_hGlobalMutex);
+					g_hGlobalMutex = NULL;
 					
 				}
-				if (hSp!=0)
+				if (g_hGlobalSemaphore!=0)
 				{
-					CloseHandle(hSp);
-					hSp = NULL;
+					CloseHandle(g_hGlobalSemaphore);
+					g_hGlobalSemaphore = NULL;
 				}
 				
 				return FALSE;
@@ -685,7 +710,7 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		//
 		// We've loaded the driver, we can delete its binary
 		//
-		_unlink(DriverFullPath);
+		_unlink(g_DriverFullPath);
 	}
 		
 	//
@@ -693,26 +718,26 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	//
 	if(!WoemCreateBinaryNames())
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create binary names");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create binary names");
 
-		delete_service(NpfDrNameWhId);
-		_unlink(DllFullPath);
-		_unlink(DriverFullPath);
+		delete_service(g_NpfDriverNameId);
+		_unlink(g_DllFullPath);
+		_unlink(g_DriverFullPath);
 		
-		ReleaseMutex(hMx);
+		ReleaseMutex(g_hGlobalMutex);
 
 		WoemReportError();
 		
-		if(hMx!=0)
+		if(g_hGlobalMutex!=0)
 		{
-			CloseHandle(hMx);
-			hMx = NULL;
+			CloseHandle(g_hGlobalMutex);
+			g_hGlobalMutex = NULL;
 			
 		}
-		if (hSp!=0)
+		if (g_hGlobalSemaphore!=0)
 		{
-			CloseHandle(hSp);
-			hSp = NULL;
+			CloseHandle(g_hGlobalSemaphore);
+			g_hGlobalSemaphore = NULL;
 		}
 		
 		return FALSE;
@@ -721,28 +746,28 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	//
 	// Load packet.dll and intercept all the calls
 	//
-	if(!LoadPacketDll(DllFullPath))
+	if(!LoadPacketDll(g_DllFullPath))
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to load packet.dll");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to load packet.dll");
 
-		delete_service(NpfDrNameWhId);
-		_unlink(DllFullPath);
-		_unlink(DriverFullPath);
+		delete_service(g_NpfDriverNameId);
+		_unlink(g_DllFullPath);
+		_unlink(g_DriverFullPath);
 		
-		ReleaseMutex(hMx);
+		ReleaseMutex(g_hGlobalMutex);
 
 		WoemReportError();
 		
-		if(hMx!=0)
+		if(g_hGlobalMutex!=0)
 		{
-			CloseHandle(hMx);
-			hMx = NULL;
+			CloseHandle(g_hGlobalMutex);
+			g_hGlobalMutex = NULL;
 			
 		}
-		if (hSp!=0)
+		if (g_hGlobalSemaphore!=0)
 		{
-			CloseHandle(hSp);
-			hSp = NULL;
+			CloseHandle(g_hGlobalSemaphore);
+			g_hGlobalSemaphore = NULL;
 		}
 		
 		return FALSE;
@@ -758,12 +783,12 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	//
 	// Schedule the deletion of the dll. It will go away at the next reboot
 	//
-	DeleteDll(DllFullPath);	
+	DeleteDll(g_DllFullPath);	
 	
 	//
 	// Done. We can release the MUTEX
 	//
-	ReleaseMutex(hMx);
+	ReleaseMutex(g_hGlobalMutex);
 
 	return TRUE;
 }
@@ -782,21 +807,21 @@ BOOL WoemLeaveDll()
 	retry = TRUE;
 	do 
 	{
-		DWORD result=WaitForSingleObject(hMx, 10000);
+		DWORD result=WaitForSingleObject(g_hGlobalMutex, 10000);
 		switch(result) 
 		{
 		case WAIT_FAILED:
 			
-			if(hMx!=0)
+			if(g_hGlobalMutex!=0)
 			{
-				CloseHandle(hMx);
-				hMx = NULL;
+				CloseHandle(g_hGlobalMutex);
+				g_hGlobalMutex = NULL;
 
 			}
-			if (hSp!=0)
+			if (g_hGlobalSemaphore!=0)
 			{
-				CloseHandle(hSp);
-				hSp = NULL;
+				CloseHandle(g_hGlobalSemaphore);
+				g_hGlobalSemaphore = NULL;
 			}
 
 			return FALSE;
@@ -815,20 +840,20 @@ BOOL WoemLeaveDll()
 	// 
 	// See if the semaphore count is 1
 	//
-	if(WaitForSingleObject(hSp, 0) == WAIT_FAILED)
+	if(WaitForSingleObject(g_hGlobalSemaphore, 0) == WAIT_FAILED)
 	{
-		ReleaseMutex(hMx);
+		ReleaseMutex(g_hGlobalMutex);
 		
-		if(hMx!=0)
+		if(g_hGlobalMutex!=0)
 		{
-			CloseHandle(hMx);
-			hMx = NULL;
+			CloseHandle(g_hGlobalMutex);
+			g_hGlobalMutex = NULL;
 			
 		}
-		if (hSp!=0)
+		if (g_hGlobalSemaphore!=0)
 		{
-			CloseHandle(hSp);
-			hSp = NULL;
+			CloseHandle(g_hGlobalSemaphore);
+			g_hGlobalSemaphore = NULL;
 		}
 				
 		return FALSE;
@@ -837,7 +862,7 @@ BOOL WoemLeaveDll()
 	//
 	// Now check if we would block on the semaphore
 	//
-	result = WaitForSingleObject(hSp, 0);
+	result = WaitForSingleObject(g_hGlobalSemaphore, 0);
 	
 	switch (result) 
 	{
@@ -847,43 +872,43 @@ BOOL WoemLeaveDll()
 		// IF WE ARE HERE, THE DLL IS BEING UNLOADED FOR THE LAST TIME.
 		//
 
-		delete_service(NpfDrNameWhId);
+		delete_service(g_NpfDriverNameId);
 
 		break;
 
 	case WAIT_FAILED: 
 
-		ReleaseMutex(hMx);
+		ReleaseMutex(g_hGlobalMutex);
 		
-		if(hMx!=0)
+		if(g_hGlobalMutex!=0)
 		{
-			CloseHandle(hMx);
-			hMx = NULL;
+			CloseHandle(g_hGlobalMutex);
+			g_hGlobalMutex = NULL;
 			
 		}
-		if (hSp!=0)
+		if (g_hGlobalSemaphore!=0)
 		{
-			CloseHandle(hSp);
-			hSp = NULL;
+			CloseHandle(g_hGlobalSemaphore);
+			g_hGlobalSemaphore = NULL;
 		}
 		
 		return FALSE;
 		
 	case WAIT_OBJECT_0: 
-		if (ReleaseSemaphore(hSp,1,NULL) == FALSE)
+		if (ReleaseSemaphore(g_hGlobalSemaphore,1,NULL) == FALSE)
 		{
-			ReleaseMutex(hMx);
+			ReleaseMutex(g_hGlobalMutex);
 			
-			if(hMx!=0)
+			if(g_hGlobalMutex!=0)
 			{
-				CloseHandle(hMx);
-				hMx = NULL;
+				CloseHandle(g_hGlobalMutex);
+				g_hGlobalMutex = NULL;
 				
 			}
-			if (hSp!=0)
+			if (g_hGlobalSemaphore!=0)
 			{
-				CloseHandle(hSp);
-				hSp = NULL;
+				CloseHandle(g_hGlobalSemaphore);
+				g_hGlobalSemaphore = NULL;
 			}
 						
 			return FALSE;
@@ -895,21 +920,21 @@ BOOL WoemLeaveDll()
 	// 
 	// Release the MUTEX
 	//
-	ReleaseMutex(hMx);
+	ReleaseMutex(g_hGlobalMutex);
 
 	//
 	// We're done, close the handles
 	//
-	if(hMx!=0)
+	if(g_hGlobalMutex!=0)
 	{
-		CloseHandle(hMx);
-		hMx = NULL;
+		CloseHandle(g_hGlobalMutex);
+		g_hGlobalMutex = NULL;
 
 	}
-	if (hSp!=0)
+	if (g_hGlobalSemaphore!=0)
 	{
-		CloseHandle(hSp);
-		hSp = NULL;
+		CloseHandle(g_hGlobalSemaphore);
+		g_hGlobalSemaphore = NULL;
 	}
 
 	return TRUE;
@@ -993,7 +1018,7 @@ BOOL WoemCreateNameRegistryEntries()
 	{
 		RegCloseKey(WinpcapKey);
 	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\CaceWinPcap");
+		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
 
@@ -1015,13 +1040,13 @@ BOOL WoemCreateNameRegistryEntries()
 		NPF_DRIVER_NAME_WIDECHAR,
 		DriverId);	
 */	
-	_snprintf(NpfDrNameWhId, 
-		sizeof(NpfDrNameWhId) - 1, 
+	_snprintf(g_NpfDriverNameId, 
+		sizeof(g_NpfDriverNameId) - 1, 
 		"%s",
 		NPF_DRIVER_NAME);
 
-	_snwprintf(NpfDrNameWhIdW, 
-		sizeof(NpfDrNameWhIdW) / sizeof(WCHAR) - 1, 
+	_snwprintf(g_NpfDriverNameIdW, 
+		sizeof(g_NpfDriverNameIdW) / sizeof(WCHAR) - 1, 
 		L"%ws",
 		NPF_DRIVER_NAME_WIDECHAR);	
 
@@ -1038,12 +1063,12 @@ BOOL WoemCreateNameRegistryEntries()
 		"npf_driver_name", 
 		0, 
 		REG_BINARY, 
-		(LPBYTE)NpfDrNameWhId,
-		strlen(NpfDrNameWhId) + 1) != ERROR_SUCCESS)
+		(LPBYTE)g_NpfDriverNameId,
+		strlen(g_NpfDriverNameId) + 1) != ERROR_SUCCESS)
 	{
 		RegCloseKey(WinpcapKey);
 	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\CaceWinPcap");
+		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
 	
@@ -1056,12 +1081,12 @@ BOOL WoemCreateNameRegistryEntries()
 		"npf_driver_name_widechar", 
 		0,
 		REG_BINARY,
-		(LPBYTE)NpfDrNameWhIdW,
-		(wcslen(NpfDrNameWhIdW) + 1) * sizeof(WCHAR)) != ERROR_SUCCESS)
+		(LPBYTE)g_NpfDriverNameIdW,
+		(wcslen(g_NpfDriverNameIdW) + 1) * sizeof(WCHAR)) != ERROR_SUCCESS)
 	{
 		RegCloseKey(WinpcapKey);
 	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\CaceWinPcap");
+		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
 
@@ -1074,7 +1099,7 @@ BOOL WoemCreateNameRegistryEntries()
 		sizeof(KeyValBufW) / sizeof(WCHAR) - 1, 
 		L"%ws (%ws)",
 		NPF_SERVICE_DESC_WIDECHAR,
-		NpfDrNameWhIdW);
+		g_NpfDriverNameIdW);
 
 	if(RegSetValueEx(WinpcapKey, 
 		"npf_service_desc_widechar", 
@@ -1085,7 +1110,7 @@ BOOL WoemCreateNameRegistryEntries()
 	{
 		RegCloseKey(WinpcapKey);
 	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\CaceWinPcap");
+		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
 
@@ -1097,7 +1122,7 @@ BOOL WoemCreateNameRegistryEntries()
 	_snwprintf(KeyValBufW, 
 		sizeof(KeyValBufW) / sizeof(WCHAR) - 1, 
 		L"SYSTEM\\CurrentControlSet\\Services\\%ws",
-		NpfDrNameWhIdW);
+		g_NpfDriverNameIdW);
 
 	if(RegSetValueEx(WinpcapKey, 
 		"npf_service_registry_location_widechar", 
@@ -1108,7 +1133,7 @@ BOOL WoemCreateNameRegistryEntries()
 	{
 		RegCloseKey(WinpcapKey);
 	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\CaceWinPcap");
+		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
 
@@ -1120,7 +1145,7 @@ BOOL WoemCreateNameRegistryEntries()
 	_snprintf(KeyValBuf, 
 		sizeof(KeyValBuf) / sizeof(CHAR) - 1, 
 		"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\%s",
-		NpfDrNameWhId);
+		g_NpfDriverNameId);
 
 	if(RegSetValueEx(WinpcapKey, 
 		"npf_complete_service_registry_location", 
@@ -1131,7 +1156,7 @@ BOOL WoemCreateNameRegistryEntries()
 	{
 		RegCloseKey(WinpcapKey);
 	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\CaceWinPcap");
+		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
 
@@ -1146,7 +1171,7 @@ BOOL WoemCreateNameRegistryEntries()
 	{
 		RegCloseKey(WinpcapKey);
 	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\CaceWinPcap");
+		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
 
@@ -1158,7 +1183,7 @@ BOOL WoemCreateNameRegistryEntries()
 	_snwprintf(KeyValBufW, 
 		sizeof(KeyValBufW) / sizeof(WCHAR) - 1, 
 		L"%ws.sys",
-		NpfDrNameWhIdW);
+		g_NpfDriverNameIdW);
 
 	if(RegSetValueEx(WinpcapKey, 
 		"npf_driver_binary_widechar", 
@@ -1169,7 +1194,7 @@ BOOL WoemCreateNameRegistryEntries()
 	{
 		RegCloseKey(WinpcapKey);
 	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\CaceWinPcap");
+		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
 
@@ -1181,7 +1206,7 @@ BOOL WoemCreateNameRegistryEntries()
 	_snprintf(KeyValBuf, 
 		sizeof(KeyValBuf) / sizeof(CHAR) - 1, 
 		"%s_",
-		NpfDrNameWhId);
+		g_NpfDriverNameId);
 
 	if(RegSetValueEx(WinpcapKey, 
 		"npf_device_names_prefix", 
@@ -1192,7 +1217,7 @@ BOOL WoemCreateNameRegistryEntries()
 	{
 		RegCloseKey(WinpcapKey);
 	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\CaceWinPcap");
+		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
 
@@ -1204,7 +1229,7 @@ BOOL WoemCreateNameRegistryEntries()
 	_snwprintf(KeyValBufW, 
 		sizeof(KeyValBufW) / sizeof(WCHAR) - 1, 
 		L"%ws_",
-		NpfDrNameWhIdW);
+		g_NpfDriverNameIdW);
 
 	if(RegSetValueEx(WinpcapKey, 
 		"npf_device_names_prefix_widechar", 
@@ -1215,7 +1240,7 @@ BOOL WoemCreateNameRegistryEntries()
 	{
 		RegCloseKey(WinpcapKey);
 	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\CaceWinPcap");
+		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
 
@@ -1227,7 +1252,7 @@ BOOL WoemCreateNameRegistryEntries()
 	_snwprintf(KeyValBufW, 
 		sizeof(KeyValBufW) / sizeof(WCHAR) - 1, 
 		L"%ws0000000000",
-		NpfDrNameWhIdW);
+		g_NpfDriverNameIdW);
 
 	if(RegSetValueEx(WinpcapKey, 
 		"npf_user_events_names", 
@@ -1238,7 +1263,7 @@ BOOL WoemCreateNameRegistryEntries()
 	{
 		RegCloseKey(WinpcapKey);
 	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\CaceWinPcap");
+		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
 
@@ -1250,7 +1275,7 @@ BOOL WoemCreateNameRegistryEntries()
 	_snwprintf(KeyValBufW, 
 		sizeof(KeyValBufW) / sizeof(WCHAR) - 1, 
 		L"\\BaseNamedObjects\\%ws0000000000\0",
-		NpfDrNameWhIdW);
+		g_NpfDriverNameIdW);
 
 	if(RegSetValueEx(WinpcapKey, 
 		"npf_kernel_events_names", 
@@ -1261,7 +1286,7 @@ BOOL WoemCreateNameRegistryEntries()
 	{
 		RegCloseKey(WinpcapKey);
 	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\CaceWinPcap");
+		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
 
@@ -1273,7 +1298,7 @@ BOOL WoemCreateNameRegistryEntries()
 	_snprintf(KeyValBuf, 
 		sizeof(KeyValBuf) / sizeof(CHAR) - 1, 
 		"\\Device\\%s_GenericDialupAdapter",
-		NpfDrNameWhId);
+		g_NpfDriverNameId);
 
 	if(RegSetValueEx(WinpcapKey, 
 		"fake_ndiswan_adapter_name", 
@@ -1284,7 +1309,7 @@ BOOL WoemCreateNameRegistryEntries()
 	{
 		RegCloseKey(WinpcapKey);
 	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\CaceWinPcap");
+		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
 
@@ -1299,7 +1324,7 @@ BOOL WoemCreateNameRegistryEntries()
 	{
 		RegCloseKey(WinpcapKey);
 	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\CaceWinPcap");
+		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
 
@@ -1311,7 +1336,7 @@ BOOL WoemCreateNameRegistryEntries()
 	_snwprintf(KeyValBufW, 
 		sizeof(KeyValBufW) / sizeof(WCHAR) - 1, 
 		L"system32\\drivers\\%ws.sys",
-		NpfDrNameWhIdW);
+		g_NpfDriverNameIdW);
 
 	if(RegSetValueEx(WinpcapKey,
 		"npf_driver_complete_widechar", 
@@ -1322,7 +1347,7 @@ BOOL WoemCreateNameRegistryEntries()
 	{
 		RegCloseKey(WinpcapKey);
 	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\CaceWinPcap");
+		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
 	
@@ -1334,7 +1359,7 @@ BOOL WoemCreateNameRegistryEntries()
 	_snprintf(KeyValBuf,
 		sizeof(KeyValBuf) / sizeof(CHAR) - 1, 
 		"\\Device\\%s_",
-		NpfDrNameWhId);
+		g_NpfDriverNameId);
 
 	if(RegSetValueEx(WinpcapKey,
 		"npf_driver_complete_driver_prefix",
@@ -1345,7 +1370,7 @@ BOOL WoemCreateNameRegistryEntries()
 	{
 		RegCloseKey(WinpcapKey);
 	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, "SOFTWARE\\CaceWinPcap");
+		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
 
@@ -1364,8 +1389,8 @@ BOOL WoemCreateBinaryNames()
 	//
 	// Get the location of the system folder to create the complete paths
 	//
-	GsdRes = GetSystemDirectory(SysDir, sizeof(SysDir));
-	if(GsdRes == 0 || GsdRes == sizeof(SysDir))
+	GsdRes = GetSystemDirectory(g_SysDir, sizeof(g_SysDir));
+	if(GsdRes == 0 || GsdRes == sizeof(g_SysDir))
 	{
 		return FALSE;
 	}
@@ -1415,27 +1440,27 @@ BOOL WoemCreateBinaryNames()
 		NPF_DRIVER_NAME_WIDECHAR,
 		DriverId);	
 */	
-	_snprintf(NpfDrNameWhId, 
-		sizeof(NpfDrNameWhId) - 1, 
+	_snprintf(g_NpfDriverNameId, 
+		sizeof(g_NpfDriverNameId) - 1, 
 		"%s",
 		NPF_DRIVER_NAME);
 
-	_snwprintf(NpfDrNameWhIdW, 
-		sizeof(NpfDrNameWhIdW) / sizeof(WCHAR) - 1, 
+	_snwprintf(g_NpfDriverNameIdW, 
+		sizeof(g_NpfDriverNameIdW) / sizeof(WCHAR) - 1, 
 		L"%ws",
 		NPF_DRIVER_NAME_WIDECHAR);	
 	
-	_snprintf(DllFullPath, 
-		sizeof(DllFullPath) - 1, 
+	_snprintf(g_DllFullPath, 
+		sizeof(g_DllFullPath) - 1, 
 		"%s\\%swoem.tmp", 
-		SysDir, 
-		NpfDrNameWhId);
+		g_SysDir, 
+		g_NpfDriverNameId);
 
-	_snprintf(DriverFullPath, 
-		sizeof(DriverFullPath) - 1, 
+	_snprintf(g_DriverFullPath, 
+		sizeof(g_DriverFullPath) - 1, 
 		"%s\\drivers\\%s.sys", 
-		SysDir, 
-		NpfDrNameWhId);
+		g_SysDir, 
+		g_NpfDriverNameId);
 
 	return TRUE;
 }
