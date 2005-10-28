@@ -2,45 +2,88 @@
 #include <wincrypt.h>
 
 #include "Crypto.h"
+#include "WoemDebug.h"
 
-
-VOID ShowMessage(LPCSTR lpText, LPCSTR lpCaption);
-INT Error(LPCSTR lpText, LPCSTR lpCaption, DWORD errorCode);
-
-
-INT getHash(LPCBYTE lpbData, DWORD dwDataLen, LPBYTE lpValue) {
+BOOL GetHash(LPCBYTE lpbData, DWORD dwDataLen, LPBYTE lpValue, DWORD dwValueLength) {
 	DWORD dwBufferSize = sizeof(DWORD);
 	DWORD dwHashSize;
-	HCRYPTPROV hCryptProv;
-	HCRYPTHASH hHash;
+	HCRYPTPROV hCryptProv = NULL;
+	HCRYPTHASH hHash = NULL;
+
+//	TRACE_ENTER("GetHash");
 
 	// initialize hash object
-	if ( CryptAcquireContext(&hCryptProv, NULL, NULL, PROV_RSA_FULL, 0) == FALSE ) 
-		return Error("Crypto.initHashObject", "Error in CryptAcquireContext!", GetLastError());
+	if ( CryptAcquireContext(&hCryptProv, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT ) == FALSE ) 
+	{
+		TRACE_MESSAGE("GetHash, Error in CryptAcquireContext [%.08x]", GetLastError());
+
+		TRACE_EXIT("GetHash");
+		return FALSE;
+	}
+
+
 
 	if ( CryptCreateHash(hCryptProv, CALG_MD5, 0, 0, &hHash) == FALSE ) 
-		return Error("Crypto.initHashObject", "Error in CryptCreateHash!", GetLastError());
+	{
+		TRACE_MESSAGE("GetHash, Error in CryptCreateHash [%.08x]", GetLastError());
+
+		CryptReleaseContext(hCryptProv, 0);
+		
+		TRACE_EXIT("GetHash");
+		return FALSE;
+	}
 
 	// add dump to hash object
 	if ( CryptHashData(hHash, lpbData, dwDataLen, 0) == FALSE ) 
-		return Error("Crypto.getHash", "Error in CryptCreateHash!", GetLastError());
+	{
+		TRACE_MESSAGE("GetHash, Error in CryptHashData [%.08x]", GetLastError());
+
+		CryptDestroyHash(hHash);
+		CryptReleaseContext(hCryptProv, 0);
+		
+		TRACE_EXIT("GetHash");
+		return FALSE;
+	}
 
 	// get the size of the hash
 	if ( CryptGetHashParam(hHash, HP_HASHSIZE, (BYTE*)&dwHashSize, &dwBufferSize, 0) == FALSE )
-		return Error("Crypto.getHash", "Error in CryptGetHashParam!", GetLastError());
+	{
+		TRACE_MESSAGE("GetHash, Error in CryptGetHashParam [%.08x]", GetLastError());
+
+		CryptDestroyHash(hHash);
+		CryptReleaseContext(hCryptProv, 0);
+		
+		TRACE_EXIT("GetHash");
+		return FALSE;
+	}
 
 	if ( dwHashSize != CREDENTIAL_LEN )
-		return Error("Crypto.getHash", "Error for different size of hash value!", FALSE);
+	{
+		TRACE_MESSAGE("GetHash, Error for different size of hash value (CryptAPI says %d, we have %d)", dwHashSize, CREDENTIAL_LEN );
+
+		CryptDestroyHash(hHash);
+		CryptReleaseContext(hCryptProv, 0);
+		
+		TRACE_EXIT("GetHash");
+		return FALSE;
+	}
 	
 	// get the hash of dump
 	if ( CryptGetHashParam(hHash, HP_HASHVAL, lpValue, &dwHashSize, 0) == FALSE )
-		return Error("Crypto.getHash", "Error in CryptGetHashParam!", GetLastError());
+	{
+		TRACE_MESSAGE("GetHash, Error in CryptGetHashParam [%.08x]", GetLastError());
+
+		CryptDestroyHash(hHash);
+		CryptReleaseContext(hCryptProv, 0);
+		
+		TRACE_EXIT("GetHash");
+		return FALSE;
+	}
 
 	// terminate hash object
-	if ( hHash )
-		CryptDestroyHash(hHash);
-	if ( hCryptProv )
-		CryptReleaseContext(hCryptProv, 0);
+	CryptDestroyHash(hHash);
+	CryptReleaseContext(hCryptProv, 0);
 
+	TRACE_EXIT("GetHash");
 	return TRUE;
 }
