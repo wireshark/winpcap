@@ -1,5 +1,10 @@
+#ifndef __CRYPTO_H_0C32B20D_A87D_429D_A7E1_A4353B74F21A
+#define __CRYPTO_H_0C32B20D_A87D_429D_A7E1_A4353B74F21A
+
 #include <windows.h>
 
 #define CREDENTIAL_LEN 16
 
-INT getHash(LPCBYTE lpbData, DWORD dwDataLen, LPBYTE lpValue);
+INT GetHash(LPCBYTE lpbData, DWORD dwDataLen, LPBYTE lpValue, DWORD dwValueLength);
+
+#endif //__CRYPTO_H_0C32B20D_A87D_429D_A7E1_A4353B74F21A
