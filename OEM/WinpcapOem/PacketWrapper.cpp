@@ -6,10 +6,7 @@ INT setProcAuthorization();
 
 HMODULE PacketLib;
 BOOL StillToInit = TRUE;
-BOOL OemActive = FALSE;	
-extern HINSTANCE DllHandle;
-extern char LastWoemError[];
-extern BOOL InitError;
+BOOL OemActive = FALSE;
 
 //---------------------------------------------------------------------------
 // PUBLIC PACKET.DLL API WRAPPERS - HANDLERS
@@ -91,7 +88,7 @@ PCHAR PacketGetVersion()
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return "failed to load packet.dll";
 		}
@@ -111,7 +108,7 @@ PCHAR PacketGetDriverVersion()
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return "failed to load packet.dll";
 		}
@@ -135,7 +132,7 @@ BOOL PacketStopDriver()
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -157,7 +154,7 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 	{
 		if(StillToInit)
 		{
-			if(!WoemEnterDll(DllHandle))
+			if(!WoemEnterDll(g_DllHandle))
 			{
 				return NULL;
 			}
@@ -182,7 +179,7 @@ VOID PacketCloseAdapter(LPADAPTER lpAdapter)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return;
 		}
@@ -202,7 +199,7 @@ LPPACKET PacketAllocatePacket(void)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return NULL;
 		}
@@ -222,7 +219,7 @@ VOID PacketFreePacket(LPPACKET lpPacket)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return;
 		}
@@ -242,7 +239,7 @@ VOID PacketInitPacket(LPPACKET lpPacket,PVOID Buffer,UINT Length)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return;
 		}
@@ -262,7 +259,7 @@ BOOLEAN PacketReceivePacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sy
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -282,7 +279,7 @@ BOOLEAN PacketSendPacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sync)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -302,7 +299,7 @@ INT PacketSendPackets(LPADAPTER AdapterObject, PVOID PacketBuff, ULONG Size, BOO
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return 0;
 		}
@@ -322,7 +319,7 @@ BOOLEAN PacketSetMinToCopy(LPADAPTER AdapterObject,int nbytes)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -342,7 +339,7 @@ BOOLEAN PacketSetMode(LPADAPTER AdapterObject,int mode)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -362,7 +359,7 @@ BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -382,7 +379,7 @@ BOOLEAN PacketSetDumpLimits(LPADAPTER AdapterObject, UINT maxfilesize, UINT maxn
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -402,7 +399,7 @@ BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -422,7 +419,7 @@ HANDLE PacketGetReadEvent(LPADAPTER AdapterObject)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return NULL;
 		}
@@ -442,7 +439,7 @@ BOOLEAN PacketSetNumWrites(LPADAPTER AdapterObject,int nwrites)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -462,7 +459,7 @@ BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -482,7 +479,7 @@ BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -502,7 +499,7 @@ BOOLEAN PacketSetBpf(LPADAPTER AdapterObject, struct bpf_program *fp)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -522,7 +519,7 @@ BOOLEAN PacketSetLoopbackBehavior(LPADAPTER  AdapterObject, UINT LoopbackBehavio
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -542,7 +539,7 @@ INT PacketSetSnapLen(LPADAPTER AdapterObject, int snaplen)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return 0;
 		}
@@ -562,7 +559,7 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -582,7 +579,7 @@ BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -602,7 +599,7 @@ BOOLEAN PacketRequest(LPADAPTER  AdapterObject,BOOLEAN Set,PPACKET_OID_DATA  Oid
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -622,7 +619,7 @@ BOOLEAN PacketSetHwFilter(LPADAPTER  AdapterObject,ULONG Filter)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -644,7 +641,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 		//
 		if(StillToInit)
 		{
-			if(!WoemEnterDll(DllHandle))
+			if(!WoemEnterDll(g_DllHandle))
 			{
 				*BufferSize = 0;
 				return FALSE;
@@ -669,7 +666,7 @@ BOOLEAN PacketGetNetInfoEx(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntrie
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -689,7 +686,7 @@ BOOLEAN PacketGetNetType(LPADAPTER AdapterObject, NetType *type)
 	//
 	if(StillToInit)
 	{
-		if(!WoemEnterDll(DllHandle))
+		if(!WoemEnterDll(g_DllHandle))
 		{
 			return FALSE;
 		}
@@ -709,11 +706,11 @@ LONG PacketStartOem(PVOID Param)
 {
 	PCHAR* ErrorString = (PCHAR*)Param;
 
-	if(InitError)
+	if(g_InitError)
 	{
 		if(ErrorString)
 		{
-			*ErrorString = LastWoemError;
+			*ErrorString = g_LastWoemError;
 		}
 
 		return 0;
@@ -726,7 +723,7 @@ LONG PacketStartOem(PVOID Param)
 // Return the last WinPcap OEM error
 PCHAR PacketGetLastOemError()
 {
-	return LastWoemError;
+	return g_LastWoemError;
 }
 
 //---------------------------------------------------------------------------
@@ -743,7 +740,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	//
 	if((PacketLib =  LoadLibrary(PacketDllFileName)) == NULL)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to initialize the Packet.dll dynamic library");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to initialize the Packet.dll dynamic library");
 		WoemReportError();
 		return FALSE;
 	}
@@ -754,7 +751,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketGetVersionH = (PacketGetVersionHandler) GetProcAddress(PacketLib, "PacketGetVersion");	
 	if(!PacketGetVersionH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 1)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 1)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -762,7 +759,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketGetDriverVersionH = (PacketGetDriverVersionHandler) GetProcAddress(PacketLib, "PacketGetDriverVersion");
 	if(!PacketGetDriverVersionH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 2)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 2)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -770,7 +767,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketStopDriverH = (PacketStopDriverHandler) GetProcAddress(PacketLib, "PacketStopDriver");
 	if(!PacketStopDriverH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 3)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 3)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -778,7 +775,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketOpenAdapterH = (PacketOpenAdapterHandler) GetProcAddress(PacketLib, "PacketOpenAdapter");
 	if(!PacketOpenAdapterH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 4)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 4)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -786,7 +783,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketCloseAdapterH = (PacketCloseAdapterHandler) GetProcAddress(PacketLib, "PacketCloseAdapter");
 	if(!PacketCloseAdapterH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 5)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 5)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -794,7 +791,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketAllocatePacketH = (PacketAllocatePacketHandler) GetProcAddress(PacketLib, "PacketAllocatePacket");
 	if(!PacketAllocatePacketH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 6)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 6)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -802,7 +799,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketFreePacketH = (PacketFreePacketHandler) GetProcAddress(PacketLib, "PacketFreePacket");
 	if(!PacketFreePacketH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 7)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 7)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -810,7 +807,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketInitPacketH = (PacketInitPacketHandler) GetProcAddress(PacketLib, "PacketInitPacket");
 	if(!PacketInitPacketH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 8)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 8)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -818,7 +815,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketReceivePacketH = (PacketReceivePacketHandler) GetProcAddress(PacketLib, "PacketReceivePacket");
 	if(!PacketReceivePacketH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 9)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 9)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -826,7 +823,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketSendPacketH = (PacketSendPacketHandler) GetProcAddress(PacketLib, "PacketSendPacket");
 	if(!PacketSendPacketH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 10)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 10)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -834,7 +831,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketSendPacketsH = (PacketSendPacketsHandler) GetProcAddress(PacketLib, "PacketSendPackets");
 	if(!PacketSendPacketsH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 11)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 11)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -842,7 +839,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketSetMinToCopyH = (PacketSetMinToCopyHandler) GetProcAddress(PacketLib, "PacketSetMinToCopy");
 	if(!PacketSetMinToCopyH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 12)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 12)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -850,7 +847,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketSetModeH = (PacketSetModeHandler) GetProcAddress(PacketLib, "PacketSetMode");
 	if(!PacketSetModeH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 12a)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 12a)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -858,7 +855,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketSetDumpNameH = (PacketSetDumpNameHandler) GetProcAddress(PacketLib, "PacketSetDumpName");
 	if(!PacketSetDumpNameH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 13)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 13)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -866,7 +863,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketSetDumpLimitsH = (PacketSetDumpLimitsHandler) GetProcAddress(PacketLib, "PacketSetDumpLimits");
 	if(!PacketSetDumpLimitsH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 14)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 14)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -874,7 +871,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketIsDumpEndedH = (PacketIsDumpEndedHandler) GetProcAddress(PacketLib, "PacketIsDumpEnded");
 	if(!PacketIsDumpEndedH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 15)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 15)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -882,7 +879,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketGetReadEventH = (PacketGetReadEventHandler) GetProcAddress(PacketLib, "PacketGetReadEvent");
 	if(!PacketGetReadEventH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 16)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 16)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -890,7 +887,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketSetNumWritesH = (PacketSetNumWritesHandler) GetProcAddress(PacketLib, "PacketSetNumWrites");
 	if(!PacketSetNumWritesH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 17)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 17)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -898,7 +895,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketSetReadTimeoutH = (PacketSetReadTimeoutHandler) GetProcAddress(PacketLib, "PacketSetReadTimeout");
 	if(!PacketSetReadTimeoutH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 18)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 18)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -906,7 +903,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketSetBuffH = (PacketSetBuffHandler) GetProcAddress(PacketLib, "PacketSetBuff");
 	if(!PacketSetBuffH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 19)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 19)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -914,7 +911,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketSetBpfH = (PacketSetBpfHandler) GetProcAddress(PacketLib, "PacketSetBpf");
 	if(!PacketSetBpfH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 20)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 20)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -922,7 +919,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketSetSnapLenH = (PacketSetSnapLenHandler) GetProcAddress(PacketLib, "PacketSetSnapLen");
 	if(!PacketSetSnapLenH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 21)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 21)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -930,7 +927,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketGetStatsH = (PacketGetStatsHandler) GetProcAddress(PacketLib, "PacketGetStats");
 	if(!PacketGetStatsH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 22)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 22)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -938,7 +935,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketGetStatsExH = (PacketGetStatsExHandler) GetProcAddress(PacketLib, "PacketGetStatsEx");
 	if(!PacketGetStatsExH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 23)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 23)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -946,7 +943,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketRequestH = (PacketRequestHandler) GetProcAddress(PacketLib, "PacketRequest");
 	if(!PacketRequestH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 24)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 24)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -954,7 +951,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketSetHwFilterH = (PacketSetHwFilterHandler) GetProcAddress(PacketLib, "PacketSetHwFilter");
 	if(!PacketSetHwFilterH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 25)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 25)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -962,7 +959,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketGetAdapterNamesH = (PacketGetAdapterNamesHandler) GetProcAddress(PacketLib, "PacketGetAdapterNames");
 	if(!PacketGetAdapterNamesH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 26)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 26)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -970,7 +967,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketGetNetInfoExH = (PacketGetNetInfoExHandler) GetProcAddress(PacketLib, "PacketGetNetInfoEx");
 	if(!PacketGetNetInfoExH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 27)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 27)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -978,7 +975,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketGetNetTypeH = (PacketGetNetTypeHandler) GetProcAddress(PacketLib, "PacketGetNetType");		
 	if(!PacketGetNetTypeH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 28)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 28)");
 		WoemReportError();
 		return FALSE;
 	}
@@ -987,7 +984,7 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 	PacketRegWoemLeaveHandlerH = (PacketRegWoemLeaveHandlerHandler) GetProcAddress(PacketLib, "PacketRegWoemLeaveHandler");		
 	if(!PacketRegWoemLeaveHandlerH)
 	{
-		_snprintf(LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 29)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 29)");
 		WoemReportError();
 		return FALSE;
 	}
