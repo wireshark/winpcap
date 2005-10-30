@@ -10,7 +10,7 @@ BOOL GetHash(LPCBYTE lpbData, DWORD dwDataLen, LPBYTE lpValue, DWORD dwValueLeng
 	HCRYPTPROV hCryptProv = NULL;
 	HCRYPTHASH hHash = NULL;
 
-//	TRACE_ENTER("GetHash");
+	TRACE_ENTER("GetHash");
 
 	// initialize hash object
 	if ( CryptAcquireContext(&hCryptProv, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT ) == FALSE ) 
