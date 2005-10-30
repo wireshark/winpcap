@@ -1936,7 +1936,7 @@ BOOLEAN PacketSetBpf(LPADAPTER AdapterObject, struct bpf_program *fp)
   \brief Sets the behavior of the NPF driver with packets sent by itself: capture or drop.
   \param AdapterObject Pointer to an _ADAPTER structure.
   \param LoopbackBehavior Can be one of the following:
-	- \ref (default) NPF_ENABLE_LOOPBACK
+	- \ref NPF_ENABLE_LOOPBACK
 	- \ref NPF_DISABLE_LOOPBACK
   \return If the function succeeds, the return value is nonzero.
 
