@@ -114,7 +114,7 @@ NPF_Write(
 		// If asked, set the flags for this packet.
 		// Currently, the only situation in which we set the flags is to disable the reception of loopback
 		// packets, i.e. of the packets sent by us.
-		if(SendPacketFlags)
+		if(Open->SkipSentPackets)
 		{
 			NdisSetPacketFlags(
 				pPacket,
@@ -272,7 +272,7 @@ NPF_BufferedWrite(
 		// If asked, set the flags for this packet.
 		// Currently, the only situation in which we set the flags is to disable the reception of loopback
 		// packets, i.e. of the packets sent by us.
-		if(SendPacketFlags)
+		if(Open->SkipSentPackets)
 		{
 			NdisSetPacketFlags(
 				pPacket,
@@ -291,7 +291,7 @@ NPF_BufferedWrite(
 			// Try again to allocate a packet
 			NdisAllocatePacket( &Status, &pPacket, Open->PacketPool);
 
-			if(SendPacketFlags)
+			if(Open->SkipSentPackets)
 			{
 				NdisSetPacketFlags(
 					pPacket,

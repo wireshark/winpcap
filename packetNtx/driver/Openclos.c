@@ -240,10 +240,10 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	Open->tme.active = TME_NONE_ACTIVE;
 	Open->DumpLimitReached = FALSE;
 	Open->MaxFrameSize = 0;
-	Open->WriterSN=0;
-	Open->ReaderSN=0;
-	Open->Size=0;
-
+	Open->WriterSN = 0;
+	Open->ReaderSN = 0;
+	Open->Size = 0;
+	Open->SkipSentPackets = FALSE;
 
 
 	//allocate the spinlock for the statistic counters

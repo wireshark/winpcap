@@ -82,8 +82,6 @@ ULONG TimestampMode;
 // OS version. We use it to properly set the packet flags when transmitting
 RTL_OSVERSIONINFOW OsVersion; 
 UINT SendPacketFlags = 0;
-// NDIS_FLAGS_DONT_LOOPBACK | NDIS_FLAGS_SKIP_LOOPBACK
-
 
 //
 //  Packet Driver's entry routine.
@@ -128,6 +126,20 @@ DriverEntry(
 	//	RtlGetVersion(&OsVersion);
 	PsGetVersion(&(OsVersion.dwMajorVersion), &(OsVersion.dwMinorVersion), NULL, NULL);
     IF_LOUD(DbgPrint("\n\nOS Version: %d.%d\n", OsVersion.dwMajorVersion, OsVersion.dwMinorVersion);)
+
+	//
+	// Define the correct flag to skip the loopback packets, according to the OS
+	//
+	if((OsVersion.dwMajorVersion == 5) && (OsVersion.dwMinorVersion == 0))
+	{
+		// Windows 2000 wants both NDIS_FLAGS_DONT_LOOPBACK and NDIS_FLAGS_SKIP_LOOPBACK
+		SendPacketFlags = NDIS_FLAGS_DONT_LOOPBACK | NDIS_FLAGS_SKIP_LOOPBACK_W2K;
+	}
+	else
+	{
+		// Windows XP, 2003 and follwing want only  NDIS_FLAGS_DONT_LOOPBACK
+		SendPacketFlags =  NDIS_FLAGS_DONT_LOOPBACK;
+	}
 
 	//
 	// Set timestamp gathering method getting it from the registry
@@ -1034,16 +1046,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			}
 			else 
 			{
-				if((OsVersion.dwMajorVersion == 5) && (OsVersion.dwMinorVersion == 0))
-				{
-					// Windows 2000 wants both NDIS_FLAGS_DONT_LOOPBACK and NDIS_FLAGS_SKIP_LOOPBACK
-					SendPacketFlags = NDIS_FLAGS_DONT_LOOPBACK | NDIS_FLAGS_SKIP_LOOPBACK_W2K;
-				}
-				else
-				{
-					// Windows XP, 2003 and follwing want only  NDIS_FLAGS_DONT_LOOPBACK
-					SendPacketFlags =  NDIS_FLAGS_DONT_LOOPBACK;
-				}
+				Open->SkipSentPackets = TRUE;
 				
 				// Reset the capture buffers, since they could contain loopbacked packets
 				Open->SkipProcessing = 1;
@@ -1066,8 +1069,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			}
 			else 
 			{
-				// Reset SendPacketFlags
-				SendPacketFlags = 0;
+				Open->SkipSentPackets = FALSE;
 			}
 		}
 		else

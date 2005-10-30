@@ -366,6 +366,7 @@ typedef struct _OPEN_INSTANCE
 	BOOLEAN				WriteInProgress;	///< True if a write is currently in progress. NPF currently allows a single wite on 
 											///< the same open instance.
 	NDIS_SPIN_LOCK		WriteLock;			///< SpinLock that protects the WriteInProgress variable.
+	BOOLEAN				SkipSentPackets;	///< True if this instance should not capture back the packets that it transmits.
 	NDIS_EVENT			IOEvent;			///< Event used to synchronize I/O requests with the callback structure of NDIS.
 	NDIS_STATUS			IOStatus;			///< Maintains the status of and OID request call, that will be passed to the application.
 	BOOLEAN				Bound;				///< Specifies if NPF is still bound to the adapter used by this instance. Bound can be
