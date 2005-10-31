@@ -980,11 +980,19 @@ BOOL LoadPacketDll(char *PacketDllFileName)
 		return FALSE;
 	}
 
+	PacketSetLoopbackBehaviorH = (PacketSetLoopbackBehaviorHandler) GetProcAddress(PacketLib, "PacketSetLoopbackBehavior");		
+	if(!PacketSetLoopbackBehaviorH)
+	{
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 29)");
+		WoemReportError();
+		return FALSE;
+	}
+
 #ifdef STATIC_LIB
 	PacketRegWoemLeaveHandlerH = (PacketRegWoemLeaveHandlerHandler) GetProcAddress(PacketLib, "PacketRegWoemLeaveHandler");		
 	if(!PacketRegWoemLeaveHandlerH)
 	{
-		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 29)");
+		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to load Packet.dll (internal error 30)");
 		WoemReportError();
 		return FALSE;
 	}
