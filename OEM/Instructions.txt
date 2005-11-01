@@ -27,9 +27,17 @@ PacketNT - Win32 NT4 OEM
 
 11. Add the following lines to wpcap's Win32-Extensions.c:
 
-int pcap_start_oem(char** err_str)
+/*!
+	\brief This function starts WinPcap OEM.
+	
+	\param err_str pointer to a user-allocated buffer (of minimum size PCAP_ERRBUF_SIZE) 
+		that will contain the error message in case of failure.
+
+	\return 0 on success,  -1 in case of failure.
+*/
+int pcap_start_oem(char* err_str)
 {
-	if(PacketStartOem(err_str) == 0)
+	if(PacketStartOem(err_str, PCAP_ERRBUF_SIZE) == FALSE)
 	{
 		return -1;
 	}
