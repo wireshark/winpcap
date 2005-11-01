@@ -29,9 +29,9 @@ HRESULT HrUninstallNetMonProtocol();
 ////////////////////////////////////////////////////////////////////
 // Packet.dll wrapper prototypes
 ////////////////////////////////////////////////////////////////////
-BOOL LoadPacketDll(char *PacketDllFileName);
+BOOL LoadPacketDll(char *PacketDllFileName, char *errorString);
 void DeleteDll(char *DllFileName);
-BOOL WoemEnterDll(HINSTANCE DllHandle);
+BOOL WoemEnterDll(HINSTANCE DllHandle, char *WoemErrorString);
 BOOL WoemLeaveDll();
 #ifdef STATIC_LIB
 void RegisterPacketUnloadHandler(void* Handler);
@@ -42,7 +42,9 @@ void RegisterPacketUnloadHandler(void* Handler);
 ///////////////////////////////////////////////////////////////////
 extern HINSTANCE g_DllHandle;
 extern char g_LastWoemError[];
-extern BOOL g_InitError;
+volatile extern BOOL g_InitError;
+volatile extern BOOL g_OemActive;
+
 
 ////////////////////////////////////////////////////////////////////
 // Resources handling prototypes
@@ -59,6 +61,7 @@ BOOL WoemCreateBinaryNames();
 ////////////////////////////////////////////////////////////////////
 // Debug definitions
 ////////////////////////////////////////////////////////////////////
+
 
 #define DEBUGTRACE
 #define TRACE_OUTPUTDEBUGSTRING
@@ -78,6 +81,7 @@ BOOL WoemCreateBinaryNames();
 #else
 #define TraceEnter(X)
 #endif
+
 
 ////////////////////////////////////////////////////////////////////
 // Error codes
