@@ -4,6 +4,7 @@
 #include "WpcapNames.h"
 #include "WinpcapOem.h"
 #include "resource.h"
+#include "WoemDebug.h"
 
 #ifdef SECURITY
 #include "Security.h"
@@ -19,9 +20,10 @@ char g_NpfDriverNameId[32];
 WCHAR g_NpfDriverNameIdW[32];
 HINSTANCE g_DllHandle = NULL;
 char g_LastWoemError[PACKET_ERRSTR_SIZE];
-BOOL g_InitError = FALSE;
-extern BOOL OemActive;
+volatile BOOL g_InitError = FALSE;
 BOOL g_IsProcAuthorized = FALSE;
+
+CRITICAL_SECTION g_CritSectionProtectingWoemEnterDll;
 
 ////////////////////////////////////////////////////////////////////
 // DLL Entry point
@@ -34,12 +36,13 @@ BOOL APIENTRY DllMain(HINSTANCE Dllh, DWORD Reason, LPVOID lpReserved)
 	case DLL_PROCESS_ATTACH:
 		
 		g_DllHandle = Dllh;
+		::InitializeCriticalSection(&::g_CritSectionProtectingWoemEnterDll);
 		
 #ifdef SECURITY
 		//
 		// the version with security enabled doesn't need to be activated with PacketStartOem()
 		//
-		OemActive = TRUE;
+		g_OemActive = TRUE;
 #endif
 		
 		break;
@@ -86,16 +89,43 @@ PCHAR getObjectName(PCHAR systemObjectName, UINT strlen)
 	return systemObjectName;
 }
 
+
+static BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString);
+
+
+BOOL WoemEnterDll(HINSTANCE DllHandle, char *WoemErrorString)
+{
+	BOOL returnValue;
+
+	TRACE_ENTER("WoemEnterDll");
+	
+	::EnterCriticalSection(&::g_CritSectionProtectingWoemEnterDll);
+
+	returnValue = WoemEnterDllInternal(DllHandle, WoemErrorString);
+
+	::LeaveCriticalSection(&::g_CritSectionProtectingWoemEnterDll);
+
+	TRACE_EXIT("WoemEnterDll");
+
+	return returnValue;
+}
+
+#define WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR(_msg) do{strncpy(WoemErrorString, _msg, PACKET_ERRSTR_SIZE - 1); TRACE_MESSAGE(_msg);}while(0)
+
 ////////////////////////////////////////////////////////////////////
 // Function called when a process loads the dll.
 // If this is the first time the dll is loaded, we start the driver
 // service
+//
+// NOTE: this function has logging/tracing code, do NOT call it
+// from within DllMain!
+// NOTE: this internal function does not protect the access to 
+// the global variables (in particular g_hGlobalMutex.
 ////////////////////////////////////////////////////////////////////
-BOOL WoemEnterDll(HINSTANCE DllHandle)
+BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 {
 	SECURITY_DESCRIPTOR sd;
 	SECURITY_ATTRIBUTES sa;
-	BOOLEAN retry;
 	LONG lold;
 	char ObjName[MAX_OBJNAME_LEN];
 	UINT i;
@@ -107,19 +137,28 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	DWORD Result;
 #endif 
 
+	TRACE_ENTER("WoemEnterDll");
+
+	WoemErrorString[PACKET_ERRSTR_SIZE - 1] = '\0';
+
+
 #ifdef SECURITY
+
+	TRACE_MESSAGE("Process bound Woem, checking if the process is authorized...");
 	if (!g_IsProcAuthorized)
 	{
 	//
 		// the version with security enabled doesn't need to be activated with PacketStartOem()
 		//
-		OemActive = TRUE;
-		Result = WoemGetCurrentProcessAuthorization(g_LastWoemError);
+		g_OemActive = TRUE;
+		Result = WoemGetCurrentProcessAuthorization(WoemErrorString);
 		
 		if (Result == WOEM_PROC_AUTHORIZATION_FAILURE)
 		{
-			g_InitError = TRUE;
 			g_IsProcAuthorized = FALSE;
+			//the error string has been already set by WoemGetCurrentProcessAuthorization
+			return FALSE;
+			
 		}
 		else
 			if (Result == WOEM_PROC_AUTHORIZATION_OK)
@@ -129,7 +168,10 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			else
 			{
 				g_IsProcAuthorized = FALSE;
-				MessageBox(NULL, "This version of WinPcap OEM can be only run in conjunction with CACE Technologies Network Toolkit. This program is not recognized as part of The Network Toolkit, and therefore WinPcap OEM will not work.", "Error", MB_ICONERROR);
+				
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("This version of WinPcap OEM can be only run in conjunction with CACE Technologies Network Toolkit. This program is not recognized as part of The Network Toolkit, and therefore WinPcap OEM will not work.");
+
+				MessageBox(NULL, "This version of WinPcap OEM can be only run in conjunction with CACE Technologies Network Toolkit.\nThis program is not recognized as part of The Network Toolkit, and therefore WinPcap OEM will not work.", "Error", MB_ICONERROR);
 				return FALSE;
 			}
 	}		
@@ -141,8 +183,8 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	//
 	if(!g_DllHandle)
 	{
-		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "NULL DLL Handle");
-		WoemReportError();
+		WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("NULL DLL Handle");
+
 		return FALSE;
 	}
 #endif
@@ -152,8 +194,7 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		//
 		// This should never happen, but better to be sure...
 		//
-		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Double initialization");
-		WoemReportError();
+		WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Double initialization");
 		return FALSE;
 	}
 
@@ -172,16 +213,17 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	//
 	_snprintf(ObjName, MAX_OBJNAME_LEN, MUTEX_NAME);
 	g_hGlobalMutex = CreateMutex(&sa, FALSE, getObjectName(ObjName, MAX_OBJNAME_LEN));
+
 	if (g_hGlobalMutex == NULL)
 	{
-		if (GetLastError()==5) 
+		if (GetLastError() == ERROR_ACCESS_DENIED) 
 		{
-			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "not enough priviles to start the packet driver");
+			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Not enough priviles to create the global mutex.");
 		}
-		
-		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create the global mutex");
-
-		WoemReportError();
+		else
+		{
+			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to create the global mutex.");
+		}
 
 		return FALSE;
 	}
@@ -189,43 +231,30 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	//
 	// Try to acquire the ownership of the mutex
 	//
-	retry = TRUE;
-	
-	do 
+	DWORD result = WaitForSingleObject(g_hGlobalMutex, 10000);
+	switch(result) 
 	{
-		DWORD result=WaitForSingleObject(g_hGlobalMutex,10000);
-		switch(result) 
-		{
-		case WAIT_FAILED:
-			
-			ReleaseMutex(g_hGlobalMutex);
-			
-			if(g_hGlobalMutex!=0)
-			{
-				CloseHandle(g_hGlobalMutex);
-				g_hGlobalMutex = NULL;
-				
-			}
-			if (g_hGlobalSemaphore!=0)
-			{
-				CloseHandle(g_hGlobalSemaphore);
-				g_hGlobalSemaphore = NULL;
-			}
-			
-			return FALSE;
-			
-		case WAIT_TIMEOUT:
-			
-			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Timeout on the global mutex");
-			WoemReportError();
-			
-			break;
-			
-		default:				
-			retry = FALSE;
-			break;
-		}
-	} while (retry);
+	case WAIT_FAILED:
+		
+		CloseHandle(g_hGlobalMutex);
+		g_hGlobalMutex = NULL;
+
+		WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Error trying to acquire the global mutex.");
+
+		return FALSE;
+		
+	case WAIT_TIMEOUT:
+		
+		CloseHandle(g_hGlobalMutex);
+		WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Timeout on the global mutex");
+
+		return FALSE;
+		
+	case WAIT_OBJECT_0:
+	case WAIT_ABANDONED:				
+		break;
+		
+	}
 	
 	//
 	// Create a Security Descriptor with NULL DACL to turn off all security checks.
@@ -242,33 +271,27 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	//
 	_snprintf(g_GlobalSemaphoreName, MAX_OBJNAME_LEN, SEMAPHORE_NAME);
 	g_hGlobalSemaphore = CreateSemaphore(&sa, 0, MAX_VALUE_SEMAPHORE, getObjectName(g_GlobalSemaphoreName, MAX_OBJNAME_LEN));
+
 	if (g_hGlobalSemaphore == NULL) 
 	{
-		if (GetLastError()==5) 
+		if (GetLastError() == ERROR_ACCESS_DENIED) 
 		{
-			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "not enough priviles to start the packet driver");
+			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Not enough priviles to create the global semaphore.");
 		}
 		else
-		{			
-			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create the global semaphore");
+		{
+			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to create the global semaphore.");
 		}
-		
+
 		ReleaseMutex(g_hGlobalMutex);
 		
-		WoemReportError();
-
 		if(g_hGlobalMutex!=0)
 		{
 			CloseHandle(g_hGlobalMutex);
 			g_hGlobalMutex = NULL;
 			
 		}
-		if (g_hGlobalSemaphore!=0)
-		{
-			CloseHandle(g_hGlobalSemaphore);
-			g_hGlobalSemaphore = NULL;
-		}
-		
+	
 		return FALSE;
 	}
 	
@@ -277,12 +300,10 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	//
 	if(ReleaseSemaphore(g_hGlobalSemaphore, 1, &lold)==FALSE)
 	{
-		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to release the semaphore");
+		WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to release the semaphore");
 		
 		ReleaseMutex(g_hGlobalMutex);
 		
-		WoemReportError();
-
 		if(g_hGlobalMutex!=0)
 		{
 			CloseHandle(g_hGlobalMutex);
@@ -298,7 +319,7 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		return FALSE;
 	}
 	
-	if (lold==0)
+	if (lold == 0)
 	{		
 		//
 		// IF WE ARE HERE, THE DLL IS BEING LOADED FOR THE FIRST TIME.
@@ -310,15 +331,13 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		ZeroMemory(&osVer, sizeof(OSVERSIONINFO));
 		osVer.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 		
-		if (GetVersionEx(&osVer)==0) 
+		if (GetVersionEx(&osVer) == 0) 
 		{
-			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to determine OS version");
+			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to determine OS version");
 	
 			ReleaseMutex(g_hGlobalMutex);
 			
-			WoemReportError();
-	
-			if(g_hGlobalMutex!=0)
+			if(g_hGlobalMutex != 0)
 			{
 				CloseHandle(g_hGlobalMutex);
 				g_hGlobalMutex = NULL;
@@ -338,12 +357,10 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		//
 		if(!WoemCreateNameRegistryEntries())
 		{
-			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create registry entries. Administrator provileges are required for this operation");
+			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to create registry entries. Administrator provileges are required for this operation");
 
 			ReleaseMutex(g_hGlobalMutex);
 			
-			WoemReportError();
-
 			if(g_hGlobalMutex!=0)
 			{
 				CloseHandle(g_hGlobalMutex);
@@ -361,12 +378,10 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 
 		if(!WoemCreateBinaryNames())
 		{
-			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create binary names");
+			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to create binary names");
 	
 			ReleaseMutex(g_hGlobalMutex);
 
-			WoemReportError();
-			
 			if(g_hGlobalMutex!=0)
 			{
 				CloseHandle(g_hGlobalMutex);
@@ -388,7 +403,26 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			// If we are here and the service is running, it's almost surely the result 
 			// of some mess. We try to cleanup.
 			//
-			delete_service(g_NpfDriverNameId);
+			if (delete_service(g_NpfDriverNameId) == -1)
+			{
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Error deleting an existing copy of the NPF service");
+
+				ReleaseMutex(g_hGlobalMutex);
+
+				if(g_hGlobalMutex!=0)
+				{
+					CloseHandle(g_hGlobalMutex);
+					g_hGlobalMutex = NULL;
+
+				}
+				if (g_hGlobalSemaphore!=0)
+				{
+					CloseHandle(g_hGlobalSemaphore);
+					g_hGlobalSemaphore = NULL;
+				}
+				
+				return FALSE;
+			}
 		}
 		
 		//
@@ -405,12 +439,10 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			//
 			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLLNT, g_DllFullPath))
 			{
-				_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", g_DllFullPath);
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.");
 
 				ReleaseMutex(g_hGlobalMutex);
 
-				WoemReportError();
-				
 				if(g_hGlobalMutex!=0)
 				{
 					CloseHandle(g_hGlobalMutex);
@@ -431,14 +463,12 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			//
 			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DRINT, g_DriverFullPath))
 			{
-				_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", g_DllFullPath);
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.");
 
 				_unlink(g_DllFullPath);
 				
 				ReleaseMutex(g_hGlobalMutex);
 
-				WoemReportError();
-				
 				if(g_hGlobalMutex!=0)
 				{
 					CloseHandle(g_hGlobalMutex);
@@ -468,8 +498,7 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 				hr = HrInstallNetMonProtocol();
 				if (hr != S_OK)
 				{
-					_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Warning: unable to load the netmon driver, ndiswan captures will not be available");
-					WoemReportError();
+					TRACE_MESSAGE("Warning: unable to load the netmon driver, ndiswan captures will not be available");
 				}
 			}
 			else
@@ -482,11 +511,9 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			//
 			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLL2K, g_DllFullPath))
 			{
-				_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.");
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.");
 
 				ReleaseMutex(g_hGlobalMutex);
-				
-				WoemReportError();
 				
 				if(g_hGlobalMutex!=0)
 				{
@@ -508,13 +535,11 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			//
 			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DRI2K, g_DriverFullPath))
 			{
-				_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", g_DllFullPath);
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.");
 
 				_unlink(g_DllFullPath);
 				
 				ReleaseMutex(g_hGlobalMutex);
-				
-				WoemReportError();
 
 				if(g_hGlobalMutex!=0)
 				{
@@ -540,14 +565,12 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			//
 			// Extract packet.dll to disk
 			//
-			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLL2K, g_DllFullPath))
+			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLLNT, g_DllFullPath))
 			{
-				_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.", g_DllFullPath);
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.");
 
 				ReleaseMutex(g_hGlobalMutex);
 
-				WoemReportError();
-				
 				if(g_hGlobalMutex!=0)
 				{
 					CloseHandle(g_hGlobalMutex);
@@ -568,12 +591,10 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			//
 			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DRI2K, g_DriverFullPath))
 			{
-				_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.");
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the WinPcap OEM files. Administrative privileges are required for this operation.");
 
 				_unlink(g_DllFullPath);
 
-				WoemReportError();
-				
 				ReleaseMutex(g_hGlobalMutex);
 				
 				if(g_hGlobalMutex!=0)
@@ -603,21 +624,19 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		
 		_snprintf(SvcBin, 
 			sizeof(SvcDesc) - 1, 
-			"system32\\drivers\\%s.sys",
+			NPF_DRIVER_PATH_ASCII "%s.sys",
 			g_NpfDriverNameId);
 		
 		if(create_driver_service(g_NpfDriverNameId, 
 			SvcDesc, 
 			SvcBin) == -1)
 		{
-			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create the packet driver service");
+			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("unable to create the packet driver service");
 
 			_unlink(g_DllFullPath);
 			_unlink(g_DriverFullPath);
 			
 			ReleaseMutex(g_hGlobalMutex);
-
-			WoemReportError();
 			
 			if(g_hGlobalMutex!=0)
 			{
@@ -639,15 +658,13 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		//
 		if(start_service(g_NpfDriverNameId) == -1)
 		{
-			_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to start the packet driver service");
+			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("unable to start the packet driver service");
 
 			delete_service(g_NpfDriverNameId);
 			_unlink(g_DllFullPath);
 			_unlink(g_DriverFullPath);
 			
 			ReleaseMutex(g_hGlobalMutex);
-
-			WoemReportError();
 			
 			if(g_hGlobalMutex!=0)
 			{
@@ -678,7 +695,7 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 			i++;
 			if(i == 300)
 			{
-				_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "timeout while starting the packet driver");
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("timeout while starting the packet driver");
 	
 				delete_service(g_NpfDriverNameId);
 				_unlink(g_DllFullPath);
@@ -686,8 +703,6 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 				
 				ReleaseMutex(g_hGlobalMutex);
 
-				WoemReportError();
-				
 				if(g_hGlobalMutex!=0)
 				{
 					CloseHandle(g_hGlobalMutex);
@@ -714,41 +729,10 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 	}
 		
 	//
-	// Create the names for the binaries
-	//
-	if(!WoemCreateBinaryNames())
-	{
-		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to create binary names");
-
-		delete_service(g_NpfDriverNameId);
-		_unlink(g_DllFullPath);
-		_unlink(g_DriverFullPath);
-		
-		ReleaseMutex(g_hGlobalMutex);
-
-		WoemReportError();
-		
-		if(g_hGlobalMutex!=0)
-		{
-			CloseHandle(g_hGlobalMutex);
-			g_hGlobalMutex = NULL;
-			
-		}
-		if (g_hGlobalSemaphore!=0)
-		{
-			CloseHandle(g_hGlobalSemaphore);
-			g_hGlobalSemaphore = NULL;
-		}
-		
-		return FALSE;
-	}
-
-	//
 	// Load packet.dll and intercept all the calls
 	//
-	if(!LoadPacketDll(g_DllFullPath))
+	if(!LoadPacketDll(g_DllFullPath, WoemErrorString))
 	{
-		_snprintf(g_LastWoemError, PACKET_ERRSTR_SIZE - 1, "unable to load packet.dll");
 
 		delete_service(g_NpfDriverNameId);
 		_unlink(g_DllFullPath);
@@ -756,8 +740,6 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 		
 		ReleaseMutex(g_hGlobalMutex);
 
-		WoemReportError();
-		
 		if(g_hGlobalMutex!=0)
 		{
 			CloseHandle(g_hGlobalMutex);
@@ -795,6 +777,11 @@ BOOL WoemEnterDll(HINSTANCE DllHandle)
 
 ////////////////////////////////////////////////////////////////////
 // Function called when a process loads the dll.
+//
+// NOTE: we cannot use tracing in this function, since it's called
+// in the context of DllMain (MSDN clearly states that only the 
+// functions exported by kernel32.dll can be called within the 
+// DllMain
 ////////////////////////////////////////////////////////////////////
 BOOL WoemLeaveDll()
 {
@@ -947,38 +934,8 @@ BOOL WoemLeaveDll()
 BOOL WoemCreateNameRegistryEntries()
 {
 	HKEY WinpcapKey;
-	DWORD DriverId = 0;
-	DWORD Type;
-	DWORD Len = sizeof(DriverId);
 	char KeyValBuf[MAX_WINPCAP_KEY_CHARS];
 	WCHAR KeyValBufW[MAX_WINPCAP_KEY_CHARS];
-
-	//
-	// First, check if the WinPcap global key is already present and
-	// if yes retrieve the id of the last loaded instance
-	//
-	if(RegOpenKeyEx(HKEY_LOCAL_MACHINE, 
-		WINPCAP_INSTANCE_KEY,
-		0,
-		KEY_ALL_ACCESS,
-		&WinpcapKey) == ERROR_SUCCESS)
-	{
-		//
-		// Key present, check the ID
-		//
-		if(RegQueryValueEx(WinpcapKey,
-			"npf_driver_id",
-			NULL,
-			&Type,
-			(LPBYTE)&DriverId,
-			&Len) != ERROR_SUCCESS)	// We include two bytes for string termination
-		{
-			//
-			// Key present but ID not present: this is the result of some mess
-			//
-			DriverId = 0;
-		}		
-	}
 
 	//
 	// Do a cleanup, just to be sure
@@ -1002,44 +959,9 @@ BOOL WoemCreateNameRegistryEntries()
 	}
 	
 	//
-	// Increase the ID and write it into the registry
-	//
-	DriverId++;
-	
-	if(DriverId > 99)
-		DriverId = 0;
-
-	if(RegSetValueEx(WinpcapKey,
-		"npf_driver_id",
-		0, 
-		REG_DWORD, 
-		(LPBYTE)&DriverId, 
-		sizeof(DriverId)) != ERROR_SUCCESS)
-	{
-		RegCloseKey(WinpcapKey);
-	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
-		return FALSE;
-	}
-
-	//
 	// Created the strings that we'll use to build the registry keys values
 	// and load the components
 	//
-/* XXX this is the totally dynamic version!
-
-	_snprintf(NpfDrNameWhId, 
-		sizeof(NpfDrNameWhId) - 1, 
-		"%s%.2d",
-		NPF_DRIVER_NAME,
-		DriverId);
-
-	_snwprintf(NpfDrNameWhIdW, 
-		sizeof(NpfDrNameWhIdW) / sizeof(WCHAR) - 1, 
-		L"%ws%.2d",
-		NPF_DRIVER_NAME_WIDECHAR,
-		DriverId);	
-*/	
 	_snprintf(g_NpfDriverNameId, 
 		sizeof(g_NpfDriverNameId) - 1, 
 		"%s",
@@ -1395,51 +1317,10 @@ BOOL WoemCreateBinaryNames()
 		return FALSE;
 	}
 
-/* XXX this is the totally dynamic version!
-	//
-	// First, check if the WinPcap global key is already present and
-	// if yes retrieve the id of the last loaded instance
-	//
-	if(RegOpenKeyEx(HKEY_LOCAL_MACHINE, 
-		WINPCAP_INSTANCE_KEY,
-		0,
-		KEY_ALL_ACCESS,
-		&WinpcapKey) == ERROR_SUCCESS)
-	{
-		//
-		// Key present, check the ID
-		//
-		if(RegQueryValueEx(WinpcapKey,
-			"npf_driver_id",
-			NULL,
-			&Type,
-			(LPBYTE)&DriverId,
-			&Len) != ERROR_SUCCESS)	// We include two bytes for string termination
-		{
-			//
-			// Key present but ID not present: this is the result of some mess
-			//
-			DriverId = 0;
-		}		
-	}
-
 	//
 	// Created the strings that we'll use to build the registry keys values
 	// and load the components
 	//
-
-	_snprintf(NpfDrNameWhId, 
-		sizeof(NpfDrNameWhId) - 1, 
-		"%s%.2d",
-		NPF_DRIVER_NAME,
-		DriverId);
-
-	_snwprintf(NpfDrNameWhIdW, 
-		sizeof(NpfDrNameWhIdW) / sizeof(WCHAR) - 1, 
-		L"%ws%.2d",
-		NPF_DRIVER_NAME_WIDECHAR,
-		DriverId);	
-*/	
 	_snprintf(g_NpfDriverNameId, 
 		sizeof(g_NpfDriverNameId) - 1, 
 		"%s",
