@@ -60,6 +60,7 @@
 #include "NetMonInstaller.h"
 //#define DEBUGTRACE
 #include "WinpcapOem.h"
+#include "WoemDebug.h"
 
 //----------------------------------------------------------------------------
 // Globals
@@ -491,7 +492,7 @@ int delete_service(LPCTSTR ServiceName)
 	
 	if (SCM_Handle==NULL)
 	{
-		TracePrint("Error opening Service Control Manager: ");
+		TRACE_MESSAGE("Error opening Service Control Manager: ");
 		DisplayErrorText(GetLastError());
 		return -1;
 	}
@@ -503,11 +504,11 @@ int delete_service(LPCTSTR ServiceName)
 	
 	if (ServiceHandle==NULL)
 	{
-		TracePrint("Error opening Service Control Manager: ");
+		TRACE_MESSAGE("Error opening Service Control Manager: ");
 		DisplayErrorText(GetLastError());
 		
 		if (!CloseServiceHandle(SCM_Handle))
-			TracePrint("Error closing Service control Manager\n");
+			TRACE_MESSAGE("Error closing Service control Manager\n");
 		
 		return -1;
 	}
@@ -520,27 +521,27 @@ int delete_service(LPCTSTR ServiceName)
 		
 		if (Err != ERROR_SERVICE_NOT_ACTIVE)
 		{
-			TracePrint("Error stopping service %s: ",ServiceName);
+			TRACE_MESSAGE("Error stopping service %s: ",ServiceName);
 			DisplayErrorText(Err);
 			ReturnValue=-1;
 		}
 	}
 	else
-		TracePrint("Service %s successfully stopped\n",ServiceName);
+		TRACE_MESSAGE("Service %s successfully stopped\n",ServiceName);
 	
 	if(!DeleteService(ServiceHandle))
 	{
-		TracePrint("Error deleting service %s: ",ServiceName);
+		TRACE_MESSAGE("Error deleting service %s: ",ServiceName);
 		DisplayErrorText(GetLastError());
 		ReturnValue=-1;
 		
 	}
 	else
-		TracePrint("Service %s successfully deleted\n",ServiceName);
+		TRACE_MESSAGE("Service %s successfully deleted\n",ServiceName);
 	
 	if(!CloseServiceHandle(ServiceHandle))
 	{
-		TracePrint("Error closing service %s: ",ServiceName);
+		TRACE_MESSAGE("Error closing service %s: ",ServiceName);
 		DisplayErrorText(GetLastError());
 		ReturnValue=-1;
 	}
@@ -548,7 +549,7 @@ int delete_service(LPCTSTR ServiceName)
 	
 	if(!CloseServiceHandle(SCM_Handle))
 	{
-		TracePrint("Error closing Service control Manager\n");
+		TRACE_MESSAGE("Error closing Service control Manager\n");
 		ReturnValue=-1;
 	}
 	
@@ -569,7 +570,7 @@ int stop_service(LPCTSTR ServiceName)
 	
 	if (SCM_Handle==NULL)
 	{
-		TracePrint("Error opening Service Control Manager: ");
+		TRACE_MESSAGE("Error opening Service Control Manager: ");
 		DisplayErrorText(GetLastError());
 		
 		return -1;
@@ -582,11 +583,11 @@ int stop_service(LPCTSTR ServiceName)
 	
 	if (ServiceHandle==NULL)
 	{
-		TracePrint("Error opening service %s:",ServiceName);
+		TRACE_MESSAGE("Error opening service %s:",ServiceName);
 		DisplayErrorText(GetLastError());
 		
 		if (!CloseServiceHandle(SCM_Handle))
-			TracePrint("Error closing Service control Manager\n");
+			TRACE_MESSAGE("Error closing Service control Manager\n");
 		
 		return -1;
 	}
@@ -595,17 +596,17 @@ int stop_service(LPCTSTR ServiceName)
 	
 	if (!ControlService(ServiceHandle,SERVICE_CONTROL_STOP,&ServiceStatus))
 	{
-		TracePrint("Error stopping service %s: ",ServiceName);
+		TRACE_MESSAGE("Error stopping service %s: ",ServiceName);
 		DisplayErrorText(GetLastError());
 		ReturnValue=-1;
 		
 	}
 	else
-		TracePrint("Service %s successfully stopped\n",ServiceName);
+		TRACE_MESSAGE("Service %s successfully stopped\n",ServiceName);
 	
 	if (!CloseServiceHandle(ServiceHandle))
 	{
-		TracePrint("Error closing service %s: ",ServiceName);
+		TRACE_MESSAGE("Error closing service %s: ",ServiceName);
 		DisplayErrorText(GetLastError());
 		
 		ReturnValue=-1;
@@ -613,7 +614,7 @@ int stop_service(LPCTSTR ServiceName)
 	
 	if (!CloseServiceHandle(SCM_Handle))
 	{
-		TracePrint("Error closing Service control Manager\n");
+		TRACE_MESSAGE("Error closing Service control Manager\n");
 		ReturnValue=-1;
 	}
 	
@@ -633,7 +634,7 @@ int change_start_type_service(LPCTSTR ServiceName, DWORD StartType)
 	
 	if (SCM_Handle == NULL)
 	{
-		TracePrint("Error opening Service Control Manager: ");
+		TRACE_MESSAGE("Error opening Service Control Manager: ");
 		DisplayErrorText(GetLastError());
 		return -1;
 	}
@@ -645,11 +646,11 @@ int change_start_type_service(LPCTSTR ServiceName, DWORD StartType)
 	
 	if (ServiceHandle == NULL)
 	{
-		TracePrint("Error opening service %s: ",ServiceName);
+		TRACE_MESSAGE("Error opening service %s: ",ServiceName);
 		DisplayErrorText(GetLastError());
 		
 		if (!CloseServiceHandle(SCM_Handle))
-			TracePrint("Error closing Service control Manager\n");
+			TRACE_MESSAGE("Error closing Service control Manager\n");
 		
 		return -1;
 	}
@@ -668,24 +669,24 @@ int change_start_type_service(LPCTSTR ServiceName, DWORD StartType)
 		NULL,
 		NULL))
 	{
-		TracePrint("Error changing start type for service %s:",ServiceName);
+		TRACE_MESSAGE("Error changing start type for service %s:",ServiceName);
 		DisplayErrorText(GetLastError());
 		ReturnValue=-1;
 		
 	}
 	else
-		TracePrint("Successfully changed start-type for service %s\n",ServiceName);
+		TRACE_MESSAGE("Successfully changed start-type for service %s\n",ServiceName);
 	
 	if (!CloseServiceHandle(ServiceHandle))
 	{
-		TracePrint("Error closing service %s\n",ServiceName);
+		TRACE_MESSAGE("Error closing service %s\n",ServiceName);
 		ReturnValue=-1;
 	}
 	
 	
 	if (!CloseServiceHandle(SCM_Handle))
 	{
-		TracePrint("Error closing Service control Manager\n");
+		TRACE_MESSAGE("Error closing Service control Manager\n");
 		ReturnValue=-1;
 	}
 	
@@ -706,7 +707,7 @@ int start_service(LPCTSTR ServiceName)
 	
 	if (SCM_Handle == NULL)
 	{
-		TracePrint("Error opening Service Control Manager: ");
+		TRACE_MESSAGE("Error opening Service Control Manager: ");
 		DisplayErrorText(GetLastError());
 		return -1;
 	}
@@ -718,11 +719,11 @@ int start_service(LPCTSTR ServiceName)
 	
 	if (ServiceHandle == NULL)
 	{
-		TracePrint("Error opening service %s: ",ServiceName);
+		TRACE_MESSAGE("Error opening service %s: ",ServiceName);
 		DisplayErrorText(GetLastError());
 		
 		if (!CloseServiceHandle(SCM_Handle))
-			TracePrint("Error closing Service control Manager\n");
+			TRACE_MESSAGE("Error closing Service control Manager\n");
 		
 		return -1;
 	}
@@ -731,24 +732,24 @@ int start_service(LPCTSTR ServiceName)
 	
 	if (!StartService(ServiceHandle,0,NULL))
 	{
-		TracePrint("Error starting service %s:",ServiceName);
+		TRACE_MESSAGE("Error starting service %s:",ServiceName);
 		DisplayErrorText(GetLastError());
 		ReturnValue=-1;
 		
 	}
 	else
-		TracePrint("Service %s successfully started\n",ServiceName);
+		TRACE_MESSAGE("Service %s successfully started\n",ServiceName);
 	
 	if (!CloseServiceHandle(ServiceHandle))
 	{
-		TracePrint("Error closing service %s\n",ServiceName);
+		TRACE_MESSAGE("Error closing service %s\n",ServiceName);
 		ReturnValue=-1;
 	}
 	
 	
 	if (!CloseServiceHandle(SCM_Handle))
 	{
-		TracePrint("Error closing Service control Manager\n");
+		TRACE_MESSAGE("Error closing Service control Manager\n");
 		ReturnValue=-1;
 	}
 	
@@ -770,7 +771,7 @@ int create_driver_service(LPCTSTR ServiceName,LPCTSTR ServiceDescription,LPCTSTR
 	if (SCM_Handle==NULL)
 	{
 		
-		TracePrint("Error opening Service Control Manager: ");
+		TRACE_MESSAGE("Error opening Service Control Manager: ");
 		DisplayErrorText(GetLastError());
 		
 		return -1;
@@ -796,12 +797,12 @@ int create_driver_service(LPCTSTR ServiceName,LPCTSTR ServiceDescription,LPCTSTR
 		{
 			if (!CloseServiceHandle(SCM_Handle))
 				if (stdout != NULL)
-					TracePrint("Error closing Service control Manager\n");
+					TRACE_MESSAGE("Error closing Service control Manager\n");
 				
 				return 0;
 		}			
 		
-		TracePrint("Error creating service %s: (%d)",
+		TRACE_MESSAGE("Error creating service %s: (%d)",
 			ServiceName,
 			GetLastError());
 		
@@ -809,25 +810,25 @@ int create_driver_service(LPCTSTR ServiceName,LPCTSTR ServiceDescription,LPCTSTR
 		
 		if (!CloseServiceHandle(SCM_Handle))
 			if (stdout != NULL)
-				TracePrint("Error closing Service control Manager\n");
+				TRACE_MESSAGE("Error closing Service control Manager\n");
 			
 			return -1;
 	}
 	
-	TracePrint("Service %s successfully created.\n",ServiceName);
+	TRACE_MESSAGE("Service %s successfully created.\n",ServiceName);
 	
 	ReturnValue=0;
 	
 	if (!CloseServiceHandle(ServiceHandle))
 	{
-		TracePrint("Error closing service %s.\n",ServiceName);
+		TRACE_MESSAGE("Error closing service %s.\n",ServiceName);
 		ReturnValue=-1;
 	}
 	
 	
 	if (!CloseServiceHandle(SCM_Handle))
 	{
-		TracePrint("Error closing Service control Manager\n");
+		TRACE_MESSAGE("Error closing Service control Manager\n");
 		ReturnValue=-1;
 	}
 	
@@ -848,7 +849,7 @@ int check_if_service_is_running(LPCTSTR ServiceName)
 	
 	if (SCM_Handle == NULL)
 	{
-		TracePrint("Error opening Service Control Manager: ");
+		TRACE_MESSAGE("Error opening Service Control Manager: ");
 		DisplayErrorText(GetLastError());
 		return -1;
 	}
@@ -899,7 +900,7 @@ int check_if_service_is_present(LPCTSTR ServiceName)
 	
 	if (SCM_Handle == NULL)
 	{
-		TracePrint("Error opening Service Control Manager: ");
+		TRACE_MESSAGE("Error opening Service Control Manager: ");
 		DisplayErrorText(GetLastError());
 		return -1;
 	}
@@ -950,7 +951,7 @@ void DisplayErrorText(DWORD dwLastError)
         NULL
         ))
     {
-		TracePrint("%s",MessageBuffer);
+		TRACE_MESSAGE("%s",MessageBuffer);
 		
         //
         // Free the buffer allocated by the system.
