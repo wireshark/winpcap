@@ -1118,7 +1118,7 @@ BOOL LoadPacketDll(char *PacketDllFileName, char *errorString)
 		return FALSE;
 	}
 
-	PacketSetLoopbackBehaviorH = (PacketSetLoopbackBehaviorHandler) GetProcAddress(PacketLib, "PacketSetLoopbackBehavior");		
+	PacketSetLoopbackBehaviorH = (PacketSetLoopbackBehaviorHandler) GetProcAddress(g_PacketLib, "PacketSetLoopbackBehavior");		
 	if(!PacketSetLoopbackBehaviorH)
 	{
 		LOAD_PACKET_DLL_TRACE_AND_COPY_ERROR("Unable to load Packet.dll (internal error 29)");
