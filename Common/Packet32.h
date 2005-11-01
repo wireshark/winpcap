@@ -321,26 +321,55 @@ typedef struct _PACKET_OID_DATA PACKET_OID_DATA, *PPACKET_OID_DATA;
 #define ODSEx(_x, _y)
 #else
 #ifdef _DEBUG_TO_FILE
+
 /*! 
   \brief Macro to print a debug string. The behavior differs depending on the debug level
 */
-#define ODS(_x) { \
-	FILE *f; \
-	f = fopen("winpcap_debug.txt", "a"); \
-	fprintf(f, "%s", _x); \
-	fclose(f); \
+__inline static  void ODS(char* _x) 
+{										
+	FILE *f;											
+	SYSTEMTIME LocalTime;								
+														
+	GetLocalTime(&LocalTime);							
+														
+	f = fopen("winpcap_debug.txt", "a");				
+
+	fprintf(f, "%.04u-%.02u-%.02u %.02u:%02u:%02u -- %s", 
+			LocalTime.wYear,							
+			LocalTime.wMonth,							
+			LocalTime.wDay,								
+			LocalTime.wHour,							
+			LocalTime.wMinute,							
+			LocalTime.wSecond,							
+			_x);										
+	fclose(f);											
 }
 /*! 
   \brief Macro to print debug data with the printf convention. The behavior differs depending on 
   the debug level
 */
-#define ODSEx(_x, _y) { \
-	FILE *f; \
-	f = fopen("winpcap_debug.txt", "a"); \
-	fprintf(f, _x, _y); \
-	fclose(f); \
-}
+static __inline void ODSEx(char *_x, ...) 
+{ 
+	FILE *f;											
+	SYSTEMTIME LocalTime;								
+	va_list Marker;
 
+	va_start( Marker, _x );     /* Initialize variable arguments. */
+														
+	GetLocalTime(&LocalTime);							
+														
+	f = fopen("winpcap_debug.txt", "a");				
+	fprintf(f, "%.04u-%.02u-%.02u %.02u:%02u:%02u -- ",
+			LocalTime.wYear,							
+			LocalTime.wMonth,							
+			LocalTime.wDay,								
+			LocalTime.wHour,							
+			LocalTime.wMinute,							
+			LocalTime.wSecond);										
+	vfprintf(f, _x, Marker);
+	
+	fclose(f);											
+}
 
 
 LONG PacketDumpRegistryKey(PCHAR KeyName, PCHAR FileName);
@@ -423,8 +452,7 @@ BOOLEAN PacketSetDumpLimits(LPADAPTER AdapterObject, UINT maxfilesize, UINT maxn
 BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync);
 BOOL PacketStopDriver();
 VOID PacketCloseAdapter(LPADAPTER lpAdapter);
-PCHAR PacketGetLastOemError();
-LONG PacketStartOem(PVOID);
+BOOLEAN PacketStartOem(PCHAR errorString, UINT errorStringLength);
 
 #ifdef __cplusplus
 }
