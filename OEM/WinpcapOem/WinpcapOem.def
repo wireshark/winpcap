@@ -31,6 +31,4 @@ EXPORTS
 		PacketSetDumpLimits
 		PacketIsDumpEnded
 		PacketSetLoopbackBehavior
-
-		PacketGetLastOemError
 		PacketStartOem
