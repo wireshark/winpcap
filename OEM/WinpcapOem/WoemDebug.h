@@ -26,6 +26,8 @@ static __inline void CreateMessageStringV(char *_x, va_list Marker, BOOL newLine
 	DWORD dwThreadId;
 	size_t currentLen;
 
+	DWORD dwLastError = GetLastError();
+
 	dwThreadId = GetCurrentThreadId();
 
 	GetLocalTime(&LocalTime);							
@@ -55,6 +57,9 @@ static __inline void CreateMessageStringV(char *_x, va_list Marker, BOOL newLine
 			outBuffer[currentLen + 1] = '\0';
 		}
 	}
+
+	SetLastError(dwLastError);
+
 }
 
 static __inline void OutputDebugMessage(char *_x, ...)
@@ -64,9 +69,13 @@ static __inline void OutputDebugMessage(char *_x, ...)
 	int loops;
 #endif
 
+
 	va_list Marker;
-	va_start(Marker, _x);
 	char message[1024];
+
+	DWORD dwLastError = GetLastError();
+	
+	va_start(Marker, _x);
 
 	CreateMessageStringV(_x, Marker, FALSE, message, sizeof(message));
 
@@ -92,6 +101,9 @@ static __inline void OutputDebugMessage(char *_x, ...)
 #else
 	OutputDebugStringA(message);
 #endif
+
+	SetLastError(dwLastError);
+
 }
 
 static __inline void OutputDebugMessageNewLine(char *_x, ...)
@@ -102,6 +114,9 @@ static __inline void OutputDebugMessageNewLine(char *_x, ...)
 #endif
 
 	va_list Marker;
+
+	DWORD dwLastError = GetLastError();
+
 	va_start(Marker, _x);
 	char message[1024];
 
@@ -130,6 +145,7 @@ static __inline void OutputDebugMessageNewLine(char *_x, ...)
 	OutputDebugStringA(message);
 #endif
 
+	SetLastError(dwLastError);
 
 }
 
@@ -140,6 +156,8 @@ static __inline void TRACE_PRINT_OS_INFO()
 	CHAR buffer[1024];
 	DWORD size = sizeof(buffer);
 	DWORD type;
+
+	DWORD dwLastError = GetLastError();
 
 	OutputDebugMessage("********************* OS info.********************* \n");
 	buffer[size-1] = 0;
@@ -205,6 +223,7 @@ static __inline void TRACE_PRINT_OS_INFO()
 
 	OutputDebugMessage("*************************************************** \n");
 
+	SetLastError(dwLastError);
 
 }
 
