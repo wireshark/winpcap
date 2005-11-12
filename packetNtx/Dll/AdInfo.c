@@ -168,6 +168,8 @@ BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, 
 		&RegQueryLen, 
 		NPF_DEVICE_NAMES_PREFIX_WIDECHAR, 
 		sizeof(NPF_DEVICE_NAMES_PREFIX_WIDECHAR));
+	
+	RegQueryLen = RegQueryLen / 2 - 1;
 
 	if (wcsncmp(ifname, 
 		QueryWinpcapRegistryKey(L"npf_device_names_prefix_widechar", NULL, NPF_DEVICE_NAMES_PREFIX_WIDECHAR, sizeof(NPF_DEVICE_NAMES_PREFIX_WIDECHAR)),
