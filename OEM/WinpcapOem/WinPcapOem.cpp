@@ -32,7 +32,7 @@ BOOL APIENTRY DllMain(HINSTANCE Dllh, DWORD Reason, LPVOID lpReserved)
 {
 	switch(Reason)
     {
-		
+
 	case DLL_PROCESS_ATTACH:
 		
 		g_DllHandle = Dllh;
@@ -320,7 +320,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	}
 	
 	if (lold == 0)
-	{		
+	{
 		//
 		// IF WE ARE HERE, THE DLL IS BEING LOADED FOR THE FIRST TIME.
 		//
@@ -727,13 +727,37 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		//
 		_unlink(g_DriverFullPath);
 	}
+	else
+	{
+		if(!WoemCreateBinaryNames())
+		{			
+			delete_service(g_NpfDriverNameId);
+			_unlink(g_DllFullPath);
+			_unlink(g_DriverFullPath);
+			
+			ReleaseMutex(g_hGlobalMutex);
+			
+			if(g_hGlobalMutex!=0)
+			{
+				CloseHandle(g_hGlobalMutex);
+				g_hGlobalMutex = NULL;
+				
+			}
+			if (g_hGlobalSemaphore!=0)
+			{
+				CloseHandle(g_hGlobalSemaphore);
+				g_hGlobalSemaphore = NULL;
+			}
+			
+			return FALSE;
+		}
+	}
 		
 	//
 	// Load packet.dll and intercept all the calls
 	//
 	if(!LoadPacketDll(g_DllFullPath, WoemErrorString))
 	{
-
 		delete_service(g_NpfDriverNameId);
 		_unlink(g_DllFullPath);
 		_unlink(g_DriverFullPath);
