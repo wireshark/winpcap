@@ -3,8 +3,8 @@ if NOT %_BUILDARCH%==AMD64 goto error_buildenv
 
 set NDISVERSION=NDIS50
 set NPF_ARCH=__NPF_AMD64__
-md \i386\free >nul 2>nul
-md \i386\checked >nul 2>nul
+md \AMD64\free >nul 2>nul
+md \AMD64\checked >nul 2>nul
 
 echo foo > driver\Sources
 xcopy driver\Sources.AMD64 driver\Sources /y /v /q 
