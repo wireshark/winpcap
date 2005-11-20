@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999 - 2003
- * NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2005 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,9 +12,10 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the Politecnico di Torino nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ * 3. Neither the name of the Politecnico di Torino, CACE Technologies 
+ * nor the names of its contributors may be used to endorse or promote 
+ * products derived from this software without specific prior written 
+ * permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -67,7 +68,9 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	CpuPrivateData		*LocalData;
 	ULONG				i;
 	ULONG				Occupation;
+
 	IF_LOUD(DbgPrint("NPF: Read\n");)
+
 		
 	IrpSp = IoGetCurrentIrpStackLocation(Irp);
     Open=IrpSp->FileObject->FsContext;
@@ -106,7 +109,8 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 		KeClearEvent(Open->ReadEvent);
 		
-		if(Open->mode & MODE_STAT){   //this capture instance is in statistics mode
+		if(Open->mode & MODE_STAT)
+		{   //this capture instance is in statistics mode
 #ifdef NDIS50
 			CurrBuff=(PUCHAR)MmGetSystemAddressForMdlSafe(Irp->MdlAddress, NormalPagePriority);
 #else
@@ -145,6 +149,12 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			return STATUS_SUCCESS;
 		}
 		
+//
+// The MONITOR_MODE (aka TME extensions) is not supported on 
+// 64 bit architectures
+//
+#ifdef __NPF_x86__
+
 		if(Open->mode==MODE_MON)   //this capture instance is in monitor mode
 		{   
 			PTME_DATA data;
@@ -169,7 +179,7 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 			
 			header->bh_hdrlen=sizeof(struct bpf_hdr);
-			
+	
 
 			//moves user memory pointer
 			UserPointer+=sizeof(struct bpf_hdr);
@@ -223,8 +233,14 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			EXIT_SUCCESS(0);
 		}
 				
-	}
+	#else // not __NPF_x86__ , so x86-64 or IA64
+		if(Open->mode==MODE_MON)   //this capture instance is in monitor mode
+		{   
+			EXIT_FAILURE(0);
+		}
+	#endif // __NPF_x86__
 
+	}
 
 
 
@@ -258,7 +274,7 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			if ( Header->SN == Open->ReaderSN)
 			{   //check if it the next one to be copied
 				plen = Header->header.bh_caplen;
-				if (plen + sizeof (struct bpf_hdr) > available-copied)  
+				if (plen + sizeof (struct bpf_hdr) > available - copied)  
 				{  //if the packet does not fit into the user buffer, we've ended copying packets
 					EXIT_SUCCESS(copied);
 				}
@@ -345,7 +361,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	ULONG				ToCopy;
 	ULONG				increment;
 	ULONG				i;
-	BOOLEAN				Flag;
+	BOOLEAN				ShouldReleaseMachineLock;
 
     IF_VERY_LOUD(DbgPrint("NPF: tap\n");)
 	IF_VERY_LOUD(DbgPrint("HeaderBufferSize=%d, LookAheadBuffer=%d, LookaheadBufferSize=%d, PacketSize=%d\n", 
@@ -368,14 +384,20 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	IF_LOUD(DbgPrint("Received on CPU %d \t%d\n",Cpu,LocalData->Received);)
 //	Open->Received++;		// Number of packets received by filter ++
 
+//
+// The MONITOR_MODE (aka TME extensions) is not supported on 
+// 64 bit architectures
+//
+#ifdef __NPF_x86__
 	if (Open->mode == MODE_MON)
 	{
-		Flag = TRUE;
+		ShouldReleaseMachineLock = TRUE;
 		NdisAcquireSpinLock(&Open->MachineLock);
 	}
 	else
-		Flag = FALSE;
-	
+		ShouldReleaseMachineLock = FALSE;
+#endif
+
 	//
 	//Check if the lookahead buffer follows the mac header.
 	//If the data follow the header (i.e. there is only a buffer) a normal bpf_filter() is
@@ -383,7 +405,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	//Otherwise if there are 2 separate buffers (this could be the case of LAN emulation or
 	//things like this) bpf_filter_with_2_buffers() is executed.
 	//
-	if((UINT)LookaheadBuffer-(UINT)HeaderBuffer != HeaderBufferSize)
+	if((PUCHAR)LookaheadBuffer-(PUCHAR)HeaderBuffer != HeaderBufferSize)
 		fres=bpf_filter_with_2_buffers((struct bpf_insn*)(Open->bpfprogram),
 									   HeaderBuffer,
 									   LookaheadBuffer,
@@ -396,6 +418,11 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	
 	
 	else 
+//
+// the jit filter is available on x86 (32 bit) only
+//
+#ifdef __NPF_x86__
+
 		if(Open->Filter != NULL)
 		{
 			if (Open->bpfprogram != NULL)
@@ -403,16 +430,13 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 				fres=Open->Filter->Function(HeaderBuffer,
 									PacketSize+HeaderBufferSize,
 									LookaheadBufferSize+HeaderBufferSize);
-		
-				// Restore the stack. 
-				// I ignore the reason, but this instruction is needed only at kernel level
-				_asm add esp,12		
 			}
 			else
 				fres = -1;
 		}
 		else
- 			fres=bpf_filter((struct bpf_insn*)(Open->bpfprogram),
+#endif //__NPF_x86__
+			fres=bpf_filter((struct bpf_insn*)(Open->bpfprogram),
  		                HeaderBuffer,
  						PacketSize+HeaderBufferSize,
 						LookaheadBufferSize+HeaderBufferSize,
@@ -420,9 +444,20 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 						&Open->tme,
 						&G_Start_Time);
 
-	if (Flag)
+//
+// The MONITOR_MODE (aka TME extensions) is not supported on 
+// 64 bit architectures
+//
+#ifdef __NPF_x86__
+	if (ShouldReleaseMachineLock)
 		NdisReleaseSpinLock(&Open->MachineLock);
-	
+#endif
+
+//
+// The MONITOR_MODE (aka TME extensions) is not supported on 
+// 64 bit architectures
+//
+#ifdef __NPF_x86__
 	if(Open->mode==MODE_MON)
 	// we are in monitor mode
 	{
@@ -432,6 +467,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 		return NDIS_STATUS_NOT_ACCEPTED;
 
 	}
+#endif
 
 	if(fres==0)
 	{
@@ -535,7 +571,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 		if (LocalData->P == Open->Size)
 			LocalData->P = 0;
 
-		if ( fres <= HeaderBufferSize || ( (ULONG)LookaheadBuffer - (ULONG)HeaderBuffer ) == HeaderBufferSize )
+		if ( fres <= HeaderBufferSize || ( (PUCHAR)LookaheadBuffer - (PUCHAR)HeaderBuffer ) == HeaderBufferSize )
 		{
 			//we can consider the buffer contiguous, either because we use only the data 
 			//present in the HeaderBuffer, or because HeaderBuffer and LookaheadBuffer are contiguous
