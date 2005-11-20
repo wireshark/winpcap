@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999 - 2003
- * NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2005 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,9 +12,10 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the Politecnico di Torino nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ * 3. Neither the name of the Politecnico di Torino, CACE Technologies 
+ * nor the names of its contributors may be used to endorse or promote 
+ * products derived from this software without specific prior written 
+ * permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -42,7 +43,9 @@
 #include "win_bpf.h"
 #include "win_bpf_filter_init.h"
 
+#ifdef __NPF_x86__
 #include "tme.h"
+#endif
 
 #if DBG
 // Declare the global debug flag for this driver.
@@ -106,7 +109,7 @@ DriverEntry(
 	
 	ReadTimeStampModeFromRegistry(RegistryPath);
 
-/**/DbgPrint("%ws",RegistryPath->Buffer);
+	IF_LOUD(DbgPrint("%ws",RegistryPath->Buffer);)
 
 	NCpu = NdisSystemProcessorCount();
 
@@ -605,6 +608,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	BOOLEAN				IsExtendedFilter=FALSE;
 
 	BOOLEAN				Flag;
+	PUINT				pStats;
 
     IF_LOUD(DbgPrint("NPF: IoControl\n");)
 		
@@ -620,24 +624,26 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 	case BIOCGSTATS: //function to get the capture stats
 		
-		if(IrpSp->Parameters.DeviceIoControl.OutputBufferLength < 4*sizeof(INT)){			
+		if(IrpSp->Parameters.DeviceIoControl.OutputBufferLength < 4*sizeof(UINT)){			
 			EXIT_FAILURE(0);
 		}
 
-		*(((PUINT)Irp->UserBuffer)+3) = 0;
-		*(((PUINT)Irp->UserBuffer)+0) = 0;
-		*(((PUINT)Irp->UserBuffer)+1) = 0;
-		*(((PUINT)Irp->UserBuffer)+2) = 0;		// Not yet supported
+		pStats = (PUINT)(Irp->UserBuffer);
 
-		for(i=0;i<NCpu;i++)
+		pStats[3] = 0;
+		pStats[0] = 0;
+		pStats[1] = 0;
+		pStats[2] = 0;		// Not yet supported
+
+		for(i = 0 ; i < NCpu ; i++)
 		{
 
-			*(((PUINT)Irp->UserBuffer)+3) += Open->CpuData[i].Accepted;
-			*(((PUINT)Irp->UserBuffer)+0) += Open->CpuData[i].Received;
-			*(((PUINT)Irp->UserBuffer)+1) += Open->CpuData[i].Dropped;
-			*(((PUINT)Irp->UserBuffer)+2) += 0;		// Not yet supported
+			pStats[3] += Open->CpuData[i].Accepted;
+			pStats[0] += Open->CpuData[i].Received;
+			pStats[1] += Open->CpuData[i].Dropped;
+			pStats[2] += 0;		// Not yet supported
 		}
-		EXIT_SUCCESS(4*sizeof(INT));
+		EXIT_SUCCESS(4*sizeof(UINT));
 		
 		break;
 		
@@ -696,7 +702,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		do
 		{
 			Flag = FALSE;
-			for(i=0;i<NCpu;i++)
+			for(i = 0; i < NCpu ; i++)
 				if (Open->CpuData[i].Processing == 1)
 					Flag = TRUE;
 		}
@@ -704,19 +710,24 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 
 		// Free the previous buffer if it was present
-		if(Open->bpfprogram!=NULL){
-			TmpBPFProgram=Open->bpfprogram;
+		if(Open->bpfprogram != NULL){
+			TmpBPFProgram = Open->bpfprogram;
 			Open->bpfprogram = NULL;
 			ExFreePool(TmpBPFProgram);
 		}
 		
-		if (Open->Filter!=NULL)
+//
+// Jitted filters are supported on x86 (32bit) only
+// 
+#ifdef __NPF_x86__
+		if (Open->Filter != NULL)
 		{
 			JIT_BPF_Filter *OldFilter=Open->Filter;
 			Open->Filter=NULL;
 			BPF_Destroy_JIT_Filter(OldFilter);
 		}
-        
+#endif // __NPF_x86__
+
 		// Get the pointer to the new program
 		prog=(PUCHAR)Irp->AssociatedIrp.SystemBuffer;
 		
@@ -726,13 +737,14 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			EXIT_FAILURE(0);
 		}
 		
-		insns=(IrpSp->Parameters.DeviceIoControl.InputBufferLength)/sizeof(struct bpf_insn);
+		insns = (IrpSp->Parameters.DeviceIoControl.InputBufferLength)/sizeof(struct bpf_insn);
 		
 		//count the number of operative instructions
 		for (cnt=0;(cnt<insns) &&(((struct bpf_insn*)prog)[cnt].code!=BPF_SEPARATION); cnt++);
 		
 		IF_LOUD(DbgPrint("Operative instructions=%u\n",cnt);)
 
+#ifdef __NPF_x86__
 		if ( cnt != insns && insns != cnt+1 && ((struct bpf_insn*)prog)[cnt].code == BPF_SEPARATION ) 
 		{
 			IF_LOUD(DbgPrint("Initialization instructions=%u\n",insns-cnt-1);)
@@ -750,10 +762,24 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 				EXIT_FAILURE(0);
 			}
 		}
+#else  //x86-64 and IA64
+		if ( cnt != insns)
+		{
+			IF_LOUD(DbgPrint("Error installing the BPF filter. The filter contains TME extensions,"
+				" not supported on 64bit platforms.\n");)
+
+			Open->SkipProcessing = 0;
+			EXIT_FAILURE(0);
+		}
+
+
+#endif
 
 		//the NPF processor has been initialized, we have to validate the operative instructions
-		insns=cnt;
+		insns = cnt;
 		
+		//NOTE: the validation code checks for TME instructions, and fails if a TME instruction is
+		//encountered on 64 bit machines
 		if(bpf_validate((struct bpf_insn*)prog,cnt,Open->mem_ex.size)==0)
 		{
 			IF_LOUD(DbgPrint("Error validating program");)
@@ -766,8 +792,8 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 		// Allocate the memory to contain the new filter program
 		// We could need the original BPF binary if we are forced to use bpf_filter_with_2_buffers()
-		TmpBPFProgram=(PUCHAR)ExAllocatePoolWithTag(NonPagedPool, cnt*sizeof(struct bpf_insn), '4PWA');
-		if (TmpBPFProgram==NULL)
+		TmpBPFProgram = (PUCHAR)ExAllocatePoolWithTag(NonPagedPool, cnt*sizeof(struct bpf_insn), '4PWA');
+		if (TmpBPFProgram == NULL)
 		{
 			IF_LOUD(DbgPrint("Error - No memory for filter");)
 			// no memory
@@ -779,6 +805,10 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		RtlCopyMemory(TmpBPFProgram,prog,cnt*sizeof(struct bpf_insn));
 		Open->bpfprogram=TmpBPFProgram;
 		
+		//
+		// At the moment the JIT compiler works on x86 (32 bit) only
+		//
+#ifdef __NPF_x86__
 		// Create the new JIT filter function
 		if(!IsExtendedFilter)
 			if((Open->Filter=BPF_jitter((struct bpf_insn*)Open->bpfprogram,cnt)) == NULL)
@@ -787,9 +817,10 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 				Open->SkipProcessing = 0;
 				EXIT_FAILURE(0);
 			}
+#endif
 
 		//return
-		for (i=0;i<NCpu;i++)
+		for (i = 0 ; i < NCpu ; i++)
 		{
 			Open->CpuData[i].C=0;
 			Open->CpuData[i].P=0;
@@ -823,25 +854,35 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		}
 ///////kernel dump does not work at the moment//////////////////////////////////////////
 
-		if(mode == MODE_CAPT){
-			Open->mode=MODE_CAPT;
+		if(mode == MODE_CAPT)
+		{
+			Open->mode = MODE_CAPT;
 			
 			EXIT_SUCCESS(0);
 		}
- 		else if (mode==MODE_MON){
- 			Open->mode=MODE_MON;
-
+ 		else if (mode == MODE_MON)
+		{
+//
+// The MONITOR_MODE (aka TME extensions) is not supported on 
+// 64 bit architectures
+//
+#ifdef __NPF_x86__
+			Open->mode = MODE_MON;
 			EXIT_SUCCESS(0);
- 		}	
+#else // _NPF_x86__
+			EXIT_FAILURE(0);
+#endif // __NPF_x86__
+		
+		}	
 		else{
 			if(mode & MODE_STAT){
 				Open->mode = MODE_STAT;
 				NdisAcquireSpinLock(&Open->CountersLock);
-				Open->Nbytes.QuadPart=0;
-				Open->Npackets.QuadPart=0;
+				Open->Nbytes.QuadPart = 0;
+				Open->Npackets.QuadPart = 0;
 				NdisReleaseSpinLock(&Open->CountersLock);
 				
-				if(Open->TimeOut.QuadPart==0)Open->TimeOut.QuadPart=-10000000;
+				if(Open->TimeOut.QuadPart==0)Open->TimeOut.QuadPart = -10000000;
 				
 			}
 			
@@ -864,6 +905,10 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		EXIT_FAILURE(0);
 ///////kernel dump does not work at the moment//////////////////////////////////////////
 
+//
+// Remove the following #if 0 to enable the kernel dump again
+//
+#if 0
 		if(Open->mode & MODE_DUMP)
 		{
 			
@@ -911,13 +956,17 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		EXIT_FAILURE(0);
 		
 		break;
-				
+#endif // #if 0				
 	case BIOCSETDUMPLIMITS:
 
 ///////kernel dump does not work at the moment//////////////////////////////////////////
 		EXIT_FAILURE(0);
 ///////kernel dump does not work at the moment//////////////////////////////////////////
 
+//
+// Remove the following #if 0 to enable the kernel dump again
+//
+#if 0
 		if (IrpSp->Parameters.DeviceIoControl.InputBufferLength < 2*sizeof(ULONG))
 		{
 			EXIT_FAILURE(0);
@@ -932,12 +981,18 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 		break;
 
+#endif // #if 0
+
 	case BIOCISDUMPENDED:
 
 ///////kernel dump does not work at the moment//////////////////////////////////////////
 		EXIT_FAILURE(0);
 ///////kernel dump does not work at the moment//////////////////////////////////////////
 
+//
+// Remove the following #if 0 to enable the kernel dump again
+//
+#if 0
 		if(IrpSp->Parameters.DeviceIoControl.OutputBufferLength < sizeof(UINT))
 		{			
 			EXIT_FAILURE(0);
@@ -948,6 +1003,8 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		EXIT_SUCCESS(4);
 
 		break;
+
+#endif // #if 0
 
 	case BIOCSETBUFFERSIZE:
 		
@@ -987,7 +1044,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		if (Open->CpuData[0].Buffer != NULL)
 			ExFreePool(Open->CpuData[0].Buffer);
 
-		for (i=0;i<NCpu;i++)
+		for (i = 0 ; i < NCpu ; i++)
 		{
 			if (dim > 0) 
 				Open->CpuData[i].Buffer=(PUCHAR)tpointer + (dim/NCpu)*i;
@@ -995,9 +1052,9 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 				Open->CpuData[i].Buffer = NULL;
 			Open->CpuData[i].Free = dim/NCpu;
 			Open->CpuData[i].P = 0;
-			Open->CpuData[i].C=0;
-			Open->CpuData[i].Accepted=0;
-			Open->CpuData[i].Dropped=0;
+			Open->CpuData[i].C = 0;
+			Open->CpuData[i].Accepted = 0;
+			Open->CpuData[i].Dropped = 0;
 			Open->CpuData[i].Received = 0;
 		}
 
@@ -1020,13 +1077,13 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		}
 
 		timeout = *((PULONG)Irp->AssociatedIrp.SystemBuffer);
-		if((int)timeout==-1)
+		if(timeout == (ULONG)-1)
 			Open->TimeOut.QuadPart=(LONGLONG)IMMEDIATE;
 		else
 		{
-			Open->TimeOut.QuadPart=(LONGLONG)timeout;
-			Open->TimeOut.QuadPart*=10000;
-			Open->TimeOut.QuadPart=-Open->TimeOut.QuadPart;
+			Open->TimeOut.QuadPart = (LONGLONG)timeout;
+			Open->TimeOut.QuadPart *= 10000;
+			Open->TimeOut.QuadPart = -Open->TimeOut.QuadPart;
 		}
 
 		IF_LOUD(DbgPrint("NPF: read timeout set to %d:%d\n",Open->TimeOut.HighPart,Open->TimeOut.LowPart);)
