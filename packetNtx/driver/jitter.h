@@ -78,7 +78,7 @@ typedef struct binary_stream{
   The syntax and the meaning of the parameters is analogous to the one of bpf_filter(). Notice that the filter
   is not among the parameters, because it is hardwired in the function.
 */
-typedef UINT (*BPF_filter_function)( binary_stream *, ULONG, UINT);
+typedef UINT (__cdecl *BPF_filter_function)( binary_stream *, ULONG, UINT);
 
 /*! \brief Prototype of the emit functions.
 
