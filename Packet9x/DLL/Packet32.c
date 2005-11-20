@@ -1,23 +1,35 @@
 /*
- * Copyright (c) 1999, 2000
- *	Politecnico di Torino.  All rights reserved.
+ * Copyright (c) 1999 - 2003
+ * NetGroup, Politecnico di Torino (Italy)
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that: (1) source code distributions
- * retain the above copyright notice and this paragraph in its entirety, (2)
- * distributions including binary code include the above copyright notice and
- * this paragraph in its entirety in the documentation or other materials
- * provided with the distribution, and (3) all advertising materials mentioning
- * features or use of this software display the following acknowledgement:
- * ``This product includes software developed by the Politecnico
- * di Torino, and its contributors.'' Neither the name of
- * the University nor the names of its contributors may be used to endorse
- * or promote products derived from this software without specific prior
- * written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the Politecnico di Torino nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
+
 
 #include <packet32.h>
 #include <windows.h>
@@ -44,10 +56,31 @@ extern "C"
 TCHAR szWindowTitle[] = TEXT ("PACKET.DLL");
 LPADAPTER lpTheAdapter = NULL;
 
-#if DBG
+#if _DBG
 #define ODS(_x) OutputDebugString(TEXT(_x))
+#define ODSEx(_x, _y)
 #else
-#define ODS(_x)
+#ifdef _DEBUG_TO_FILE
+#include <stdio.h>
+// Macro to print a debug string. The behavior differs depending on the debug level
+#define ODS(_x) { \
+	FILE *f; \
+	f = fopen("winpcap_debug.txt", "a"); \
+	fprintf(f, "%s", _x); \
+	fclose(f); \
+}
+// Macro to print debug data with the printf convention. The behavior differs depending on */
+#define ODSEx(_x, _y) { \
+	FILE *f; \
+	f = fopen("winpcap_debug.txt", "a"); \
+	fprintf(f, _x, _y); \
+	fclose(f); \
+}
+
+#else
+#define ODS(_x)		
+#define ODSEx(_x, _y)
+#endif
 #endif
 
 typedef DWORD(CALLBACK* OPENVXDHANDLE)(HANDLE);
@@ -56,11 +89,19 @@ BOOLEAN StartPacketDriver (LPTSTR ServiceName);
 BOOLEAN StopPacketDriver (void);
 BOOLEAN PacketSetMaxLookaheadsize (LPADAPTER AdapterObject);
 
-char PacketLibraryVersion[] = "2.3"; 
+char PacketLibraryVersion[] = "3.1"; 
 
 //---------------------------------------------------------------------------
 
-PCHAR PacketGetVersion(){
+PCHAR PacketGetVersion()
+{
+	return PacketLibraryVersion;
+}
+
+//---------------------------------------------------------------------------
+
+PCHAR PacketGetDriverVersion()
+{
 	return PacketLibraryVersion;
 }
 
@@ -150,13 +191,14 @@ LPADAPTER PacketOpenAdapter (LPTSTR AdapterName)
 	UINT		BytesReturned;
 	struct _timeb time;
 
-    ODS ("Packet32: PacketOpenAdapter\n");
+    ODSEx ("Packet32: PacketOpenAdapter, opening %s\n", AdapterName);
 	
 	nAdapter = (LPADAPTER) GlobalAllocPtr (GMEM_MOVEABLE | GMEM_ZEROINIT,sizeof (ADAPTER));
 	if (nAdapter == NULL)
 	{
 		error=GetLastError();
 		ODS ("Packet32: PacketOpenAdapter GlobalAlloc Failed\n");
+		ODSEx("Error=%d\n",error);
 		//set the error to the one on which we failed
 		SetLastError(error);
 		return NULL;
@@ -175,7 +217,8 @@ LPADAPTER PacketOpenAdapter (LPTSTR AdapterName)
 	if (nAdapter->hFile == INVALID_HANDLE_VALUE)
 	{
 		error=GetLastError();
-		ODS ("Packet32: PacketOpenAdapter Could not open adapter\n");
+		ODS ("Packet32: PacketOpenAdapter Could not open adapter, 1\n");
+		ODSEx("Error=%d\n",error);
 		GlobalFreePtr (nAdapter);
 		//set the error to the one on which we failed
 		SetLastError(error);
@@ -201,7 +244,8 @@ LPADAPTER PacketOpenAdapter (LPTSTR AdapterName)
 		_ftime(&time);
 		if(DeviceIoControl(nAdapter->hFile,pBIOCSTIMEZONE,&time.timezone,2,NULL,0,&BytesReturned,NULL)==FALSE){
 			error=GetLastError();
-			ODS ("Packet32: PacketOpenAdapter Could not open adapter\n");
+			ODS ("Packet32: PacketOpenAdapter Could not open adapter, 2\n");
+			ODSEx("Error=%d\n",error);
 			GlobalFreePtr (nAdapter);
 			//set the error to the one on which we failed
 			SetLastError(error);
@@ -218,7 +262,8 @@ LPADAPTER PacketOpenAdapter (LPTSTR AdapterName)
 		// pass the event to the driver
 		if(DeviceIoControl(nAdapter->hFile,pBIOCEVNAME,&KernEvent,4,NULL,0,&BytesReturned,NULL)==FALSE){
 			error=GetLastError();
-			ODS ("Packet32: PacketOpenAdapter Could not open adapter\n");
+			ODS("Packet32: PacketOpenAdapter Could not open adapter, 3\n");
+			ODSEx("Error=%d\n",error);
 			GlobalFreePtr (nAdapter);
 			//set the error to the one on which we failed
 			SetLastError(error);
@@ -235,7 +280,8 @@ LPADAPTER PacketOpenAdapter (LPTSTR AdapterName)
 	}
 err:
 	error=GetLastError();
-	ODS ("Packet32: PacketOpenAdapter Could not open adapter\n");
+	ODS ("Packet32: PacketOpenAdapter Could not open adapter, 4\n");
+	ODSEx("Error=%d\n",error);
 	//set the error to the one on which we failed
 	SetLastError(error);
     return NULL;
@@ -326,6 +372,14 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
     return DeviceIoControl(AdapterObject->hFile,pBIOCGSTATS,NULL,0,s,sizeof(struct bpf_stat),&BytesReturned,NULL);
 }
 
+//---------------------------------------------------------------------------
+
+BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s)
+{
+	int BytesReturned;
+
+    return DeviceIoControl(AdapterObject->hFile,pBIOCGSTATS,NULL,0,s,sizeof(struct bpf_stat),&BytesReturned,NULL);
+}
 
 //---------------------------------------------------------------------------
 VOID PacketCloseAdapter (LPADAPTER lpAdapter)
@@ -403,6 +457,65 @@ BOOLEAN PacketSendPacket (LPADAPTER AdapterObject,
 	}
 
 	return TRUE;
+}
+
+//---------------------------------------------------------------------------
+// Emulated at user-level under Win9x
+
+INT PacketSendPackets(LPADAPTER AdapterObject, 
+					   PVOID PacketBuff, 
+					   ULONG Size, 
+					   BOOLEAN Sync)
+{
+	struct dump_bpf_hdr	*winpcap_hdr;
+	PCHAR	EndOfUserBuff = (PCHAR)PacketBuff + Size;
+	LPPACKET PacketToSend;
+	BOOLEAN res;
+
+	// Start from the first packet
+	winpcap_hdr = (struct dump_bpf_hdr*)PacketBuff;
+
+	if( (PCHAR)winpcap_hdr + winpcap_hdr->caplen + sizeof(struct dump_bpf_hdr) > EndOfUserBuff )
+	{
+		// Malformed buffer
+		return 0;
+	}
+
+	while( TRUE ){
+		
+		if(winpcap_hdr->caplen ==0 || winpcap_hdr->caplen > 65536)
+		{
+			// Malformed header
+			return 0;
+		}
+		
+		// Set up the LPPACKET structure
+		PacketToSend=PacketAllocatePacket();
+		PacketInitPacket(PacketToSend,
+			(PCHAR)winpcap_hdr + sizeof(struct dump_bpf_hdr),
+			winpcap_hdr->caplen);
+
+		// Send the packet
+		res = PacketSendPacket (AdapterObject,	PacketToSend, TRUE);
+
+		// Free the just used LPPACKET structure
+		PacketFreePacket(PacketToSend);
+
+		if(res == FALSE){
+			// Error sending the packet
+			return (PCHAR)winpcap_hdr - (PCHAR)PacketBuff;
+		}
+
+		
+		// Step to the next packet in the buffer
+		(PCHAR)winpcap_hdr += winpcap_hdr->caplen + sizeof(struct dump_bpf_hdr);
+		
+		// Check if the end of the user buffer has been reached
+		if( (PCHAR)winpcap_hdr >= EndOfUserBuff )
+		{				
+				return (PCHAR)winpcap_hdr - (PCHAR)PacketBuff;
+		}
+	}
 }
 
 //---------------------------------------------------------------------------
@@ -622,109 +735,241 @@ BOOLEAN StopPacketDriver(void)
 
 //---------------------------------------------------------------------------
 
+INT PacketSetSnapLen(LPADAPTER AdapterObject, int snaplen)
+{
+    ODS ("Packet32: PacketSetSnapLen\n"); 
+
+	return 0;
+}
+
+//---------------------------------------------------------------------------
+
 BOOLEAN PacketGetAdapterNames (PTSTR pStr,
 				PULONG BufferSize)
 {
-    ULONG Result,i;
+    ULONG		Result,i;
     LONG		Status;
-	char		*TpStr;
-	char		*TTpStr,*DpStr;
+	char*		pStrInternal;
+	
+	ULONG		RemainingBytes;
+
 	LPADAPTER	adapter;
     PPACKET_OID_DATA  OidData;
-    HKEY		Key,Key1;
-	ULONG		BSize;
-	ULONG		dim;
-	char		NdisName[32];
+    HKEY		Key;
+	char		NdisName[80];
+	ULONG		NeededBytes;
+	ULONG		NeededBytesForString;
+	char		TempBuffer[1024];
+	BOOLEAN		retVal;
 
-    OidData=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,256);
-    if (OidData == NULL) {
+	OidData=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,256);
+    if (OidData == NULL) 
+	{
         return FALSE;
     }
 
-    Status=RegOpenKeyEx(HKEY_LOCAL_MACHINE,"SYSTEM",0,KEY_READ,&Key);
-    Status=RegOpenKeyEx(Key,"CurrentControlSet",0,KEY_READ,&Key);
-    Status=RegOpenKeyEx(Key,"Services",0,KEY_READ,&Key);
-    Status=RegOpenKeyEx(Key,"class",0,KEY_READ,&Key);
-    Status=RegOpenKeyEx(Key,"net",0,KEY_READ,&Key);
-    if (Status != ERROR_SUCCESS) return FALSE;
-
-	TpStr=pStr;
-	BSize=*BufferSize;
-	i=0;
-	while((Result=RegEnumKey(Key,i,NdisName,32))==ERROR_SUCCESS)
+    Status=RegOpenKeyEx(HKEY_LOCAL_MACHINE,"SYSTEM\\CurrentControlSet\\Services\\class\\net",0,KEY_READ,&Key);
+    
+	if (Status != ERROR_SUCCESS) 
 	{
-		Status=RegOpenKeyEx(Key,NdisName,0,KEY_READ,&Key1);
-		Status=RegOpenKeyEx(Key1,"NDIS",0,KEY_READ,&Key1);
-		dim=BSize;
-        Status=RegQueryValueEx(Key1,"LOGDRIVERNAME",NULL,NULL,(LPBYTE)TpStr,&dim);
-		i++;
-		if(Status!=ERROR_SUCCESS) continue;
-		BSize-=dim;
-		TpStr+=dim;
+		GlobalFree(OidData);
+		return FALSE;
 	}
-	
-	TpStr[0]=0;
-	*BufferSize-=BSize;
 
-	if(Result==259){  //259 means OK
-		i=0;
-	
-		(*BufferSize)++;
-		TpStr=pStr;
-		DpStr=pStr+*BufferSize;	
+	NeededBytes = 0;
+
+	//first we calculate the needed bytes
+	i=0;
+	while((Result=RegEnumKey(Key,i,NdisName,sizeof(NdisName) - sizeof("\\NDIS") - 1))==ERROR_SUCCESS)
+	{
+		HKEY hKeyNdisName;
+		strcat(NdisName,"\\NDIS");
+
+		Status=RegOpenKeyEx(Key,NdisName,0,KEY_READ,&hKeyNdisName);
 		
-		while(*TpStr!=0){
-			
-			adapter=PacketOpenAdapter(TpStr);
-			if(adapter==NULL){
-				strcpy(DpStr,"Unknown");
-				DpStr+=7;
-				*DpStr++=0;
-				
-				while(*TpStr!=0){
-					TpStr++;
-				}
-				
-				TpStr++;
-				continue;
-			}
-			
-			OidData->Oid = OID_GEN_VENDOR_DESCRIPTION;
-			OidData->Length = 256;
-			Status = PacketRequest(adapter,FALSE,OidData);
-			if(Status==0){
-				strcpy(DpStr,"Unknown");
-				DpStr+=7;
-				*DpStr++=0;
-				
-				while(*TpStr!=0){
-					TpStr++;
-				}
-				
-				TpStr++;
-				continue;
-			}
+		if (Status != ERROR_SUCCESS)
+			continue;
 
-			TTpStr=(char*)(OidData->Data);
-			while(*TTpStr!=0){
-				*DpStr++=*TTpStr++;
+		//we need to tell RegOpenKeyEx the length of the buffer passed as argument
+		NeededBytesForString = sizeof(TempBuffer);
+
+        Status=RegQueryValueEx(hKeyNdisName,"LOGDRIVERNAME",NULL,NULL,(LPBYTE)TempBuffer,&NeededBytesForString);
+		
+		if (Status != ERROR_SUCCESS)
+		{
+			RegCloseKey(hKeyNdisName);
+			continue;
+		}
+
+		NeededBytes += NeededBytesForString;
+
+		//we try to open the adapter and retrieve its name
+		adapter=PacketOpenAdapter(TempBuffer);
+		if(adapter==NULL)
+		{
+			NeededBytes += sizeof("Unknown") + 1;
+		}
+		else
+		{
+			//we retrieve its name by performing a PacketRequest, 
+			//the buffer that will contain the name is at the end of the OidData structure
+			OidData->Oid = OID_GEN_VENDOR_DESCRIPTION;
+			OidData->Length = 256 - sizeof(PACKET_OID_DATA);
+			Status = PacketRequest(adapter,FALSE,OidData);
+			if(Status==0)
+			{
+				NeededBytes += sizeof("Unknown") + 1;
 			}
-			*DpStr++=*TTpStr++;
+			else
+			{
+				NeededBytes += strlen((char*) OidData->Data) + 1;
+			}
 			
 			PacketCloseAdapter(adapter);
-			
-			while(*TpStr!=0){
-				TpStr++;
-			}
-			
-			TpStr++;
+		
 		}
-		*DpStr=0;
 
-		return TRUE;
+		i++;
+		RegCloseKey(hKeyNdisName);
+	}
+
+	NeededBytes += 1 + 1;  //the two nulls at the end of each block of strings
+
+	if (NeededBytes > *BufferSize || pStr == NULL || Result != ERROR_NO_MORE_ITEMS)
+	{
+		*BufferSize = NeededBytes;
+		GlobalFree(OidData);
+		RegCloseKey(Key);
+		return FALSE;
+	}
+
+	//now we copy the strings
+
+	retVal = TRUE;
+	NeededBytes = 0;
+	i = 0;
+	pStrInternal = pStr;
+	RemainingBytes = *BufferSize;
+	while((Result=RegEnumKey(Key,i,NdisName,sizeof(NdisName) - sizeof("\\NDIS") - 1))==ERROR_SUCCESS)
+	{
+		HKEY hKeyNdisName;
+		strcat(NdisName,"\\NDIS");
+		NeededBytesForString = sizeof(TempBuffer);
+
+		Status=RegOpenKeyEx(Key,NdisName,0,KEY_READ,&hKeyNdisName);
+		
+		if (Status != ERROR_SUCCESS)
+			continue;
+
+		Status=RegQueryValueEx(hKeyNdisName,"LOGDRIVERNAME",NULL,NULL,(LPBYTE)TempBuffer,&NeededBytesForString);
+		
+		if (Status == ERROR_SUCCESS && NeededBytesForString <= RemainingBytes)
+		{
+			//this copy is safe, since we have checked that the available space will fit the string
+			strcpy(pStrInternal, TempBuffer);
+			pStrInternal += NeededBytesForString;
+			RemainingBytes -= NeededBytesForString;
+		}
+
+		NeededBytes += NeededBytesForString; //just in case the second scan returns a larger number of adapters!!
+
+		i++;
+		RegCloseKey(hKeyNdisName);
 	}
 	
-	return FALSE;
+	RegCloseKey(Key);
+		
+	//we need to properly terminate the list of adapter names with another \0
+	if (RemainingBytes > 0)
+	{
+		pStrInternal[0] = 0;
+		pStrInternal++;
+		RemainingBytes--;
+	}
+	NeededBytes++;
+
+	while (*pStr != 0)  //now we scan again the list of adapters in pStr to retrieve their names
+	{
+		adapter=PacketOpenAdapter(pStr);
+		if(adapter==NULL)
+		{
+			if ( RemainingBytes < sizeof("Unknown") + 1 )
+				retVal = FALSE;		//we do not copy anything, we simply skip this adapter, and return failure
+			else
+			{	//this copy is safe as we have checked that the remaining bytes will fit the source string
+				strcpy(pStrInternal, "Unknown");
+				//we move the pointer of the list of adapter names
+				pStrInternal += sizeof("Unknown") + 1;
+				RemainingBytes -= sizeof("Unknown") + 1;
+			}
+			
+			//we continue to keep track of available bytes. This is used if we fail in this phase
+			NeededBytes += sizeof("Unknown") + 1;  
+		}
+		else
+		{	
+			OidData->Oid = OID_GEN_VENDOR_DESCRIPTION;
+			OidData->Length = 256 - sizeof(PACKET_OID_DATA);
+			Status = PacketRequest(adapter,FALSE,OidData);
+			if(Status==0)
+			{
+				if ( RemainingBytes < sizeof("Unknown") + 1 )
+					retVal = FALSE;	//we do not copy anything, we simply skip this adapter, and return failure
+				else
+				{	//this copy is safe as we have checked that the remaining bytes will fit the source string
+					strcpy(pStrInternal, "Unknown");
+					//we move the pointer of the list of adapter names
+					pStrInternal += sizeof("Unknown") + 1;
+					RemainingBytes -= sizeof("Unknown") + 1;
+				}
+				
+				//we continue to keep track of available bytes. This is used if we fail in this phase
+				NeededBytes += sizeof("Unknown") + 1;
+			}
+			else
+			{
+				if ( RemainingBytes < strlen((char*) OidData->Data) + 1 )
+					retVal = FALSE; //we do not copy anything, we simply skip this adapter, and return failure
+				else
+				{
+					//this copy is safe as we have checked that the remaining bytes will fit the source string
+					strcpy(pStrInternal, (char*)OidData->Data);
+					//we move the pointer of the list of adapter names
+					pStrInternal += strlen((char*) OidData->Data) + 1;
+					RemainingBytes -= strlen((char*) OidData->Data) + 1;
+				}
+				
+				//we continue to keep track of available bytes. This is used if we fail in this phase
+				NeededBytes += strlen((char*) OidData->Data) + 1;
+			}
+			
+			PacketCloseAdapter(adapter);
+		
+		}
+		
+		//we move to the next adapter in the list. We end when we reach the double \0
+		pStr += strlen(pStr) + 1;
+	
+	}
+
+
+	//we need to properly terminate the list of adapter descriptions with another \0
+	if (RemainingBytes > 0)
+	{
+		pStrInternal[0] = 0;
+		pStrInternal++;
+		RemainingBytes--;
+	}
+	else
+		retVal = FALSE;
+	
+	NeededBytes++;
+
+	*BufferSize = NeededBytes;
+
+	GlobalFree(OidData);
+
+	return retVal;
 }
 
 //---------------------------------------------------------------------------
@@ -939,6 +1184,24 @@ BOOLEAN PacketGetNetInfoEx(LPTSTR AdapterName, npf_if_addr* buffer, PLONG NEntri
 	*NEntries = naddrs + 1;
 
 	return TRUE;
+}
+
+// not supported in Win9x
+BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len)
+{
+	return FALSE;
+}
+
+// not supported in Win9x
+BOOLEAN PacketSetDumpLimits(LPADAPTER AdapterObject, UINT maxfilesize, UINT maxnpacks)
+{
+	return FALSE;
+}
+
+// not supported in Win9x
+BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync)
+{
+	return FALSE;
 }
 
 //---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 per far linkare correttamente gli esempi di libpcap:
 	- editare il file funcs\pcap.h
 	- cambiare il blocco a inizio file:
-	 /** @defgroup wpcap_fn Exported functions
+	 /** @defgroup wpcapfunc Exported functions
 	 *  @ingroup wpcap
 	 *  Functions exported by wpcap.dll
 	 *  @{
@@ -9,7 +9,7 @@ per far linkare correttamente gli esempi di libpcap:
 	
 	in
 
-	/** @ingroup wpcap_fn
+	/** @ingroup wpcapfunc
 	 *  @{
 	 */
 	- generare la documentazione
@@ -20,7 +20,7 @@ per far linkare correttamente gli esempi di libpcap:
 
 per far si' che gli esempi puntino al manuale in maniera corretta:
 	- generare la documentazione winpcap_noc.dox
-	- backuppare group__wpcap__tut.html, pcap__filter_8c-source.html, Pktdump_8c-source.html
+	- backuppare i vari group__wpcap__tutXXX.html, pcap__filter_8c-source.html, Pktdump_8c-source.html, group__wpcapsampsXXX.html
 	- generare la documentazione winpcap_c.dox
 	- copiare i file backuppati sui nuovi
 

@@ -1,0 +1,58 @@
+<gi2project>
+
+<variables>
+   <var name="AppID" value="WinPcapInst"/>
+   <var name="AppName" value="WinPcap 3.1"/>
+   <var name="InstallPath" value="%ProgramFiles%\WinPcap"/>
+   <var name="Uninstall" value="1"/>
+   <var name="CompanyName" value="CACE Technologies"/>
+   <var name="OutputPath" value=""/>
+   <var name="Password" value=""/>
+   <var name="CompressionLevel" value="7"/>
+   <var name="ProgramGroup" value="%AppName%"/>
+   <var name="AppFolder" value="%ProgramsMenu%\%ProgramGroup%"/>
+   <var name="RemoveOldReferences" value="1"/>
+   <var name="SplashBitmap" value="distribution\winpcap.bmp"/>
+   <var name="AdminRights" value="1" />
+</variables>
+
+<packages>
+   <package filename="WinPcap_3_1_nogui_noreboot" main="1">
+
+	<presetup>
+		<file src="distribution\readme.txt"/>
+		<file src="distribution\license.txt"/>
+	</presetup>
+
+      <components>
+         <component id="Main">
+            <files>
+               <file src="distribution\2000\npf.sys" dst="%System%\drivers\npf.sys" condition="%OSPlatform%=NT and (%OSVersion%=2K or %OSVersion%=XP or %OSVersion%=2K3)" />
+               <file src="distribution\nt\npf.sys" dst="%System%\drivers\npf.sys" condition="%OSPlatform%=NT and (%OSVersion%=NT4)" />
+               <file src="distribution\2000\packet.dll" dst="%System%\packet.dll" condition="%OSPlatform%=NT and (%OSVersion%=2K or %OSVersion%=XP or %OSVersion%=2K3)" />
+               <file src="distribution\2000\wanpacket.dll" dst="%System%\wanpacket.dll" condition="%OSPlatform%=NT and (%OSVersion%=2K or %OSVersion%=XP or %OSVersion%=2K3)" />
+               <file src="distribution\nt\packet.dll" dst="%System%\packet.dll" condition="%OSPlatform%=NT and (%OSVersion%=NT4)" />
+               <file src="distribution\9x\packet.dll" dst="%System%\packet.dll" condition="%OSPlatform%=9X" />
+               <file src="distribution\9x\npf.vxd" dst="%System%\npf.vxd" condition="%OSPlatform%=9X" />
+               <file src="distribution\wpcap.dll" dst="%System%\wpcap.dll" />
+               <file src="distribution\pthreadVC.dll" dst="%System%\pthreadVC.dll" />
+               <file src="distribution\2000\npf_mgm.exe" dst="%InstallPath%\npf_mgm.exe" condition="%OSPlatform%=NT"/>
+               <file src="distribution\2000\daemon_mgm.exe" dst="%InstallPath%\daemon_mgm.exe" condition="%OSPlatform%=NT" />
+               <file src="distribution\2000\rpcapd.exe" dst="%InstallPath%\rpcapd.exe" condition="%OSPlatform%=NT"/>
+               <file src="distribution\2000\NetMonInstaller.exe" dst="%InstallPath%\NetMonInstaller.exe" condition="%OSPlatform%=NT and (%OSVersion%=2K or %OSVersion%=XP or %OSVersion%=2K3)"/>
+            </files>
+
+             <runapps>
+            	<runapp cmdline="%InstallPath%\npf_mgm.exe" arg="-r" workdir="%InstallPath%" showcmd="hide" whenstart="after_install" condition="%OSPlatform%=NT"/>
+            	<runapp cmdline="%InstallPath%\npf_mgm.exe" arg="-u" workdir="%InstallPath%" showcmd="hide" whenstart="before_uninstall" condition="%OSPlatform%=NT"/>
+            	<runapp cmdline="%InstallPath%\daemon_mgm.exe" arg="-r" workdir="%InstallPath%" showcmd="hide" whenstart="after_install" condition="%OSPlatform%=NT"/>
+            	<runapp cmdline="%InstallPath%\daemon_mgm.exe" arg="-u" workdir="%InstallPath%" showcmd="hide" whenstart="before_uninstall" condition="%OSPlatform%=NT"/>
+            	<runapp cmdline="%InstallPath%\NetMonInstaller.exe" arg="i" workdir="%InstallPath%" showcmd="hide" whenstart="after_install" condition="%OSPlatform%=NT and (%OSVersion%=2K or %OSVersion%=XP or %OSVersion%=2K3)"/>
+            </runapps>
+
+         </component>
+      </components>
+
+   </package>
+</packages>
+</gi2project>

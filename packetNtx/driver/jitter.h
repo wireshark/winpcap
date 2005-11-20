@@ -1,22 +1,33 @@
 /*
- * Copyright (c) 2002
- *	Politecnico di Torino.  All rights reserved.
+ * Copyright (c) 2002 - 2003
+ * NetGroup, Politecnico di Torino (Italy)
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that: (1) source code distributions
- * retain the above copyright notice and this paragraph in its entirety, (2)
- * distributions including binary code include the above copyright notice and
- * this paragraph in its entirety in the documentation or other materials
- * provided with the distribution, and (3) all advertising materials mentioning
- * features or use of this software display the following acknowledgement:
- * ``This product includes software developed by the Politecnico
- * di Torino, and its contributors.'' Neither the name of
- * the University nor the names of its contributors may be used to endorse
- * or promote products derived from this software without specific prior
- * written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the Politecnico di Torino nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 /** @ingroup NPF 
@@ -93,31 +104,26 @@ JIT_BPF_Filter;
 /* X86 INSTRUCTION MACROS */
 /**************************/
 
-/// Generates the binary for the X86 instruction
 /// mov r32,i32
 #define MOVid(r32, i32) \
   emitm(&stream, 11 << 4 | 1 << 3 | r32 & 0x7, 1); emitm(&stream, i32, 4);
 
-/// Generates the binary for the X86 instruction 
 /// mov dr32,sr32
 #define MOVrd(dr32, sr32) \
   emitm(&stream, 8 << 4 | 3 | 1 << 3, 1); emitm(&stream,  3 << 6 | (dr32 & 0x7) << 3 | sr32 & 0x7, 1);
 
-/// Generates the binary for the X86 instruction 
 /// mov dr32,sr32[off]
 #define MOVodd(dr32, sr32, off) \
   emitm(&stream, 8 << 4 | 3 | 1 << 3, 1); \
   emitm(&stream,  1 << 6 | (dr32 & 0x7) << 3 | sr32 & 0x7, 1);\
   emitm(&stream,  off, 1);
 
-/// Generates the binary for the X86 instruction 
 /// mov dr32,sr32[or32]
 #define MOVobd(dr32, sr32, or32) \
   emitm(&stream, 8 << 4 | 3 | 1 << 3, 1); \
   emitm(&stream,  (dr32 & 0x7) << 3 | 4 , 1);\
   emitm(&stream,  (or32 & 0x7) << 3 | (sr32 & 0x7) , 1);
 
-/// Generates the binary for the X86 instruction 
 /// mov dr16,sr32[or32]
 #define MOVobw(dr32, sr32, or32) \
   emitm(&stream, 0x66, 1); \
@@ -125,105 +131,88 @@ JIT_BPF_Filter;
   emitm(&stream,  (dr32 & 0x7) << 3 | 4 , 1);\
   emitm(&stream,  (or32 & 0x7) << 3 | (sr32 & 0x7) , 1);
 
-/// Generates the binary for the X86 instruction 
 /// mov dr8,sr32[or32]
 #define MOVobb(dr8, sr32, or32) \
   emitm(&stream, 0x8a, 1); \
   emitm(&stream,  (dr8 & 0x7) << 3 | 4 , 1);\
   emitm(&stream,  (or32 & 0x7) << 3 | (sr32 & 0x7) , 1);
 
-/// Generates the binary for the X86 instruction 
 /// mov [dr32][or32],sr32
 #define MOVomd(dr32, or32, sr32) \
   emitm(&stream, 0x89, 1); \
   emitm(&stream,  (sr32 & 0x7) << 3 | 4 , 1);\
   emitm(&stream,  (or32 & 0x7) << 3 | (dr32 & 0x7) , 1);
 
-/// Generates the binary for the X86 instruction 
 /// bswap dr32
 #define BSWAP(dr32) \
   emitm(&stream, 0xf, 1); \
   emitm(&stream,  0x19 << 3 | dr32 , 1);
 
-/// Generates the binary for the X86 instruction 
 /// xchg al,ah
 #define SWAP_AX() \
   emitm(&stream, 0x86, 1); \
   emitm(&stream,  0xc4 , 1);
 
-/// Generates the binary for the X86 instruction 
 /// push r32
 #define PUSH(r32) \
   emitm(&stream, 5 << 4 | 0 << 3 | r32 & 0x7, 1);
 
-/// Generates the binary for the X86 instruction 
 /// pop r32
 #define POP(r32) \
   emitm(&stream, 5 << 4 | 1 << 3 | r32 & 0x7, 1);
 
-/// Generates the binary for the X86 instruction 
 /// ret
 #define RET() \
   emitm(&stream, 12 << 4 | 0 << 3 | 3, 1);
 
-/// Generates the binary for the X86 instruction 
 /// add dr32,sr32
 #define ADDrd(dr32, sr32) \
   emitm(&stream, 0x03, 1);\
   emitm(&stream, 3 << 6 | (dr32 & 0x7) << 3 | (sr32 & 0x7), 1);
 
-/// Generates the binary for the X86 instruction 
 /// add eax,i32
 #define ADD_EAXi(i32) \
   emitm(&stream, 0x05, 1);\
   emitm(&stream, i32, 4);
 
-/// Generates the binary for the X86 instruction 
 /// add r32,i32
 #define ADDid(r32, i32) \
   emitm(&stream, 0x81, 1);\
   emitm(&stream, 24 << 3 | r32, 1);\
   emitm(&stream, i32, 4);
 
-/// Generates the binary for the X86 instruction 
 /// add r32,i8
 #define ADDib(r32, i8) \
   emitm(&stream, 0x83, 1);\
   emitm(&stream, 24 << 3 | r32, 1);\
   emitm(&stream, i8, 1);
 
-/// Generates the binary for the X86 instruction 
 /// sub dr32,sr32
 #define SUBrd(dr32, sr32) \
   emitm(&stream, 0x2b, 1);\
   emitm(&stream, 3 << 6 | (dr32 & 0x7) << 3 | (sr32 & 0x7), 1);
 
-/// Generates the binary for the X86 instruction 
 /// sub eax,i32
 #define SUB_EAXi(i32) \
   emitm(&stream, 0x2d, 1);\
   emitm(&stream, i32, 4);
 
-/// Generates the binary for the X86 instruction 
 /// mul r32
 #define MULrd(r32) \
   emitm(&stream, 0xf7, 1);\
   emitm(&stream, 7 << 5 | (r32 & 0x7), 1);
 
-/// Generates the binary for the X86 instruction 
 /// div r32
 #define DIVrd(r32) \
   emitm(&stream, 0xf7, 1);\
   emitm(&stream, 15 << 4 | (r32 & 0x7), 1);
 
-/// Generates the binary for the X86 instruction 
 /// and r8,i8
 #define ANDib(r8, i8) \
   emitm(&stream, 0x80, 1);\
   emitm(&stream, 7 << 5 | r8, 1);\
   emitm(&stream, i8, 1);
 
-/// Generates the binary for the X86 instruction 
 /// and r32,i32
 #define ANDid(r32, i32) \
   if (r32 == EAX){ \
@@ -234,19 +223,16 @@ JIT_BPF_Filter;
   emitm(&stream, 7 << 5 | r32, 1);\
   emitm(&stream, i32, 4);}
 
-/// Generates the binary for the X86 instruction 
 /// and dr32,sr32
 #define ANDrd(dr32, sr32) \
   emitm(&stream, 0x23, 1);\
   emitm(&stream,  3 << 6 | (dr32 & 0x7) << 3 | sr32 & 0x7, 1);
 
-/// Generates the binary for the X86 instruction 
 /// or dr32,sr32
 #define ORrd(dr32, sr32) \
   emitm(&stream, 0x0b, 1);\
   emitm(&stream,  3 << 6 | (dr32 & 0x7) << 3 | sr32 & 0x7, 1);
 
-/// Generates the binary for the X86 instruction 
 /// or r32,i32
 #define ORid(r32, i32) \
   if (r32 == EAX){ \
@@ -257,52 +243,44 @@ JIT_BPF_Filter;
   emitm(&stream, 25 << 3 | r32, 1);\
   emitm(&stream, i32, 4);}
 
-/// Generates the binary for the X86 instruction 
 /// shl r32,i8
 #define SHLib(r32, i8) \
   emitm(&stream, 0xc1, 1);\
   emitm(&stream, 7 << 5 | r32 & 0x7, 1);\
   emitm(&stream, i8, 1);
 
-/// Generates the binary for the X86 instruction 
 /// shl dr32,cl
 #define SHL_CLrb(dr32) \
   emitm(&stream, 0xd3, 1);\
   emitm(&stream,  7 << 5 | dr32 & 0x7, 1);
 
-/// Generates the binary for the X86 instruction 
 /// shr r32,i8
 #define SHRib(r32, i8) \
   emitm(&stream, 0xc1, 1);\
   emitm(&stream, 29 << 3 | r32 & 0x7, 1);\
   emitm(&stream, i8, 1);
 
-/// Generates the binary for the X86 instruction 
 /// shr dr32,cl
 #define SHR_CLrb(dr32) \
   emitm(&stream, 0xd3, 1);\
   emitm(&stream,  29 << 3 | dr32 & 0x7, 1);
 
-/// Generates the binary for the X86 instruction 
 /// neg r32
 #define NEGd(r32) \
   emitm(&stream, 0xf7, 1);\
   emitm(&stream,  27 << 3 | r32 & 0x7, 1);
 
-/// Generates the binary for the X86 instruction 
 /// cmp dr32,sr32[off]
 #define CMPodd(dr32, sr32, off) \
   emitm(&stream, 3 << 4 | 3 | 1 << 3, 1); \
   emitm(&stream,  1 << 6 | (dr32 & 0x7) << 3 | sr32 & 0x7, 1);\
   emitm(&stream,  off, 1);
 
-/// Generates the binary for the X86 instruction 
 /// cmp dr32,sr32
 #define CMPrd(dr32, sr32) \
   emitm(&stream, 0x3b, 1); \
   emitm(&stream,  3 << 6 | (dr32 & 0x7) << 3 | sr32 & 0x7, 1);
 
-/// Generates the binary for the X86 instruction 
 /// cmp dr32,i32
 #define CMPid(dr32, i32) \
   if (dr32 == EAX){ \
@@ -313,61 +291,52 @@ JIT_BPF_Filter;
   emitm(&stream,  0x1f << 3 | (dr32 & 0x7), 1);\
   emitm(&stream,  i32, 4);}
 
-/// Generates the binary for the X86 instruction 
 /// jne off32
 #define JNEb(off8) \
    emitm(&stream, 0x75, 1);\
    emitm(&stream, off8, 1);
 
-/// Generates the binary for the X86 instruction 
 /// je off32
 #define JE(off32) \
    emitm(&stream, 0x0f, 1);\
    emitm(&stream, 0x84, 1);\
    emitm(&stream, off32, 4);
 
-/// Generates the binary for the X86 instruction 
 /// jle off32
 #define JLE(off32) \
    emitm(&stream, 0x0f, 1);\
    emitm(&stream, 0x8e, 1);\
    emitm(&stream, off32, 4);
 
-/// Generates the binary for the X86 instruction 
 /// jle off8
 #define JLEb(off8) \
    emitm(&stream, 0x7e, 1);\
    emitm(&stream, off8, 1);
 
-/// Generates the binary for the X86 instruction 
 /// ja off32
 #define JA(off32) \
    emitm(&stream, 0x0f, 1);\
    emitm(&stream, 0x87, 1);\
    emitm(&stream, off32, 4);
    
-/// Generates the binary for the X86 instruction 
 /// jae off32
 #define JAE(off32) \
    emitm(&stream, 0x0f, 1);\
    emitm(&stream, 0x83, 1);\
    emitm(&stream, off32, 4);
 
-/// Generates the binary for the X86 instruction 
 /// jg off32
 #define JG(off32) \
    emitm(&stream, 0x0f, 1);\
    emitm(&stream, 0x8f, 1);\
    emitm(&stream, off32, 4);
 
-/// Generates the binary for the X86 instruction 
 /// jge off32
 #define JGE(off32) \
    emitm(&stream, 0x0f, 1);\
    emitm(&stream, 0x8d, 1);\
    emitm(&stream, off32, 4);
 
-/// Generates the binary for the X86 instruction 
 /// jmp off32
 #define JMP(off32) \
    emitm(&stream, 0xe9, 1);\
@@ -394,7 +363,7 @@ JIT_BPF_Filter;
  */
 
 /*!
-  \brief Deletes a filtering function that was previously created by BPF_jitter().
+  \brief BPF jitter, builds an x86 function from a BPF program.
   \param fp The BPF pseudo-assembly filter that will be translated into x86 code.
   \param nins Number of instructions of the input filter.
   \return The JIT_BPF_Filter structure containing the x86 filtering binary.
@@ -405,7 +374,7 @@ JIT_BPF_Filter;
 JIT_BPF_Filter* BPF_jitter(struct bpf_insn *fp, INT nins);
 
 /*!
-  \brief The actual jitter. Translates a set of BPF instructions in an x86 function.
+  \brief Translates a set of BPF instructions in a set of x86 ones.
   \param ins Pointer to the BPF instructions that will be translated into x86 code.
   \param nins Number of instructions to translate.
   \param mem Memory used by the x86 function to emulate the RAM of the BPF pseudo processor.

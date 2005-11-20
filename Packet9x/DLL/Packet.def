@@ -5,6 +5,7 @@ DESCRIPTION 'Packet driver dll'
 EXPORTS
 		PacketLibraryVersion
 		PacketGetVersion
+		PacketGetDriverVersion
 		PacketOpenAdapter
 		PacketInitPacket
 		PacketAllocatePacket
@@ -22,6 +23,7 @@ EXPORTS
 		PacketSetBuff
 		PacketSetBpf
 		PacketGetStats
+		PacketGetStatsEx
 		PacketGetNetType
 		PacketSetReadTimeout
 		PacketSetMode
@@ -30,3 +32,8 @@ EXPORTS
 		PacketGetNetInfoEx
 		PacketSetMinToCopy
 		PacketGetReadEvent
+		PacketSetDumpName
+		PacketSetDumpLimits
+		PacketIsDumpEnded
+		PacketSendPackets
+		PacketSetSnapLen

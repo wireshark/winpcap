@@ -1,22 +1,33 @@
 /*
- * Copyright (c) 1999, 2000
- *	Politecnico di Torino.  All rights reserved.
+ * Copyright (c) 1999 - 2003
+ * NetGroup, Politecnico di Torino (Italy)
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that: (1) source code distributions
- * retain the above copyright notice and this paragraph in its entirety, (2)
- * distributions including binary code include the above copyright notice and
- * this paragraph in its entirety in the documentation or other materials
- * provided with the distribution, and (3) all advertising materials mentioning
- * features or use of this software display the following acknowledgement:
- * ``This product includes software developed by the Politecnico
- * di Torino, and its contributors.'' Neither the name of
- * the University nor the names of its contributors may be used to endorse
- * or promote products derived from this software without specific prior
- * written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the Politecnico di Torino nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 /** @ingroup packetapi
@@ -35,10 +46,14 @@
 
 #include <winsock2.h>
 #include "devioctl.h"
+#ifdef HAVE_DAG_API
+#include <dagc.h>
+#endif /* HAVE_DAG_API */
 
 // Working modes
 #define PACKET_MODE_CAPT 0x0 ///< Capture mode
 #define PACKET_MODE_STAT 0x1 ///< Statistical mode
+#define PACKET_MODE_MON 0x2 ///< Monitoring mode
 #define PACKET_MODE_DUMP 0x10 ///< Dump mode
 #define PACKET_MODE_STAT_DUMP MODE_DUMP | MODE_STAT ///< Statistical dump Mode
 
@@ -55,17 +70,21 @@
 
 #define	 pBIOCSETBUFFERSIZE 9592		///< IOCTL code: set kernel buffer size.
 #define	 pBIOCSETF 9030					///< IOCTL code: set packet filtering program.
-#define  pBIOCGSTATS 9031				///< IOCTL code: get the capture stats
-#define	 pBIOCSRTIMEOUT 7416			///< IOCTL code: set the read timeout
-#define	 pBIOCSMODE 7412				///< IOCTL code: set working mode
-#define	 pBIOCSWRITEREP 7413			///< IOCTL code: set number of physical repetions of every packet written by the app
-#define	 pBIOCSMINTOCOPY 7414			///< IOCTL code: set minimum amount of data in the kernel buffer that unlocks a read call
-#define	 pBIOCSETOID 2147483648			///< IOCTL code: set an OID value
-#define	 pBIOCQUERYOID 2147483652		///< IOCTL code: get an OID value
+#define  pBIOCGSTATS 9031				///< IOCTL code: get the capture stats.
+#define	 pBIOCSRTIMEOUT 7416			///< IOCTL code: set the read timeout.
+#define	 pBIOCSMODE 7412				///< IOCTL code: set working mode.
+#define	 pBIOCSWRITEREP 7413			///< IOCTL code: set number of physical repetions of every packet written by the app.
+#define	 pBIOCSMINTOCOPY 7414			///< IOCTL code: set minimum amount of data in the kernel buffer that unlocks a read call.
+#define	 pBIOCSETOID 2147483648			///< IOCTL code: set an OID value.
+#define	 pBIOCQUERYOID 2147483652		///< IOCTL code: get an OID value.
 #define	 pATTACHPROCESS 7117			///< IOCTL code: attach a process to the driver. Used in Win9x only.
 #define	 pDETACHPROCESS 7118			///< IOCTL code: detach a process from the driver. Used in Win9x only.
-#define  pBIOCSETDUMPFILENAME 9029		///< IOCTL code: set the name of a the file used by kernel dump mode
-#define  pBIOCEVNAME 7415				///< IOCTL code: get the name of the event that the driver signals when some data is present in the buffer
+#define  pBIOCSETDUMPFILENAME 9029		///< IOCTL code: set the name of a the file used by kernel dump mode.
+#define  pBIOCEVNAME 7415				///< IOCTL code: get the name of the event that the driver signals when some data is present in the buffer.
+#define  pBIOCSENDPACKETSNOSYNC 9032	///< IOCTL code: Send a buffer containing multiple packets to the network, ignoring the timestamps associated with the packets.
+#define  pBIOCSENDPACKETSSYNC 9033		///< IOCTL code: Send a buffer containing multiple packets to the network, respecting the timestamps associated with the packets.
+#define  pBIOCSETDUMPLIMITS 9034		///< IOCTL code: Set the dump file limits. See the PacketSetDumpLimits() function.
+#define  pBIOCISDUMPENDED 7411			///< IOCTL code: Get the status of the kernel dump process. See the PacketIsDumpEnded() function.
 
 #define  pBIOCSTIMEZONE 7471			///< IOCTL code: set time zone. Used in Win9x only.
 
@@ -75,6 +94,11 @@
 /// Alignment macro. Rounds up to the next even multiple of Packet_ALIGNMENT. 
 #define Packet_WORDALIGN(x) (((x)+(Packet_ALIGNMENT-1))&~(Packet_ALIGNMENT-1))
 
+
+#define NdisMediumNull	-1		// Custom linktype: NDIS doesn't provide an equivalent
+#define NdisMediumCHDLC	-2		// Custom linktype: NDIS doesn't provide an equivalent
+#define NdisMediumPPPSerial	-3	// Custom linktype: NDIS doesn't provide an equivalent
+
 /*!
   \brief Network type structure.
 
@@ -83,7 +107,7 @@
 typedef struct NetType
 {
 	UINT LinkType;	///< The MAC of the current network adapter (see function PacketGetNetType() for more information)
-	UINT LinkSpeed;	///< The speed of the network in bits per second
+	ULONGLONG LinkSpeed;	///< The speed of the network in bits per second
 }NetType;
 
 
@@ -96,7 +120,8 @@ typedef struct NetType
 
   The program will be injected in the kernel by the PacketSetBPF() function and applied to every incoming packet. 
 */
-struct bpf_program {
+struct bpf_program 
+{
 	UINT bf_len;				///< Indicates the number of instructions of the program, i.e. the number of struct bpf_insn that will follow.
 	struct bpf_insn *bf_insns;	///< A pointer to the first instruction of the program.
 };
@@ -106,7 +131,8 @@ struct bpf_program {
 
   bpf_insn contains a single instruction for the BPF register-machine. It is used to send a filter program to the driver.
 */
-struct bpf_insn {
+struct bpf_insn 
+{
 	USHORT	code;		///< Instruction type and addressing mode.
 	UCHAR 	jt;			///< Jump if true
 	UCHAR 	jf;			///< Jump if false
@@ -118,13 +144,17 @@ struct bpf_insn {
 
   It is used by packet.dll to return statistics about a capture session.
 */
-struct bpf_stat {
+struct bpf_stat 
+{
 	UINT bs_recv;		///< Number of packets that the driver received from the network adapter 
 						///< from the beginning of the current capture. This value includes the packets 
-						///< lost by the driver as well.
+						///< lost by the driver.
 	UINT bs_drop;		///< number of packets that the driver lost from the beginning of a capture. 
 						///< Basically, a packet is lost when the the buffer of the driver is full. 
 						///< In this situation the packet cannot be stored and the driver rejects it.
+	UINT ps_ifdrop;		///< drops by interface. XXX not yet supported
+	UINT bs_capt;		///< number of packets that pass the filter, find place in the kernel buffer and
+						///< thus reach the application.
 };
 
 /*!
@@ -132,7 +162,8 @@ struct bpf_stat {
 
   This structure defines the header associated with every packet delivered to the application.
 */
-struct bpf_hdr {
+struct bpf_hdr 
+{
 	struct timeval	bh_tstamp;	///< The timestamp associated with the captured packet. 
 								///< It is stored in a TimeVal structure.
 	UINT	bh_caplen;			///< Length of captured portion. The captured portion <b>can be different</b>
@@ -145,21 +176,85 @@ struct bpf_hdr {
 								///< of the packet.
 };
 
+/*!
+  \brief Dump packet header.
+
+  This structure defines the header associated with the packets in a buffer to be used with PacketSendPackets().
+  It is simpler than the bpf_hdr, because it corresponds to the header associated by WinPcap and libpcap to a
+  packet in a dump file. This makes straightforward sending WinPcap dump files to the network.
+*/
+struct dump_bpf_hdr{
+    struct timeval	ts;			///< Time stamp of the packet
+    UINT			caplen;		///< Length of captured portion. The captured portion can smaller than the 
+								///< the original packet, because it is possible (with a proper filter) to 
+								///< instruct the driver to capture only a portion of the packets. 
+    UINT			len;		///< Length of the original packet (off wire).
+};
+
+
 #endif
 
 #define        DOSNAMEPREFIX   TEXT("Packet_")	///< Prefix added to the adapters device names to create the WinPcap devices
-#define        MAX_LINK_NAME_LENGTH   64		///< Maximum length of the devices symbolic links
+#define        MAX_LINK_NAME_LENGTH	64			//< Maximum length of the devices symbolic links
 #define        NMAX_PACKET 65535
 
 /*!
-  \brief Describes a network adapter.
+  \brief Addresses of a network adapter.
+
+  This structure is used by the PacketGetNetInfoEx() function to return the IP addresses associated with 
+  an adapter.
+*/
+typedef struct npf_if_addr {
+	struct sockaddr_storage IPAddress;	///< IP address.
+	struct sockaddr_storage SubnetMask;	///< Netmask for that address.
+	struct sockaddr_storage Broadcast;	///< Broadcast address.
+}npf_if_addr;
+
+
+#define ADAPTER_NAME_LENGTH 256 + 12	///<  Maximum length for the name of an adapter. The value is the same used by the IP Helper API.
+#define ADAPTER_DESC_LENGTH 128			///<  Maximum length for the description of an adapter. The value is the same used by the IP Helper API.
+#define MAX_MAC_ADDR_LENGTH 8			///<  Maximum length for the link layer address of an adapter. The value is the same used by the IP Helper API.
+#define MAX_NETWORK_ADDRESSES 16		///<  Maximum length for the link layer address of an adapter. The value is the same used by the IP Helper API.
+
+
+typedef struct WAN_ADAPTER_INT WAN_ADAPTER; ///< Describes an opened wan (dialup, VPN...) network adapter using the NetMon API
+typedef WAN_ADAPTER *PWAN_ADAPTER; ///< Describes an opened wan (dialup, VPN...) network adapter using the NetMon API
+
+#define INFO_FLAG_NDIS_ADAPTER		0	///< Flag for ADAPTER_INFO: this is a traditional ndis adapter
+#define INFO_FLAG_NDISWAN_ADAPTER	1	///< Flag for ADAPTER_INFO: this is a NdisWan adapter
+#define INFO_FLAG_DAG_CARD			2	///< Flag for ADAPTER_INFO: this is a DAG card
+#define INFO_FLAG_DAG_FILE			6	///< Flag for ADAPTER_INFO: this is a DAG file
+#define INFO_FLAG_DONT_EXPORT		8	///< Flag for ADAPTER_INFO: when this flag is set, the adapter will not be listed or openend by winpcap. This allows to prevent exporting broken network adapters, like for example FireWire ones.
+
+/*!
+  \brief Contains comprehensive information about a network adapter.
+
+  This structure is filled with all the accessory information that the user can need about an adapter installed
+  on his system.
+*/
+typedef struct _ADAPTER_INFO  
+{
+	struct _ADAPTER_INFO *Next;				///< Pointer to the next adapter in the list.
+	CHAR Name[ADAPTER_NAME_LENGTH + 1];		///< Name of the device representing the adapter.
+	CHAR Description[ADAPTER_DESC_LENGTH + 1];	///< Human understandable description of the adapter
+	UINT MacAddressLen;						///< Length of the link layer address.
+	UCHAR MacAddress[MAX_MAC_ADDR_LENGTH];	///< Link layer address.
+	NetType LinkLayer;						///< Physical characteristics of this adapter. This NetType structure contains the link type and the speed of the adapter.
+	INT NNetworkAddresses;					///< Number of network layer addresses of this adapter.
+	npf_if_addr *NetworkAddresses;			///< Pointer to an array of npf_if_addr, each of which specifies a network address of this adapter.
+	UINT Flags;								///< Adapter's flags. Tell if this adapter must be treated in a different way, using the Netmon API or the dagc API.
+}
+ADAPTER_INFO, *PADAPTER_INFO;
+
+/*!
+  \brief Describes an opened network adapter.
 
   This structure is the most important for the functioning of packet.dll, but the great part of its fields
   should be ignored by the user, since the library offers functions that avoid to cope with low-level parameters
 */
 typedef struct _ADAPTER  { 
 	HANDLE hFile;				///< \internal Handle to an open instance of the NPF driver.
-	TCHAR  SymbolicLink[MAX_LINK_NAME_LENGTH]; ///< \internal A string containing the name of the network adapter currently opened.
+	CHAR  SymbolicLink[MAX_LINK_NAME_LENGTH]; ///< \internal A string containing the name of the network adapter currently opened.
 	int NumWrites;				///< \internal Number of times a packets written on this adapter will be repeated 
 								///< on the wire.
 	HANDLE ReadEvent;			///< A notification event associated with the read calls on the adapter.
@@ -172,6 +267,16 @@ typedef struct _ADAPTER  {
 	
 	UINT ReadTimeOut;			///< \internal The amount of time after which a read on the driver will be released and 
 								///< ReadEvent will be signaled, also if no packets were captured
+	CHAR Name[ADAPTER_NAME_LENGTH];
+	PWAN_ADAPTER pWanAdapter;
+	UINT Flags;					///< Adapter's flags. Tell if this adapter must be treated in a different way, using the Netmon API or the dagc API.
+#ifdef HAVE_DAG_API
+	dagc_t *pDagCard;			///< Pointer to the dagc API adapter descriptor for this adapter
+	PCHAR DagBuffer;			///< Pointer to the buffer with the packets that is received from the DAG card
+	struct timeval DagReadTimeout;	///< Read timeout. The dagc API requires a timeval structure
+	unsigned DagFcsLen;			///< Length of the frame check sequence attached to any packet by the card. Obtained from the registry
+	DWORD DagFastProcess;		///< True if the user requests fast capture processing on this card. Higher level applications can use this value to provide a faster but possibly unprecise capture (for example, libpcap doesn't convert the timestamps).
+#endif // HAVE_DAG_API
 }  ADAPTER, *LPADAPTER;
 
 /*!
@@ -185,7 +290,7 @@ typedef struct _PACKET {
 	PVOID        Buffer;		///< Buffer with containing the packets. See the PacketReceivePacket() for
 								///< details about the organization of the data in this buffer
 	UINT         Length;		///< Length of the buffer
-	UINT         ulBytesReceived;	///< Number of valid bytes present in the buffer, i.e. amount of data
+	DWORD        ulBytesReceived;	///< Number of valid bytes present in the buffer, i.e. amount of data
 									///< received by the last call to PacketReceivePacket()
 	BOOLEAN      bIoComplete;	///< \deprecated Still present for compatibility with old applications.
 }  PACKET, *LPPACKET;
@@ -206,17 +311,55 @@ struct _PACKET_OID_DATA {
 }; 
 typedef struct _PACKET_OID_DATA PACKET_OID_DATA, *PPACKET_OID_DATA;
 
-/*!
-  \brief Addresses of a network adapter.
 
-  This structure is used by the PacketGetNetInfoEx() function to return the IP addresses associated with 
-  an adapter.
+#if _DBG
+#define ODS(_x) OutputDebugString(TEXT(_x))
+#define ODSEx(_x, _y)
+#else
+#ifdef _DEBUG_TO_FILE
+/*! 
+  \brief Macro to print a debug string. The behavior differs depending on the debug level
 */
-typedef struct npf_if_addr {
-	struct sockaddr IPAddress;	///< IP address.
-	struct sockaddr SubnetMask;	///< Netmask for that address.
-	struct sockaddr Broadcast;	///< Broadcast address.
-}npf_if_addr;
+#define ODS(_x) { \
+	FILE *f; \
+	f = fopen("winpcap_debug.txt", "a"); \
+	fprintf(f, "%s", _x); \
+	fclose(f); \
+}
+/*! 
+  \brief Macro to print debug data with the printf convention. The behavior differs depending on 
+  the debug level
+*/
+#define ODSEx(_x, _y) { \
+	FILE *f; \
+	f = fopen("winpcap_debug.txt", "a"); \
+	fprintf(f, _x, _y); \
+	fclose(f); \
+}
+
+
+
+LONG PacketDumpRegistryKey(PCHAR KeyName, PCHAR FileName);
+#else
+#define ODS(_x)		
+#define ODSEx(_x, _y)
+#endif
+#endif
+
+/* We load dinamically the dag library in order link it only when it's present on the system */
+#ifdef HAVE_DAG_API
+typedef dagc_t* (*dagc_open_handler)(const char *source, unsigned flags, char *ebuf);	///< prototype used to dynamically load the dag dll
+typedef void (*dagc_close_handler)(dagc_t *dagcfd);										///< prototype used to dynamically load the dag dll
+typedef int (*dagc_getlinktype_handler)(dagc_t *dagcfd);								///< prototype used to dynamically load the dag dll
+typedef int (*dagc_getlinkspeed_handler)(dagc_t *dagcfd);								///< prototype used to dynamically load the dag dll
+typedef int (*dagc_setsnaplen_handler)(dagc_t *dagcfd, unsigned snaplen);				///< prototype used to dynamically load the dag dll
+typedef unsigned (*dagc_getfcslen_handler)(dagc_t *dagcfd);								///< prototype used to dynamically load the dag dll
+typedef int (*dagc_receive_handler)(dagc_t *dagcfd, u_char **buffer, u_int *bufsize);	///< prototype used to dynamically load the dag dll
+typedef int (*dagc_stats_handler)(dagc_t *dagcfd, dagc_stats_t *ps);					///< prototype used to dynamically load the dag dll
+typedef int (*dagc_wait_handler)(dagc_t *dagcfd, struct timeval *timeout);				///< prototype used to dynamically load the dag dll
+typedef int (*dagc_finddevs_handler)(dagc_if_t **alldevsp, char *ebuf);					///< prototype used to dynamically load the dag dll
+typedef int (*dagc_freedevs_handler)(dagc_if_t *alldevsp);								///< prototype used to dynamically load the dag dll
+#endif // HAVE_DAG_API
 
 #ifdef __cplusplus
 extern "C" {
@@ -226,32 +369,50 @@ extern "C" {
  *  @}
  */
 
+// The following is used to check the adapter name in PacketOpenAdapterNPF and prevent 
+// opening of firewire adapters 
+#define FIREWIRE_SUBSTR L"1394"
+
+void PacketPopulateAdaptersInfoList();
+PWCHAR SChar2WChar(PCHAR string);
+PCHAR WChar2SChar(PWCHAR string);
+BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLen);
+PADAPTER_INFO PacketFindAdInfo(PCHAR AdapterName);
+BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName);
+BOOLEAN IsFireWire(TCHAR *AdapterDesc);
+
+
 //---------------------------------------------------------------------------
-// FUNCTIONS
+// EXPORTED FUNCTIONS
 //---------------------------------------------------------------------------
 
 PCHAR PacketGetVersion();
+PCHAR PacketGetDriverVersion();
 BOOLEAN PacketSetMinToCopy(LPADAPTER AdapterObject,int nbytes);
 BOOLEAN PacketSetNumWrites(LPADAPTER AdapterObject,int nwrites);
 BOOLEAN PacketSetMode(LPADAPTER AdapterObject,int mode);
 BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout);
 BOOLEAN PacketSetBpf(LPADAPTER AdapterObject,struct bpf_program *fp);
+INT PacketSetSnapLen(LPADAPTER AdapterObject,int snaplen);
 BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s);
+BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s);
 BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim);
 BOOLEAN PacketGetNetType (LPADAPTER AdapterObject,NetType *type);
-LPADAPTER PacketOpenAdapter(LPTSTR AdapterName);
+LPADAPTER PacketOpenAdapter(PCHAR AdapterName);
 BOOLEAN PacketSendPacket(LPADAPTER AdapterObject,LPPACKET pPacket,BOOLEAN Sync);
+INT PacketSendPackets(LPADAPTER AdapterObject,PVOID PacketBuff,ULONG Size, BOOLEAN Sync);
 LPPACKET PacketAllocatePacket(void);
 VOID PacketInitPacket(LPPACKET lpPacket,PVOID  Buffer,UINT  Length);
 VOID PacketFreePacket(LPPACKET lpPacket);
 BOOLEAN PacketReceivePacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sync);
 BOOLEAN PacketSetHwFilter(LPADAPTER AdapterObject,ULONG Filter);
 BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize);
-BOOLEAN PacketGetNetInfo(LPTSTR AdapterName, PULONG netp, PULONG maskp);
-BOOLEAN PacketGetNetInfoEx(LPTSTR AdapterName, npf_if_addr* buffer, PLONG NEntries);
+BOOLEAN PacketGetNetInfoEx(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntries);
 BOOLEAN PacketRequest(LPADAPTER  AdapterObject,BOOLEAN Set,PPACKET_OID_DATA  OidData);
 HANDLE PacketGetReadEvent(LPADAPTER AdapterObject);
 BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len);
+BOOLEAN PacketSetDumpLimits(LPADAPTER AdapterObject, UINT maxfilesize, UINT maxnpacks);
+BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync);
 BOOL PacketStopDriver();
 VOID PacketCloseAdapter(LPADAPTER lpAdapter);
 

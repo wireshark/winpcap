@@ -17,20 +17,17 @@ OPTFLAGS = -O
 LEX = flex -Ppcap_
 YACC = bison -y -p pcap_
 
-ifeq (${SYSTYPE}, "NT")
-	PACKET_DIR = packetNTx
-	INSTALL_DIR = c:/winnt/system32
-else
-	PACKET_DIR = packet9x
-	INSTALL_DIR = c:/windows/system32
-endif
+PACKET_DIR = packetNTx
+INSTALL_DIR = ${SYSTEMROOT}\system32
 
 CFLAGS = -I ../libpcap -I ../libpcap/bpf -I ../libpcap/lbl \
 	-I ../libpcap/Win32/Include -I../libpcap/Win32/Include/ipv6kit \
-	-I ../../common \
+	-I ../../common -I ../Win32-Extensions \
 	-DLIBPCAP_EXPORTS -DYY_NEVER_INTERACTIVE -Dyylval=pcap_lval \
-	-DHAVE_STRERROR -DNEED_ADDRINFO_H -D__STDC__ -DINET6 -DWIN32 \
-	-DSIZEOF_CHAR=1 -DSIZEOF_SHORT=2 -DSIZEOF_INT=4 \
+	-DHAVE_STRERROR -DNEED_ADDRINFO_H -DINET6 -DWIN32 \
+	-DSIZEOF_CHAR=1 -DSIZEOF_SHORT=2 -DSIZEOF_INT=4 -DSIZEOF_LONG_LONG=8 -DWPCAP -D'_U_=' \
+	-DHAVE_SNPRINTF -DHAVE_VSNPRINTF \
+	-DSIZEOF_LONG_LONG=8 \
 	-mno-cygwin -shared ${OPTFLAGS}
 LDFLAGS = -Wl,--out-implib,../lib/libwpcap.a
 LIBS = -L ../../${PACKET_DIR}/DLL/Project -lPacket -lwsock32
@@ -51,14 +48,15 @@ OBJS = ../libpcap/bpf/net/bpf_filter.o \
 	../libpcap/Win32/Src/inet_pton.o \
 	../libpcap/nametoaddr.o \
 	../libpcap/optimize.o \
-	../libpcap/Pcap-win32.o \
+	../libpcap/pcap-win32.o \
+	../libpcap/fad-win32.o \
 	../libpcap/pcap.o \
 	../libpcap/savefile.o \
 	../libpcap/scanner.o \
 	../Win32-Extensions/Win32-Extensions.o
 
 main: ${OBJS}
-	${CC} ${CFLAGS} ${LDFLAGS} -o wpcap.dll wpcap.def ${OBJS} ${LIBS}
+	${CC} ${CFLAGS} ${LDFLAGS} -o wpcap.dll wpcap_no_extensions.def ${OBJS} ${LIBS}
 
 install:
 	cp wpcap.dll ${INSTALL_DIR}
