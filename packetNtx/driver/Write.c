@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999 - 2003
- * NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2005 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,9 +12,10 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the Politecnico di Torino nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ * 3. Neither the name of the Politecnico di Torino, CACE Technologies 
+ * nor the names of its contributors may be used to endorse or promote 
+ * products derived from this software without specific prior written 
+ * permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -186,7 +187,7 @@ NPF_BufferedWrite(
 	} 
 
 	// Sanity check on the user buffer
-	if(UserBuff==0)
+	if(UserBuff == NULL)
 	{
 		return 0;
 	}
@@ -314,7 +315,7 @@ NPF_BufferedWrite(
 			// Wait the completion of pending sends
 			NPF_WaitEndOfBufferedWrite(Open);
 
-			return (PCHAR)winpcap_hdr - UserBuff;
+			return (INT)((PCHAR)winpcap_hdr - UserBuff);
 		}
 	
 		if( Sync ){
@@ -327,7 +328,7 @@ NPF_BufferedWrite(
 				// Wait the completion of pending sends
 				NPF_WaitEndOfBufferedWrite(Open);
 					
-				return (PCHAR)winpcap_hdr - UserBuff;
+				return (INT)((PCHAR)winpcap_hdr - UserBuff);
 			}
 			
 			// Calculate the time interval to wait before sending the next packet
@@ -343,7 +344,7 @@ NPF_BufferedWrite(
 	
 	}
 
-	return (PCHAR)winpcap_hdr - UserBuff;
+	return (INT)((PCHAR)winpcap_hdr - UserBuff);
 }
 
 //-------------------------------------------------------------------
