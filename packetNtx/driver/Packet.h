@@ -42,9 +42,12 @@
 #ifndef __PACKET_INCLUDE______
 #define __PACKET_INCLUDE______
 
+#ifdef __NPF_x86__
 #define NTKERNEL	///< Forces the compilation of the jitter with kernel calls 
-
 #include "jitter.h"
+#endif
+
+
 #include "win_bpf.h"
 
 #define  MAX_REQUESTS   32 ///< Maximum number of simultaneous IOCTL requests.
@@ -337,8 +340,10 @@ typedef struct _OPEN_INSTANCE
 											///< from the NIC driver is stored in two non-consecutive buffers. In normal situations
 											///< the filtering routine created by the JIT compiler and pointed by the next field 
 											///< is used. See \ref NPF for details on the filtering process.
+#ifdef __NPF_x86__
 	JIT_BPF_Filter		*Filter;			///< Pointer to the native filtering function created by the jitter. 
 											///< See BPF_jitter() for details.
+#endif
 	UINT				MinToCopy;			///< Minimum amount of data in the circular buffer that unlocks a read. Set with the
 											///< BIOCSMINTOCOPY IOCTL. 
 	LARGE_INTEGER		TimeOut;			///< Timeout after which a read is released, also if the amount of data in the buffer is 
