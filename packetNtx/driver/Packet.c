@@ -238,7 +238,6 @@ PWCHAR getAdaptersList(void)
 	else { //OK
 		
 		ULONG resultLength;
-		KEY_VALUE_PARTIAL_INFORMATION valueInfo;
 		CHAR AdapInfo[1024];
 		UINT i=0;
 		
@@ -257,7 +256,6 @@ PWCHAR getAdaptersList(void)
 				UNICODE_STRING AdapterKeyName;
 				HANDLE ExportKeyHandle;
 				KEY_VALUE_PARTIAL_INFORMATION valueInfo;
-				ULONG resultLength;
 				
 				RtlCopyMemory(ExportKeyName,
 					ExportKeyPrefix,
@@ -533,7 +531,7 @@ VOID NPF_Unload(IN PDRIVER_OBJECT DriverObject)
 	PDEVICE_OBJECT     OldDeviceObject;
 	PDEVICE_EXTENSION  DeviceExtension;
 
-	NDIS_HANDLE        NdisProtocolHandle;
+	NDIS_HANDLE        NdisProtocolHandle = NULL;
 	NDIS_STATUS        Status;
 
 	NDIS_STRING		   SymLink;
