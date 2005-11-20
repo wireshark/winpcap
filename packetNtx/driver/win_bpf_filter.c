@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999 - 2003
- * NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2005 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,9 +12,10 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the Politecnico di Torino nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ * 3. Neither the name of the Politecnico di Torino, CACE Technologies 
+ * nor the names of its contributors may be used to endorse or promote 
+ * products derived from this software without specific prior written 
+ * permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -172,7 +173,13 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 			X = mem[pc->k];
 			continue;
 
-/* LD NO PACKET INSTRUCTIONS */
+#ifdef __NPF_x86__
+		//
+		// these instructions use the TME extensions,
+		// not supported on x86-64 and IA64 architectures.
+		//
+			
+			/* LD NO PACKET INSTRUCTIONS */
 
 		case BPF_LD|BPF_MEM_EX_IMM|BPF_B:
 			A= mem_ex->buffer[pc->k];
@@ -222,6 +229,7 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 			A=EXTRACT_LONG((uint32*)&mem_ex->buffer[k]);
 			continue;
 /* END LD NO PACKET INSTRUCTIONS */
+#endif //__NPF_x86__
 
 		case BPF_ST:
 			mem[pc->k] = A;
@@ -231,7 +239,13 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 			mem[pc->k] = X;
 			continue;
 
-/* STORE INSTRUCTIONS */
+#ifdef __NPF_x86__
+		//
+		// these instructions use the TME extensions,
+		// not supported on x86-64 and IA64 architectures.
+		//
+
+		/* STORE INSTRUCTIONS */
 		case BPF_ST|BPF_MEM_EX_IMM|BPF_B:
 			mem_ex->buffer[pc->k]=(uint8)A;
 			continue;
@@ -273,6 +287,8 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 			*(uint16*)&mem_ex->buffer[pc->k+X]=EXTRACT_SHORT(&tmp2);
 			continue;
 /* END STORE INSTRUCTIONS */
+
+#endif //__NPF_x86__
 
 		case BPF_JMP|BPF_JA:
 			pc += pc->k;
@@ -388,7 +404,13 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 			A = X;
 			continue;
 
-/* TME INSTRUCTIONS */
+#ifdef __NPF_x86__
+		//
+		// these instructions use the TME extensions,
+		// not supported on x86-64 and IA64 architectures.
+		//
+
+		/* TME INSTRUCTIONS */
 		case BPF_MISC|BPF_TME|BPF_LOOKUP:
 			j=lookup_frontend(mem_ex,tme,pc->k,time_ref);
 			if (j==TME_ERROR)
@@ -417,6 +439,7 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 				return 0;
 			continue;
 /* END TME INSTRUCTIONS */
+#endif //__NPF_x86__
 
 		}
 	}
@@ -630,6 +653,11 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 			X = mem[pc->k];
 			continue;
 
+#ifdef __NPF_x86__
+		//
+		// these instructions use the TME extensions,
+		// not supported on x86-64 and IA64 architectures.
+		//
 /* LD NO PACKET INSTRUCTIONS */
 
 		case BPF_LD|BPF_MEM_EX_IMM|BPF_B:
@@ -680,7 +708,8 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 			A=EXTRACT_LONG((uint32*)&mem_ex->buffer[k]);
 			continue;
 /* END LD NO PACKET INSTRUCTIONS */
-		
+#endif //__NPF_x86__
+
 		case BPF_ST:
 			mem[pc->k] = A;
 			continue;
@@ -690,6 +719,11 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 			continue;
 
 
+#ifdef __NPF_x86__
+		//
+		// these instructions use the TME extensions,
+		// not supported on x86-64 and IA64 architectures.
+		//
 /* STORE INSTRUCTIONS */
 		case BPF_ST|BPF_MEM_EX_IMM|BPF_B:
 			mem_ex->buffer[pc->k]=(uint8)A;
@@ -731,9 +765,9 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 			tmp2=(uint16)A;
 			*(uint16*)&mem_ex->buffer[pc->k+X]=EXTRACT_SHORT(&tmp2);
 			continue;
-/* END STORE INSTRUCTIONS */
-		
-		
+
+			/* END STORE INSTRUCTIONS */
+#endif //__NPF_x86__		
 		
 		case BPF_JMP|BPF_JA:
 			pc += pc->k;
@@ -849,7 +883,13 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 			A = X;
 			continue;
 
-/* TME INSTRUCTIONS */
+#ifdef __NPF_x86__
+		//
+		// these instructions use the TME extensions,
+		// not supported on x86-64 and IA64 architectures.
+		//
+
+		/* TME INSTRUCTIONS */
 		case BPF_MISC|BPF_TME|BPF_LOOKUP:
 			j=lookup_frontend(mem_ex,tme,pc->k,time_ref);
 			if (j==TME_ERROR)
@@ -877,8 +917,8 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 			if (set_tme_block_register(&tme->block_data[tme->working],mem_ex,pc->k,A,FALSE)==TME_ERROR)
 				return 0;
 			continue;
-/* END TME INSTRUCTIONS */
-
+		/* END TME INSTRUCTIONS */
+#endif //__NPF_x86__
 		}
 	}
 }
@@ -903,11 +943,11 @@ bpf_validate(f, len,mem_ex_size)
 
 		IF_LOUD(DbgPrint("Validating program");)
 		
-		flag=0;
-		for(j=0;j<VALID_INSTRUCTIONS_LEN;j++)
-			if (p->code==valid_instructions[j])
-				flag=1;
-		if (flag==0)
+		flag = 0;
+		for(j = 0; j < VALID_INSTRUCTIONS_LEN ; j++)
+			if (p->code == valid_instructions[j])
+				flag = 1;
+		if (flag == 0)
 			return 0;
 
 		IF_LOUD(DbgPrint("Validating program: no unknown instructions");)
@@ -928,18 +968,30 @@ bpf_validate(f, len,mem_ex_size)
 		/*
 		 * Check that memory operations use valid addresses.
 		 */
-		if (((BPF_CLASS(p->code) == BPF_ST && ((p->code &BPF_MEM_EX_IMM)!=BPF_MEM_EX_IMM && (p->code &BPF_MEM_EX_IND)!=BPF_MEM_EX_IND)) ||
+#ifdef __NPF_x86__
+		 if (((BPF_CLASS(p->code) == BPF_ST && ((p->code &BPF_MEM_EX_IMM)!=BPF_MEM_EX_IMM && (p->code &BPF_MEM_EX_IND)!=BPF_MEM_EX_IND)) ||
 		     (BPF_CLASS(p->code) == BPF_LD && 
 		      (p->code & 0xe0) == BPF_MEM)) &&
 			  (p->k >= BPF_MEMWORDS || p->k < 0))
 			return 0;
-		
+#else //x86-64 and IA64
+		if ((BPF_CLASS(p->code) == BPF_ST ||
+		     (BPF_CLASS(p->code) == BPF_LD &&
+		      (p->code & 0xe0) == BPF_MEM)) &&
+		    (p->k >= BPF_MEMWORDS || p->k < 0))
+			return 0;
+#endif
+
 		IF_LOUD(DbgPrint("Validating program: no wrong ST/LD memory locations");)
 			
+#ifdef __NPF_x86__
 		/*
 		 * Check if key stores use valid addresses 
 		 */ 
-		if (BPF_CLASS(p->code) == BPF_ST && (p->code &BPF_MEM_EX_IMM)==BPF_MEM_EX_IMM)
+		 //this check verifies some TME instructions using the extended memory. 
+		 //do not check for them under systems different from x86 (32 bits)
+
+		 if (BPF_CLASS(p->code) == BPF_ST && (p->code &BPF_MEM_EX_IMM)==BPF_MEM_EX_IMM)
 	    switch (BPF_SIZE(p->code))
 		{
 			case BPF_W: if (p->k<0 || p->k+3>=(int32)mem_ex_size) return 0;
@@ -948,6 +1000,7 @@ bpf_validate(f, len,mem_ex_size)
 		}
 
 		IF_LOUD(DbgPrint("Validating program: no wrong ST/LD mem_ex locations");)
+#endif
 
 		/*
 		 * Check for constant division by 0.
