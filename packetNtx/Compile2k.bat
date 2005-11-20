@@ -9,7 +9,7 @@ md \i386\checked >nul 2>nul
 echo foo > driver\Sources
 xcopy driver\Sources.x86 driver\Sources /y /v /q 
 
-build -cefw
+prefast build -cefw
 
 del driver\Sources
 
