@@ -43,10 +43,6 @@
 #include "win_bpf.h"
 #include "win_bpf_filter_init.h"
 
-#ifdef __NPF_x86__
-#include "tme.h"
-#endif
-
 #if DBG
 // Declare the global debug flag for this driver.
 ULONG PacketDebugFlag = PACKET_DEBUG_LOUD;
