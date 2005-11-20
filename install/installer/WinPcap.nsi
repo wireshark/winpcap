@@ -42,14 +42,14 @@
 ;Project definitions
 
   !define WINPCAP_PRJ_MAJOR "3"
-  !define WINPCAP_PRJ_MINOR "1"
-  !define WINPCAP_PRJ_REV "0"
-  !define WINPCAP_PRJ_BUILD "27"
-  !define WINPCAP_PROJ_VERSION_DOTTED "3.1.0.27"
+  !define WINPCAP_PRJ_MINOR "2"
+  !define WINPCAP_PRJ_REV "1"
+  !define WINPCAP_PRJ_BUILD "28"
+  !define WINPCAP_PROJ_VERSION_DOTTED "3.2.1.28"
   !define WINPCAP_LEGAL_COPYRIGHT "© 2005 CACE Technologies"
-  !define WINPCAP_PRODUCT_NAME "WinPcap 3.1"
+  !define WINPCAP_PRODUCT_NAME "WinPcap 3.2 beta1"
   !define WINPCAP_COMPANY_NAME "CACE Technologies"
-  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}.exe"
+  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_beta1.exe"
  
   ;Default installation folder
   InstallDir "$PROGRAMFILES\WinPcap"
@@ -83,6 +83,7 @@
   Var WINPCAP_UNINSTALL_EXEC
   Var WINPCAP_OLD_PROJ_VERSION_DOTTED
   Var WINPCAP_TARGET_OS
+  Var WINPCAP_TARGET_ARCHITECTURE
   Var WINPCAP_OLD_PRJ_MAJOR
   Var WINPCAP_OLD_PRJ_MINOR
   Var WINPCAP_OLD_PRJ_REV
@@ -90,6 +91,7 @@
   Var WINPCAP_OLD_PRJ_SAME_VERSION
   Var WINPCAP_OLD_INSTALLER
   Var WINPCAP_OLD_REBOOT_NEEDED
+  Var MY_BOOL
   Var VARIABLE_1
   
 ;--------------------------------
@@ -223,10 +225,13 @@ CheckX86:
     StrCmp $WINPCAP_TARGET_OS "98" NormalInstallation
     StrCmp $WINPCAP_TARGET_OS "ME" NormalInstallation
 
-    ReadRegStr $R0 HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
-    StrCmp $R0 "x86" NormalInstallation
+    StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" NormalInstallation
+    StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" AmdInstallationWarning
     
-    MessageBox MB_ICONEXCLAMATION|MB_OK "${WINPCAP_PRODUCT_NAME} can be installed on 32-bit x86 systems, only.$\nThe installation will be aborted."
+AmdInstallationWarning: 
+    
+    MessageBox MB_ICONEXCLAMATION|MB_OKCANCEL  "You are about to install ${WINPCAP_PRODUCT_NAME} on Windows x64.$\nThe support for this operating system is still *highly* experimental.$\nPress Ok if you want to continue, or Cancel if you want to abort the installation." IDOK NormalInstallation
+
     Quit
 
 NormalInstallation:
@@ -486,7 +491,30 @@ MainInstallationProcedure:
 CopyFilesNT5:
     File "Distribution\2000\packet.dll"
     File "Distribution\2000\wanpacket.dll"
+	
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" CopyX86Driver
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" CopyAMD64Driver
+	
+CopyX86Driver:	
     File /oname=drivers\npf.sys "Distribution\2000\npf.sys"
+    goto CopiedNT5Files
+    
+CopyAMD64Driver:
+    StrCpy $MY_BOOL '1'	 
+
+; note: this call is available on windows 2003 x64.
+;       On Windows XP x64 the proper call should be Wow64DisableWow64FsRedirection
+;       and Wow64RevertWow64FsRedirection, that have a stupid signature!
+    System::Call 'kernel32::Wow64EnableWow64FsRedirection(b) b($MY_BOOL).r9' 
+    
+    File /oname=drivers\npf.sys "Distribution\x86-64\npf.sys"
+
+    StrCpy $MY_BOOL '0'	 
+    System::Call 'kernel32::Wow64EnableWow64FsRedirection(b) b($MY_BOOL).r9' 
+
+    goto CopiedNT5Files
+
+CopiedNT5Files:    
   
 ;Run install commands
 ; Todo add error checking for these apps
@@ -519,7 +547,27 @@ CopyFiles9x:
 
 CopyFilesVista:
     File "Distribution\nt\packet.dll"
+
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" CopyX86DriverVista
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" CopyAMD64DriverVista
+	
+CopyX86DriverVista:	
     File /oname=drivers\npf.sys "Distribution\2000\npf.sys"
+    goto CopiedVistaFiles
+    
+CopyAMD64DriverVista:	
+
+    StrCpy $MY_BOOL '1'	 
+    System::Call 'kernel32::Wow64EnableWow64FsRedirection(b) b($MY_BOOL).r9' 
+    
+    File /oname=drivers\npf.sys "Distribution\x86-64\npf.sys"
+
+    StrCpy $MY_BOOL '0'	 
+    System::Call 'kernel32::Wow64EnableWow64FsRedirection(b) b($MY_BOOL).r9' 
+
+    goto CopiedVistaFiles
+
+CopiedVistaFiles:    
   
 ;Run install commands
 ; Todo add error checking for these apps
@@ -650,7 +698,14 @@ RmFilesNT5:
 ; The rebootok is used to delete the files on reboot if they are in use.
     Delete /REBOOTOK "$SYSDIR\packet.dll"
     Delete /REBOOTOK "$SYSDIR\wanpacket.dll"
+
+    StrCpy $MY_BOOL '1'	 
+    System::Call 'kernel32::Wow64EnableWow64FsRedirection(b) b($MY_BOOL).r9' 
+    
     Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
+
+    StrCpy $MY_BOOL '0'	 
+    System::Call 'kernel32::Wow64EnableWow64FsRedirection(b) b($MY_BOOL).r9' 
 
     Goto EndRm
 
@@ -682,7 +737,14 @@ RmFilesVista:
 ;Delete files
 ; The rebootok is used to delete the files on reboot if they are in use.
     Delete /REBOOTOK "$SYSDIR\packet.dll"
+
+    StrCpy $MY_BOOL '1'	 
+    System::Call 'kernel32::Wow64EnableWow64FsRedirection(b) b($MY_BOOL).r9' 
+    
     Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
+
+    StrCpy $MY_BOOL '0'	 
+    System::Call 'kernel32::Wow64EnableWow64FsRedirection(b) b($MY_BOOL).r9' 
 
     Goto EndRm
 
@@ -793,7 +855,7 @@ SectionEnd
    Goto lbl_done
  
    lbl_winnt:
- 
+
    StrCpy $R1 $R0 1
  
    StrCmp $R1 '3' lbl_winnt_x
@@ -802,9 +864,12 @@ SectionEnd
    StrCpy $R1 $R0 3
  
    StrCmp $R1 '5.0' lbl_winnt_2000
+   ; note: this is not true on x64 machines, the version is 5.2
    StrCmp $R1 '5.1' lbl_winnt_XP
-   StrCmp $R1 '5.2' lbl_winnt_2003
+   StrCmp $R1 '5.2' lbl_winnt_XP64_2003
    StrCmp $R1 '6.0' lbl_vista lbl_error
+ 
+ 
  
    lbl_winnt_x:
      StrCpy $R0 'NT'
@@ -816,14 +881,32 @@ SectionEnd
  
    lbl_winnt_XP:
      Strcpy $R0 'XP'
+
+	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+	 
+	 IfErrors lbl_error
+
    Goto lbl_done
  
-   lbl_winnt_2003:
+   lbl_winnt_XP64_2003:
+
+	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+	 IfErrors lbl_error
+
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE 'x86' lbl_winnt_2003 lbl_winnt_XP
+
+lbl_winnt_2003:
+
      Strcpy $R0 '2003'
+
    Goto lbl_done
  
    lbl_vista:
      Strcpy $R0 'vista'
+
+	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+	 IfErrors lbl_error
+
    Goto lbl_done
 
    lbl_error:
@@ -876,7 +959,7 @@ SectionEnd
    Goto lbl_done
  
    lbl_winnt:
- 
+
    StrCpy $R1 $R0 1
  
    StrCmp $R1 '3' lbl_winnt_x
@@ -885,9 +968,12 @@ SectionEnd
    StrCpy $R1 $R0 3
  
    StrCmp $R1 '5.0' lbl_winnt_2000
+   ; note: this is not true on x64 machines, the version is 5.2
    StrCmp $R1 '5.1' lbl_winnt_XP
-   StrCmp $R1 '5.2' lbl_winnt_2003
+   StrCmp $R1 '5.2' lbl_winnt_XP64_2003
    StrCmp $R1 '6.0' lbl_vista lbl_error
+ 
+ 
  
    lbl_winnt_x:
      StrCpy $R0 'NT'
@@ -899,14 +985,32 @@ SectionEnd
  
    lbl_winnt_XP:
      Strcpy $R0 'XP'
+
+	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+	 
+	 IfErrors lbl_error
+
    Goto lbl_done
  
-   lbl_winnt_2003:
+   lbl_winnt_XP64_2003:
+
+	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+	 IfErrors lbl_error
+
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE 'x86' lbl_winnt_2003 lbl_winnt_XP
+
+lbl_winnt_2003:
+
      Strcpy $R0 '2003'
+
    Goto lbl_done
  
    lbl_vista:
      Strcpy $R0 'vista'
+
+	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+	 IfErrors lbl_error
+
    Goto lbl_done
 
    lbl_error:
