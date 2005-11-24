@@ -30,6 +30,7 @@
  *
  */
 
+#include "stdio.h"
 #include "ntddk.h"
 #include "ntiologc.h"
 #include "ndis.h"
@@ -49,7 +50,7 @@ static NDIS_MEDIUM MediumArray[] = {
 
 #define NUM_NDIS_MEDIA  (sizeof MediumArray / sizeof MediumArray[0])
 
-ULONG NamedEventsCounter=0;
+ULONG NamedEventsCounter = 0;
 
 //Itoa. Replaces the buggy RtlIntegerToUnicodeString
 void PacketItoa(UINT n,PUCHAR buf){
@@ -86,9 +87,12 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
     UINT				i;
 	PUCHAR				tpointer;
     PLIST_ENTRY			PacketListEntry;
-	PCHAR				EvName;
-	WCHAR				TmpNameBuff[128];
+	PWCHAR				EventName;
+	WCHAR				EventPrefix[MAX_WINPCAP_KEY_CHARS];
+	ULONG				EventLengthChars;  // including the traling \0
 	UINT				RegStrLen;
+	WCHAR				EventOrdinalString[100];
+
 
     IF_LOUD(DbgPrint("NPF: OpenAdapter\n");)
 
@@ -114,17 +118,29 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	//
 	// Get the Event names base from the registry
 	//
-	RegStrLen = sizeof(TmpNameBuff);
+	RegStrLen = sizeof(EventPrefix)/sizeof(EventPrefix[0]);
 
-	NPF_QueryWinpcapRegistryKey(L"npf_kernel_events_names",
-		TmpNameBuff,
-		&RegStrLen,
-		NPF_KERNEL_EVENTS_NAMES, 
-		sizeof(NPF_KERNEL_EVENTS_NAMES));
+	NPF_QueryWinpcapRegistryString(NPF_EVENTS_NAMES_REG_KEY_WC,
+		EventPrefix,
+		RegStrLen,
+		NPF_EVENTS_NAMES_WIDECHAR);
 
-	EvName=ExAllocatePoolWithTag(NonPagedPool, RegStrLen, '1OWA');
+	_snwprintf(EventOrdinalString, 
+		sizeof(EventOrdinalString) / sizeof(EventOrdinalString[0]) - 1,
+		L"%.010u", 
+		InterlockedIncrement(&NamedEventsCounter));
 
-    if (EvName==NULL) {
+	//
+	// lets compute the needed size for the event name
+	//
+	// In chars, it's the length of the prefix (\BaseNamedObjects\) plus the name taken from the registry, plus the ordinal plus the trailing 0
+	//
+	EventLengthChars = wcslen(KERNEL_EVENT_NAMESPACE) + wcslen(EventPrefix) + wcslen(EventOrdinalString) + 1;
+
+
+	EventName = ExAllocatePoolWithTag(NonPagedPool, EventLengthChars * sizeof(WCHAR), '1OWA');
+
+    if (EventName == NULL) {
         // no memory
         ExFreePool(Open);
 	    Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
@@ -132,7 +148,19 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
-    //  Save or open here
+	swprintf(EventName, 
+		L"%s%s%s", 
+		KERNEL_EVENT_NAMESPACE,
+		EventPrefix,
+		EventOrdinalString);
+
+	//Create the string containing the name of the read event
+	RtlInitUnicodeString(&Open->ReadEventName, EventName);
+
+	IF_LOUD(DbgPrint("\nCreated the named event for the read; name=%ws, counter=%d\n", Open->ReadEventName.Buffer,NamedEventsCounter-1);)
+
+		
+	//  Save or open here
     IrpSp->FileObject->FsContext=Open;
 	
     Open->DeviceExtension=DeviceExtension;
@@ -154,30 +182,18 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
         IF_LOUD(DbgPrint("NPF: Failed to allocate packet pool\n");)
 			
 		ExFreePool(Open);
-		ExFreePool(EvName);
+		ExFreePool(EventName);
         Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
         IoCompleteRequest(Irp, IO_NO_INCREMENT);
         return STATUS_INSUFFICIENT_RESOURCES;
     }
 
-	RtlCopyBytes(EvName,
-		TmpNameBuff,
-		RegStrLen);
-
-	//Create the string containing the name of the read event
-	RtlInitUnicodeString(&Open->ReadEventName,(PCWSTR) EvName);
-
-	PacketItoa(NamedEventsCounter,(PUCHAR)(Open->ReadEventName.Buffer+21));
-
-	InterlockedIncrement(&NamedEventsCounter);
-	
-	IF_LOUD(DbgPrint("\nCreated the named event for the read; name=%ws, counter=%d\n", Open->ReadEventName.Buffer,NamedEventsCounter-1);)
 
 	//allocate the event objects
 	Open->ReadEvent=IoCreateNotificationEvent(&Open->ReadEventName,&Open->ReadEventHandle);
 	if(Open->ReadEvent==NULL){
 		ExFreePool(Open);
-		ExFreePool(EvName);
+		ExFreePool(EventName);
         Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
         IoCompleteRequest(Irp, IO_NO_INCREMENT);
         return STATUS_INSUFFICIENT_RESOURCES;
@@ -195,7 +211,6 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
     //  list to hold irp's want to reset the adapter
     InitializeListHead(&Open->ResetIrpList);
 	
-	
     //  Initialize the request list
     KeInitializeSpinLock(&Open->RequestSpinLock);
     InitializeListHead(&Open->RequestList);
@@ -206,7 +221,7 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	{
         // no memory
         ExFreePool(Open);
-		ExFreePool(EvName);
+		ExFreePool(EventName);
 	    Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
         IoCompleteRequest(Irp, IO_NO_INCREMENT);
         return STATUS_INSUFFICIENT_RESOURCES;
@@ -269,7 +284,7 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
     //
     //  Try to open the MAC
     //
-    IF_LOUD(DbgPrint("NPF: Openinig the device %ws, BindingContext=%d\n",DeviceExtension->AdapterName.Buffer, Open);)
+    IF_LOUD(DbgPrint("NPF: Opening the device %ws, BindingContext=%d\n",DeviceExtension->AdapterName.Buffer, Open);)
 
 	NdisOpenAdapter(
         &Status,
@@ -530,7 +545,7 @@ NPF_CloseAdapterComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  
 		// Free the jitted filter if it's present
 		if(Open->Filter != NULL)
 			BPF_Destroy_JIT_Filter(Open->Filter);
-		
+
 		//free the buffer
 //		Open->BufSize = 0;
 //		if(Open->Buffer!=NULL)ExFreePool(Open->Buffer);
