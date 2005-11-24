@@ -57,7 +57,7 @@ BOOL GetHash(LPCBYTE lpbData, DWORD dwDataLen, LPBYTE lpValue, DWORD dwValueLeng
 		return FALSE;
 	}
 
-	if ( dwHashSize != CREDENTIAL_LEN )
+	if ( dwHashSize != CREDENTIAL_LEN || dwValueLength != CREDENTIAL_LEN )
 	{
 		TRACE_MESSAGE("GetHash, Error for different size of hash value (CryptAPI says %d, we have %d)", dwHashSize, CREDENTIAL_LEN );
 
