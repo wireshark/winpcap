@@ -12,12 +12,9 @@
 
 HANDLE g_hGlobalMutex = NULL;
 HANDLE g_hGlobalSemaphore = NULL;
-char g_SysDir[MAX_PATH + 16];
 char g_GlobalSemaphoreName[MAX_OBJNAME_LEN];
 char g_DllFullPath[MAX_PATH + 16];
 char g_DriverFullPath[MAX_PATH + 16];
-char g_NpfDriverNameId[32];
-WCHAR g_NpfDriverNameIdW[32];
 HINSTANCE g_DllHandle = NULL;
 char g_LastWoemError[PACKET_ERRSTR_SIZE];
 volatile BOOL g_InitError = FALSE;
@@ -44,7 +41,7 @@ BOOL APIENTRY DllMain(HINSTANCE Dllh, DWORD Reason, LPVOID lpReserved)
 		//
 		g_OemActive = TRUE;
 #endif
-		
+
 		break;
 		
 	case DLL_PROCESS_DETACH:
@@ -129,8 +126,6 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	LONG lold;
 	char ObjName[MAX_OBJNAME_LEN];
 	UINT i;
-	char SvcDesc[MAX_PATH + 16];
-	char SvcBin[MAX_PATH + 16];
 	OSVERSIONINFO osVer;
     HRESULT hr;
 #ifdef SECURITY
@@ -397,13 +392,13 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			return FALSE;
 		}
 		
-		if(check_if_service_is_running(g_NpfDriverNameId) == 0)
+		if(check_if_service_is_running(NPF_DRIVER_NAME) == 0)
 		{
 			//
 			// If we are here and the service is running, it's almost surely the result 
 			// of some mess. We try to cleanup.
 			//
-			if (delete_service(g_NpfDriverNameId) == -1)
+			if (delete_service(NPF_DRIVER_NAME) == -1)
 			{
 				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Error deleting an existing copy of the NPF service");
 
@@ -617,19 +612,9 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		//
 		// Create the driver service
 		//		
-		_snprintf(SvcDesc, 
-			sizeof(SvcDesc) - 1, 
-			"WinPcap Packet Driver (%s)",
-			g_NpfDriverNameId);
-		
-		_snprintf(SvcBin, 
-			sizeof(SvcDesc) - 1, 
-			NPF_DRIVER_PATH_ASCII "%s.sys",
-			g_NpfDriverNameId);
-		
-		if(create_driver_service(g_NpfDriverNameId, 
-			SvcDesc, 
-			SvcBin) == -1)
+		if(create_driver_service(NPF_DRIVER_NAME, 
+			NPF_SERVICE_DESC, 
+			NPF_DRIVER_COMPLETE_PATH) == -1)
 		{
 			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("unable to create the packet driver service");
 
@@ -656,11 +641,11 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		//
 		// Load the driver
 		//
-		if(start_service(g_NpfDriverNameId) == -1)
+		if(start_service(NPF_DRIVER_NAME) == -1)
 		{
 			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("unable to start the packet driver service");
 
-			delete_service(g_NpfDriverNameId);
+			delete_service(NPF_DRIVER_NAME);
 			_unlink(g_DllFullPath);
 			_unlink(g_DriverFullPath);
 			
@@ -687,7 +672,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		i = 0;
 		while(TRUE)
 		{
-			if(check_if_service_is_running(g_NpfDriverNameId) == 0)
+			if(check_if_service_is_running(NPF_DRIVER_NAME) == 0)
 			{
 				break;
 			}
@@ -697,7 +682,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			{
 				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("timeout while starting the packet driver");
 	
-				delete_service(g_NpfDriverNameId);
+				delete_service(NPF_DRIVER_NAME);
 				_unlink(g_DllFullPath);
 				_unlink(g_DriverFullPath);
 				
@@ -731,7 +716,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	{
 		if(!WoemCreateBinaryNames())
 		{			
-			delete_service(g_NpfDriverNameId);
+			delete_service(NPF_DRIVER_NAME);
 			_unlink(g_DllFullPath);
 			_unlink(g_DriverFullPath);
 			
@@ -758,7 +743,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	//
 	if(!LoadPacketDll(g_DllFullPath, WoemErrorString))
 	{
-		delete_service(g_NpfDriverNameId);
+		delete_service(NPF_DRIVER_NAME);
 		_unlink(g_DllFullPath);
 		_unlink(g_DriverFullPath);
 		
@@ -805,7 +790,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 // NOTE: we cannot use tracing in this function, since it's called
 // in the context of DllMain (MSDN clearly states that only the 
 // functions exported by kernel32.dll can be called within the 
-// DllMain
+// DllMain).
 ////////////////////////////////////////////////////////////////////
 BOOL WoemLeaveDll()
 {
@@ -823,7 +808,7 @@ BOOL WoemLeaveDll()
 		{
 		case WAIT_FAILED:
 			
-			if(g_hGlobalMutex!=0)
+			if(g_hGlobalMutex != 0)
 			{
 				CloseHandle(g_hGlobalMutex);
 				g_hGlobalMutex = NULL;
@@ -883,7 +868,8 @@ BOOL WoemLeaveDll()
 		// IF WE ARE HERE, THE DLL IS BEING UNLOADED FOR THE LAST TIME.
 		//
 
-		delete_service(g_NpfDriverNameId);
+		delete_service(NPF_DRIVER_NAME);
+		WoemDeleteNameRegistryEntries();
 
 		break;
 
@@ -958,8 +944,16 @@ BOOL WoemLeaveDll()
 BOOL WoemCreateNameRegistryEntries()
 {
 	HKEY WinpcapKey;
-	char KeyValBuf[MAX_WINPCAP_KEY_CHARS];
-	WCHAR KeyValBufW[MAX_WINPCAP_KEY_CHARS];
+	OSVERSIONINFO osVer;
+
+	ZeroMemory(&osVer,sizeof(OSVERSIONINFO));
+	osVer.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+
+	if (GetVersionEx(&osVer)==0) 
+	{
+		TRACE_MESSAGE("Impossible to retrieve the OS version Info");
+		return FALSE;
+	}
 
 	//
 	// Do a cleanup, just to be sure
@@ -983,34 +977,18 @@ BOOL WoemCreateNameRegistryEntries()
 	}
 	
 	//
-	// Created the strings that we'll use to build the registry keys values
-	// and load the components
-	//
-	_snprintf(g_NpfDriverNameId, 
-		sizeof(g_NpfDriverNameId) - 1, 
-		"%s",
-		NPF_DRIVER_NAME);
-
-	_snwprintf(g_NpfDriverNameIdW, 
-		sizeof(g_NpfDriverNameIdW) / sizeof(WCHAR) - 1, 
-		L"%ws",
-		NPF_DRIVER_NAME_WIDECHAR);	
-
-	//
 	// Add subkeys with the strings
 	//
 
-	// npf_driver_name
-
-	memset(KeyValBuf, sizeof(KeyValBuf), 0);
-	memset(KeyValBufW, sizeof(KeyValBufW), 0);
-
+	//
+	// NpfDriverName (e.g. "NPF")  -- HHH
+	//
 	if(RegSetValueEx(WinpcapKey, 
-		"npf_driver_name", 
+		NPF_DRIVER_NAME_REG_KEY, 
 		0, 
-		REG_BINARY, 
-		(LPBYTE)g_NpfDriverNameId,
-		strlen(g_NpfDriverNameId) + 1) != ERROR_SUCCESS)
+		REG_SZ, 
+		(LPBYTE)NPF_DRIVER_NAME,
+		sizeof(NPF_DRIVER_NAME)) != ERROR_SUCCESS)
 	{
 		RegCloseKey(WinpcapKey);
 	
@@ -1018,17 +996,15 @@ BOOL WoemCreateNameRegistryEntries()
 		return FALSE;
 	}
 	
-	// npf_driver_name_widechar
-
-	memset(KeyValBuf, sizeof(KeyValBuf), 0);
-	memset(KeyValBufW, sizeof(KeyValBufW), 0);
-
+	//
+	// NpfServiceDescription (e.g. "WinPcap Packet Driver ( NPF )") -- FFF
+	//
 	if(RegSetValueEx(WinpcapKey, 
-		"npf_driver_name_widechar", 
+		NPF_SERVICE_DESC_REG_KEY, 
 		0,
-		REG_BINARY,
-		(LPBYTE)g_NpfDriverNameIdW,
-		(wcslen(g_NpfDriverNameIdW) + 1) * sizeof(WCHAR)) != ERROR_SUCCESS)
+		REG_SZ,
+		(LPBYTE)NPF_SERVICE_DESC,
+		sizeof(NPF_SERVICE_DESC)) != ERROR_SUCCESS)
 	{
 		RegCloseKey(WinpcapKey);
 	
@@ -1036,23 +1012,15 @@ BOOL WoemCreateNameRegistryEntries()
 		return FALSE;
 	}
 
-	// npf_service_desc_widechar
-
-	memset(KeyValBuf, sizeof(KeyValBuf), 0);
-	memset(KeyValBufW, sizeof(KeyValBufW), 0);
-
-	_snwprintf(KeyValBufW, 
-		sizeof(KeyValBufW) / sizeof(WCHAR) - 1, 
-		L"%ws (%ws)",
-		NPF_SERVICE_DESC_WIDECHAR,
-		g_NpfDriverNameIdW);
-
+	//
+	//	NpfDeviceNamesPrefix (e.g. "NPF_") -- AAA
+	//
 	if(RegSetValueEx(WinpcapKey, 
-		"npf_service_desc_widechar", 
+		NPF_DEVICES_PREFIX_REG_KEY, 
 		0,
-		REG_BINARY,
-		(LPBYTE)KeyValBufW,
-		(wcslen(KeyValBufW) + 1) * sizeof(WCHAR)) != ERROR_SUCCESS)
+		REG_SZ,
+		(LPBYTE)NPF_DEVICE_NAMES_PREFIX,
+		sizeof(NPF_DEVICE_NAMES_PREFIX)) != ERROR_SUCCESS)
 	{
 		RegCloseKey(WinpcapKey);
 	
@@ -1060,136 +1028,7 @@ BOOL WoemCreateNameRegistryEntries()
 		return FALSE;
 	}
 
-	// npf_service_registry_location_widechar
-
-	memset(KeyValBuf, sizeof(KeyValBuf), 0);
-	memset(KeyValBufW, sizeof(KeyValBufW), 0);
-
-	_snwprintf(KeyValBufW, 
-		sizeof(KeyValBufW) / sizeof(WCHAR) - 1, 
-		L"SYSTEM\\CurrentControlSet\\Services\\%ws",
-		g_NpfDriverNameIdW);
-
-	if(RegSetValueEx(WinpcapKey, 
-		"npf_service_registry_location_widechar", 
-		0,
-		REG_BINARY,
-		(LPBYTE)KeyValBufW,
-		(wcslen(KeyValBufW) + 1) * sizeof(WCHAR)) != ERROR_SUCCESS)
-	{
-		RegCloseKey(WinpcapKey);
-	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
-		return FALSE;
-	}
-
-	// npf_complete_service_registry_location
-
-	memset(KeyValBuf, sizeof(KeyValBuf), 0);
-	memset(KeyValBufW, sizeof(KeyValBufW), 0);
-
-	_snprintf(KeyValBuf, 
-		sizeof(KeyValBuf) / sizeof(CHAR) - 1, 
-		"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\%s",
-		g_NpfDriverNameId);
-
-	if(RegSetValueEx(WinpcapKey, 
-		"npf_complete_service_registry_location", 
-		0,
-		REG_BINARY,
-		(LPBYTE)KeyValBuf,
-		strlen(KeyValBuf) + 1) != ERROR_SUCCESS)
-	{
-		RegCloseKey(WinpcapKey);
-	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
-		return FALSE;
-	}
-
-	// npf_driver_path_widechar
-
-	if(RegSetValueEx(WinpcapKey, 
-		"npf_driver_path_widechar", 
-		0,
-		REG_BINARY,
-		(LPBYTE)NPF_DRIVER_PATH_WIDECHAR,
-		sizeof(NPF_DRIVER_PATH_WIDECHAR)) != ERROR_SUCCESS)
-	{
-		RegCloseKey(WinpcapKey);
-	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
-		return FALSE;
-	}
-
-	// npf_driver_binary_widechar
-
-	memset(KeyValBuf, sizeof(KeyValBuf), 0);
-	memset(KeyValBufW, sizeof(KeyValBufW), 0);
-
-	_snwprintf(KeyValBufW, 
-		sizeof(KeyValBufW) / sizeof(WCHAR) - 1, 
-		L"%ws.sys",
-		g_NpfDriverNameIdW);
-
-	if(RegSetValueEx(WinpcapKey, 
-		"npf_driver_binary_widechar", 
-		0,
-		REG_BINARY,
-		(LPBYTE)KeyValBufW,
-		(wcslen(KeyValBufW) + 1) * sizeof(WCHAR)) != ERROR_SUCCESS)
-	{
-		RegCloseKey(WinpcapKey);
-	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
-		return FALSE;
-	}
-
-	// npf_device_names_prefix
-
-	memset(KeyValBuf, sizeof(KeyValBuf), 0);
-	memset(KeyValBufW, sizeof(KeyValBufW), 0);
-
-	_snprintf(KeyValBuf, 
-		sizeof(KeyValBuf) / sizeof(CHAR) - 1, 
-		"%s_",
-		g_NpfDriverNameId);
-
-	if(RegSetValueEx(WinpcapKey, 
-		"npf_device_names_prefix", 
-		0,
-		REG_BINARY,
-		(LPBYTE)KeyValBuf,
-		strlen(KeyValBuf) + 1) != ERROR_SUCCESS)
-	{
-		RegCloseKey(WinpcapKey);
-	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
-		return FALSE;
-	}
-
-	// npf_device_names_prefix_widechar
-
-	memset(KeyValBuf, sizeof(KeyValBuf), 0);
-	memset(KeyValBufW, sizeof(KeyValBufW), 0);
-
-	_snwprintf(KeyValBufW, 
-		sizeof(KeyValBufW) / sizeof(WCHAR) - 1, 
-		L"%ws_",
-		g_NpfDriverNameIdW);
-
-	if(RegSetValueEx(WinpcapKey, 
-		"npf_device_names_prefix_widechar", 
-		0,
-		REG_BINARY,
-		(LPBYTE)KeyValBufW,
-		(wcslen(KeyValBufW) + 1) * sizeof(WCHAR)) != ERROR_SUCCESS)
-	{
-		RegCloseKey(WinpcapKey);
-	
-		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
-		return FALSE;
-	}
-
+#if 0
 	// npf_user_events_names
 
 	memset(KeyValBuf, sizeof(KeyValBuf), 0);
@@ -1201,9 +1040,9 @@ BOOL WoemCreateNameRegistryEntries()
 		g_NpfDriverNameIdW);
 
 	if(RegSetValueEx(WinpcapKey, 
-		"npf_user_events_names", 
+		NPF_USER_EVENTS_NAMES_REG_KEY, 
 		0,
-		REG_BINARY,
+		REG_SZ,
 		(LPBYTE)KeyValBufW,
 		(wcslen(KeyValBufW) + 1) * sizeof(WCHAR)) != ERROR_SUCCESS)
 	{
@@ -1212,23 +1051,17 @@ BOOL WoemCreateNameRegistryEntries()
 		RegDeleteKey(HKEY_LOCAL_MACHINE, WINPCAP_INSTANCE_KEY);
 		return FALSE;
 	}
+#endif
 
-	// npf_kernel_events_names
-
-	memset(KeyValBuf, sizeof(KeyValBuf), 0);
-	memset(KeyValBufW, sizeof(KeyValBufW), 0);
-
-	_snwprintf(KeyValBufW, 
-		sizeof(KeyValBufW) / sizeof(WCHAR) - 1, 
-		L"\\BaseNamedObjects\\%ws0000000000\0",
-		g_NpfDriverNameIdW);
-
+	//
+	// NpfEventsNames (e.g. "NPF") -- BBB
+	//
 	if(RegSetValueEx(WinpcapKey, 
-		"npf_kernel_events_names", 
+		NPF_EVENTS_NAMES_REG_KEY, 
 		0,
-		REG_BINARY,
-		(LPBYTE)KeyValBufW,
-		(wcslen(KeyValBufW) + 1) * sizeof(WCHAR)) != ERROR_SUCCESS)
+		REG_SZ,
+		(LPBYTE)NPF_EVENTS_NAMES,
+		sizeof(NPF_EVENTS_NAMES)) != ERROR_SUCCESS)
 	{
 		RegCloseKey(WinpcapKey);
 	
@@ -1236,22 +1069,15 @@ BOOL WoemCreateNameRegistryEntries()
 		return FALSE;
 	}
 
-	// fake_ndiswan_adapter_name
-
-	memset(KeyValBuf, sizeof(KeyValBuf), 0);
-	memset(KeyValBufW, sizeof(KeyValBufW), 0);
-
-	_snprintf(KeyValBuf, 
-		sizeof(KeyValBuf) / sizeof(CHAR) - 1, 
-		"\\Device\\%s_GenericDialupAdapter",
-		g_NpfDriverNameId);
-
+	//
+	// NdiswanAdapterName (e.g. "\\Device\\NPF_GenericDialupAdapter") -- CCC
+	//
 	if(RegSetValueEx(WinpcapKey, 
-		"fake_ndiswan_adapter_name", 
+		NPF_FAKE_NDISWAN_ADAPTER_NAME_REG_KEY, 
 		0,
-		REG_BINARY,
-		(LPBYTE)KeyValBuf,
-		strlen(KeyValBuf) + 1) != ERROR_SUCCESS)
+		REG_SZ,
+		(LPBYTE)FAKE_NDISWAN_ADAPTER_NAME,
+		sizeof(FAKE_NDISWAN_ADAPTER_NAME)) != ERROR_SUCCESS)
 	{
 		RegCloseKey(WinpcapKey);
 	
@@ -1259,12 +1085,13 @@ BOOL WoemCreateNameRegistryEntries()
 		return FALSE;
 	}
 
-	// fake_ndiswan_adapter_description
-
+	//
+	// NdiswanAdapterDescription (e.g. "Adapter for generic dialup and VPN capture") -- DDD
+	//
 	if(RegSetValueEx(WinpcapKey, 
-		"fake_ndiswan_adapter_description", 
+		NPF_FAKE_NDISWAN_ADAPTER_DESC_REG_KEY, 
 		0,
-		REG_BINARY,
+		REG_SZ,
 		(LPBYTE)FAKE_NDISWAN_ADAPTER_DESCRIPTION,
 		sizeof(FAKE_NDISWAN_ADAPTER_DESCRIPTION)) != ERROR_SUCCESS)
 	{
@@ -1274,22 +1101,15 @@ BOOL WoemCreateNameRegistryEntries()
 		return FALSE;
 	}
 
-	// npf_driver_complete_widechar
-
-	memset(KeyValBuf, sizeof(KeyValBuf), 0);
-	memset(KeyValBufW, sizeof(KeyValBufW), 0);
-
-	_snwprintf(KeyValBufW, 
-		sizeof(KeyValBufW) / sizeof(WCHAR) - 1, 
-		L"system32\\drivers\\%ws.sys",
-		g_NpfDriverNameIdW);
-
+	//
+	// NpfDriverCompletePath (e.g. "system32\\drivers\npf.sys") -- GG
+	//
 	if(RegSetValueEx(WinpcapKey,
-		"npf_driver_complete_widechar", 
+		NPF_DRIVER_COMPLETE_PATH_REG_KEY, 
 		0,
-		REG_BINARY,
-		(LPBYTE)KeyValBufW,
-		(wcslen(KeyValBufW) + 1) * sizeof(WCHAR)) != ERROR_SUCCESS)
+		REG_SZ,
+		(LPBYTE)NPF_DRIVER_COMPLETE_PATH,
+		sizeof(NPF_DRIVER_COMPLETE_PATH)) != ERROR_SUCCESS)
 	{
 		RegCloseKey(WinpcapKey);
 	
@@ -1297,22 +1117,15 @@ BOOL WoemCreateNameRegistryEntries()
 		return FALSE;
 	}
 	
-	// npf_driver_complete_driver_prefix
-
-	memset(KeyValBuf, sizeof(KeyValBuf), 0);
-	memset(KeyValBufW, sizeof(KeyValBufW), 0);
-
-	_snprintf(KeyValBuf,
-		sizeof(KeyValBuf) / sizeof(CHAR) - 1, 
-		"\\Device\\%s_",
-		g_NpfDriverNameId);
-
+	//
+	// NpfDriverCompleteDevicePrefix (e.g. "\\Device\\NPF_") -- III
+	//
 	if(RegSetValueEx(WinpcapKey,
-		"npf_driver_complete_driver_prefix",
+		NPF_DRIVER_COMPLETE_DEVICE_PREFIX_REG_KEY,
 		0,
-		REG_BINARY,
-		(LPBYTE)KeyValBuf,
-		strlen(KeyValBuf) + 1) != ERROR_SUCCESS)
+		REG_SZ,
+		(LPBYTE)NPF_DRIVER_COMPLETE_DEVICE_PREFIX,
+		sizeof(NPF_DRIVER_COMPLETE_DEVICE_PREFIX)) != ERROR_SUCCESS)
 	{
 		RegCloseKey(WinpcapKey);
 	
@@ -1330,13 +1143,25 @@ BOOL WoemCreateNameRegistryEntries()
 ////////////////////////////////////////////////////////////////////
 BOOL WoemCreateBinaryNames()
 {
+	//TODO we should try to put the files in three places:
+	// - current directory
+	// - system32
+	// - temp directory
 	UINT GsdRes;
-
+	char WinDir[MAX_PATH + 16];
+	char SysDir[MAX_PATH + 16];
+	
 	//
 	// Get the location of the system folder to create the complete paths
 	//
-	GsdRes = GetSystemDirectory(g_SysDir, sizeof(g_SysDir));
-	if(GsdRes == 0 || GsdRes == sizeof(g_SysDir))
+	GsdRes = GetSystemDirectory(SysDir, sizeof(SysDir));
+	if(GsdRes == 0 || GsdRes == sizeof(SysDir))
+	{
+		return FALSE;
+	}
+	
+	GsdRes = GetWindowsDirectory(WinDir, sizeof(WinDir));
+	if(GsdRes == 0 || GsdRes == sizeof(WinDir))
 	{
 		return FALSE;
 	}
@@ -1345,27 +1170,18 @@ BOOL WoemCreateBinaryNames()
 	// Created the strings that we'll use to build the registry keys values
 	// and load the components
 	//
-	_snprintf(g_NpfDriverNameId, 
-		sizeof(g_NpfDriverNameId) - 1, 
-		"%s",
-		NPF_DRIVER_NAME);
 
-	_snwprintf(g_NpfDriverNameIdW, 
-		sizeof(g_NpfDriverNameIdW) / sizeof(WCHAR) - 1, 
-		L"%ws",
-		NPF_DRIVER_NAME_WIDECHAR);	
-	
 	_snprintf(g_DllFullPath, 
 		sizeof(g_DllFullPath) - 1, 
 		"%s\\%swoem.tmp", 
-		g_SysDir, 
-		g_NpfDriverNameId);
+		SysDir, 
+		NPF_DRIVER_NAME);
 
 	_snprintf(g_DriverFullPath, 
 		sizeof(g_DriverFullPath) - 1, 
-		"%s\\drivers\\%s.sys", 
-		g_SysDir, 
-		g_NpfDriverNameId);
+		"%s\\%s", 
+		WinDir, 
+		NPF_DRIVER_COMPLETE_PATH);
 
 	return TRUE;
 }
