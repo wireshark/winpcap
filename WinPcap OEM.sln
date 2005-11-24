@@ -1,0 +1,61 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PacketAndWan (Win2k)", "packetNtx\Dll\Project\PacketAndWan2003.vcproj", "{A3042039-CBC3-4F02-BD4E-A372F2BE2ED2}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Packet (WinNT4)", "packetNtx\Dll\Project\PacketNT4.vcproj", "{33BCE0DE-2404-4647-8F2D-DA5D00F04A3D}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinPcap NTx Driver", "..\winpcap\packetNtx\driver\WinPcap NTx Driver_2003.vcproj", "{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinpcapOem", "OEM\WinpcapOem\WinpcapOem.vcproj", "{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{A3042039-CBC3-4F02-BD4E-A372F2BE2ED2} = {A3042039-CBC3-4F02-BD4E-A372F2BE2ED2}
+		{33BCE0DE-2404-4647-8F2D-DA5D00F04A3D} = {33BCE0DE-2404-4647-8F2D-DA5D00F04A3D}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Debug_Security = Debug_Security
+		Release = Release
+		Release_Security = Release_Security
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{A3042039-CBC3-4F02-BD4E-A372F2BE2ED2}.Debug.ActiveCfg = Debug|Win32
+		{A3042039-CBC3-4F02-BD4E-A372F2BE2ED2}.Debug.Build.0 = Debug|Win32
+		{A3042039-CBC3-4F02-BD4E-A372F2BE2ED2}.Debug_Security.ActiveCfg = Debug|Win32
+		{A3042039-CBC3-4F02-BD4E-A372F2BE2ED2}.Debug_Security.Build.0 = Debug|Win32
+		{A3042039-CBC3-4F02-BD4E-A372F2BE2ED2}.Release.ActiveCfg = Release|Win32
+		{A3042039-CBC3-4F02-BD4E-A372F2BE2ED2}.Release.Build.0 = Release|Win32
+		{A3042039-CBC3-4F02-BD4E-A372F2BE2ED2}.Release_Security.ActiveCfg = Release|Win32
+		{A3042039-CBC3-4F02-BD4E-A372F2BE2ED2}.Release_Security.Build.0 = Release|Win32
+		{33BCE0DE-2404-4647-8F2D-DA5D00F04A3D}.Debug.ActiveCfg = Debug|Win32
+		{33BCE0DE-2404-4647-8F2D-DA5D00F04A3D}.Debug.Build.0 = Debug|Win32
+		{33BCE0DE-2404-4647-8F2D-DA5D00F04A3D}.Debug_Security.ActiveCfg = Debug|Win32
+		{33BCE0DE-2404-4647-8F2D-DA5D00F04A3D}.Debug_Security.Build.0 = Debug|Win32
+		{33BCE0DE-2404-4647-8F2D-DA5D00F04A3D}.Release.ActiveCfg = Release|Win32
+		{33BCE0DE-2404-4647-8F2D-DA5D00F04A3D}.Release.Build.0 = Release|Win32
+		{33BCE0DE-2404-4647-8F2D-DA5D00F04A3D}.Release_Security.ActiveCfg = Release|Win32
+		{33BCE0DE-2404-4647-8F2D-DA5D00F04A3D}.Release_Security.Build.0 = Release|Win32
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug.ActiveCfg = Debug|Win32
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug_Security.ActiveCfg = Debug|Win32
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release.ActiveCfg = Release|Win32
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release_Security.ActiveCfg = Release|Win32
+		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Debug.ActiveCfg = Debug|Win32
+		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Debug.Build.0 = Debug|Win32
+		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Debug_Security.ActiveCfg = Debug_Security|Win32
+		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Debug_Security.Build.0 = Debug_Security|Win32
+		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Release.ActiveCfg = Release|Win32
+		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Release.Build.0 = Release|Win32
+		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Release_Security.ActiveCfg = Release_Security|Win32
+		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Release_Security.Build.0 = Release_Security|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal
