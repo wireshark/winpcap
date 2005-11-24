@@ -115,7 +115,7 @@ PostBuild_Cmds=postbuild.bat
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x410 /d "_DEBUG"
-# ADD RSC /l 0x410 /d "_DEBUG"
+# ADD RSC /l 0x409 /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -143,7 +143,7 @@ PostBuild_Cmds=postbuild.bat
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /I ".\\" /D "NDEBUG" /D "_MBCS" /D "_USRDLL" /D "WinpcapOem_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "SECURITY" /FD /c
 # SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /nologo /MT /W3 /GX /O2 /I ".\\" /I "..\..\..\winpcap\common" /I "..\..\..\common" /D "NDEBUG" /D "_MBCS" /D "_USRDLL" /D "WinpcapOem_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "SECURITY" /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\..\..\winpcap\common" /I ".\\" /I "..\..\..\common" /D "NDEBUG" /D "_MBCS" /D "_USRDLL" /D "WinpcapOem_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "SECURITY" /FR /FD /c
 # SUBTRACT CPP /YX /Yc /Yu
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -221,6 +221,10 @@ SOURCE=.\NetMonInstaller.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\winpcap\Common\Packet32.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\pch.h
 # End Source File
 # Begin Source File
@@ -237,7 +241,11 @@ SOURCE=.\WinpcapOem.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\Common\WpcapNames.h
+SOURCE=.\WoemDebug.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\winpcap\Common\WpcapNames.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
@@ -246,7 +254,15 @@ SOURCE=..\..\Common\WpcapNames.h
 # End Group
 # Begin Source File
 
+SOURCE=..\Instructions.txt
+# End Source File
+# Begin Source File
+
 SOURCE=.\binaries\npf2k.sys
+# End Source File
+# Begin Source File
+
+SOURCE=.\binaries\npfnt.sys
 # End Source File
 # Begin Source File
 
@@ -255,6 +271,10 @@ SOURCE=.\binaries\Packet2k.dll
 # Begin Source File
 
 SOURCE=.\Packet2k.dll
+# End Source File
+# Begin Source File
+
+SOURCE=.\binaries\Packetnt.dll
 # End Source File
 # Begin Source File
 
