@@ -55,6 +55,7 @@ BOOLEAN WanPacketAddPacketToRingBuffer(PWAN_ADAPTER pWanAdapter, LPFRAME_DESCRIP
 DWORD WanPacketRemovePacketsFromRingBuffer(PWAN_ADAPTER pWanAdapter, PUCHAR Buffer, DWORD BuffSize);
 BOOLEAN IsWindows2000();
 
+#if 0
 /*! 
   \brief The main dll function.
 */
@@ -78,6 +79,8 @@ BOOLEAN APIENTRY DllMain( HANDLE hModule, DWORD  Reason, LPVOID lpReserved)
 
 	return TRUE;
 }
+
+#endif
 
 /*! 
   \brief It returns the current time formatted as a timeval structure.
@@ -176,6 +179,11 @@ BOOLEAN WanPacketTestAdapter()
 	BOOLEAN retVal;
 	DWORD i;
 	HRESULT hResult;
+
+	if ( g_hModule == NULL)
+	{
+		g_hModule = LoadLibrary("npp\\ndisnpp.dll");
+	}
 
 	if ( g_hModule == NULL)
 	{
@@ -289,6 +297,11 @@ PWAN_ADAPTER WanPacketOpenAdapter()
 	HBLOB hFilterBlob = NULL;
 	HRESULT hResult;
 	DWORD i;
+
+	if ( g_hModule == NULL)
+	{
+		g_hModule = LoadLibrary("npp\\ndisnpp.dll");
+	}
 
 	if ( g_hModule == NULL)
 	{
