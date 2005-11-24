@@ -56,12 +56,14 @@ BOOL WoemGetResource(HINSTANCE hInst, int ResID, LPVOID * lpResMem, LPDWORD dwRe
 // Registry and names-related functions
 ////////////////////////////////////////////////////////////////////
 BOOL WoemCreateNameRegistryEntries();
+BOOL WoemDeleteNameRegistryEntries();
 BOOL WoemCreateBinaryNames();
 
 ////////////////////////////////////////////////////////////////////
 // Debug definitions
 ////////////////////////////////////////////////////////////////////
 
+#if 0
 
 #define DEBUGTRACE
 #define TRACE_OUTPUTDEBUGSTRING
@@ -82,6 +84,7 @@ BOOL WoemCreateBinaryNames();
 #define TraceEnter(X)
 #endif
 
+#endif
 
 ////////////////////////////////////////////////////////////////////
 // Error codes
