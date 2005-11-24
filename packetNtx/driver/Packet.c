@@ -56,7 +56,8 @@ PDEVICE_EXTENSION GlobalDeviceExtension;
 //
 // Global strings
 //
-NDIS_STRING NPF_Prefix;
+WCHAR g_NPF_PrefixBuffer[MAX_WINPCAP_KEY_CHARS];
+NDIS_STRING g_NPF_Prefix;
 //NDIS_STRING NPF_Prefix = NDIS_STRING_CONST("" NPF_DRIVER_NAME_WIDECHAR L"_");
 NDIS_STRING devicePrefix = NDIS_STRING_CONST("\\Device\\");
 NDIS_STRING symbolicLinkPrefix = NDIS_STRING_CONST("\\DosDevices\\");
@@ -65,8 +66,7 @@ NDIS_STRING tcpLinkageKeyName = NDIS_STRING_CONST("\\Registry\\Machine\\System"
 NDIS_STRING AdapterListKey = NDIS_STRING_CONST("\\Registry\\Machine\\System"
 								L"\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}");
 NDIS_STRING bindValueName = NDIS_STRING_CONST("Bind");
-NDIS_STRING WinpcapKey = NDIS_STRING_CONST("\\Registry\\Machine\\" WINPCAP_INSTANCE_KEY_WIDECHAR);
-
+NDIS_STRING g_WinpcapGlobalKey = NDIS_STRING_CONST("\\Registry\\Machine\\" WINPCAP_INSTANCE_KEY_WIDECHAR);
 
 /// Global variable that points to the names of the bound adapters
 WCHAR* bindP = NULL;
@@ -109,7 +109,6 @@ DriverEntry(
 	WCHAR* bindT;
 	PKEY_VALUE_PARTIAL_INFORMATION tcpBindingsP;
 	UNICODE_STRING macName;
-	CHAR TmpNameBuff[128];
 	UINT RegStrLen;
 
     IF_LOUD(DbgPrint("\n\nPacket: DriverEntry\n");)
@@ -149,15 +148,14 @@ DriverEntry(
 	//
 	// Get the device names prefix from the registry
 	//
-	RegStrLen = sizeof(TmpNameBuff);
+	RegStrLen = sizeof(g_NPF_PrefixBuffer) / sizeof(g_NPF_PrefixBuffer[0]);
 
-	NPF_QueryWinpcapRegistryKey(L"npf_device_names_prefix",
-		TmpNameBuff,
-		&RegStrLen,
-		NPF_DRIVER_NAME "_", 
-		sizeof(NPF_DRIVER_NAME "_"));
+	NPF_QueryWinpcapRegistryString(NPF_DEVICES_PREFIX_REG_KEY_WC,
+		g_NPF_PrefixBuffer,
+		RegStrLen,
+		NPF_DEVICE_NAMES_PREFIX_WIDECHAR);
 
-	NdisInitializeString(&NPF_Prefix, TmpNameBuff);
+	NdisInitUnicodeString(&g_NPF_Prefix, g_NPF_PrefixBuffer);
 
 	//
 	// Get number of CPUs and save it
@@ -495,7 +493,7 @@ BOOLEAN createDevice(IN OUT PDRIVER_OBJECT adriverObjectP,
 	}
 
 	deviceName.Length = 0;
-	deviceName.MaximumLength = (USHORT)(amacNameP->Length + NPF_Prefix.Length + sizeof(UNICODE_NULL));
+	deviceName.MaximumLength = (USHORT)(amacNameP->Length + g_NPF_Prefix.Length + sizeof(UNICODE_NULL));
 	deviceName.Buffer = ExAllocatePoolWithTag(PagedPool, deviceName.MaximumLength, '3PWA');
 
 	if (deviceName.Buffer == NULL)
@@ -504,7 +502,7 @@ BOOLEAN createDevice(IN OUT PDRIVER_OBJECT adriverObjectP,
 	deviceSymLink.Length = 0;
 	deviceSymLink.MaximumLength =(USHORT)(amacNameP->Length-devicePrefix.Length 
 		+ symbolicLinkPrefix.Length 
-		+ NPF_Prefix.Length 
+		+ g_NPF_Prefix.Length 
 		+ sizeof(UNICODE_NULL));
 
 	deviceSymLink.Buffer = ExAllocatePoolWithTag(NonPagedPool, deviceSymLink.MaximumLength, '3PWA');
@@ -516,12 +514,12 @@ BOOLEAN createDevice(IN OUT PDRIVER_OBJECT adriverObjectP,
 	}
 
 	RtlAppendUnicodeStringToString(&deviceName, &devicePrefix);
-	RtlAppendUnicodeStringToString(&deviceName, &NPF_Prefix);
+	RtlAppendUnicodeStringToString(&deviceName, &g_NPF_Prefix);
 	RtlAppendUnicodeToString(&deviceName, amacNameP->Buffer +
 		devicePrefix.Length / sizeof(WCHAR));
 
 	RtlAppendUnicodeStringToString(&deviceSymLink, &symbolicLinkPrefix);
-	RtlAppendUnicodeStringToString(&deviceSymLink, &NPF_Prefix);
+	RtlAppendUnicodeStringToString(&deviceSymLink, &g_NPF_Prefix);
 	RtlAppendUnicodeToString(&deviceSymLink, amacNameP->Buffer +
 		devicePrefix.Length / sizeof(WCHAR));
 
@@ -632,7 +630,7 @@ VOID NPF_Unload(IN PDRIVER_OBJECT DriverObject)
 	ExFreePool( bindP );
 
 	// Free the device names string that was allocated in the DriverEntry 
-	NdisFreeString(NPF_Prefix);
+//	NdisFreeString(g_NPF_Prefix);
 }
 
 //-------------------------------------------------------------------
@@ -663,8 +661,10 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	ULONG				cnt;
 	BOOLEAN				IsExtendedFilter=FALSE;
 	BOOLEAN				Flag;
-	WCHAR				TmpNameBuff[128];
+	WCHAR				KernelEventNames[MAX_WINPCAP_KEY_CHARS];
 	UINT				RegStrLen;
+	SIZE_T				StringLength;
+	ULONG				NeededBytes;
 
     IF_LOUD(DbgPrint("NPF: IoControl\n");)
 		
@@ -703,22 +703,21 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 	case BIOCGEVNAME: //function to get the name of the event associated with the current instance
 		
-		//
-		// Get the Event names base from the registry
-		//
-		RegStrLen = sizeof(TmpNameBuff);
+		StringLength = Open->ReadEventName.Length / 2;
 		
-		NPF_QueryWinpcapRegistryKey(L"npf_kernel_events_names",
-			TmpNameBuff,
-			&RegStrLen,
-			NPF_KERNEL_EVENTS_NAMES, 
-			sizeof(NPF_KERNEL_EVENTS_NAMES));
+		if (StringLength < wcslen(KERNEL_EVENT_NAMESPACE))
+		{
+			NeededBytes = 0;
+		}
+		else
+		{
+			NeededBytes = ( StringLength - wcslen(KERNEL_EVENT_NAMESPACE)) * sizeof(WCHAR);
+		}
 
 		//
 		// Check input
 		//
-		if(IrpSp->Parameters.DeviceIoControl.OutputBufferLength < 
-			RegStrLen - sizeof(WCHAR))	// The string we pass to user-level is not 0-termianted
+		if(IrpSp->Parameters.DeviceIoControl.OutputBufferLength < NeededBytes) // The string we pass to user-level is not 0-termianted
 		{
 			EXIT_FAILURE(0);
 		}
@@ -727,10 +726,10 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		// Copy the name of the event associated with this open instance
 		//
 		RtlCopyMemory(Irp->UserBuffer, 
-			(Open->ReadEventName.Buffer) + 18, 
-			RegStrLen - sizeof(WCHAR));
+			Open->ReadEventName.Buffer + wcslen(KERNEL_EVENT_NAMESPACE), 
+			NeededBytes);
 
-		EXIT_SUCCESS(RegStrLen - sizeof(WCHAR));
+		EXIT_SUCCESS(NeededBytes);
 		
 		break;
 
@@ -1050,12 +1049,33 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 				
 				// Reset the capture buffers, since they could contain loopbacked packets
 				Open->SkipProcessing = 1;
+				
+				do
+				{
+					Flag = FALSE;
+					for(i=0;i<NCpu;i++)
+						if (Open->CpuData[i].Processing == 1)
+							Flag = TRUE;
+				}
+				while(Flag);  //BUSY FORM WAITING...
+						
 				for (i=0;i<NCpu;i++)
 				{
+					
 					Open->CpuData[i].C = 0;
 					Open->CpuData[i].P = 0;
 					Open->CpuData[i].Free = Open->Size;
+					//
+					//we reset the counters since we are resetting the contents of the buffer!!
+					//
+					Open->CpuData[i].Accepted=0;
+					Open->CpuData[i].Dropped=0;
+					Open->CpuData[i].Received = 0;
 				}
+
+				Open->ReaderSN=0;
+				Open->WriterSN=0;
+				
 				Open->SkipProcessing = 0;
 			}
 		}
@@ -1078,8 +1098,6 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			EXIT_FAILURE(0);
 		}
 
-		Open->ReaderSN=0;
-		Open->WriterSN=0;
 
 		EXIT_SUCCESS(0);
 
@@ -1571,31 +1589,36 @@ NPF_QueryRegistryRoutine(
 
 //-------------------------------------------------------------------
 
-VOID NPF_QueryWinpcapRegistryKey(PWSTR SubKeyToQuery,
-								 PVOID ResultStorage,
-								 PUINT ResultLen, 
-								 PVOID DefaultVal, 
-								 UINT DefaultLen)
+//NOTE: ValueLen is the length of Value in characters
+
+VOID NPF_QueryWinpcapRegistryString(PWSTR SubKeyName,
+								 WCHAR *Value,
+                                 UINT ValueLen, 
+								 WCHAR *DefaultValue)
 {
+	UINT CharsToCopy;
+
 #ifdef WPCAP_OEM
-	PKEY_VALUE_PARTIAL_INFORMATION result = NULL;
+//	PKEY_VALUE_PARTIAL_INFORMATION result = NULL;
 	OBJECT_ATTRIBUTES objAttrs;
 	NTSTATUS status;
 	HANDLE keyHandle;
 	UNICODE_STRING SubKeyToQueryU;
-	CHAR valueInfo[MAX_WINPCAP_KEY_CHARS];
+	CHAR kvpiBuffer[sizeof(KEY_VALUE_PARTIAL_INFORMATION) + sizeof(WCHAR) * MAX_WINPCAP_KEY_CHARS];
 	ULONG QvkResultLength;
-	
+	PKEY_VALUE_PARTIAL_INFORMATION pKeyValuePartialInformation = (PKEY_VALUE_PARTIAL_INFORMATION)kvpiBuffer;	
+	PUNICODE_STRING pResultingKeyValue;
+
 	//
 	// Create subkey string
 	//
-	RtlInitUnicodeString(&SubKeyToQueryU, SubKeyToQuery);
+	RtlInitUnicodeString(&SubKeyToQueryU, SubKeyName);
 
 	//
 	// Init Attributes
 	//
 	InitializeObjectAttributes(&objAttrs,
-		&WinpcapKey,
+		&g_WinpcapGlobalKey,
 		OBJ_CASE_INSENSITIVE, 
 		NULL, 
 		NULL);
@@ -1611,9 +1634,17 @@ VOID NPF_QueryWinpcapRegistryKey(PWSTR SubKeyToQuery,
 	{
 		IF_LOUD(DbgPrint("NPF_QueryWinpcapRegistryKey: ZwOpenKey error %x\n", status);)
 		
-
-		RtlCopyMemory(ResultStorage, DefaultVal, (*ResultLen < DefaultLen)? *ResultLen:DefaultLen);
-		*ResultLen = (*ResultLen < DefaultLen)? *ResultLen:DefaultLen;
+		//copy the default value and return
+		CharsToCopy = wcslen(DefaultValue) + 1;
+		if (CharsToCopy > ValueLen)
+		{
+			RtlCopyMemory(Value, DefaultValue, ValueLen * 2);
+			Value[ValueLen - 1] = 0;
+		}
+		else
+		{
+			RtlCopyMemory(Value, DefaultValue, CharsToCopy * 2);
+		}
 		return;
 	}
 
@@ -1623,8 +1654,8 @@ VOID NPF_QueryWinpcapRegistryKey(PWSTR SubKeyToQuery,
 	status = ZwQueryValueKey(keyHandle, 
 		&SubKeyToQueryU,
 		KeyValuePartialInformation, 
-		(KEY_VALUE_PARTIAL_INFORMATION*)&valueInfo,
-		sizeof(valueInfo),
+		pKeyValuePartialInformation,
+		sizeof(kvpiBuffer),
 		&QvkResultLength);
 
 	if(!NT_SUCCESS(status))
@@ -1635,40 +1666,82 @@ VOID NPF_QueryWinpcapRegistryKey(PWSTR SubKeyToQuery,
 		
 		ZwClose(keyHandle);
 		
-		RtlCopyMemory(ResultStorage, DefaultVal, (*ResultLen < DefaultLen)? *ResultLen:DefaultLen);
-		*ResultLen = (*ResultLen < DefaultLen)? *ResultLen:DefaultLen;
+		//copy the default value and return
+		CharsToCopy = wcslen(DefaultValue) + 1;
+		if (CharsToCopy > ValueLen)
+		{
+			RtlCopyMemory(Value, DefaultValue, ValueLen * 2);
+			Value[ValueLen - 1] = 0;
+		}
+		else
+		{
+			RtlCopyMemory(Value, DefaultValue, CharsToCopy * 2);
+		}
+		return;
 	}
-		
+	
 	//
-	// Check we have enough space for the result. We include two bytes for string termination
+	// Check that the resulting value is of the correct type
 	//
-	if(((KEY_VALUE_PARTIAL_INFORMATION*)valueInfo)->DataLength > *ResultLen - 2)
+	if (pKeyValuePartialInformation->Type != REG_SZ)
 	{
-		IF_LOUD(DbgPrint("NPF_QueryWinpcapRegistryKey: storage buffer too small\n", 
-			status,
-			SubKeyToQueryU.Buffer);)
+		IF_LOUD(DbgPrint("NPF_QueryWinpcapRegistryKey: the reg key has the wrong type (%u)\n", pKeyValuePartialInformation->Type);)
 		
 		ZwClose(keyHandle);
 		
-		RtlCopyMemory(ResultStorage, DefaultVal, (*ResultLen < DefaultLen)? *ResultLen:DefaultLen);
-		*ResultLen = (*ResultLen < DefaultLen)? *ResultLen:DefaultLen;
+		//copy the default value and return
+		CharsToCopy = wcslen(DefaultValue) + 1;
+		if (CharsToCopy > ValueLen)
+		{
+			RtlCopyMemory(Value, DefaultValue, ValueLen * 2);
+			Value[ValueLen - 1] = 0;
+		}
+		else
+		{
+			RtlCopyMemory(Value, DefaultValue, CharsToCopy * 2);
+		}
+		return;
+	}
+
+	pResultingKeyValue = (PUNICODE_STRING)pKeyValuePartialInformation->Data;
+
+	//
+	// Check we have enough space for the result. We include two bytes for string termination
+	//
+	// Length contains the number of bytes. We divide by two to ibtain the chars, and add 1 for the
+	// NULL terminator that is not included into a unicode string
+	if((UINT)pResultingKeyValue->Length / 2 + 1> ValueLen)
+	{
+		IF_LOUD(DbgPrint("NPF_QueryWinpcapRegistryKey: storage buffer too small\n");)		
+
+		ZwClose(keyHandle);
+		
+		//copy the default value and return
+		CharsToCopy = wcslen(DefaultValue) + 1;
+		if (CharsToCopy > ValueLen)
+		{
+			RtlCopyMemory(Value, DefaultValue, ValueLen * 2);
+			Value[ValueLen - 1] = 0;
+		}
+		else
+		{
+			RtlCopyMemory(Value, DefaultValue, CharsToCopy * 2);
+		}
+		return;
 	}
 	
 	//
 	// Copy the value to the user-provided values
 	//
-	RtlCopyMemory(ResultStorage,
-		((KEY_VALUE_PARTIAL_INFORMATION*)valueInfo)->Data,
-		((KEY_VALUE_PARTIAL_INFORMATION*)valueInfo)->DataLength);
-
-	*ResultLen = ((KEY_VALUE_PARTIAL_INFORMATION*)valueInfo)->DataLength;
+	RtlCopyMemory(Value,
+		pResultingKeyValue->Buffer,
+		pResultingKeyValue->Length);
 
 	//
-	// Zero-terminate the resulting string for security
+	// Correctly terminate the string
 	//
-	((PCHAR)ResultStorage)[*ResultLen] = 0;
-	((PCHAR)ResultStorage)[(*ResultLen) + 1] = 0;
-				
+	Value[pResultingKeyValue->Length/2] = L'\0';
+
 	//
 	// Free the key
 	//
@@ -1678,8 +1751,18 @@ VOID NPF_QueryWinpcapRegistryKey(PWSTR SubKeyToQuery,
 
 #else // WPCAP_OEM
 
-	RtlCopyMemory(ResultStorage, DefaultVal, (*ResultLen < DefaultLen)? *ResultLen:DefaultLen);
-	*ResultLen = (*ResultLen < DefaultLen)? *ResultLen:DefaultLen;
+	//copy the default value and return
+	CharsToCopy = wcslen(DefaultValue) + 1;
+	if (CharsToCopy > ValueLen)
+	{
+		RtlCopyMemory(Value, DefaultValue, ValueLen * 2);
+		Value[ValueLen - 1] = 0;
+	}
+	else
+	{
+		RtlCopyMemory(Value, DefaultValue, CharsToCopy * 2);
+	}
+	return;
 
 #endif // WPCAP_OEM
 }
