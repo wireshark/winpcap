@@ -413,11 +413,16 @@ BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLe
 PADAPTER_INFO PacketFindAdInfo(PCHAR AdapterName);
 BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName);
 BOOLEAN IsFireWire(TCHAR *AdapterDesc);
-PVOID QueryWinpcapRegistryKey(WCHAR *SubKeyName,
-							  PUINT ResultLen,
-							  PVOID DefaultVal,
-							  UINT DefaultLen);
 
+BOOLEAN QueryWinPcapRegistryStringA(CHAR *SubKeyName,
+								 CHAR *Value,
+								 UINT *pValueLen,
+								 CHAR *DefaultVal);
+
+BOOLEAN QueryWinPcapRegistryStringW(WCHAR *SubKeyName,
+								 WCHAR *Value,
+								 UINT *pValueLen,
+								 WCHAR *DefaultVal);
 //---------------------------------------------------------------------------
 // EXPORTED FUNCTIONS
 //---------------------------------------------------------------------------
