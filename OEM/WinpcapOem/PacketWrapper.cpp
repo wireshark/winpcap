@@ -825,6 +825,11 @@ __inline BOOL WoemInitialize(HINSTANCE hDllHandle)
 
 	returnValue = WoemEnterDll(hDllHandle, errorString);
 
+	if (returnValue == TRUE)
+	{
+		g_StillToInit = FALSE;
+	}
+
 	TRACE_EXIT("WoemInitialize");
 
 	return returnValue;
