@@ -51,6 +51,9 @@
 #define Packet_ALIGNMENT sizeof(int) ///< Alignment macro. Defines the alignment size.
 #define Packet_WORDALIGN(x) (((x)+(Packet_ALIGNMENT-1))&~(Packet_ALIGNMENT-1))	///< Alignment macro. Rounds up to the next 
 																				///< even multiple of Packet_ALIGNMENT. 
+
+#define KERNEL_EVENT_NAMESPACE L"\\BaseNamedObjects\\"
+
 /***************************/
 /*         IOCTLs          */
 /***************************/
@@ -307,7 +310,7 @@ typedef struct __CPU_Private_Data
 								///< is dropped if there is no more space to store it in the circular buffer that the 
 								///< driver associates to current instance. 
 								///< This number is related to the particular CPU this structure is referring to.
-	ULONG	Processing;			///< Flag. If set to 1, it indicates that the tap is processing a packet on the CPU this structure is referring to.
+	volatile ULONG	Processing;	///< Flag. If set to 1, it indicates that the tap is processing a packet on the CPU this structure is referring to.
 	PMDL    TransferMdl1;		///< MDL used to map the portion of the buffer that will contain an incoming packet. 
 	PMDL    TransferMdl2;		///< Second MDL used to map the portion of the buffer that will contain an incoming packet. 
 	ULONG	NewP;				///< Used by NdisTransferData() (when we call NdisTransferData, p index must be updated only in the TransferDataComplete.
@@ -950,12 +953,10 @@ NDIS_STATUS NPF_PowerChange(IN NDIS_HANDLE ProtocolBindingContext, IN PNET_PNP_E
 /*!
   \brief Helper function to query a value from the global WinPcap registry key
 */
-VOID NPF_QueryWinpcapRegistryKey(PWSTR SubKeyToQuery,
-								 PVOID ResultStorage,
-								 PUINT ResultLen, 
-								 PVOID DefaultVal, 
-								 UINT DefaultLen);
-
+VOID NPF_QueryWinpcapRegistryString(PWSTR SubKeyName,
+								 WCHAR *Value,
+                                 UINT ValueLen, 
+								 WCHAR *DefaultValue);
 /**
  *  @}
  */
