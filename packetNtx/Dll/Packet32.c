@@ -41,7 +41,7 @@ char PacketLibraryVersion[64];
 char PacketDriverVersion[64]; 
 
 /// WinPcap global registry key
-HKEY WinpcapKey = NULL;
+HKEY g_WinpcapKey = NULL;
 WCHAR WinPcapKeyBuffer[MAX_WINPCAP_KEY_CHARS];
 
 // Global adapters list
@@ -108,29 +108,22 @@ BOOL APIENTRY DllMain(HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 
 		ODS("************Packet32: DllMain************\n");
 		
+#if 0
 #ifdef WPCAP_OEM
 #ifndef _WINNT4
 		LoadNdisNpp(Reason);
 #endif // _WINNT4
 #endif // WPCAP_OEM 
-
-		//
-		// Open, if present, the WinPcap registry key
-		//
-		RegOpenKeyEx(HKEY_LOCAL_MACHINE, 
-			WINPCAP_INSTANCE_KEY_WIDECHAR,
-			0,
-			KEY_ALL_ACCESS,
-			&WinpcapKey);
+#endif
 
 #ifdef _DEBUG_TO_FILE
+		PacketDumpRegistryKey("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\" NPF_DRIVER_NAME,"npf.reg");
+		
 		// dump a bunch of registry keys useful for debug to file
 		PacketDumpRegistryKey("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}",
 			"adapters.reg");
 		PacketDumpRegistryKey("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\Tcpip",
 			"tcpip.reg");
-		PacketDumpRegistryKey(QueryWinpcapRegistryKey(L"npf_complete_service_registry_location", NULL, NPF_COMPLETE_SERVICE_REGISTRY_LOCATION, sizeof(NPF_COMPLETE_SERVICE_REGISTRY_LOCATION)),
-			"npf.reg");
 		PacketDumpRegistryKey("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services",
 			"services.reg");
 #endif
@@ -186,9 +179,6 @@ BOOL APIENTRY DllMain(HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 		
 	case DLL_PROCESS_DETACH:
 
-		if(WinpcapKey)
-			RegCloseKey(WinpcapKey);
-		
 		CloseHandle(AdaptersInfoMutex);
 		
 		AdaptersInfoList;
@@ -220,57 +210,193 @@ BOOL APIENTRY DllMain(HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
     return Status;
 }
 
-/*!
-\brief Query the global WinPcap registry key.
-*/
-PVOID QueryWinpcapRegistryKey(WCHAR *SubKeyName,
-							  PUINT ResultLen,
-							  PVOID DefaultVal,
-							  UINT DefaultLen)
+
+BOOLEAN QueryWinPcapRegistryStringA(CHAR *SubKeyName,
+								 CHAR *Value,
+								 UINT *pValueLen,
+								 CHAR *DefaultVal)
 {
 #ifdef WPCAP_OEM
 	DWORD Type;
-	DWORD Len = sizeof(WinPcapKeyBuffer) - 2;
 	LONG QveRes;
-
-	if(WinpcapKey)
+	HKEY hWinPcapKey;
+	
+	if (QveRes = RegOpenKeyExA(HKEY_LOCAL_MACHINE, 
+			WINPCAP_INSTANCE_KEY,
+			0,
+			KEY_ALL_ACCESS,
+			&hWinPcapKey) != ERROR_SUCCESS)
 	{
-		//
-		// Query the requested value
-		//
-		if((QveRes = RegQueryValueEx(WinpcapKey,
-			SubKeyName,
-			NULL,
-			&Type,
-			(LPBYTE)WinPcapKeyBuffer,
-			&Len)) == ERROR_SUCCESS)	// We include two bytes for string termination
+		*pValueLen = 0;
+		
+		SetLastError(QveRes);
+
+		return FALSE;
+	}
+
+	//
+	// Query the requested value
+	//
+	QveRes = RegQueryValueExA(hWinPcapKey,
+		SubKeyName,
+		NULL,
+		&Type,
+		Value,
+		pValueLen);
+
+	RegCloseKey(hWinPcapKey);
+
+	if (QveRes == ERROR_SUCCESS)
+	{
+		//let's check that the key is text
+		if (Type != REG_SZ)
 		{
-			if(ResultLen)
-				*ResultLen = Len;
+			*pValueLen = 0;
 			
-			//
-			// Zero-terminate the resulting string for security
-			//
-			((PCHAR)WinPcapKeyBuffer)[Len] = 0;
-			((PCHAR)WinPcapKeyBuffer)[Len + 1] = 0;
-			
-			return WinPcapKeyBuffer;
+			SetLastError(ERROR_INVALID_DATA);
+			return FALSE;
 		}
 		else
 		{
-			DWORD err = GetLastError();
-			ODSEx("QueryWinpcapRegistryKey, RegQueryValueEx failed, code %d\n",err);
+			//success!
+			return TRUE;
 		}
 	}
-		
-	ODS("QueryWinpcapRegistryKey, failure\n");
+	else
+	if (QveRes == ERROR_MORE_DATA)
+	{
+		//
+		//the needed bytes are already set by RegQueryValueExA
+		//
+
+		SetLastError(QveRes);
+		return FALSE;
+	}
+	else
+	{
+		//
+		//print the error
+		//
+		ODSEx("QueryWinpcapRegistryKey, RegQueryValueEx failed, code %d\n",QveRes);
+		//
+		//JUST CONTINUE WITH THE DEFAULT VALUE
+		//
+	}
 
 #endif // WPCAP_OEM
 
-	if(ResultLen)
-		*ResultLen = DefaultLen;
+	if ((*pValueLen) < strlen(DefaultVal) + 1)
+	{
+		memcpy(Value, DefaultVal, *pValueLen - 1);
+		Value[*pValueLen - 1] = '\0';
+		*pValueLen = strlen(DefaultVal) + 1;
+		SetLastError(ERROR_MORE_DATA);
+		return FALSE;
+	}
+	else
+	{
+		strcpy(Value, DefaultVal);
+		*pValueLen = strlen(DefaultVal) + 1;
+		return TRUE;
+	}
 
-	return DefaultVal;
+}
+						
+BOOLEAN QueryWinPcapRegistryStringW(WCHAR *SubKeyName,
+								 WCHAR *Value,
+								 UINT *pValueLen,
+								 WCHAR *DefaultVal)
+{
+#ifdef WPCAP_OEM
+	DWORD Type;
+	LONG QveRes;
+	HKEY hWinPcapKey;
+	DWORD InternalLenBytes;
+
+	if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, 
+			WINPCAP_INSTANCE_KEY_WIDECHAR,
+			0,
+			KEY_ALL_ACCESS,
+			&hWinPcapKey) != ERROR_SUCCESS)
+	{
+		*pValueLen = 0;
+		return FALSE;
+	}
+
+	InternalLenBytes = *pValueLen * 2;
+	
+	//
+	// Query the requested value
+	//
+	QveRes = RegQueryValueExW(hWinPcapKey,
+		SubKeyName,
+		NULL,
+		&Type,
+		(LPBYTE)Value,
+		&InternalLenBytes);
+
+	RegCloseKey(hWinPcapKey);
+
+	if (QveRes == ERROR_SUCCESS)
+	{
+		//let's check that the key is text
+		if (Type != REG_SZ)
+		{
+			*pValueLen = 0;
+			SetLastError(ERROR_INVALID_DATA);
+			return FALSE;
+		}
+		else
+		{
+			//success!
+			*pValueLen = wcslen(Value) + 1;
+		
+			return TRUE;
+		}
+	}
+	else
+	if (QveRes == ERROR_MORE_DATA)
+	{
+		//
+		//the needed bytes are not set by RegQueryValueExW
+		//
+		
+		//the +1 is needed to round the needed buffer size (in WCHARs) to a number of WCHARs that will fit
+		//the number of needed bytes. In any case if it's a W string, the number of needed bytes should always be even!
+
+		*pValueLen = (InternalLenBytes + 1) / 2;
+
+		SetLastError(ERROR_MORE_DATA);
+		return FALSE;
+	}
+	else
+	{
+		//
+		//print the error
+		//
+		ODSEx("QueryWinpcapRegistryKey, RegQueryValueEx failed, code %d\n",QveRes);
+		//
+		//JUST CONTINUE WITH THE DEFAULT VALUE
+		//
+	}
+
+#endif // WPCAP_OEM
+
+	if (*pValueLen < wcslen(DefaultVal) + 1)
+	{
+		memcpy(Value, DefaultVal, (*pValueLen  - 1) * 2);
+		Value[*pValueLen - 1] = '\0';
+		*pValueLen = wcslen(DefaultVal) + 1;
+		SetLastError(ERROR_MORE_DATA);
+		return FALSE;
+	}
+	else
+	{
+		wcscpy(Value, DefaultVal);
+		*pValueLen = wcslen(DefaultVal) + 1;
+		return TRUE;
+	}
+
 }
 
 /*! 
@@ -394,7 +520,7 @@ BOOLEAN PacketSetMaxLookaheadsize (LPADAPTER AdapterObject)
 BOOLEAN PacketSetReadEvt(LPADAPTER AdapterObject)
 {
 	DWORD BytesReturned;
-	TCHAR EventName[30 + sizeof(NPF_USER_EVENTS_NAMES)];
+	TCHAR EventName[MAX_WINPCAP_KEY_CHARS];
 
  	if (LOWORD(GetVersion()) == 4)
 	{
@@ -456,27 +582,44 @@ BOOLEAN PacketSetReadEvt(LPADAPTER AdapterObject)
   This function installs the driver's service in the system using the CreateService function.
 */
 
-BOOL PacketInstallDriver()
+BOOLEAN PacketInstallDriver()
 {
 	BOOL result = FALSE;
 	ULONG err = 0;
 	SC_HANDLE svcHandle;
 	SC_HANDLE scmHandle;
+	CHAR driverName[MAX_WINPCAP_KEY_CHARS];
+	CHAR driverDesc[MAX_WINPCAP_KEY_CHARS];
+	CHAR driverLocation[MAX_WINPCAP_KEY_CHARS];
+	UINT len;
+
 	ODS("PacketInstallDriver\n");
 
+	len = sizeof(driverName)/sizeof(driverName[0]);
+	if (QueryWinPcapRegistryStringA(NPF_DRIVER_NAME_REG_KEY, driverName, &len, NPF_DRIVER_NAME) == FALSE && len == 0)
+		return FALSE;
+
+	len = sizeof(driverDesc)/sizeof(driverDesc[0]);
+	if (QueryWinPcapRegistryStringA(NPF_SERVICE_DESC_REG_KEY, driverDesc, &len, NPF_SERVICE_DESC) == FALSE && len == 0)
+		return FALSE;
+
+	len = sizeof(driverLocation)/sizeof(driverLocation[0]);
+	if (QueryWinPcapRegistryStringA(NPF_DRIVER_COMPLETE_PATH_REG_KEY, driverLocation, &len, NPF_DRIVER_COMPLETE_PATH) == FALSE && len == 0)
+		return FALSE;
+	
 	scmHandle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 	
 	if(scmHandle == NULL)
 		return FALSE;
 
-	svcHandle = CreateService(scmHandle, 
-		QueryWinpcapRegistryKey(L"npf_driver_name_widechar", NULL, NPF_DRIVER_NAME_WIDECHAR, sizeof(NPF_DRIVER_NAME_WIDECHAR)),
-		QueryWinpcapRegistryKey(L"npf_service_desc_widechar", NULL, NPF_SERVICE_DESC_WIDECHAR, sizeof(NPF_SERVICE_DESC_WIDECHAR)),
+	svcHandle = CreateServiceA(scmHandle, 
+		driverName,
+		driverDesc,
 		SERVICE_ALL_ACCESS,
 		SERVICE_KERNEL_DRIVER,
 		SERVICE_DEMAND_START,
 		SERVICE_ERROR_NORMAL,
-		QueryWinpcapRegistryKey(L"npf_driver_complete_widechar", NULL, NPF_DRIVER_COMPLETE_WIDECHAR, sizeof(NPF_DRIVER_COMPLETE_WIDECHAR)),
+		driverLocation,
 		NULL, NULL, NULL, NULL, NULL);
 	if (svcHandle == NULL) 
 	{
@@ -649,7 +792,11 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 	SERVICE_STATUS SStat;
 	BOOLEAN QuerySStat;
 	WCHAR SymbolicLink[128];
+	UINT	RegQueryLen;
+	CHAR	NpfServiceLocation[MAX_WINPCAP_KEY_CHARS];
+	CHAR	NpfDriverName[MAX_WINPCAP_KEY_CHARS];
 
+	// Create the NPF device name from the original device name
 	ODS("PacketOpenAdapterNPF\n");
 	
 	scmHandle = OpenSCManager(NULL, NULL, GENERIC_READ);
@@ -661,10 +808,23 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 	}
 	else
 	{
+		RegQueryLen = sizeof(NpfDriverName)/sizeof(NpfDriverName[0]);
+		if (QueryWinPcapRegistryStringA(NPF_DRIVER_NAME_REG_KEY, NpfDriverName, &RegQueryLen, NPF_DRIVER_NAME) == FALSE && RegQueryLen == 0)
+		{
+			//just use an empty string string for the service name
+			NpfDriverName[0] = '\0';
+		}
+		
+		//
+		// Create the name of the registry key containing the service.
+		//
+		_snprintf(NpfServiceLocation, sizeof(NpfServiceLocation) - 1, "SYSTEM\\CurrentControlSet\\Services\\%s", NpfDriverName);
+		NpfServiceLocation[sizeof(NpfServiceLocation) - 1] = '\0';
+
 		// check if the NPF registry key is already present
 		// this means that the driver is already installed and that we don't need to call PacketInstallDriver
-		KeyRes=RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-			QueryWinpcapRegistryKey(L"npf_service_registry_location_widechar", NULL, NPF_SERVICE_REGISTRY_LOCATION_WIDECHAR, sizeof(NPF_SERVICE_REGISTRY_LOCATION_WIDECHAR)),
+		KeyRes=RegOpenKeyExA(HKEY_LOCAL_MACHINE,
+			NpfServiceLocation,
 			0,
 			KEY_READ,
 			&PathKey);
@@ -681,15 +841,13 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 		
 		if (Result) 
 		{
-			
-			svcHandle = OpenService(scmHandle, 
-				QueryWinpcapRegistryKey(L"npf_driver_name_widechar", NULL, NPF_DRIVER_NAME_WIDECHAR, sizeof(NPF_DRIVER_NAME_WIDECHAR)), 
-				SERVICE_START | SERVICE_QUERY_STATUS );
+			svcHandle = OpenServiceA(scmHandle, NpfDriverName, SERVICE_START | SERVICE_QUERY_STATUS );
+
 			if (svcHandle != NULL)
 			{
 				QuerySStat = QueryServiceStatus(svcHandle, &SStat);
 				
-#if defined(_DBG) || defined(_DEBUG_TO_FILE)				
+#ifdef _DEBUG_TO_FILE				
 				switch (SStat.dwCurrentState)
 				{
 				case SERVICE_CONTINUE_PENDING:
@@ -759,15 +917,15 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 			
 			if (Result) {
 				
-				svcHandle = OpenService(scmHandle,
-					QueryWinpcapRegistryKey(L"npf_driver_name_widechar", NULL, NPF_DRIVER_NAME_WIDECHAR, sizeof(NPF_DRIVER_NAME_WIDECHAR)),
+				svcHandle = OpenServiceA(scmHandle,
+					NpfDriverName,
 					SERVICE_START);
 				if (svcHandle != NULL)
 				{
 					
 					QuerySStat = QueryServiceStatus(svcHandle, &SStat);
 
-#if defined(_DBG) || defined(_DEBUG_TO_FILE)				
+#ifdef _DEBUG_TO_FILE
 					switch (SStat.dwCurrentState)
 					{
 					case SERVICE_CONTINUE_PENDING:
@@ -804,7 +962,8 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 						
 						if (StartService(svcHandle, 0, NULL)==0){ 
 							error = GetLastError();
-							if(error!=ERROR_SERVICE_ALREADY_RUNNING && error!=ERROR_ALREADY_EXISTS){
+							if(error!=ERROR_SERVICE_ALREADY_RUNNING && error!=ERROR_ALREADY_EXISTS)
+							{
 								if (scmHandle != NULL) CloseServiceHandle(scmHandle);
 								ODSEx("PacketOpenAdapterNPF: StartService failed, LastError=%d\n",error);
 								SetLastError(error);
@@ -838,6 +997,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 	    ODS("PacketOpenAdapterNPF: Failed to allocate the adapter structure\n");
 		return NULL;
 	}
+
 	lpAdapter->NumWrites=1;
 
  	if (LOWORD(GetVersion()) == 4)
@@ -1034,13 +1194,22 @@ BOOL PacketStopDriver()
     SC_HANDLE       schService;
     BOOL            ret;
     SERVICE_STATUS  serviceStatus;
+	UINT	RegQueryLen;
+	CHAR	NpfDriverName[MAX_WINPCAP_KEY_CHARS];
+
+	// Create the NPF device name from the original device name
+
+	RegQueryLen = sizeof(NpfDriverName)/sizeof(NpfDriverName[0]);
+	
+	if (QueryWinPcapRegistryStringA(NPF_DRIVER_NAME_REG_KEY, NpfDriverName, &RegQueryLen, NPF_DRIVER_NAME) == FALSE && RegQueryLen == 0)
+		return FALSE;
 
 	scmHandle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 	
 	if(scmHandle != NULL){
 		
-		schService = OpenService (scmHandle,
-			QueryWinpcapRegistryKey(L"npf_driver_name_widechar", NULL, NPF_DRIVER_NAME_WIDECHAR, sizeof(NPF_DRIVER_NAME_WIDECHAR)),
+		schService = OpenServiceA (scmHandle,
+			NpfDriverName,
 			SERVICE_ALL_ACCESS
 			);
 		
@@ -1082,7 +1251,7 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 #ifndef _WINNT4
 	PADAPTER_INFO TAdInfo;
 #endif // _WINNT4
-	ODSEx("PacketOpenAdapter: trying to open the adapter=%s\n",AdapterName)
+	ODSEx("PacketOpenAdapter: trying to open the adapter=%s\n",AdapterName);
 
 	if(AdapterName[1]!=0)
 	{ 
@@ -1114,7 +1283,7 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 		TAdInfo = PacketFindAdInfo(AdapterNameA);
 		if(TAdInfo == NULL)
 		{
-
+			lpAdapter = NULL;
 			//can be an ERF file?
 			lpAdapter = PacketOpenAdapterDAG(AdapterNameA, TRUE);
 
