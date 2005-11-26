@@ -67,6 +67,7 @@ NDIS_STRING AdapterListKey = NDIS_STRING_CONST("\\Registry\\Machine\\System"
 								L"\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318}");
 NDIS_STRING bindValueName = NDIS_STRING_CONST("Bind");
 NDIS_STRING g_WinpcapGlobalKey = NDIS_STRING_CONST("\\Registry\\Machine\\" WINPCAP_INSTANCE_KEY_WIDECHAR);
+//NDIS_STRING g_WinpcapGlobalKey = NDIS_STRING_CONST("\\Registry\\Machine\\" WINPCAP_GLOBAL_KEY_WIDECHAR);
 
 /// Global variable that points to the names of the bound adapters
 WCHAR* bindP = NULL;
@@ -1599,7 +1600,6 @@ VOID NPF_QueryWinpcapRegistryString(PWSTR SubKeyName,
 	UINT CharsToCopy;
 
 #ifdef WPCAP_OEM
-//	PKEY_VALUE_PARTIAL_INFORMATION result = NULL;
 	OBJECT_ATTRIBUTES objAttrs;
 	NTSTATUS status;
 	HANDLE keyHandle;
@@ -1607,7 +1607,7 @@ VOID NPF_QueryWinpcapRegistryString(PWSTR SubKeyName,
 	CHAR kvpiBuffer[sizeof(KEY_VALUE_PARTIAL_INFORMATION) + sizeof(WCHAR) * MAX_WINPCAP_KEY_CHARS];
 	ULONG QvkResultLength;
 	PKEY_VALUE_PARTIAL_INFORMATION pKeyValuePartialInformation = (PKEY_VALUE_PARTIAL_INFORMATION)kvpiBuffer;	
-	PUNICODE_STRING pResultingKeyValue;
+	PWCHAR pResultingKeyValue;
 
 	//
 	// Create subkey string
@@ -1703,14 +1703,12 @@ VOID NPF_QueryWinpcapRegistryString(PWSTR SubKeyName,
 		return;
 	}
 
-	pResultingKeyValue = (PUNICODE_STRING)pKeyValuePartialInformation->Data;
+	pResultingKeyValue = (PWCHAR)pKeyValuePartialInformation->Data;
 
 	//
-	// Check we have enough space for the result. We include two bytes for string termination
+	// Check we have enough space for the result. We include 1 to account for the UNICODE NULL terminator
 	//
-	// Length contains the number of bytes. We divide by two to ibtain the chars, and add 1 for the
-	// NULL terminator that is not included into a unicode string
-	if((UINT)pResultingKeyValue->Length / 2 + 1> ValueLen)
+	if(wcslen(pResultingKeyValue) + 1 > ValueLen)
 	{
 		IF_LOUD(DbgPrint("NPF_QueryWinpcapRegistryKey: storage buffer too small\n");)		
 
@@ -1733,14 +1731,7 @@ VOID NPF_QueryWinpcapRegistryString(PWSTR SubKeyName,
 	//
 	// Copy the value to the user-provided values
 	//
-	RtlCopyMemory(Value,
-		pResultingKeyValue->Buffer,
-		pResultingKeyValue->Length);
-
-	//
-	// Correctly terminate the string
-	//
-	Value[pResultingKeyValue->Length/2] = L'\0';
+	wcscpy(Value, pResultingKeyValue);
 
 	//
 	// Free the key
