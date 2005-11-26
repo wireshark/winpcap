@@ -35,8 +35,8 @@
 //
 // Original names
 //
-#define NPF_DRIVER_NAME							"GVO"					///< (HHH) Packet.dll
-#define NPF_DRIVER_NAME_WIDECHAR				L"GVO"					///< (HHH) Packet.dll
+#define NPF_DRIVER_NAME							"NPF"					///< (HHH) Packet.dll
+#define NPF_DRIVER_NAME_WIDECHAR				L"NPF"					///< (HHH) Packet.dll
 
 //
 // Derived strings
