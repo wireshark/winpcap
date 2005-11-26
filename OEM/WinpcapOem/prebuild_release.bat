@@ -1,8 +1,8 @@
 @echo off
 
 echo Copying compiled DLLs
-copy ..\..\..\winpcap\packetNtx\Dll\Project\NT4_Release_OEM\packet.dll .\Binaries\packetnt.dll
-copy ..\..\..\winpcap\packetNtx\Dll\Project\Release_PacketWan\packet.dll .\Binaries\packet2k.dll
+copy ..\..\..\winpcap\packetNtx\Dll\Project\Packet_Release_NT4\packet.dll .\Binaries\packetnt.dll
+copy ..\..\..\winpcap\packetNtx\Dll\Project\Packet_Release_2k\packet.dll .\Binaries\packet2k.dll
 
 echo Copying drivers
 copy \i386\npf.sys .\Binaries\npf2k.sys
