@@ -38,7 +38,7 @@
 #include "debug.h"
 #include "packet.h"
 
-extern UINT SendPacketFlags;
+extern UINT g_SendPacketFlags;
 
 //-------------------------------------------------------------------
 
@@ -118,7 +118,7 @@ NPF_Write(
 		{
 			NdisSetPacketFlags(
 				pPacket,
-				SendPacketFlags);
+				g_SendPacketFlags);
 		}
 
 		if (Status != NDIS_STATUS_SUCCESS) {
@@ -276,7 +276,7 @@ NPF_BufferedWrite(
 		{
 			NdisSetPacketFlags(
 				pPacket,
-				SendPacketFlags);
+				g_SendPacketFlags);
 		}
 
 		if (Status != NDIS_STATUS_SUCCESS) 
@@ -295,7 +295,7 @@ NPF_BufferedWrite(
 			{
 				NdisSetPacketFlags(
 					pPacket,
-					SendPacketFlags);
+					g_SendPacketFlags);
 			}
 			
 			if (Status != NDIS_STATUS_SUCCESS) 

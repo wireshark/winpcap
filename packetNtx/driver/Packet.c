@@ -79,10 +79,7 @@ extern NDIS_SPIN_LOCK Opened_Instances_Lock;
 ULONG NCpu;
 
 ULONG TimestampMode;
-
-// OS version. We use it to properly set the packet flags when transmitting
-RTL_OSVERSIONINFOW OsVersion; 
-UINT SendPacketFlags = 0;
+UINT g_SendPacketFlags = 0;
 
 //
 //  Packet Driver's entry routine.
@@ -111,35 +108,39 @@ DriverEntry(
 	PKEY_VALUE_PARTIAL_INFORMATION tcpBindingsP;
 	UNICODE_STRING macName;
 	UINT RegStrLen;
-
+	ULONG			OsMajorVersion, OsMinorVersion;
     IF_LOUD(DbgPrint("\n\nPacket: DriverEntry\n");)
 
+#ifndef __NPF_NT4__
 	//
 	// Get OS version and store it in a global variable. 
 	// For the moment we use the deprecated PsGetVersion() because the suggested
 	// RtlGetVersion() doesn't seem to exist in Windows 2000, and we don't want
 	// to have two separated drivers just for this call.
+	// Morever, the NT4 version of the driver just excludes this, since those flags 
+	// are not available.
 	//
 	// Note: both RtlGetVersion() and PsGetVersion() are documented to always return success.
 	//
 	//	OsVersion.dwOSVersionInfoSize = sizeof(OsVersion);
 	//	RtlGetVersion(&OsVersion);
-	PsGetVersion(&(OsVersion.dwMajorVersion), &(OsVersion.dwMinorVersion), NULL, NULL);
-    IF_LOUD(DbgPrint("\n\nOS Version: %d.%d\n", OsVersion.dwMajorVersion, OsVersion.dwMinorVersion);)
+	PsGetVersion(&OsMajorVersion, &OsMinorVersion, NULL, NULL);
+    IF_LOUD(DbgPrint("\n\nOS Version: %d.%d\n", OsMajorVersion, OsMinorVersion);)
 
 	//
 	// Define the correct flag to skip the loopback packets, according to the OS
 	//
-	if((OsVersion.dwMajorVersion == 5) && (OsVersion.dwMinorVersion == 0))
+	if((OsMajorVersion == 5) && (OsMinorVersion == 0))
 	{
 		// Windows 2000 wants both NDIS_FLAGS_DONT_LOOPBACK and NDIS_FLAGS_SKIP_LOOPBACK
-		SendPacketFlags = NDIS_FLAGS_DONT_LOOPBACK | NDIS_FLAGS_SKIP_LOOPBACK_W2K;
+		g_SendPacketFlags = NDIS_FLAGS_DONT_LOOPBACK | NDIS_FLAGS_SKIP_LOOPBACK_W2K;
 	}
 	else
 	{
 		// Windows XP, 2003 and follwing want only  NDIS_FLAGS_DONT_LOOPBACK
-		SendPacketFlags =  NDIS_FLAGS_DONT_LOOPBACK;
+		g_SendPacketFlags =  NDIS_FLAGS_DONT_LOOPBACK;
 	}
+#endif //__NPF_NT4__
 
 	//
 	// Set timestamp gathering method getting it from the registry
@@ -664,7 +665,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	BOOLEAN				Flag;
 	WCHAR				KernelEventNames[MAX_WINPCAP_KEY_CHARS];
 	UINT				RegStrLen;
-	SIZE_T				StringLength;
+	ULONG				StringLength;
 	ULONG				NeededBytes;
 
     IF_LOUD(DbgPrint("NPF: IoControl\n");)
@@ -1037,58 +1038,52 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			EXIT_FAILURE(0);
 		}
 
+#ifdef __NPF_NT4__
+
+		// NT4 doesn't support loopback inhibition / activation
+		EXIT_FAILURE(0);
+
+#endif
+		//
+		// win2000/xp/2003/vista
+		//
 		if(*(PINT)Irp->AssociatedIrp.SystemBuffer == NPF_DISABLE_LOOPBACK)
 		{
-			if(OsVersion.dwMajorVersion < 5)
+			Open->SkipSentPackets = TRUE;
+				
+			// Reset the capture buffers, since they could contain loopbacked packets
+			Open->SkipProcessing = 1;
+				
+			do
 			{
-				// NT4 doesn't support loopback inhibition / activation
-				EXIT_FAILURE(0);
+				Flag = FALSE;
+				for(i=0;i<NCpu;i++)
+					if (Open->CpuData[i].Processing == 1)
+						Flag = TRUE;
 			}
-			else 
-			{
-				Open->SkipSentPackets = TRUE;
-				
-				// Reset the capture buffers, since they could contain loopbacked packets
-				Open->SkipProcessing = 1;
-				
-				do
-				{
-					Flag = FALSE;
-					for(i=0;i<NCpu;i++)
-						if (Open->CpuData[i].Processing == 1)
-							Flag = TRUE;
-				}
-				while(Flag);  //BUSY FORM WAITING...
+			while(Flag);  //BUSY FORM WAITING...
 						
-				for (i=0;i<NCpu;i++)
-				{
-					
-					Open->CpuData[i].C = 0;
-					Open->CpuData[i].P = 0;
-					Open->CpuData[i].Free = Open->Size;
-					//
-					//we reset the counters since we are resetting the contents of the buffer!!
-					//
-					Open->CpuData[i].Accepted=0;
-					Open->CpuData[i].Dropped=0;
-					Open->CpuData[i].Received = 0;
-				}
-
-				Open->ReaderSN=0;
-				Open->WriterSN=0;
-				
-				Open->SkipProcessing = 0;
+			for (i = 0 ; i < NCpu ; i++ )
+			{
+				Open->CpuData[i].C = 0;
+				Open->CpuData[i].P = 0;
+				Open->CpuData[i].Free = Open->Size;
+				//
+				//we reset the counters since we are resetting the contents of the buffer!!
+				//
+				Open->CpuData[i].Accepted = 0;
+				Open->CpuData[i].Dropped  = 0;
+				Open->CpuData[i].Received = 0;
 			}
+
+			Open->ReaderSN = 0;
+			Open->WriterSN = 0;
+				 
+			Open->SkipProcessing = 0;
 		}
 		else
 		if(*(PINT)Irp->AssociatedIrp.SystemBuffer == NPF_ENABLE_LOOPBACK)
 		{
-			if(OsVersion.dwMajorVersion < 5)
-			{
-				// NT4 doesn't support loopback inhibition / activation
-				EXIT_FAILURE(0);
-			}
-			else 
 			{
 				Open->SkipSentPackets = FALSE;
 			}
