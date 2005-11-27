@@ -127,6 +127,10 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	char ObjName[MAX_OBJNAME_LEN];
 	UINT i;
 	OSVERSIONINFO osVer;
+	CHAR osArchitecture[256];
+	HKEY environmentKey = NULL;
+	DWORD keyType;
+	DWORD bufSize;
     HRESULT hr;
 #ifdef SECURITY
 	DWORD Result;
@@ -347,6 +351,60 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			return FALSE;
 		}
 		
+		//
+		// Get the OS architecture
+		//
+		bufSize = sizeof(osArchitecture);
+		if (RegOpenKey(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment", &environmentKey) != ERROR_SUCCESS
+			|| RegQueryValueEx(environmentKey, "PROCESSOR_ARCHITECTURE",	NULL,&keyType,(LPBYTE)&osArchitecture,&bufSize) != ERROR_SUCCESS
+			|| keyType != REG_SZ)
+		{
+			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to determine OS architecture");
+	
+			if (environmentKey != NULL)
+				RegCloseKey(environmentKey);
+
+			ReleaseMutex(g_hGlobalMutex);
+			
+			if(g_hGlobalMutex != 0)
+			{
+				CloseHandle(g_hGlobalMutex);
+				g_hGlobalMutex = NULL;
+
+			}
+			if (g_hGlobalSemaphore!=0)
+			{
+				CloseHandle(g_hGlobalSemaphore);
+				g_hGlobalSemaphore = NULL;
+			}
+			
+			return FALSE;
+		}
+
+		//
+		// check that we are running on x86 (the only architecture that we support at the moment)
+		//
+		if (stricmp("x86", osArchitecture) != 0)
+		{
+			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unsupported Operating System architecture (only x86 is supported)");
+	
+			ReleaseMutex(g_hGlobalMutex);
+			
+			if(g_hGlobalMutex != 0)
+			{
+				CloseHandle(g_hGlobalMutex);
+				g_hGlobalMutex = NULL;
+
+			}
+			if (g_hGlobalSemaphore!=0)
+			{
+				CloseHandle(g_hGlobalSemaphore);
+				g_hGlobalSemaphore = NULL;
+			}
+			
+			return FALSE;
+		}
+
 		//
 		// Create the WinPcap global registry key
 		//
