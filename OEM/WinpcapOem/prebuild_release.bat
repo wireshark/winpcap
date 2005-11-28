@@ -5,6 +5,6 @@ copy ..\..\..\winpcap\packetNtx\Dll\Project\Packet_Release_NT4\packet.dll .\Bina
 copy ..\..\..\winpcap\packetNtx\Dll\Project\Packet_Release_2k\packet.dll .\Binaries\packet2k.dll
 
 echo Copying drivers
-copy \i386\npf.sys .\Binaries\npf2k.sys
-copy \i386\free\npf.sys .\Binaries\npfnt.sys
+copy ..\..\packetNtx\Driver\bin\2k\i386\npf.sys .\Binaries\npf2k.sys
+copy ..\..\packetNtx\Driver\bin\NT4\i386\npf.sys .\Binaries\npfnt.sys
 
