@@ -1,11 +1,17 @@
 @echo off
 
+mkdir driver\bin 2> nul
+mkdir driver\bin\2k 2> nul
+
 set USER_C_DEFINES=-DNDIS50 -DWPCAP_OEM
+set TARGETPATH=..\..\..\winpcap_oem\PacketNtx\driver\bin\2k
 
-md \i386\free >nul 2>nul
-md \i386\checked >nul 2>nul
+pushd ..\..\winpcap\packetntx\driver
 
-build -cefw
+prefast build -cefw
 
+popd
+
+set TARGETPATH=
 set USER_C_DEFINES=
 
