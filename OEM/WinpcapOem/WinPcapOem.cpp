@@ -92,13 +92,20 @@ static BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString);
 
 BOOL WoemEnterDll(HINSTANCE DllHandle, char *WoemErrorString)
 {
-	BOOL returnValue;
+	BOOL returnValue = TRUE;
 
 	TRACE_ENTER("WoemEnterDll");
 	
 	::EnterCriticalSection(&::g_CritSectionProtectingWoemEnterDll);
 
-	returnValue = WoemEnterDllInternal(DllHandle, WoemErrorString);
+	if (g_StillToInit)
+	{
+		returnValue = WoemEnterDllInternal(DllHandle, WoemErrorString);
+		if (returnValue == TRUE)
+		{
+			g_StillToInit = FALSE;
+		}
+	}
 
 	::LeaveCriticalSection(&::g_CritSectionProtectingWoemEnterDll);
 
@@ -136,7 +143,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	DWORD Result;
 #endif 
 
-	TRACE_ENTER("WoemEnterDll");
+	TRACE_ENTER("WoemEnterDllInternal");
 
 	WoemErrorString[PACKET_ERRSTR_SIZE - 1] = '\0';
 
@@ -147,15 +154,13 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	if (!g_IsProcAuthorized)
 	{
 	//
-		// the version with security enabled doesn't need to be activated with PacketStartOem()
-		//
-		g_OemActive = TRUE;
 		Result = WoemGetCurrentProcessAuthorization(WoemErrorString);
 		
 		if (Result == WOEM_PROC_AUTHORIZATION_FAILURE)
 		{
 			g_IsProcAuthorized = FALSE;
 			//the error string has been already set by WoemGetCurrentProcessAuthorization
+			TRACE_EXIT("WoemEnterDllInternal");
 			return FALSE;
 			
 		}
@@ -171,6 +176,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("This version of WinPcap OEM can be only run in conjunction with CACE Technologies Network Toolkit. This program is not recognized as part of The Network Toolkit, and therefore WinPcap OEM will not work.");
 
 				MessageBox(NULL, "This version of WinPcap OEM can be only run in conjunction with CACE Technologies Network Toolkit.\nThis program is not recognized as part of The Network Toolkit, and therefore WinPcap OEM will not work.", "Error", MB_ICONERROR);
+				TRACE_EXIT("WoemEnterDllInternal");
 				return FALSE;
 			}
 	}		
@@ -184,6 +190,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	{
 		WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("NULL DLL Handle");
 
+		TRACE_EXIT("WoemEnterDllInternal");
 		return FALSE;
 	}
 #endif
@@ -194,6 +201,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		// This should never happen, but better to be sure...
 		//
 		WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Double initialization");
+		TRACE_EXIT("WoemEnterDllInternal");
 		return FALSE;
 	}
 
@@ -224,6 +232,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to create the global mutex.");
 		}
 
+		TRACE_EXIT("WoemEnterDllInternal");
 		return FALSE;
 	}
 
@@ -240,6 +249,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 
 		WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Error trying to acquire the global mutex.");
 
+		TRACE_EXIT("WoemEnterDllInternal");
 		return FALSE;
 		
 	case WAIT_TIMEOUT:
@@ -247,6 +257,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		CloseHandle(g_hGlobalMutex);
 		WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Timeout on the global mutex");
 
+		TRACE_EXIT("WoemEnterDllInternal");
 		return FALSE;
 		
 	case WAIT_OBJECT_0:
@@ -291,6 +302,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			
 		}
 	
+		TRACE_EXIT("WoemEnterDllInternal");
 		return FALSE;
 	}
 	
@@ -315,6 +327,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			g_hGlobalSemaphore = NULL;
 		}
 		
+		TRACE_EXIT("WoemEnterDllInternal");
 		return FALSE;
 	}
 	
@@ -348,6 +361,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 				g_hGlobalSemaphore = NULL;
 			}
 			
+			TRACE_EXIT("WoemEnterDllInternal");
 			return FALSE;
 		}
 		
@@ -378,6 +392,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 				g_hGlobalSemaphore = NULL;
 			}
 			
+			TRACE_EXIT("WoemEnterDllInternal");
 			return FALSE;
 		}
 
@@ -402,6 +417,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 				g_hGlobalSemaphore = NULL;
 			}
 			
+			TRACE_EXIT("WoemEnterDllInternal");
 			return FALSE;
 		}
 
@@ -426,6 +442,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 				g_hGlobalSemaphore = NULL;
 			}
 			
+			TRACE_EXIT("WoemEnterDllInternal");
 			return FALSE;
 		}
 
@@ -447,6 +464,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 				g_hGlobalSemaphore = NULL;
 			}
 			
+			TRACE_EXIT("WoemEnterDllInternal");
 			return FALSE;
 		}
 		
@@ -474,6 +492,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 					g_hGlobalSemaphore = NULL;
 				}
 				
+				TRACE_EXIT("WoemEnterDllInternal");
 				return FALSE;
 			}
 		}
@@ -508,6 +527,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 					g_hGlobalSemaphore = NULL;
 				}
 				
+				TRACE_EXIT("WoemEnterDllInternal");
 				return FALSE;
 			}
 			
@@ -534,6 +554,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 					g_hGlobalSemaphore = NULL;
 				}
 				
+				TRACE_EXIT("WoemEnterDllInternal");
 				return FALSE;
 			}
 		}
@@ -580,6 +601,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 					g_hGlobalSemaphore = NULL;
 				}
 				
+				TRACE_EXIT("WoemEnterDllInternal");
 				return FALSE;
 			}
 			
@@ -605,7 +627,8 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 					CloseHandle(g_hGlobalSemaphore);
 					g_hGlobalSemaphore = NULL;
 				}
-				
+
+				TRACE_EXIT("WoemEnterDllInternal");
 				return FALSE;
 			}
 		}
@@ -636,6 +659,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 					g_hGlobalSemaphore = NULL;
 				}
 				
+				TRACE_EXIT("WoemEnterDllInternal");
 				return FALSE;
 			}
 			
@@ -662,6 +686,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 					g_hGlobalSemaphore = NULL;
 				}
 				
+				TRACE_EXIT("WoemEnterDllInternal");
 				return FALSE;
 			}
 			
@@ -693,6 +718,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 				g_hGlobalSemaphore = NULL;
 			}
 			
+			TRACE_EXIT("WoemEnterDllInternal");
 			return FALSE;
 		}
 
@@ -721,6 +747,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 				g_hGlobalSemaphore = NULL;
 			}
 			
+			TRACE_EXIT("WoemEnterDllInternal");
 			return FALSE;
 		}
 
@@ -758,6 +785,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 					g_hGlobalSemaphore = NULL;
 				}
 				
+				TRACE_EXIT("WoemEnterDllInternal");
 				return FALSE;
 				
 			}
@@ -792,6 +820,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 				g_hGlobalSemaphore = NULL;
 			}
 			
+			TRACE_EXIT("WoemEnterDllInternal");
 			return FALSE;
 		}
 	}
@@ -819,6 +848,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			g_hGlobalSemaphore = NULL;
 		}
 		
+		TRACE_EXIT("WoemEnterDllInternal");
 		return FALSE;
 	}
 	
@@ -839,6 +869,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	//
 	ReleaseMutex(g_hGlobalMutex);
 
+	TRACE_EXIT("WoemEnterDllInternal");
 	return TRUE;
 }
 
