@@ -44,6 +44,7 @@ extern HINSTANCE g_DllHandle;
 extern char g_LastWoemError[];
 volatile extern BOOL g_InitError;
 volatile extern BOOL g_OemActive;
+volatile extern BOOL g_StillToInit;
 
 
 ////////////////////////////////////////////////////////////////////
