@@ -710,6 +710,8 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 			*BufferSize = 0;
 			SetLastError(ERROR_INVALID_FUNCTION);
 			
+			TRACE_MESSAGE("WoemInitialize failed");
+
 			TRACE_EXIT("PacketGetAdapterNames");
 			return FALSE;
 		}
@@ -722,6 +724,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	{
 		*BufferSize = 0;
 		returnValue = FALSE;
+		TRACE_MESSAGE("g_OemActive is false!!\n");
 		SetLastError(ERROR_INVALID_FUNCTION);
 	}
 	
@@ -823,12 +826,10 @@ __inline BOOL WoemInitialize(HINSTANCE hDllHandle)
 		return TRUE;
 	}
 
+	// NOTE: this  function changes the value of g_StillInit!!
+	// we cannot do it here because we need to change this value
+	// while holding the global lock!
 	returnValue = WoemEnterDll(hDllHandle, errorString);
-
-	if (returnValue == TRUE)
-	{
-		g_StillToInit = FALSE;
-	}
 
 	TRACE_EXIT("WoemInitialize");
 
