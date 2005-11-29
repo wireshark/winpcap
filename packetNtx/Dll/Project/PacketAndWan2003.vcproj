@@ -24,6 +24,7 @@
 				AdditionalIncludeDirectories="../../../../winpcap/dag/include,../../../../winpcap/dag/drv/windows,../../../../winpcap/common,../../../../winpcap/PacketNtx/driver"
 				PreprocessorDefinitions="HAVE_DAG_API;WIN32;_WINDOWS;WPCAP_OEM"
 				RuntimeLibrary="1"
+				BufferSecurityCheck="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="$(IntDir)/Packet.pch"
 				AssemblerListingLocation="$(IntDir)/"
