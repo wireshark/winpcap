@@ -791,7 +791,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 	HKEY PathKey;
 	SERVICE_STATUS SStat;
 	BOOLEAN QuerySStat;
-	WCHAR SymbolicLink[128];
+	WCHAR SymbolicLink[MAX_PATH];
 	UINT	RegQueryLen;
 	CHAR	NpfServiceLocation[MAX_WINPCAP_KEY_CHARS];
 	CHAR	NpfDriverName[MAX_WINPCAP_KEY_CHARS];
@@ -1001,10 +1001,12 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 	lpAdapter->NumWrites=1;
 
  	if (LOWORD(GetVersion()) == 4)
- 		wsprintf(SymbolicLink,TEXT("\\\\.\\%s"),&AdapterName[16]);
+ 		_snwprintf(SymbolicLink, sizeof(SymbolicLink)/sizeof(SymbolicLink[0]) - 1, TEXT("\\\\.\\%s"),&AdapterName[16]);
  	else
- 		wsprintf(SymbolicLink,TEXT("\\\\.\\Global\\%s"),&AdapterName[16]);
+ 		_snwprintf(SymbolicLink, sizeof(SymbolicLink)/sizeof(SymbolicLink[0]) - 1, TEXT("\\\\.\\Global\\%s"),&AdapterName[16]);
 	
+	SymbolicLink[sizeof(SymbolicLink)/sizeof(SymbolicLink[0]) - 1] = 0;
+
 	// Copy  only the bytes that fit in the adapter structure.
 	// Note that lpAdapter->SymbolicLink is present for backward compatibility but will
 	// never be used by the apps
