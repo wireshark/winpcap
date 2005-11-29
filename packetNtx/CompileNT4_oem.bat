@@ -18,7 +18,13 @@ build -cefw
 
 popd
 
-copy driver\bin\NT4\i386\%DDKBUILDENV%\*.* driver\bin\NT4\i386\
+if "%DDKBUILDENV%" == "free" (
+		copy driver\bin\NT4\i386\free\npf.sys driver\bin\NT4\i386\
+			)
 
+if "%DDKBUILDENV%" == "checked" (
+		copy driver\bin\NT4\i386\checked\npf.sys driver\bin\NT4\i386\
+		copy driver\bin\NT4\i386\checked\npf.pdb driver\bin\NT4\i386\
+			)
 set TARGETPATH=
 set USER_C_DEFINES=
