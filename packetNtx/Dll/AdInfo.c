@@ -731,6 +731,16 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 	
 	ODS("AddAdapter\n");
 	
+	//
+	// let's check that the adapter name will fit in the space available within ADAPTER_INFO::Name
+	// If not, simply fail, since we cannot properly save the adapter name
+	//
+	if (strlen(AdName) + 1 > sizeof(TmpAdInfo->Name))
+	{
+		ODS("AddAdapter: adapter name is too long to be stored into ADAPTER_INFO::Name, simply skip it");
+		return FALSE;
+	}
+
 	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
 	
 	for(TAdInfo = AdaptersInfoList; TAdInfo != NULL; TAdInfo = TAdInfo->Next)
@@ -742,7 +752,7 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 			return TRUE;
 		}
 	}
-		
+	
 	//here we could have released the mutex, but what happens if two threads try to add the same adapter? 
 	//The adapter would be duplicated on the linked list
 	
@@ -794,8 +804,11 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 	}
 	
 	// Copy the device name
-	strcpy(TmpAdInfo->Name, AdName);
-	
+	strncpy(TmpAdInfo->Name, AdName, sizeof(TmpAdInfo->Name)/ sizeof(TmpAdInfo->Name[0]) - 1);
+
+	//we do not need to terminate the string TmpAdInfo->Name, since we have left a char at the end, and
+	//the memory for TmpAdInfo was zeroed upon allocation
+
 	if(flags != INFO_FLAG_DONT_EXPORT)
 	{
 		// Retrieve the adapter description querying the NIC driver
@@ -813,7 +826,9 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 		ODSEx("Adapter Description=%s\n\n",OidData->Data);
 		
 		// Copy the description
-		strcpy(TmpAdInfo->Description, OidData->Data);
+		strncpy(TmpAdInfo->Description, OidData->Data, sizeof(TmpAdInfo->Description)/ sizeof(TmpAdInfo->Description[0]) - 1);
+		//we do not need to terminate the string TmpAdInfo->Description, since we have left a char at the end, and
+		//the memory for TmpAdInfo was zeroed upon allocation
 		
 		PacketGetLinkLayerFromRegistry(adapter, &(TmpAdInfo->LinkLayer));
 		
