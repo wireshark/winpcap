@@ -700,34 +700,21 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	
 	TRACE_ENTER("PacketGetAdapterNames");
 	
-	if(g_OemActive)
+	//
+	// Check if we are the first instance and Init everything accordingly
+	//
+	if(!WoemInitialize(g_DllHandle))
 	{
-		//
-		// Check if we are the first instance and Init everything accordingly
-		//
-		if(!WoemInitialize(g_DllHandle))
-		{
-			*BufferSize = 0;
-			SetLastError(ERROR_INVALID_FUNCTION);
+		*BufferSize = 0;
+		SetLastError(ERROR_INVALID_FUNCTION);
 			
-			TRACE_MESSAGE("WoemInitialize failed");
-
-			TRACE_EXIT("PacketGetAdapterNames");
-			return FALSE;
-		}
-		else
-		{
-			returnValue = PacketGetAdapterNamesH(pStr,  BufferSize);
-		}
+		TRACE_EXIT("PacketGetAdapterNames");
+		return FALSE;
 	}
 	else
 	{
-		*BufferSize = 0;
-		returnValue = FALSE;
-		TRACE_MESSAGE("g_OemActive is false!!\n");
-		SetLastError(ERROR_INVALID_FUNCTION);
+		returnValue = PacketGetAdapterNamesH(pStr,  BufferSize);
 	}
-	
 	
 	TRACE_EXIT("PacketGetAdapterNames");
 	return returnValue;
@@ -824,6 +811,14 @@ __inline BOOL WoemInitialize(HINSTANCE hDllHandle)
 	{
 		TRACE_EXIT("WoemInitialize");
 		return TRUE;
+	}
+
+	if (g_OemActive == FALSE)
+	{
+		TRACE_MESSAGE("OEM WinPcap not active");
+
+		TRACE_EXIT("WoemInitialize");
+		return FALSE;
 	}
 
 	// NOTE: this  function changes the value of g_StillInit!!
