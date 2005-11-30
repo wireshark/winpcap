@@ -1,8 +1,14 @@
 //Microsoft Developer Studio generated resource script.
 //
-#include "resrc1.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 1 resource.
+//
+#include "afxres.h"
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Generated from the TEXTINCLUDE 2 resource.
@@ -32,7 +38,8 @@ HSH_AUTH_PROC           RCDATA  MOVEABLE PURE   "binaries\\tools.bin"
 
 1 TEXTINCLUDE DISCARDABLE 
 BEGIN
-    "resrc1.h\0"
+    "#include ""afxres.h""\r\n"
+    "\0"
 END
 
 2 TEXTINCLUDE DISCARDABLE 
@@ -43,22 +50,11 @@ END
 
 3 TEXTINCLUDE DISCARDABLE 
 BEGIN
-    "\r\n"
+    "#include ""WinPcapOem.rc2""\r\n"
     "\0"
 END
 
 #endif    // APSTUDIO_INVOKED
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// String Table
-//
-
-STRINGTABLE DISCARDABLE 
-BEGIN
-    Wpcap                   "NPF"
-END
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -69,7 +65,7 @@ END
 //
 // Generated from the TEXTINCLUDE 3 resource.
 //
-
+#include "WinPcapOem.rc2"
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
