@@ -101,13 +101,14 @@ BOOL APIENTRY DllMain(HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 #ifdef HAVE_DAG_API
 	HMODULE DagcLib;
 #endif // HAVE_DAG_API
+	TCHAR DllFileName[MAX_PATH];
 
     switch(Reason)
     {
 	case DLL_PROCESS_ATTACH:
 
 		ODS("************Packet32: DllMain************\n");
-		
+
 #if 0
 #ifdef WPCAP_OEM
 #ifndef _WINNT4
@@ -135,13 +136,16 @@ BOOL APIENTRY DllMain(HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 		// Retrieve packet.dll version information from the file
 		//
 		// XXX We want to replace this with a constant. We leave it out for the moment
-//		PacketGetFileVersion(TEXT("packet.dll"), PacketLibraryVersion, sizeof(PacketLibraryVersion));
-
+		if (GetModuleFileName(DllHandle, DllFileName, sizeof(DllFileName) / sizeof(DllFileName[0])) > 0)
+		{
+			PacketGetFileVersion(DllFileName, PacketLibraryVersion, sizeof(PacketLibraryVersion));
+		}
 		//
 		// Retrieve NPF.sys version information from the file
 		//
 		// XXX We want to replace this with a constant. We leave it out for the moment
-//		PacketGetFileVersion(TEXT("drivers\\" NPF_DRIVER_BINARY_WIDECHAR), PacketDriverVersion, sizeof(PacketDriverVersion));
+		// TODO fixme. Those hardcoded strings are terrible...
+		PacketGetFileVersion(TEXT("drivers\\") TEXT(NPF_DRIVER_NAME) TEXT(".sys"), PacketDriverVersion, sizeof(PacketDriverVersion));
 
 		//
 		// Locate GetAdaptersAddresses dinamically since it is not present in Win2k
