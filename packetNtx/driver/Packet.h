@@ -30,7 +30,7 @@
  *
  */
 
-/** @ingroup NPF 
+/** @addtogroup NPF 
  *  @{
  */
 
@@ -471,7 +471,7 @@ DriverEntry(
   \return A string containing a list of network adapters.
 
   The list of adapters is retrieved from the 
-  SYSTEM\CurrentControlSet\Control\Class\{4D36E972-E325-11CE-BFC1-08002BE10318} registry key. 
+  SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E972-E325-11CE-BFC1-08002BE10318} registry key. 
   NPF tries to create its bindings from this list. In this way it is possible to be loaded
   and unloaded dynamically without passing from the control panel.
 */
@@ -694,6 +694,7 @@ NPF_Write(
   \param Irp Pointer to the IRP containing the user request.
   \param UserBuff Pointer to the buffer containing the packets to send.
   \param UserBuffSize Size of the buffer with the packets.
+  \param sync If set to TRUE, the packets are transmitted respecting their timestamps.
   \return The amount of bytes actually sent. If the return value is smaller than the Size parameter, an
           error occurred during the send. The error can be caused by an adapter problem or by an
 		  inconsistent/bogus user buffer.
@@ -724,7 +725,7 @@ VOID NPF_WaitEndOfBufferedWrite(POPEN_INSTANCE Open);
 /*!
   \brief Ends a send operation.
   \param ProtocolBindingContext Context of the function. Contains a pointer to the OPEN_INSTANCE structure associated with the current instance.
-  \param pRequest Pointer to the NDIS PACKET structure used by NPF_Write() to send the packet. 
+  \param pPacket Pointer to the NDIS PACKET structure used by NPF_Write() to send the packet. 
   \param Status Status of the operation.
 
   Callback function associated with the NdisSend() NDIS function. It is invoked by NDIS when the NIC 
