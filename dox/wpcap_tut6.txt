@@ -31,7 +31,7 @@ Once we know the location of the UDP header, we extract the source and destinati
 The extracted values are printed on the screen, and the result is something like:
 
 <tt>
-1. \Device\Packet_{A7FD048A-5D4B-478E-B3C1-34401AC3B72F} (Xircom
+1. \\Device\\Packet_{A7FD048A-5D4B-478E-B3C1-34401AC3B72F} (Xircom
 t 10/100 Adapter) \n
 Enter the interface number (1-2):1\n
 

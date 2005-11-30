@@ -58,7 +58,7 @@ Note finally that we free the list with pcap_freealldevs() once when we have fin
 Let's try to compile and run the code of this first sample. In order to compile it under Unix or Cygwin, simply type:
 
 <pre>
-  gcc -o testaprog testprog.c -lpcap
+  gcc -o testprog testprog.c -lpcap
 </pre>
 
 On Windows, you will need to create a project, following the instructions in the \ref wpcapsamps section of this manual. However, we suggest that you use the WinPcap developer's pack (available at the WinPcap website, http://www.winpcap.org ), since it provides many examples already configured as projects including all the code presented in this tutorial and the \e includes and \e libraries needed to compile and run the examples. 
@@ -66,8 +66,8 @@ On Windows, you will need to create a project, following the instructions in the
 Assuming we have compiled the program, let's try to run it. On a particular WinXP workstation, the result we optained is
 
 <pre>
-   1. \Device\NPF_{4E273621-5161-46C8-895A-48D0E52A0B83} (Realtek RTL8029(AS) Ethernet Adapter)
-   2. \Device\NPF_{5D24AE04-C486-4A96-83FB-8B5EC6C7F430} (3Com EtherLink PCI) 
+   1. \\Device\\NPF_{4E273621-5161-46C8-895A-48D0E52A0B83} (Realtek RTL8029(AS) Ethernet Adapter)
+   2. \\Device\\NPF_{5D24AE04-C486-4A96-83FB-8B5EC6C7F430} (3Com EtherLink PCI) 
 </pre>
 
 As you can see, the name of the network adapters (that will be passed to libpcap when opening the devices) under Windows are quite unreadable, so the parenthetical descriptions can be very helpful.
