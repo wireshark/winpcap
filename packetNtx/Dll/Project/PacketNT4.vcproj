@@ -170,7 +170,7 @@
 			RelativePath="..\..\..\..\winpcap\packetNtx\Dll\Packet.def">
 		</File>
 		<File
-			RelativePath="..\..\..\..\winpcap\packetNtx\Dll\version.rc">
+			RelativePath=".\PacketNT4.rc">
 		</File>
 	</Files>
 	<Globals>
