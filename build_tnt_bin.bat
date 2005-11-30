@@ -12,7 +12,7 @@ echo Creating %__DEST_FOLDER% folder
 mkdir %__DEST_FOLDER% >nul 2>nul
 
 xcopy /v /Y .\wpcap\PRJ\Release_REMOTE\wpcap.dll		 %__DEST_FOLDER%\
-xcopy /v /Y .\OEM\WinPcapOEM\release_security\packet.dll %__DEST_FOLDER%\
+xcopy /v /Y .\OEM\WinPcapOEM\release_TNT\packet.dll 		%__DEST_FOLDER%\
 
 echo Folder %__DEST_FOLDER% created successfully
 

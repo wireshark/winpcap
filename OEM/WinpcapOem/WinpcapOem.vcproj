@@ -81,9 +81,9 @@
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="Debug_Security|Win32"
-			OutputDirectory=".\Debug_Security"
-			IntermediateDirectory=".\Debug_Security"
+			Name="Debug_TNT|Win32"
+			OutputDirectory=".\Debug_TNT"
+			IntermediateDirectory=".\Debug_TNT"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -96,10 +96,10 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				BufferSecurityCheck="TRUE"
-				PrecompiledHeaderFile=".\Debug_Security/WinpcapOem.pch"
-				AssemblerListingLocation=".\Debug_Security/"
-				ObjectFile=".\Debug_Security/"
-				ProgramDataBaseFileName=".\Debug_Security/"
+				PrecompiledHeaderFile=".\Debug_TNT/WinpcapOem.pch"
+				AssemblerListingLocation=".\Debug_TNT/"
+				ObjectFile=".\Debug_TNT/"
+				ProgramDataBaseFileName=".\Debug_TNT/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -110,13 +110,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib npptools.lib"
-				OutputFile="Debug_Security/Packet.dll"
+				OutputFile="Debug_TNT/Packet.dll"
 				LinkIncremental="0"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile=".\WinpcapOem.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Debug_Security/Packet.pdb"
-				ImportLibrary=".\Debug_Security/Packet.lib"
+				ProgramDatabaseFile=".\Debug_TNT/Packet.pdb"
+				ImportLibrary=".\Debug_TNT/Packet.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -124,7 +124,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug_Security/WinpcapOem.tlb"
+				TypeLibraryName=".\Debug_TNT/WinpcapOem.tlb"
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -219,9 +219,9 @@
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="Release_Security|Win32"
-			OutputDirectory=".\Release_Security"
-			IntermediateDirectory=".\Release_Security"
+			Name="Release_TNT|Win32"
+			OutputDirectory=".\Release_TNT"
+			IntermediateDirectory=".\Release_TNT"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -235,10 +235,10 @@
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
-				PrecompiledHeaderFile=".\Release_Security/WinpcapOem.pch"
-				AssemblerListingLocation=".\Release_Security/"
-				ObjectFile=".\Release_Security/"
-				ProgramDataBaseFileName=".\Release_Security/"
+				PrecompiledHeaderFile=".\Release_TNT/WinpcapOem.pch"
+				AssemblerListingLocation=".\Release_TNT/"
+				ObjectFile=".\Release_TNT/"
+				ProgramDataBaseFileName=".\Release_TNT/"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
@@ -248,13 +248,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="npptools.lib odbc32.lib odbccp32.lib"
-				OutputFile="Release_Security/Packet.dll"
+				OutputFile="Release_TNT/Packet.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\..\WinpcapOem\Release\"
 				ModuleDefinitionFile=".\WinpcapOem.def"
-				ProgramDatabaseFile=".\Release_Security/Packet.pdb"
-				ImportLibrary=".\Release_Security/Packet.lib"
+				ProgramDatabaseFile=".\Release_TNT/Packet.pdb"
+				ImportLibrary=".\Release_TNT/Packet.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -262,7 +262,7 @@
 				MkTypLibCompatible="TRUE"
 				SuppressStartupBanner="TRUE"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release_Security/WinpcapOem.tlb"
+				TypeLibraryName=".\Release_TNT/WinpcapOem.tlb"
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -305,7 +305,7 @@
 						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug_Security|Win32">
+					Name="Debug_TNT|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
@@ -325,7 +325,7 @@
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release_Security|Win32">
+					Name="Release_TNT|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
@@ -345,7 +345,7 @@
 						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug_Security|Win32">
+					Name="Debug_TNT|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
@@ -365,7 +365,7 @@
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release_Security|Win32">
+					Name="Release_TNT|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
@@ -385,7 +385,7 @@
 						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug_Security|Win32">
+					Name="Debug_TNT|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
@@ -405,7 +405,7 @@
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release_Security|Win32">
+					Name="Release_TNT|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
@@ -425,7 +425,7 @@
 						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug_Security|Win32">
+					Name="Debug_TNT|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
@@ -445,7 +445,7 @@
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release_Security|Win32">
+					Name="Release_TNT|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
@@ -465,7 +465,7 @@
 						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug_Security|Win32">
+					Name="Debug_TNT|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
@@ -485,7 +485,7 @@
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release_Security|Win32">
+					Name="Release_TNT|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
@@ -505,7 +505,7 @@
 						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug_Security|Win32">
+					Name="Debug_TNT|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
@@ -525,7 +525,7 @@
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release_Security|Win32">
+					Name="Release_TNT|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
@@ -575,6 +575,9 @@
 		<Filter
 			Name="Resource Files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
+			<File
+				RelativePath=".\binaries\hsh_auth.bin">
+			</File>
 			<File
 				RelativePath=".\WinpcapOem.rc">
 			</File>
