@@ -261,9 +261,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\winpcap\packetNtx\Dll\version.rc">
-			</File>
-			<File
 				RelativePath="..\..\..\..\winpcap\packetNtx\Dll\WanPacket\WanPacket.cpp">
 				<FileConfiguration
 					Name="Debug|Win32">
@@ -348,6 +345,9 @@
 		</Filter>
 		<File
 			RelativePath="..\..\..\..\winpcap\packetNtx\Dll\Packet.def">
+		</File>
+		<File
+			RelativePath=".\PacketAndWan.rc">
 		</File>
 	</Files>
 	<Globals>
