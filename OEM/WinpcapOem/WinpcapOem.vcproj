@@ -95,6 +95,7 @@
 				PreprocessorDefinitions="_DEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
+				BufferSecurityCheck="TRUE"
 				PrecompiledHeaderFile=".\Debug_Security/WinpcapOem.pch"
 				AssemblerListingLocation=".\Debug_Security/"
 				ObjectFile=".\Debug_Security/"
@@ -562,9 +563,6 @@
 				RelativePath="Security.h">
 			</File>
 			<File
-				RelativePath="version.h">
-			</File>
-			<File
 				RelativePath="WinpcapOem.h">
 			</File>
 			<File
@@ -577,6 +575,9 @@
 		<Filter
 			Name="Resource Files"
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
+			<File
+				RelativePath=".\WinpcapOem.rc">
+			</File>
 		</Filter>
 		<File
 			RelativePath="..\Instructions.txt">
@@ -598,9 +599,6 @@
 		</File>
 		<File
 			RelativePath="WinpcapOem.def">
-		</File>
-		<File
-			RelativePath="WinPcapOem.rc">
 		</File>
 	</Files>
 	<Globals>
