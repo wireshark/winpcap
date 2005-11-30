@@ -93,7 +93,7 @@ PCHAR PacketGetVersion()
 	//
 	if(!WoemInitialize(g_DllHandle))
 	{
-		returnValue = "failed to load packet.dll";
+		returnValue = "<unknown>";
 	}
 	else
 	{
@@ -115,7 +115,7 @@ PCHAR PacketGetDriverVersion()
 	//
 	if(!WoemInitialize(g_DllHandle))
 	{
-		returnValue = "failed to load packet.dll";
+		returnValue = "<unknown>";
 	}
 	else
 	{
