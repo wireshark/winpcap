@@ -30,11 +30,7 @@
  *
  */
 
-/** @ingroup NPF 
- *  @{
- */
-
-/** @defgroup NPF_include NPF structures and definitions 
+/** @addtogroup NPF 
  *  @{
  */
 
@@ -346,19 +342,11 @@ JIT_BPF_Filter;
  *  @}
  */
 
-/**
- *  @}
- */
-
 /**************************/
 /* Prototypes             */
 /**************************/
 
-/** @ingroup NPF 
- *  @{
- */
-
-/** @defgroup NPF_code NPF functions 
+/** @addtogroup NPF_code 
  *  @{
  */
 
@@ -392,10 +380,6 @@ BPF_filter_function BPFtoX86(struct bpf_insn *ins, UINT nins, INT *mem);
   This function frees the variuos buffers (code, memory, etc.) associated with a filtering function.
 */ 
 void BPF_Destroy_JIT_Filter(JIT_BPF_Filter *Filter);
-
-/**
- *  @}
- */
 
 /**
  *  @}
