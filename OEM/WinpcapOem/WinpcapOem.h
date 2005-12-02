@@ -56,8 +56,8 @@ BOOL WoemGetResource(HINSTANCE hInst, int ResID, LPVOID * lpResMem, LPDWORD dwRe
 ////////////////////////////////////////////////////////////////////
 // Registry and names-related functions
 ////////////////////////////////////////////////////////////////////
-BOOL WoemCreateNameRegistryEntries();
-BOOL WoemDeleteNameRegistryEntries();
+//BOOL WoemCreateNameRegistryEntries();
+//BOOL WoemDeleteNameRegistryEntries();
 BOOL WoemCreateBinaryNames();
 
 ////////////////////////////////////////////////////////////////////

@@ -421,30 +421,33 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			return FALSE;
 		}
 
-		//
-		// Create the WinPcap global registry key
-		//
-		if(!WoemCreateNameRegistryEntries())
-		{
-			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to create registry entries. Administrator provileges are required for this operation");
-
-			ReleaseMutex(g_hGlobalMutex);
-			
-			if(g_hGlobalMutex!=0)
-			{
-				CloseHandle(g_hGlobalMutex);
-				g_hGlobalMutex = NULL;
-
-			}
-			if (g_hGlobalSemaphore!=0)
-			{
-				CloseHandle(g_hGlobalSemaphore);
-				g_hGlobalSemaphore = NULL;
-			}
-			
-			TRACE_EXIT("WoemEnterDllInternal");
-			return FALSE;
-		}
+//  
+//	Old registry based WinPcap names
+//
+//		//
+//		// Create the WinPcap global registry key
+//		//
+//		if(!WoemCreateNameRegistryEntries())
+//		{
+//			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to create registry entries. Administrator provileges are required for this operation");
+//
+//			ReleaseMutex(g_hGlobalMutex);
+//			
+//			if(g_hGlobalMutex!=0)
+//			{
+//				CloseHandle(g_hGlobalMutex);
+//				g_hGlobalMutex = NULL;
+//
+//			}
+//			if (g_hGlobalSemaphore!=0)
+//			{
+//				CloseHandle(g_hGlobalSemaphore);
+//				g_hGlobalSemaphore = NULL;
+//			}
+//			
+//			TRACE_EXIT("WoemEnterDllInternal");
+//			return FALSE;
+//		}
 
 		if(!WoemCreateBinaryNames())
 		{
@@ -958,7 +961,10 @@ BOOL WoemLeaveDll()
 		//
 
 		delete_service(NPF_DRIVER_NAME);
-		WoemDeleteNameRegistryEntries();
+//  
+//	Old registry based WinPcap names
+//
+//		WoemDeleteNameRegistryEntries();
 
 		break;
 
@@ -1025,6 +1031,11 @@ BOOL WoemLeaveDll()
 
 	return TRUE;
 }
+
+#if 0
+//  
+//	Old registry based WinPcap names
+//
 
 ////////////////////////////////////////////////////////////////////
 // Create the temporary registry key with the name that all the  
@@ -1226,6 +1237,7 @@ BOOL WoemCreateNameRegistryEntries()
 
 	return TRUE;
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////
 // Create the binaries names according to the name we have 
@@ -1275,6 +1287,11 @@ BOOL WoemCreateBinaryNames()
 	return TRUE;
 }
 
+#if 0
+//  
+//	Old registry based WinPcap names
+//
+
 ////////////////////////////////////////////////////////////////////
 // Delete the temporary registry key with the name that all the  
 // WinPcap components will use
@@ -1286,3 +1303,5 @@ BOOL WoemDeleteNameRegistryEntries()
 	else
 		return TRUE;
 }
+
+#endif
