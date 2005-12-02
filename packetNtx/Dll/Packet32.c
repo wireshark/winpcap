@@ -2059,8 +2059,8 @@ BOOLEAN PacketSetHwFilter(LPADAPTER  AdapterObject,ULONG Filter)
 BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 {
 	PADAPTER_INFO	TAdInfo;
-	ULONG	SizeNeeded = 1;
-	ULONG	SizeNames = 1;
+	ULONG	SizeNeeded = 0;
+	ULONG	SizeNames = 0;
 	ULONG	SizeDesc;
 	ULONG	OffDescriptions;
 
@@ -2094,16 +2094,16 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 
 	// Check that we don't overflow the buffer.
 	// Note: 2 is the number of additional separators needed inside the list
-	if(SizeNeeded + 2 >= *BufferSize || pStr == NULL)
+	if(SizeNeeded + 2 > *BufferSize || pStr == NULL)
 	{
 		ReleaseMutex(AdaptersInfoMutex);
 
 		ODS("PacketGetAdapterNames: input buffer too small\n");
-		*BufferSize = SizeNeeded + 4;  // Report the required size
+		*BufferSize = SizeNeeded + 2;  // Report the required size
 		return FALSE;
 	}
 
-	OffDescriptions = SizeNames;
+	OffDescriptions = SizeNames + 1;
 
 	// 
 	// Second scan of the list to copy the information
@@ -2126,7 +2126,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	((PCHAR)pStr)[SizeNames] = 0;
 
 	// End the list with a further \0
-	((PCHAR)pStr)[SizeNeeded] = 0;
+	((PCHAR)pStr)[SizeNeeded + 1] = 0;
 
 
 	ReleaseMutex(AdaptersInfoMutex);
