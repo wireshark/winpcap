@@ -37,7 +37,7 @@
  *
  *      @(#)bpf.h       7.1 (Berkeley) 5/7/91
  *
- * @(#) $Header: /tcpdump/master/libpcap/bpf/net/bpf.h,v 1.44 2000/12/21 10:29:24 guy Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot_private/winpcap/Packet9x/VXD/win_Bpf.h,v 1.1 2002/05/18 10:24:20 varenni Exp $ (LBL)
  */
 
 #ifndef BPF_MAJOR_VERSION
@@ -307,7 +307,7 @@ struct bpf_insn {
 	u_short	code;
 	u_char 	jt;
 	u_char 	jf;
-	bpf_int32 k;
+	bpf_u_int32 k;
 };
 
 /*
