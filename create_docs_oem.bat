@@ -19,10 +19,12 @@ copy ..\*.gif docs\. /v /y /q
 
 popd
 
-xcopy /v /Y .\dox\WinPcap_docs.html	%WPDPACKDESTDIR%\docs\
-xcopy /v /Y .\dox\prj\docs\*.*		%WPDPACKDESTDIR%\docs\html\
-xcopy /v /Y .\dox\*.gif			%WPDPACKDESTDIR%\docs\html\
-xcopy /v /Y .\dox\pics\*.gif		%WPDPACKDESTDIR%\docs\html\
+xcopy /v /Y ..\winpcap\dox\WinPcap_docs.html	%WPDPACKDESTDIR%\docs\
+xcopy /v /Y .\dox\prj\docs\*.*			%WPDPACKDESTDIR%\docs\html\
+xcopy /v /Y .\dox\*.gif				%WPDPACKDESTDIR%\docs\html\
+xcopy /v /Y ..\winpcap\dox\*.gif		%WPDPACKDESTDIR%\docs\html\
+xcopy /v /Y ..\winpcap\dox\pics\*.gif		%WPDPACKDESTDIR%\docs\html\
+xcopy /v /Y .\dox\pics\*.gif			%WPDPACKDESTDIR%\docs\html\
 echo Folder \docs created successfully
 set WPDPACKDESTDIR=
 set WINPCAPSOURCEDIR=
