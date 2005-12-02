@@ -472,7 +472,7 @@ uint32 bpf_filter_init(register struct bpf_insn *pc, MEM_TYPE *mem_ex, TME_CORE 
 				return 0;
 			continue;
 		case BPF_MISC|BPF_TME|BPF_SET_WORKING:
-			if ((pc->k<0)||(pc->k>=MAX_TME_DATA_BLOCKS))
+			if (pc->k>=MAX_TME_DATA_BLOCKS)
 				return 0;
 			tme->working=pc->k;
 			continue;

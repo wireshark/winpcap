@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999 - 2003
- * NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2005 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,9 +12,10 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the Politecnico di Torino nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ * 3. Neither the name of the Politecnico di Torino, CACE Technologies 
+ * nor the names of its contributors may be used to endorse or promote 
+ * products derived from this software without specific prior written 
+ * permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -607,7 +608,7 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 				return 0;
 			}
 			
-			if((pc->k) <= headersize) 
+			if((int)(pc->k) <= headersize) 
 				X = (p[pc->k] & 0xf) << 2;
 			 else 
 				X = (pd[(pc->k)-headersize] & 0xf) << 2;
@@ -629,7 +630,7 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 		case BPF_LDX|BPF_MEM:
 			X = mem[pc->k];
 			continue;
-
+		
 /* LD NO PACKET INSTRUCTIONS */
 
 		case BPF_LD|BPF_MEM_EX_IMM|BPF_B:
@@ -680,7 +681,7 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 			A=EXTRACT_LONG((uint32*)&mem_ex->buffer[k]);
 			continue;
 /* END LD NO PACKET INSTRUCTIONS */
-		
+
 		case BPF_ST:
 			mem[pc->k] = A;
 			continue;
@@ -688,7 +689,6 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 		case BPF_STX:
 			mem[pc->k] = X;
 			continue;
-
 
 /* STORE INSTRUCTIONS */
 		case BPF_ST|BPF_MEM_EX_IMM|BPF_B:
@@ -732,9 +732,9 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 			*(uint16*)&mem_ex->buffer[pc->k+X]=EXTRACT_SHORT(&tmp2);
 			continue;
 /* END STORE INSTRUCTIONS */
-		
-		
-		
+
+
+
 		case BPF_JMP|BPF_JA:
 			pc += pc->k;
 			continue;
@@ -889,16 +889,15 @@ bpf_validate(f, len,mem_ex_size)
 	int32 len;
 	uint32 mem_ex_size;	
 {
-	register int32 i,j;
+	register uint32 i, from;
+	register int32 j;
 	register struct bpf_insn *p;
 	int32 flag;
 		
-	for (i = 0; i < len; ++i) {
-		/*
-		 * Check that that jumps are forward, and within 
-		 * the code block.
-		 */
-		
+	if (len < 1)
+		return 0;
+
+	for (i = 0; i < (uint32)len; ++i) {
 		p = &f[i];
 
 		IF_LOUD(DbgPrint("Validating program");)
@@ -912,48 +911,127 @@ bpf_validate(f, len,mem_ex_size)
 
 		IF_LOUD(DbgPrint("Validating program: no unknown instructions");)
 		
-		if (BPF_CLASS(p->code) == BPF_JMP) {
-			register int32 from = i + 1;
-
-			if (BPF_OP(p->code) == BPF_JA) {
-				if (from + p->k >= len)
-					return 0;
-			}
-			else if (from + p->jt >= len || from + p->jf >= len)
-				return 0;
-		}
-
-		IF_LOUD(DbgPrint("Validating program: no wrong JUMPS");)
-	
+		switch (BPF_CLASS(p->code)) {
 		/*
 		 * Check that memory operations use valid addresses.
 		 */
-		if (((BPF_CLASS(p->code) == BPF_ST && ((p->code &BPF_MEM_EX_IMM)!=BPF_MEM_EX_IMM && (p->code &BPF_MEM_EX_IND)!=BPF_MEM_EX_IND)) ||
-		     (BPF_CLASS(p->code) == BPF_LD && 
-		      (p->code & 0xe0) == BPF_MEM)) &&
-			  (p->k >= BPF_MEMWORDS || p->k < 0))
+		case BPF_LD:
+		case BPF_LDX:
+			switch (BPF_MODE(p->code)) {
+			case BPF_IMM:
+				break;
+			case BPF_ABS:
+			case BPF_IND:
+			case BPF_MSH:
+				break;
+			case BPF_MEM:
+				if (p->k >= BPF_MEMWORDS)
+					return 0;
+				break;
+			case BPF_LEN:
+				break;
+			default:
+				return 0;
+			}
+			IF_LOUD(DbgPrint("Validating program: no wrong LD memory locations");)
+			break;
+		case BPF_ST:
+		case BPF_STX:
+			if ((p->code &BPF_MEM_EX_IMM) == BPF_MEM_EX_IMM) 
+			{
+				/*
+				 * Check if key stores use valid addresses 
+				 */ 
+				switch (BPF_SIZE(p->code)) {
+
+				case BPF_W:
+					if (p->k+3 >= mem_ex_size)
+						return 0;
+					break;
+
+				case BPF_H:
+					if (p->k+1 >= mem_ex_size)
+						return 0;
+					break;
+
+				case BPF_B:
+					if (p->k >= mem_ex_size)
+						return 0;
+					break;
+				}
+			} 
+			else 
+			{
+				if ((p->code & BPF_MEM_EX_IND) != BPF_MEM_EX_IND) 
+				{
+					if (p->k >= BPF_MEMWORDS)
+						return 0;
+				}
+			}
+			IF_LOUD(DbgPrint("Validating program: no wrong ST memory locations");)
+			break;
+		case BPF_ALU:
+			switch (BPF_OP(p->code)) {
+			case BPF_ADD:
+			case BPF_SUB:
+			case BPF_OR:
+			case BPF_AND:
+			case BPF_LSH:
+			case BPF_RSH:
+			case BPF_NEG:
+				break;
+			case BPF_DIV:
+				/*
+				 * Check for constant division by 0.
+				 */
+				if (BPF_RVAL(p->code) == BPF_K && p->k == 0)
+					return 0;
+			default:
+				return 0;
+			}
+			break;
+		case BPF_JMP:
+			/*
+			 * Check that jumps are within the code block,
+			 * and that unconditional branches don't go
+			 * backwards as a result of an overflow.
+			 * Unconditional branches have a 32-bit offset,
+			 * so they could overflow; we check to make
+			 * sure they don't.  Conditional branches have
+			 * an 8-bit offset, and the from address is <=
+			 * BPF_MAXINSNS, and we assume that BPF_MAXINSNS
+			 * is sufficiently small that adding 255 to it
+			 * won't overflow.
+			 *
+			 * We know that len is <= BPF_MAXINSNS, and we
+			 * assume that BPF_MAXINSNS is < the maximum size
+			 * of a u_int, so that i + 1 doesn't overflow.
+			 */
+			from = i + 1;
+			switch (BPF_OP(p->code)) {
+			case BPF_JA:
+				if (from + p->k < from || from + p->k >= (uint32)len)
+					return 0;
+				break;
+			case BPF_JEQ:
+			case BPF_JGT:
+			case BPF_JGE:
+			case BPF_JSET:
+				if (from + p->jt >= (uint32)len || from + p->jf >= (uint32)len)
+					return 0;
+				break;
+			default:
+				return 0;
+			}
+			IF_LOUD(DbgPrint("Validating program: no wrong JUMPS");)
+			break;
+		case BPF_RET:
+			break;
+		case BPF_MISC:
+			break;
+		default:
 			return 0;
-		
-		IF_LOUD(DbgPrint("Validating program: no wrong ST/LD memory locations");)
-			
-		/*
-		 * Check if key stores use valid addresses 
-		 */ 
-		if (BPF_CLASS(p->code) == BPF_ST && (p->code &BPF_MEM_EX_IMM)==BPF_MEM_EX_IMM)
-	    switch (BPF_SIZE(p->code))
-		{
-			case BPF_W: if (p->k<0 || p->k+3>=(int32)mem_ex_size) return 0;
-			case BPF_H: if (p->k<0 || p->k+1>=(int32)mem_ex_size) return 0;
-			case BPF_B: if (p->k<0 || p->k>=(int32)mem_ex_size) return 0;
 		}
-
-		IF_LOUD(DbgPrint("Validating program: no wrong ST/LD mem_ex locations");)
-
-		/*
-		 * Check for constant division by 0.
-		 */
-		if (p->code == (BPF_ALU|BPF_DIV|BPF_K) && p->k == 0)
-			return 0;
 	}
 	return BPF_CLASS(f[len - 1].code) == BPF_RET;
 }
