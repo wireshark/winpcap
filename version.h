@@ -17,7 +17,7 @@
 #define WINPCAPOEM_REV		1
 #define WINPCAPOEM_BUILD	337
 
-#define WINPCAPOEM_VER_STRING	"3.2.1.337.tnt"
+#define WINPCAPOEM_VER_STRING	"3.2.1.337.woem"
 
 #define WINPCAPOEM_COMPANY_NAME 			"CACE Technologies"
 
