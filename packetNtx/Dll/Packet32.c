@@ -214,7 +214,7 @@ BOOL APIENTRY DllMain(HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
     return Status;
 }
 
-
+/*
 BOOLEAN QueryWinPcapRegistryStringA(CHAR *SubKeyName,
 								 CHAR *Value,
 								 UINT *pValueLen,
@@ -402,6 +402,8 @@ BOOLEAN QueryWinPcapRegistryStringW(WCHAR *SubKeyName,
 	}
 
 }
+
+*/
 
 /*! 
   \brief Convert a Unicode dotted-quad to a 32-bit IP address.
@@ -592,24 +594,34 @@ BOOLEAN PacketInstallDriver()
 	ULONG err = 0;
 	SC_HANDLE svcHandle;
 	SC_HANDLE scmHandle;
-	CHAR driverName[MAX_WINPCAP_KEY_CHARS];
-	CHAR driverDesc[MAX_WINPCAP_KEY_CHARS];
-	CHAR driverLocation[MAX_WINPCAP_KEY_CHARS];
-	UINT len;
+//  
+//	Old registry based WinPcap names
+//
+//	CHAR driverName[MAX_WINPCAP_KEY_CHARS];
+//	CHAR driverDesc[MAX_WINPCAP_KEY_CHARS];
+//	CHAR driverLocation[MAX_WINPCAP_KEY_CHARS;
+//	UINT len;
+
+	CHAR driverName[MAX_WINPCAP_KEY_CHARS] = NPF_DRIVER_NAME;
+	CHAR driverDesc[MAX_WINPCAP_KEY_CHARS] = NPF_SERVICE_DESC;
+	CHAR driverLocation[MAX_WINPCAP_KEY_CHARS] = NPF_DRIVER_COMPLETE_PATH;
 
 	ODS("PacketInstallDriver\n");
 
-	len = sizeof(driverName)/sizeof(driverName[0]);
-	if (QueryWinPcapRegistryStringA(NPF_DRIVER_NAME_REG_KEY, driverName, &len, NPF_DRIVER_NAME) == FALSE && len == 0)
-		return FALSE;
-
-	len = sizeof(driverDesc)/sizeof(driverDesc[0]);
-	if (QueryWinPcapRegistryStringA(NPF_SERVICE_DESC_REG_KEY, driverDesc, &len, NPF_SERVICE_DESC) == FALSE && len == 0)
-		return FALSE;
-
-	len = sizeof(driverLocation)/sizeof(driverLocation[0]);
-	if (QueryWinPcapRegistryStringA(NPF_DRIVER_COMPLETE_PATH_REG_KEY, driverLocation, &len, NPF_DRIVER_COMPLETE_PATH) == FALSE && len == 0)
-		return FALSE;
+//  
+//	Old registry based WinPcap names
+//
+//	len = sizeof(driverName)/sizeof(driverName[0]);
+//	if (QueryWinPcapRegistryStringA(NPF_DRIVER_NAME_REG_KEY, driverName, &len, NPF_DRIVER_NAME) == FALSE && len == 0)
+//		return FALSE;
+//
+//	len = sizeof(driverDesc)/sizeof(driverDesc[0]);
+//	if (QueryWinPcapRegistryStringA(NPF_SERVICE_DESC_REG_KEY, driverDesc, &len, NPF_SERVICE_DESC) == FALSE && len == 0)
+//		return FALSE;
+//
+//	len = sizeof(driverLocation)/sizeof(driverLocation[0]);
+//	if (QueryWinPcapRegistryStringA(NPF_DRIVER_COMPLETE_PATH_REG_KEY, driverLocation, &len, NPF_DRIVER_COMPLETE_PATH) == FALSE && len == 0)
+//		return FALSE;
 	
 	scmHandle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 	
@@ -796,9 +808,14 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 	SERVICE_STATUS SStat;
 	BOOLEAN QuerySStat;
 	WCHAR SymbolicLink[MAX_PATH];
-	UINT	RegQueryLen;
+//  
+//	Old registry based WinPcap names
+//
+//	CHAR	NpfDriverName[MAX_WINPCAP_KEY_CHARS];
+//	UINT	RegQueryLen;
+
+	CHAR	NpfDriverName[MAX_WINPCAP_KEY_CHARS] = NPF_DRIVER_NAME;
 	CHAR	NpfServiceLocation[MAX_WINPCAP_KEY_CHARS];
-	CHAR	NpfDriverName[MAX_WINPCAP_KEY_CHARS];
 
 	// Create the NPF device name from the original device name
 	ODS("PacketOpenAdapterNPF\n");
@@ -812,12 +829,15 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 	}
 	else
 	{
-		RegQueryLen = sizeof(NpfDriverName)/sizeof(NpfDriverName[0]);
-		if (QueryWinPcapRegistryStringA(NPF_DRIVER_NAME_REG_KEY, NpfDriverName, &RegQueryLen, NPF_DRIVER_NAME) == FALSE && RegQueryLen == 0)
-		{
-			//just use an empty string string for the service name
-			NpfDriverName[0] = '\0';
-		}
+//  
+//	Old registry based WinPcap names
+//
+//		RegQueryLen = sizeof(NpfDriverName)/sizeof(NpfDriverName[0]);
+//		if (QueryWinPcapRegistryStringA(NPF_DRIVER_NAME_REG_KEY, NpfDriverName, &RegQueryLen, NPF_DRIVER_NAME) == FALSE && RegQueryLen == 0)
+//		{
+//			//just use an empty string string for the service name
+//			NpfDriverName[0] = '\0';
+//		}
 		
 		//
 		// Create the name of the registry key containing the service.
@@ -1200,15 +1220,23 @@ BOOL PacketStopDriver()
     SC_HANDLE       schService;
     BOOL            ret;
     SERVICE_STATUS  serviceStatus;
-	UINT	RegQueryLen;
-	CHAR	NpfDriverName[MAX_WINPCAP_KEY_CHARS];
+	CHAR	NpfDriverName[MAX_WINPCAP_KEY_CHARS] = NPF_DRIVER_NAME;
 
-	// Create the NPF device name from the original device name
+//  
+//	Old registry based WinPcap names
+//
+//	CHAR	NpfDriverName[MAX_WINPCAP_KEY_CHARS];
+//	UINT	RegQueryLen;
 
-	RegQueryLen = sizeof(NpfDriverName)/sizeof(NpfDriverName[0]);
-	
-	if (QueryWinPcapRegistryStringA(NPF_DRIVER_NAME_REG_KEY, NpfDriverName, &RegQueryLen, NPF_DRIVER_NAME) == FALSE && RegQueryLen == 0)
-		return FALSE;
+
+//  
+//	Old registry based WinPcap names
+//
+//	// Create the NPF device name from the original device name
+//	RegQueryLen = sizeof(NpfDriverName)/sizeof(NpfDriverName[0]);
+//	
+//	if (QueryWinPcapRegistryStringA(NPF_DRIVER_NAME_REG_KEY, NpfDriverName, &RegQueryLen, NPF_DRIVER_NAME) == FALSE && RegQueryLen == 0)
+//		return FALSE;
 
 	scmHandle = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 	

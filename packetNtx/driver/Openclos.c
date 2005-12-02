@@ -88,11 +88,15 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	PUCHAR				tpointer;
     PLIST_ENTRY			PacketListEntry;
 	PWCHAR				EventName;
-	WCHAR				EventPrefix[MAX_WINPCAP_KEY_CHARS];
+	WCHAR				EventPrefix[MAX_WINPCAP_KEY_CHARS] = NPF_EVENTS_NAMES_WIDECHAR;
 	ULONG				EventLengthChars;  // including the traling \0
-	UINT				RegStrLen;
 	WCHAR				EventOrdinalString[100];
 
+//  
+//	Old registry based WinPcap names
+//
+//	WCHAR				EventPrefix[MAX_WINPCAP_KEY_CHARS];
+//	UINT				RegStrLen;
 
     IF_LOUD(DbgPrint("NPF: OpenAdapter\n");)
 
@@ -115,15 +119,19 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
         sizeof(OPEN_INSTANCE)
         );
 
-	//
-	// Get the Event names base from the registry
-	//
-	RegStrLen = sizeof(EventPrefix)/sizeof(EventPrefix[0]);
-
-	NPF_QueryWinpcapRegistryString(NPF_EVENTS_NAMES_REG_KEY_WC,
-		EventPrefix,
-		RegStrLen,
-		NPF_EVENTS_NAMES_WIDECHAR);
+//  
+//	Old registry based WinPcap names
+//
+//	//
+//	// Get the Event names base from the registry
+//	//
+//	RegStrLen = sizeof(EventPrefix)/sizeof(EventPrefix[0]);
+//
+//	NPF_QueryWinpcapRegistryString(NPF_EVENTS_NAMES_REG_KEY_WC,
+//		EventPrefix,
+//		RegStrLen,
+//		NPF_EVENTS_NAMES_WIDECHAR);
+//
 
 	_snwprintf(EventOrdinalString, 
 		sizeof(EventOrdinalString) / sizeof(EventOrdinalString[0]) - 1,

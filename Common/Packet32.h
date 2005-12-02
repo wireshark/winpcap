@@ -414,6 +414,7 @@ PADAPTER_INFO PacketFindAdInfo(PCHAR AdapterName);
 BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName);
 BOOLEAN IsFireWire(TCHAR *AdapterDesc);
 
+/*
 BOOLEAN QueryWinPcapRegistryStringA(CHAR *SubKeyName,
 								 CHAR *Value,
 								 UINT *pValueLen,
@@ -423,6 +424,8 @@ BOOLEAN QueryWinPcapRegistryStringW(WCHAR *SubKeyName,
 								 WCHAR *Value,
 								 UINT *pValueLen,
 								 WCHAR *DefaultVal);
+*/
+								 
 //---------------------------------------------------------------------------
 // EXPORTED FUNCTIONS
 //---------------------------------------------------------------------------

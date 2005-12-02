@@ -56,9 +56,12 @@ PDEVICE_EXTENSION GlobalDeviceExtension;
 //
 // Global strings
 //
-WCHAR g_NPF_PrefixBuffer[MAX_WINPCAP_KEY_CHARS];
+WCHAR g_NPF_PrefixBuffer[MAX_WINPCAP_KEY_CHARS] = NPF_DEVICE_NAMES_PREFIX_WIDECHAR;
+//  
+//	Old registry based WinPcap names
+//
+//WCHAR g_NPF_PrefixBuffer[MAX_WINPCAP_KEY_CHARS];
 NDIS_STRING g_NPF_Prefix;
-//NDIS_STRING NPF_Prefix = NDIS_STRING_CONST("" NPF_DRIVER_NAME_WIDECHAR L"_");
 NDIS_STRING devicePrefix = NDIS_STRING_CONST("\\Device\\");
 NDIS_STRING symbolicLinkPrefix = NDIS_STRING_CONST("\\DosDevices\\");
 NDIS_STRING tcpLinkageKeyName = NDIS_STRING_CONST("\\Registry\\Machine\\System"
@@ -107,7 +110,10 @@ DriverEntry(
 	WCHAR* bindT;
 	PKEY_VALUE_PARTIAL_INFORMATION tcpBindingsP;
 	UNICODE_STRING macName;
-	UINT RegStrLen;
+//  
+//	Old registry based WinPcap names
+//
+//	UINT RegStrLen;
 	ULONG			OsMajorVersion, OsMinorVersion;
     IF_LOUD(DbgPrint("\n\nPacket: DriverEntry\n");)
 
@@ -147,16 +153,19 @@ DriverEntry(
 	//
 	ReadTimeStampModeFromRegistry(RegistryPath);
 
-	//
-	// Get the device names prefix from the registry
-	//
-	RegStrLen = sizeof(g_NPF_PrefixBuffer) / sizeof(g_NPF_PrefixBuffer[0]);
-
-	NPF_QueryWinpcapRegistryString(NPF_DEVICES_PREFIX_REG_KEY_WC,
-		g_NPF_PrefixBuffer,
-		RegStrLen,
-		NPF_DEVICE_NAMES_PREFIX_WIDECHAR);
-
+//  
+//	Old registry based WinPcap names
+//
+//	//
+//	// Get the device names prefix from the registry
+//	//
+//	RegStrLen = sizeof(g_NPF_PrefixBuffer) / sizeof(g_NPF_PrefixBuffer[0]);
+//
+//	NPF_QueryWinpcapRegistryString(NPF_DEVICES_PREFIX_REG_KEY_WC,
+//		g_NPF_PrefixBuffer,
+//		RegStrLen,
+//		NPF_DEVICE_NAMES_PREFIX_WIDECHAR);
+//
 	NdisInitUnicodeString(&g_NPF_Prefix, g_NPF_PrefixBuffer);
 
 	//
@@ -663,8 +672,6 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	ULONG				cnt;
 	BOOLEAN				IsExtendedFilter=FALSE;
 	BOOLEAN				Flag;
-	WCHAR				KernelEventNames[MAX_WINPCAP_KEY_CHARS];
-	UINT				RegStrLen;
 	ULONG				StringLength;
 	ULONG				NeededBytes;
 
@@ -1583,6 +1590,11 @@ NPF_QueryRegistryRoutine(
 
 }
 
+#if 0
+//  
+//	Old registry based WinPcap names
+//
+
 //-------------------------------------------------------------------
 
 //NOTE: ValueLen is the length of Value in characters
@@ -1752,3 +1764,5 @@ VOID NPF_QueryWinpcapRegistryString(PWSTR SubKeyName,
 
 #endif // WPCAP_OEM
 }
+
+#endif

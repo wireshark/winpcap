@@ -951,13 +951,19 @@ UINT GetBuffOccupation(POPEN_INSTANCE Open);
 NDIS_STATUS NPF_PowerChange(IN NDIS_HANDLE ProtocolBindingContext, IN PNET_PNP_EVENT pNetPnPEvent);
 #endif
 
-/*!
-  \brief Helper function to query a value from the global WinPcap registry key
-*/
-VOID NPF_QueryWinpcapRegistryString(PWSTR SubKeyName,
-								 WCHAR *Value,
-                                 UINT ValueLen, 
-								 WCHAR *DefaultValue);
+//  
+//	Old registry based WinPcap names
+//
+///*!
+//  \brief Helper function to query a value from the global WinPcap registry key
+//*/
+//VOID NPF_QueryWinpcapRegistryString(PWSTR SubKeyName,
+//								 WCHAR *Value,
+//                               UINT ValueLen, 
+//								 WCHAR *DefaultValue);
+//
+
+
 /**
  *  @}
  */
