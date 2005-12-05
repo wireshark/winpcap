@@ -91,9 +91,10 @@
   Var WINPCAP_OLD_PRJ_SAME_VERSION
   Var WINPCAP_OLD_INSTALLER
   Var WINPCAP_OLD_REBOOT_NEEDED
-  Var MY_BOOL
+  Var WINPCAP_IS_ADMIN
   Var VARIABLE_1
-  
+  Var WOW_FS_REDIR_OLD_VAL
+  Var BOOL_RET  
 ;--------------------------------
 ;General
 
@@ -150,8 +151,8 @@
     SetSilent normal
 
 ;Detect the current Windows version
+; this will set the WINPCAP_TARGET_OS variable
     Call GetWindowsVersion
-    Pop $WINPCAP_TARGET_OS
     StrCmp $WINPCAP_TARGET_OS "vista" ContinueVistaInstallation
     goto NoVistaInstallation
 
@@ -207,14 +208,17 @@ NewerVersionExit:
 
 SameVersionExit:
 ; WinPcap has already been installed
-    MessageBox MB_ICONEXCLAMATION|MB_OK "${WINPCAP_PRODUCT_NAME} is already installed on this machine.$\nThe installation will be aborted."
+    MessageBox MB_ICONEXCLAMATION|MB_OKCANCEL "${WINPCAP_PRODUCT_NAME} is already installed on this machine.$\nPress Ok if you want to force the installation, or Cancel if you want to abort the installation." IDOK ForceInstallation
     Quit
+
+ForceInstallation:
+; Reset the old installation found flag, so that the new installer will simply overwrite the files
+StrCpy $WINPCAP_OLD_FOUND "false"
 
 CheckAdmin:
 ; Only admins can install winpcap
     Call IsUserAdmin
-    Pop $R0
-    StrCmp $R0 "true" CheckX86
+    StrCmp $WINPCAP_IS_ADMIN "true" CheckX86
 
     MessageBox MB_ICONEXCLAMATION|MB_OK "${WINPCAP_PRODUCT_NAME} requires administrator privileges to be installed.$\nThe installation will be aborted."
     Quit
@@ -224,6 +228,8 @@ CheckX86:
     StrCmp $WINPCAP_TARGET_OS "95" NormalInstallation
     StrCmp $WINPCAP_TARGET_OS "98" NormalInstallation
     StrCmp $WINPCAP_TARGET_OS "ME" NormalInstallation
+	
+	MessageBox MB_OK $WINPCAP_TARGET_ARCHITECTURE
 
     StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" NormalInstallation
     StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" AmdInstallationWarning
@@ -324,13 +330,12 @@ Ended:
     SetSilent normal
 
 ;Detect the current Windows version
+; this will set the WINPCAP_TARGET_OS variable
     Call un.GetWindowsVersion
-    Pop $WINPCAP_TARGET_OS
 
 ; Only admins can uninstall winpcap
     Call un.IsUserAdmin
-    Pop $R0
-    StrCmp $R0 "true" NormalUninstallation
+    StrCmp $WINPCAP_IS_ADMIN "true" NormalUninstallation
 
     MessageBox MB_ICONEXCLAMATION|MB_OK "${WINPCAP_PRODUCT_NAME} requires administrator privileges to be uninstalled.$\nThe uninstallation will be aborted."
     Quit
@@ -492,26 +497,15 @@ CopyFilesNT5:
     File "Distribution\2000\packet.dll"
     File "Distribution\2000\wanpacket.dll"
 	
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" CopyX86Driver
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" CopyAMD64Driver
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" CopyX86DriverLabel
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" CopyAMD64DriverLabel
 	
-CopyX86Driver:	
-    File /oname=drivers\npf.sys "Distribution\2000\npf.sys"
+CopyX86DriverLabel:	
+	Call CopyX86Driver
     goto CopiedNT5Files
     
-CopyAMD64Driver:
-    StrCpy $MY_BOOL '1'	 
-
-; note: this call is available on windows 2003 x64.
-;       On Windows XP x64 the proper call should be Wow64DisableWow64FsRedirection
-;       and Wow64RevertWow64FsRedirection, that have a stupid signature!
-    System::Call 'kernel32::Wow64EnableWow64FsRedirection(b) b($MY_BOOL).r9' 
-    
-    File /oname=drivers\npf.sys "Distribution\x86-64\npf.sys"
-
-    StrCpy $MY_BOOL '0'	 
-    System::Call 'kernel32::Wow64EnableWow64FsRedirection(b) b($MY_BOOL).r9' 
-
+CopyAMD64DriverLabel:
+	Call CopyAMD64Driver
     goto CopiedNT5Files
 
 CopiedNT5Files:    
@@ -520,16 +514,34 @@ CopiedNT5Files:
 ; Todo add error checking for these apps
     ExecDos::exec '$INSTDIR\npf_mgm.exe -r'
     Pop $R0
+    StrCmp $R0 "0" NpfMgmOkLabel1
+    
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while registering the NPF service (npf_mgm.exe -r failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+
+NpfMgmOkLabel1:    
     ExecDos::exec '$INSTDIR\daemon_mgm.exe -r'
     Pop $R0
+    StrCmp $R0 "0" DaemonMgmOkLabel1
+    
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while registering the rpcapd service (daemon_mgm.exe -r failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+
+DaemonMgmOkLabel1:    
+
+; The NetMon component is not available on x64 and on vista!
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" EndCopy
+    StrCmp $WINPCAP_TARGET_OS "vista" EndCopy
+    
     ExecDos::exec '$INSTDIR\NetMonInstaller.exe i'
     Pop $R0
+    StrCmp $R0 "0" EndCopy
+    
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NetMon service (NetMonInstaller.exe i failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
 
     Goto EndCopy
 
 CopyFilesNT4:
-    File "Distribution\NT\packet.dll"
-    File /oname=drivers\npf.sys Distribution\NT\npf.sys
+    File 'Distribution\NT\packet.dll'
+    Call CopyNT4Driver
 
 ;Run install commands
 ; Todo add error checking for these apps
@@ -548,23 +560,15 @@ CopyFiles9x:
 CopyFilesVista:
     File "Distribution\nt\packet.dll"
 
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" CopyX86DriverVista
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" CopyAMD64DriverVista
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" CopyX86DriverVistaLabel
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" CopyAMD64DriverVistaLabel
 	
-CopyX86DriverVista:	
-    File /oname=drivers\npf.sys "Distribution\2000\npf.sys"
+CopyX86DriverVistaLabel:	
+    Call CopyX86Driver
     goto CopiedVistaFiles
     
-CopyAMD64DriverVista:	
-
-    StrCpy $MY_BOOL '1'	 
-    System::Call 'kernel32::Wow64EnableWow64FsRedirection(b) b($MY_BOOL).r9' 
-    
-    File /oname=drivers\npf.sys "Distribution\x86-64\npf.sys"
-
-    StrCpy $MY_BOOL '0'	 
-    System::Call 'kernel32::Wow64EnableWow64FsRedirection(b) b($MY_BOOL).r9' 
-
+CopyAMD64DriverVistaLabel:	
+    Call CopyAMD64Driver
     goto CopiedVistaFiles
 
 CopiedVistaFiles:    
@@ -577,10 +581,6 @@ CopiedVistaFiles:
     Pop $R0
 
     Goto EndCopy
-
-
-
-
 
 EndCopy:
 
@@ -684,70 +684,48 @@ Section "Uninstall" MainUnistall
     StrCmp $WINPCAP_TARGET_OS "2000" RmFilesNT5
     StrCmp $WINPCAP_TARGET_OS "XP" RmFilesNT5
     StrCmp $WINPCAP_TARGET_OS "2003" RmFilesNT5
-    StrCmp $WINPCAP_TARGET_OS "vista" RmFilesVista ; vista (beta1) seems not to have the netmon stuff...
+    StrCmp $WINPCAP_TARGET_OS "vista" RmFilesVista
   
+RmFilesNT4:
 RmFilesNT5:
+RmFilesVista:
+
 ;Run uninstall commands
 ; Todo add error checking for these apps
     ExecDos::exec '"$INSTDIR\npf_mgm.exe" "-u"'
     Pop $R0
+    StrCmp $R0 "0" NpfMgmOkLabel1
+    
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while deregistering the NPF service (npf_mgm.exe -u failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+
+NpfMgmOkLabel1:    
     ExecDos::exec '"$INSTDIR\daemon_mgm.exe" "-u"'
     Pop $R0
+    StrCmp $R0 "0" DaemonMgmOkLabel1
+    
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while deregistering the rpcapd service (daemon_mgm.exe -u failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+
+DaemonMgmOkLabel1:    
 
 ;Delete files
 ; The rebootok is used to delete the files on reboot if they are in use.
-    Delete /REBOOTOK "$SYSDIR\packet.dll"
+;NOTE: this file does not exist on Vista and NT4, but NSIS ignores any file that doesn't exist :-))
     Delete /REBOOTOK "$SYSDIR\wanpacket.dll"
 
-    StrCpy $MY_BOOL '1'	 
-    System::Call 'kernel32::Wow64EnableWow64FsRedirection(b) b($MY_BOOL).r9' 
-    
-    Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" RemoveX86DriverLabel
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" RemoveAMD64DriverLabel
 
-    StrCpy $MY_BOOL '0'	 
-    System::Call 'kernel32::Wow64EnableWow64FsRedirection(b) b($MY_BOOL).r9' 
+RemoveX86DriverLabel:
+	Call un.RemoveX86Driver
+	Goto EndRm
 
-    Goto EndRm
-
-RmFilesNT4:
-;Run uninstall commands
-; Todo add error checking for these apps
-    ExecDos::exec '"$INSTDIR\npf_mgm.exe" "-u"'
-    Pop $R0
-    ExecDos::exec '"$INSTDIR\daemon_mgm.exe" "-u"'
-    Pop $R0
-
-    Delete /REBOOTOK "$SYSDIR\packet.dll"
-    Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
-    Goto EndRm
+RemoveAMD64DriverLabel:
+	Call un.RemoveAMD64Driver
+	Goto EndRm
 
 RmFiles9x:
-    Delete /REBOOTOK "$SYSDIR\packet.dll"
     Delete /REBOOTOK "$SYSDIR\npf.vxd"
     Goto EndRm
-
-RmFilesVista:
-;Run uninstall commands
-; Todo add error checking for these apps
-    ExecDos::exec '"$INSTDIR\npf_mgm.exe" "-u"'
-    Pop $R0
-    ExecDos::exec '"$INSTDIR\daemon_mgm.exe" "-u"'
-    Pop $R0
-
-;Delete files
-; The rebootok is used to delete the files on reboot if they are in use.
-    Delete /REBOOTOK "$SYSDIR\packet.dll"
-
-    StrCpy $MY_BOOL '1'	 
-    System::Call 'kernel32::Wow64EnableWow64FsRedirection(b) b($MY_BOOL).r9' 
-    
-    Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
-
-    StrCpy $MY_BOOL '0'	 
-    System::Call 'kernel32::Wow64EnableWow64FsRedirection(b) b($MY_BOOL).r9' 
-
-    Goto EndRm
-
 
 EndRm:
 
@@ -757,6 +735,7 @@ EndRm:
     Delete /REBOOTOK "$INSTDIR\NetMonInstaller.exe"
     Delete /REBOOTOK "$INSTDIR\npf_mgm.exe"
     Delete /REBOOTOK "$INSTDIR\rpcapd.exe"
+    Delete /REBOOTOK "$SYSDIR\packet.dll"
     Delete /REBOOTOK "$SYSDIR\wpcap.dll"
     Delete /REBOOTOK "$SYSDIR\pthreadVC.dll"
 
@@ -791,6 +770,131 @@ SectionEnd
   VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "${WINPCAP_PRODUCT_NAME} installer"
   VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${WINPCAP_PROJ_VERSION_DOTTED}"
 
+
+Function CopyAMD64Driver
+	
+	; these two stupid assignments are used to avoid a compilation warning...
+	StrCpy $BOOL_RET "1"
+	StrCpy $WOW_FS_REDIR_OLD_VAL "1"
+	
+	System::Call 'kernel32::Wow64DisableWow64FsRedirection(*i .$WOW_FS_REDIR_OLD_VAL).$BOOL_RET'
+	
+	StrCmp $BOOL_RET "error" ErrorCannotLoadDll
+	StrCmp $BOOL_RET 0 ErrorCannotDisableFsRedirector
+    
+	push $R0
+	push $OUTDIR
+	SetOutPath $SYSDIR
+    File /oname=drivers\npf.sys Distribution\x86-64\npf.sys
+	pop $R0
+	SetOutPath $R0
+	pop $R0
+
+	System::Call 'kernel32::Wow64RevertWow64FsRedirection(*i $WOW_FS_REDIR_OLD_VAL).$BOOL_RET'
+
+	StrCmp $BOOL_RET "error" ErrorCannotLoadDll2
+	StrCmp $BOOL_RET 0 ErrorCannotRevertFsRedirector
+	
+	goto End
+
+	ErrorCannotLoadDll:
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+		SetErrors
+		goto End
+		
+	ErrorCannotDisableFsRedirector:
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+		SetErrors
+		goto End
+
+	ErrorCannotLoadDll2:
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+		SetErrors
+		goto End
+		
+	ErrorCannotRevertFsRedirector:
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+		SetErrors
+		goto End
+		
+End:
+
+FunctionEnd
+
+Function CopyX86Driver
+	
+	push $R0
+	push $OUTDIR
+	SetOutPath $SYSDIR
+    File /oname=drivers\npf.sys Distribution\2000\npf.sys
+	pop $R0
+	SetOutPath $R0
+	pop $R0
+
+FunctionEnd
+
+Function CopyNT4Driver
+	
+	push $R0
+	push $OUTDIR
+	SetOutPath $SYSDIR
+    File /oname=drivers\npf.sys Distribution\NT\npf.sys
+	pop $R0
+	SetOutPath $R0
+	pop $R0
+
+FunctionEnd
+
+
+Function un.RemoveAMD64Driver
+	
+	; these two stupid assignments are used to avoid a compilation warning...
+	StrCpy $BOOL_RET "1"
+	StrCpy $WOW_FS_REDIR_OLD_VAL "1"
+	
+	System::Call 'kernel32::Wow64DisableWow64FsRedirection(*i .$WOW_FS_REDIR_OLD_VAL).$BOOL_RET'
+	
+	StrCmp $BOOL_RET "error" ErrorCannotLoadDll
+	StrCmp $BOOL_RET 0 ErrorCannotDisableFsRedirector
+    
+    Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
+
+	System::Call 'kernel32::Wow64RevertWow64FsRedirection(*i $WOW_FS_REDIR_OLD_VAL).$BOOL_RET'
+
+	StrCmp $BOOL_RET "error" ErrorCannotLoadDll2
+	StrCmp $BOOL_RET 0 ErrorCannotRevertFsRedirector
+	
+	goto End
+
+	ErrorCannotLoadDll:
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+		SetErrors
+		goto End
+		
+	ErrorCannotDisableFsRedirector:
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+		SetErrors
+		goto End
+
+	ErrorCannotLoadDll2:
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+		SetErrors
+		goto End
+		
+	ErrorCannotRevertFsRedirector:
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+		SetErrors
+		goto End
+		
+End:		
+
+FunctionEnd
+
+Function un.RemoveX86Driver
+	
+    Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
+
+FunctionEnd
 
 ;--------------------------------
 ;--------------------------------
@@ -843,15 +947,15 @@ SectionEnd
    StrCmp $R1 '4.9' lbl_win32_ME lbl_win32_98
  
    lbl_win32_95:
-     StrCpy $R0 '95'
+     StrCpy $WINPCAP_TARGET_OS '95'
    Goto lbl_done
  
    lbl_win32_98:
-     StrCpy $R0 '98'
+     StrCpy $WINPCAP_TARGET_OS '98'
    Goto lbl_done
  
    lbl_win32_ME:
-     StrCpy $R0 'ME'
+     StrCpy $WINPCAP_TARGET_OS 'ME'
    Goto lbl_done
  
    lbl_winnt:
@@ -872,15 +976,21 @@ SectionEnd
  
  
    lbl_winnt_x:
-     StrCpy $R0 'NT'
+     StrCpy $WINPCAP_TARGET_OS 'NT'
+
+	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+
    Goto lbl_done
  
    lbl_winnt_2000:
-     Strcpy $R0 '2000'
+     Strcpy $WINPCAP_TARGET_OS '2000'
+
+	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+
    Goto lbl_done
  
    lbl_winnt_XP:
-     Strcpy $R0 'XP'
+     Strcpy $WINPCAP_TARGET_OS 'XP'
 
 	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
 	 
@@ -897,12 +1007,12 @@ SectionEnd
 
 lbl_winnt_2003:
 
-     Strcpy $R0 '2003'
+     Strcpy $WINPCAP_TARGET_OS '2003'
 
    Goto lbl_done
  
    lbl_vista:
-     Strcpy $R0 'vista'
+     Strcpy $WINPCAP_TARGET_OS 'vista'
 
 	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
 	 IfErrors lbl_error
@@ -910,11 +1020,11 @@ lbl_winnt_2003:
    Goto lbl_done
 
    lbl_error:
-     Strcpy $R0 ''
+     Strcpy $WINPCAP_TARGET_OS ''
    lbl_done:
  
    Pop $R1
-   Exch $R0
+   Pop $R0
  
  FunctionEnd
 
@@ -947,15 +1057,15 @@ lbl_winnt_2003:
    StrCmp $R1 '4.9' lbl_win32_ME lbl_win32_98
  
    lbl_win32_95:
-     StrCpy $R0 '95'
+     StrCpy $WINPCAP_TARGET_OS '95'
    Goto lbl_done
  
    lbl_win32_98:
-     StrCpy $R0 '98'
+     StrCpy $WINPCAP_TARGET_OS '98'
    Goto lbl_done
  
    lbl_win32_ME:
-     StrCpy $R0 'ME'
+     StrCpy $WINPCAP_TARGET_OS 'ME'
    Goto lbl_done
  
    lbl_winnt:
@@ -976,7 +1086,7 @@ lbl_winnt_2003:
  
  
    lbl_winnt_x:
-     StrCpy $R0 'NT'
+     StrCpy $WINPCAP_TARGET_OS 'NT'
    Goto lbl_done
  
    lbl_winnt_2000:
@@ -984,7 +1094,7 @@ lbl_winnt_2003:
    Goto lbl_done
  
    lbl_winnt_XP:
-     Strcpy $R0 'XP'
+     Strcpy $WINPCAP_TARGET_OS 'XP'
 
 	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
 	 
@@ -1001,12 +1111,12 @@ lbl_winnt_2003:
 
 lbl_winnt_2003:
 
-     Strcpy $R0 '2003'
+     Strcpy $WINPCAP_TARGET_OS '2003'
 
    Goto lbl_done
  
    lbl_vista:
-     Strcpy $R0 'vista'
+     Strcpy $WINPCAP_TARGET_OS 'vista'
 
 	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
 	 IfErrors lbl_error
@@ -1014,11 +1124,11 @@ lbl_winnt_2003:
    Goto lbl_done
 
    lbl_error:
-     Strcpy $R0 ''
+     Strcpy $WINPCAP_TARGET_OS ''
    lbl_done:
  
    Pop $R1
-   Exch $R0
+   Pop $R0
  
  FunctionEnd
 
@@ -1132,10 +1242,9 @@ FunctionEnd
 ;
 ; Usage:
 ;   Call IsUserAdmin
-;   Pop $R0   ; at this point $R0 is "true" or "false"
+;        ; $WINPCAP_IS_ADMIN  is "true" or "false"
 ;
 Function IsUserAdmin
-Push $R0
 Push $R1
 Push $R2
 
@@ -1152,14 +1261,14 @@ StrCmp $R2 "Admin" 0 Continue
 ; but just don't work. So UserInfo.dll, knowing that admin isn't required
 ; on Win98, returns admin anyway. (per kichik)
 ; MessageBox MB_OK 'User "$R1" is in the Administrators group'
-StrCpy $R0 "true"
+StrCpy $WINPCAP_IS_ADMIN "true"
 Goto Done
 
 Continue:
 ; You should still check for an empty string because the functions
 ; UserInfo.dll looks for may not be present on Windows 95. (per kichik)
 StrCmp $R2 "" Win9x
-StrCpy $R0 "false"
+StrCpy $WINPCAP_IS_ADMIN "false"
 ;MessageBox MB_OK 'User "$R1" is in the "$R2" group'
 Goto Done
 
@@ -1168,14 +1277,13 @@ Win9x:
 ; This one means you don't need to care about admin or
 ; not admin because Windows 9x doesn't either
 ;MessageBox MB_OK "Error! This DLL can't run under Windows 9x!"
-StrCpy $R0 "true"
+StrCpy $WINPCAP_IS_ADMIN "true"
 
 Done:
-;MessageBox MB_OK 'User= "$R1"  AccountType= "$R2"  IsUserAdmin= "$R0"'
+;MessageBox MB_OK 'User= "$R1"  AccountType= "$R2"  IsUserAdmin= "$WINPCAP_IS_ADMIN"'
 
 Pop $R2
 Pop $R1
-Exch $R0
 FunctionEnd
 
 ; Author: Lilla (lilla@earthlink.net) 2003-06-13
@@ -1184,11 +1292,10 @@ FunctionEnd
 ; This function was tested under NSIS 2 beta 4 (latest CVS as of this writing).
 ;
 ; Usage:
-;   Call IsUserAdmin
-;   Pop $R0   ; at this point $R0 is "true" or "false"
+;   Call un.IsUserAdmin
+;        ; $WINPCAP_IS_ADMIN  is "true" or "false"
 ;
 Function un.IsUserAdmin
-Push $R0
 Push $R1
 Push $R2
 
@@ -1205,14 +1312,14 @@ StrCmp $R2 "Admin" 0 Continue
 ; but just don't work. So UserInfo.dll, knowing that admin isn't required
 ; on Win98, returns admin anyway. (per kichik)
 ; MessageBox MB_OK 'User "$R1" is in the Administrators group'
-StrCpy $R0 "true"
+StrCpy $WINPCAP_IS_ADMIN "true"
 Goto Done
 
 Continue:
 ; You should still check for an empty string because the functions
 ; UserInfo.dll looks for may not be present on Windows 95. (per kichik)
 StrCmp $R2 "" Win9x
-StrCpy $R0 "false"
+StrCpy $WINPCAP_IS_ADMIN "false"
 ;MessageBox MB_OK 'User "$R1" is in the "$R2" group'
 Goto Done
 
@@ -1221,14 +1328,13 @@ Win9x:
 ; This one means you don't need to care about admin or
 ; not admin because Windows 9x doesn't either
 ;MessageBox MB_OK "Error! This DLL can't run under Windows 9x!"
-StrCpy $R0 "true"
+StrCpy $WINPCAP_IS_ADMIN "true"
 
 Done:
-;MessageBox MB_OK 'User= "$R1"  AccountType= "$R2"  IsUserAdmin= "$R0"'
+;MessageBox MB_OK 'User= "$R1"  AccountType= "$R2"  IsUserAdmin= "$WINPCAP_IS_ADMIN"'
 
 Pop $R2
 Pop $R1
-Exch $R0
 FunctionEnd
 
 
