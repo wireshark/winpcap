@@ -405,7 +405,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	//Otherwise if there are 2 separate buffers (this could be the case of LAN emulation or
 	//things like this) bpf_filter_with_2_buffers() is executed.
 	//
-	if((PUCHAR)LookaheadBuffer-(PUCHAR)HeaderBuffer != HeaderBufferSize)
+	if((UINT)((PUCHAR)LookaheadBuffer-(PUCHAR)HeaderBuffer) != HeaderBufferSize)
 		fres=bpf_filter_with_2_buffers((struct bpf_insn*)(Open->bpfprogram),
 									   HeaderBuffer,
 									   LookaheadBuffer,
@@ -571,7 +571,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 		if (LocalData->P == Open->Size)
 			LocalData->P = 0;
 
-		if ( fres <= HeaderBufferSize || ( (PUCHAR)LookaheadBuffer - (PUCHAR)HeaderBuffer ) == HeaderBufferSize )
+		if ( fres <= HeaderBufferSize || (UINT)( (PUCHAR)LookaheadBuffer - (PUCHAR)HeaderBuffer ) == HeaderBufferSize )
 		{
 			//we can consider the buffer contiguous, either because we use only the data 
 			//present in the HeaderBuffer, or because HeaderBuffer and LookaheadBuffer are contiguous
