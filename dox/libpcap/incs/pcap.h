@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/incs/pcap.h,v 1.3 2002/07/12 13:58:57 degioanni Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot_private/winpcap/dox/libpcap/incs/pcap.h,v 1.5 2005/11/30 21:48:23 gianlucav Exp $ (LBL)
  */
 
 
@@ -165,6 +165,9 @@ struct pcap_addr {
 	struct sockaddr *broadaddr;	///< if not NULL, a pointer to a struct sockaddr that contains the broadcast address corre­ sponding to the address pointed to by addr; may be null if the interface doesn't support broadcasts
 	struct sockaddr *dstaddr;	///< if not NULL, a pointer to a struct sockaddr that contains the destination address corre­ sponding to the address pointed to by addr; may be null if the interface isn't a point- to-point interface
 };
+
+#if defined(WIN32)
+
 
 #define MODE_CAPT 0	///< Capture mode, to be used when calling pcap_setmode()
 #define MODE_STAT 1	///< Statistical mode, to be used when calling pcap_setmode()
