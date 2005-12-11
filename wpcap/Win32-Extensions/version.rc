@@ -28,8 +28,8 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,1,0,27
- PRODUCTVERSION 3,1,0,27
+ FILEVERSION 3,2,0,28
+ PRODUCTVERSION 3,2,0,28
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -46,15 +46,15 @@ BEGIN
         BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "CACE Technologies\0"
-            VALUE "FileDescription", "wpcap - Based on libpcap 0.9.3\0"
-            VALUE "FileVersion", "3, 1, 0, 27\0"
+            VALUE "FileDescription", "wpcap - Based on libpcap 0.9.4\0"
+            VALUE "FileVersion", "3, 2, 0, 28\0"
             VALUE "InternalName", "wpcap\0"
             VALUE "LegalCopyright", "Copyright © 2005 CACE Technologies. Copyright © 2003-2005 NetGroup, Politecnico di Torino.\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "wpcap.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "WinPcap high level library\0"
-            VALUE "ProductVersion", "3, 1, 0, 27\0"
+            VALUE "ProductVersion", "3, 2, 0, 28\0"
             VALUE "SpecialBuild", "\0"
         END
     END

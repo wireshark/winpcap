@@ -43,13 +43,13 @@
 
   !define WINPCAP_PRJ_MAJOR "3"
   !define WINPCAP_PRJ_MINOR "2"
-  !define WINPCAP_PRJ_REV "1"
+  !define WINPCAP_PRJ_REV "0"
   !define WINPCAP_PRJ_BUILD "28"
-  !define WINPCAP_PROJ_VERSION_DOTTED "3.2.1.28"
+  !define WINPCAP_PROJ_VERSION_DOTTED "3.2.0.28"
   !define WINPCAP_LEGAL_COPYRIGHT "© 2005 CACE Technologies"
-  !define WINPCAP_PRODUCT_NAME "WinPcap 3.2 beta1"
+  !define WINPCAP_PRODUCT_NAME "WinPcap 3.2 alpha1 PREVIEW"
   !define WINPCAP_COMPANY_NAME "CACE Technologies"
-  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_beta1.exe"
+  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_alpha1_PREVIEW.exe"
  
   ;Default installation folder
   InstallDir "$PROGRAMFILES\WinPcap"
