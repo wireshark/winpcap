@@ -788,7 +788,10 @@ BOOLEAN PacketGetAdapterNames (PTSTR pStr,
 		Status=RegOpenKeyEx(Key,NdisName,0,KEY_READ,&hKeyNdisName);
 		
 		if (Status != ERROR_SUCCESS)
+		{
+			i++;
 			continue;
+		}
 
 		//we need to tell RegOpenKeyEx the length of the buffer passed as argument
 		NeededBytesForString = sizeof(TempBuffer);
@@ -798,6 +801,7 @@ BOOLEAN PacketGetAdapterNames (PTSTR pStr,
 		if (Status != ERROR_SUCCESS)
 		{
 			RegCloseKey(hKeyNdisName);
+			i++;
 			continue;
 		}
 
@@ -859,7 +863,10 @@ BOOLEAN PacketGetAdapterNames (PTSTR pStr,
 		Status=RegOpenKeyEx(Key,NdisName,0,KEY_READ,&hKeyNdisName);
 		
 		if (Status != ERROR_SUCCESS)
+		{
+			i++;
 			continue;
+		}
 
 		Status=RegQueryValueEx(hKeyNdisName,"LOGDRIVERNAME",NULL,NULL,(LPBYTE)TempBuffer,&NeededBytesForString);
 		
