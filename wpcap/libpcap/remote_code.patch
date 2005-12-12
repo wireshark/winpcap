@@ -33,7 +33,7 @@ diff -urb libpcap-0.9.4/Makefile.in libpcap/Makefile.in
  GENHDR = \
 diff -urb libpcap-0.9.4/Win32/Prj/libpcap.dsp libpcap/Win32/Prj/libpcap.dsp
 --- libpcap-0.9.4/Win32/Prj/libpcap.dsp	2004-01-28 06:08:34.000000000 -0800
-+++ libpcap/Win32/Prj/libpcap.dsp	2005-12-11 14:54:01.078125000 -0800
++++ libpcap/Win32/Prj/libpcap.dsp	2005-12-11 15:46:54.343750000 -0800
 @@ -4,7 +4,7 @@
  
  # TARGTYPE "Win32 (x86) Static Library" 0x0104
@@ -568,7 +568,7 @@ diff -urb libpcap-0.9.4/pcap-win32.c libpcap/pcap-win32.c
  		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "The kernel buffer size cannot be set while reading from a file");
 diff -urb libpcap-0.9.4/pcap.c libpcap/pcap.c
 --- libpcap-0.9.4/pcap.c	2005-08-13 15:29:46.000000000 -0700
-+++ libpcap/pcap.c	2005-12-11 14:54:01.218750000 -0800
++++ libpcap/pcap.c	2005-12-11 16:09:49.312500000 -0800
 @@ -70,6 +70,10 @@
  #include <dagapi.h>
  #endif
@@ -636,6 +636,24 @@ diff -urb libpcap-0.9.4/pcap.c libpcap/pcap.c
  #ifndef WIN32
  	return (p->fd);
  #else
+@@ -807,7 +846,7 @@
+ #ifdef HAVE_VERSION_H
+ #include "version.h"
+ #else
+-static const char pcap_version_string[] = "libpcap version 0.9[.x]";
++static const char pcap_version_string[] = "libpcap version 0.9.4";
+ #endif
+ 
+ #ifdef WIN32
+@@ -816,7 +855,7 @@
+  * version numbers when building WinPcap.  (It'd be nice to do so for
+  * the packet.dll version number as well.)
+  */
+-static const char wpcap_version_string[] = "3.1";
++static const char wpcap_version_string[] = "3.2 alpha1";
+ static const char pcap_version_string_fmt[] =
+     "WinPcap version %s, based on %s";
+ static const char pcap_version_string_packet_dll_fmt[] =
 diff -urb libpcap-0.9.4/pcap.h libpcap/pcap.h
 --- libpcap-0.9.4/pcap.h	2005-07-06 19:04:36.000000000 -0700
 +++ libpcap/pcap.h	2005-12-11 14:54:01.234375000 -0800
