@@ -229,8 +229,6 @@ CheckX86:
     StrCmp $WINPCAP_TARGET_OS "98" NormalInstallation
     StrCmp $WINPCAP_TARGET_OS "ME" NormalInstallation
 	
-	MessageBox MB_OK $WINPCAP_TARGET_ARCHITECTURE
-
     StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" NormalInstallation
     StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" AmdInstallationWarning
     
