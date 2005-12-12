@@ -2076,6 +2076,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	{
 		ReleaseMutex(AdaptersInfoMutex);
 		*BufferSize = 0;
+		SetLastError(ERROR_INSUFFICIENT_BUFFER);
 		return FALSE;		// No adapters to return
 	}
 
@@ -2100,6 +2101,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 
 		ODS("PacketGetAdapterNames: input buffer too small\n");
 		*BufferSize = SizeNeeded + 2;  // Report the required size
+		SetLastError(ERROR_INSUFFICIENT_BUFFER);
 		return FALSE;
 	}
 
