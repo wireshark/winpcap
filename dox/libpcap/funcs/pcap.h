@@ -670,8 +670,6 @@ bool pcap_offline_filter(struct bpf_program *prog, const struct pcap_pkthdr *hea
 
 /*! \brief Save a capture to file.
 
-  \note: this function does not work in current version of WinPcap.
-
 pcap_live_dump() dumps the network traffic from an interface to
 a file. Using this function the dump is performed at kernel level, therefore it is more efficient than using
 pcap_dump().
@@ -696,8 +694,6 @@ int pcap_live_dump(pcap_t *p, char *filename, int maxsize, int maxpacks);
 
 
 /*! \brief Return the status of the kernel dump process, i.e. tells if one of the limits defined with pcap_live_dump() has been reached.
-
-    \note: this function does not work in current version of WinPcap.
 
 pcap_live_dump_ended() informs the user about the limits that were set with a previous call to 
 pcap_live_dump() on the interface pointed by p: if the return value is nonzero, one of the limits has been 

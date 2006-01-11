@@ -37,7 +37,7 @@
  *
  *      @(#)bpf.h       7.1 (Berkeley) 5/7/91
  *
- * @(#) $Header: /usr/cvsroot_private/winpcap/packetNtx/driver/win_bpf.h,v 1.2.2.1 2005/12/02 22:12:58 gianlucav Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/packetNtx/driver/win_bpf.h,v 1.1 2002/05/18 10:31:10 varenni Exp $ (LBL)
  */
 
 #ifndef BPF_MAJOR_VERSION
@@ -75,7 +75,7 @@ struct bpf_insn {
 	u_short	code;
 	u_char 	jt;
 	u_char 	jf;
-	bpf_u_int32 k;
+	bpf_int32 k;
 };
 
 /*
