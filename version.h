@@ -9,15 +9,15 @@
 // 0 May = 31 + 28 + 31 + 30 = 120
 // 0 Jun = 31 + 28 + 31 + 30 + 31 = 151 
 // 0 Jul = 31 + 28 + 31 + 30 + 31 + 30 = 181
-// 0 Nov = 181 + (Jul) 31 + (Aug) 31 + (Sept)30 + (Oct)31 = 325
-// 0 Dec = 325 + 30 = 335
+// 0 Nov = 181 + (Jul) 31 + (Aug) 31 + (Sept)30 + (Oct)31 = 324
+// 0 Dec = 324 + 30 = 334
 
 #define WINPCAPOEM_MAJOR	3
 #define WINPCAPOEM_MINOR	2
-#define WINPCAPOEM_REV		1
-#define WINPCAPOEM_BUILD	337
+#define WINPCAPOEM_REV		91
+#define WINPCAPOEM_BUILD	375
 
-#define WINPCAPOEM_VER_STRING	"3.2.1.337.woem"
+#define WINPCAPOEM_VER_STRING	"3.2.91.375.woem"
 
 #define WINPCAPOEM_COMPANY_NAME 			"CACE Technologies"
 
@@ -26,6 +26,6 @@
 #define WINPCAPOEM_PRODUCT_NAME 			"WinPcap OEM"
 #define WINPCAPOEM_COPYRIGHT_STRING 		"Copyright © 2005 CACE Technologies"
 #define WINPCAPOEM_PACKET_WRAPPER_FILENAME 	"Packet.dll (wrapper)"
-#define WINPCAPOEM_BUILD_DESCRIPTION 		""
+#define WINPCAPOEM_BUILD_DESCRIPTION 		"Private Build for Ben Greear"
 #define WINPCAPOEM_PRIVATE_BUILD			""
 #define WINPCAPOEM_LIBPCAP_VERSION			"0.9.3"
