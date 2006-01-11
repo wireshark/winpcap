@@ -182,7 +182,7 @@ BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, 
 //		ifname += RegQueryLen;
 
 	if (wcsncmp(ifname, npfDeviceNamesPrefix, wcslen(npfDeviceNamesPrefix)) == 0)
-				ifname += wcslen(npfDeviceNamesPrefix) + 1;
+				ifname += wcslen(npfDeviceNamesPrefix);
 
 	if(	RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT("SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces"), 0, KEY_READ, &UnderTcpKey) == ERROR_SUCCESS)
 	{
