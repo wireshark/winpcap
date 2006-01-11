@@ -62,7 +62,7 @@
 				CommandLine="postbuild_release.bat"/>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="$(ProjectDir)\prebuild_release.bat"/>
+				CommandLine="&quot;$(ProjectDir)\prebuild_release.bat&quot;"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
 			<Tool
@@ -592,10 +592,10 @@
 			RelativePath="binaries\npfnt.sys">
 		</File>
 		<File
-			RelativePath="binaries\Packet2k.dll">
+			RelativePath="Packet2k.dll">
 		</File>
 		<File
-			RelativePath="Packet2k.dll">
+			RelativePath="binaries\Packet2k.dll">
 		</File>
 		<File
 			RelativePath="binaries\Packetnt.dll">
