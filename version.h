@@ -15,9 +15,9 @@
 #define WINPCAPOEM_MAJOR	3
 #define WINPCAPOEM_MINOR	2
 #define WINPCAPOEM_REV		91
-#define WINPCAPOEM_BUILD	375
+#define WINPCAPOEM_BUILD	378
 
-#define WINPCAPOEM_VER_STRING	"3.2.91.375.woem"
+#define WINPCAPOEM_VER_STRING	"3.2.91.378.woem"
 
 #define WINPCAPOEM_COMPANY_NAME 			"CACE Technologies"
 
@@ -26,6 +26,6 @@
 #define WINPCAPOEM_PRODUCT_NAME 			"WinPcap OEM"
 #define WINPCAPOEM_COPYRIGHT_STRING 		"Copyright © 2005 CACE Technologies"
 #define WINPCAPOEM_PACKET_WRAPPER_FILENAME 	"Packet.dll (wrapper)"
-#define WINPCAPOEM_BUILD_DESCRIPTION 		"Private Build for Ben Greear"
+#define WINPCAPOEM_BUILD_DESCRIPTION 		"Private Build for Leaf Networks"
 #define WINPCAPOEM_PRIVATE_BUILD			""
 #define WINPCAPOEM_LIBPCAP_VERSION			"0.9.3"
