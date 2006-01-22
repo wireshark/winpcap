@@ -14,8 +14,8 @@ OPTFLAGS = -O
 # used by the generated parser.  This allows programs to use lex/yacc
 # and link against libpcap.  If you don't have flex or bison, get them.
 #
-LEX = flex -Ppcap_
-YACC = bison -y -p pcap_
+LFLAGS = -Ppcap_
+YFLAGS = -y -p pcap_
 
 PACKET_DIR = packetNTx
 INSTALL_DIR = ${SYSTEMROOT}\system32
@@ -28,9 +28,10 @@ CFLAGS = -I ../libpcap -I ../libpcap/bpf -I ../libpcap/lbl \
 	-DSIZEOF_CHAR=1 -DSIZEOF_SHORT=2 -DSIZEOF_INT=4 -DSIZEOF_LONG_LONG=8 -DWPCAP -D'_U_=' \
 	-DHAVE_SNPRINTF -DHAVE_VSNPRINTF \
 	-DSIZEOF_LONG_LONG=8 \
+	-DHAVE_REMOTE \
 	-mno-cygwin -shared ${OPTFLAGS}
 LDFLAGS = -Wl,--out-implib,../lib/libwpcap.a
-LIBS = -L ../../${PACKET_DIR}/DLL/Project -lPacket -lwsock32
+LIBS = -L ../../${PACKET_DIR}/DLL/Project -lPacket -lws2_32
 OBJS = ../libpcap/bpf/net/bpf_filter.o \
 	../libpcap/bpf_dump.o \
 	../libpcap/bpf_image.o \
@@ -53,27 +54,31 @@ OBJS = ../libpcap/bpf/net/bpf_filter.o \
 	../libpcap/pcap.o \
 	../libpcap/savefile.o \
 	../libpcap/scanner.o \
+	../libpcap/pcap-new.o \
+	../libpcap/pcap-remote.o \
+	../libpcap/sockutils.o \
+	../libpcap/Win32/Src/gai_strerror.o \
 	../Win32-Extensions/Win32-Extensions.o
 
 main: ${OBJS}
-	${CC} ${CFLAGS} ${LDFLAGS} -o wpcap.dll wpcap_no_extensions.def ${OBJS} ${LIBS}
+	${CC} ${CFLAGS} ${LDFLAGS} -o wpcap.dll wpcap.def ${OBJS} ${LIBS}
 
 install:
 	cp wpcap.dll ${INSTALL_DIR}
 
 clean:
-	rm -f ${OBJS} ../libpcap/scanner.c ../libpcap/grammar.c wpcap.a wpcap.dll
+	${RM} ${OBJS} ../libpcap/scanner.c ../libpcap/grammar.c wpcap.a wpcap.dll
 
 # Keeps intermediate .c files from being deleted
 .SECONDARY: ../libpcap/scanner.c ../libpcap/grammar.c
 
 .y.c:
-	@rm -f ../libpcap/grammar.c ../libpcap/tokdefs.h
-	$(YACC) -d $<
+	@${RM} ../libpcap/grammar.c ../libpcap/tokdefs.h
+	${YACC} ${YFLAGS} -d $<
 	mv y.tab.c ../libpcap/grammar.c
 	mv y.tab.h ../libpcap/tokdefs.h
 .l.c:
-	@rm -f $@
-	$(LEX) -t $< >$*.c
+	@${RM} $@
+	${LEX} ${LFLAGS} -t $< >$*.c
 .c.o:
 	${CC} ${CFLAGS} -o $*.o -c $<
