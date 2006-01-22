@@ -194,6 +194,8 @@ struct dump_bpf_hdr{
 
 #endif
 
+struct bpf_stat;
+
 #define        DOSNAMEPREFIX   TEXT("Packet_")	///< Prefix added to the adapters device names to create the WinPcap devices
 #define        MAX_LINK_NAME_LENGTH	64			//< Maximum length of the devices symbolic links
 #define        NMAX_PACKET 65535
