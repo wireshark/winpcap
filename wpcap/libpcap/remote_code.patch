@@ -193,42 +193,6 @@ diff -urb libpcap-0.9.4/configure.in libpcap/configure.in
  AC_SUBST(V_RANLIB)
  AC_SUBST(V_YACC)
  AC_SUBST(SSRC)
-diff -urb libpcap-0.9.4/fad-win32.c libpcap/fad-win32.c
---- libpcap-0.9.4/fad-win32.c	2005-09-01 15:07:42.000000000 -0700
-+++ libpcap/fad-win32.c	2005-11-25 16:10:52.000000000 -0800
-@@ -224,22 +224,23 @@
- 	ULONG NameLength;
- 	char *name;
- 	
--	if(!PacketGetAdapterNames(NULL, &NameLength) && NameLength == 0)
-+	if (!PacketGetAdapterNames(NULL, &NameLength))
- 	{
--		/*
--		 * If PacketGetAdapterNames *and* sets the lenght of the buffer to zero, 
--		 * it means there was an error.
--		 */
--		snprintf(errbuf, PCAP_ERRBUF_SIZE, "PacketGetAdapterNames failed: %s", pcap_win32strerror());
--		*alldevsp = NULL;
--		return -1;
-+		DWORD last_error = GetLastError();
-+
-+		if (last_error != ERROR_INSUFFICIENT_BUFFER)
-+		{
-+			snprintf(errbuf, PCAP_ERRBUF_SIZE,
-+				"PacketGetAdapterNames: %s",
-+				pcap_win32strerror());
-+			return (-1);
-+		}
- 	}
- 
- 	if (NameLength > 0)
- 		AdaptersName = (char*) malloc(NameLength);
- 	else
- 	{
--		snprintf(errbuf, PCAP_ERRBUF_SIZE, "no adapters found.");
- 		*alldevsp = NULL;
- 		return 0;
- 	}
 diff -urb libpcap-0.9.4/gencode.c libpcap/gencode.c
 --- libpcap-0.9.4/gencode.c	2005-09-05 02:08:04.000000000 -0700
 +++ libpcap/gencode.c	2005-12-11 14:54:01.125000000 -0800
