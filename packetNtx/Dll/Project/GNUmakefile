@@ -8,7 +8,7 @@ OPTFLAGS = -O -D_WINNT4
 CFLAGS = -I ../../../common -shared -mno-cygwin ${OPTFLAGS} 
 LDFLAGS = -Wl,--out-implib,libpacket.a
 OBJS = ../Packet32.o ../AdInfo.o
-LIBS = -lwsock32 -lversion
+LIBS = -lws2_32 -lversion
 
 Packet.dll: ${OBJS}
 	${CC} ${CFLAGS} ${LDFLAGS} -o Packet.dll ../Packet.def ${OBJS} ${LIBS}
@@ -17,7 +17,7 @@ Packet.dll: ${OBJS}
 	${CC} ${CFLAGS} -o $*.o -c $<
 
 clean:
-	rm -f ${OBJS} libpacket.a Packet.dll
+	${RM} ${OBJS} libpacket.a Packet.dll
 
 install: Packet.dll
 	cp Packet.dll c:/winnt/system32
