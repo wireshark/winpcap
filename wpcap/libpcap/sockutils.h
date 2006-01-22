@@ -46,6 +46,10 @@
 #ifdef _WINSOCKAPI_
 #undef _WINSOCKAPI_
 #endif
+/* Need windef.h for defines used in winsock2.h under MingW32 */
+#ifdef __MINGW32__
+#include <windef.h>
+#endif
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #else
@@ -59,6 +63,15 @@
 #include <netinet/in.h> /* for sockaddr_in, in BSD at least */
 #include <arpa/inet.h>
 #include <net/if.h>
+#endif
+
+
+/* MingW headers include this definition, but only for Windows XP and above.
+   MSDN states that this function is available for most versions on Windows.
+*/
+#if ((defined(__MINGW32__)) && (_WIN32_WINNT < 0x0501))
+int WSAAPI getnameinfo(const struct sockaddr*,socklen_t,char*,DWORD,
+		       char*,DWORD,int);
 #endif
 
 
