@@ -1,0 +1,121 @@
+OEM WINPCAP TOOLKIT RELEASE PROCEDURE
+=====================================
+
+Needed tools
+------------
+- Visual Studio .NET 2003
+- Visual Studio 6 SP5 or SP6
+- A recent version of the Microsoft Platform Software Development Kit (SDK) that
+  is compatible with Visual Studio 6 (the latest compatible one is Platform SDK 
+  February 2003). This version of the SDK is available on the Microsoft web site
+  at http://www.microsoft.com/msdownload/platformsdk/sdkupdate/psdk-full.htm.
+- The cygnus environment on your path (needed to execute step 12 and 13).
+
+
+How to compile OEM WinPcap for the toolkit.
+-------------------------------------------
+
+1.  Download winpcap (HEAD) and winpcap_oem from the CVS into %BUILD_TREE%
+
+2.  Modify the version info into
+	  %BUILD_TREE%\winpcap_oem\version.h. The version for the TNT is x.y.1.z
+
+3.  Modify the device string into
+	  %BUILD_TREE%\winpcap\common\wpcapnames.h (first two defines)
+
+4.  Download the libpcap sources (usually 0_9 branch) into 
+	  %BUILD_TREE%\libpcap_<version>
+
+5.  Commit %BUILD_TREE%\winpcap_oem\version.h into the CVS. This should be the 
+    *only* modified file in this module.
+
+6.  Tag the %BUILD_TREE%\winpcap_oem module with the tag 
+	  OEM_WINPCAP_<version>_TNT_<TNT version>
+
+7.  Tag the %BUILD_TREE%\winpcap module with the tag 
+	  OEM_WINPCAP_<version>_TNT_<TNT version>
+
+8.  Take the contents of %BUILD_TREE%\libpcap_<version> and copy it into
+	  %BUILD_TREE%\winpcap\wpcap\libpcap 
+	(confirm the overwrite operation)
+
+9.  From the command line, go to folder 
+      %BUILD_TREE%\winpcap\wpcap\libpcap
+
+10. On the command line, type "patch -p1 < remote_code.patch"
+
+11. CD into win32\Prj
+
+12. Type unix2dos *
+
+13. CD into %BUILD_TREE%\winpcap\wpcap\prj and execute 
+	"build_scanner_parser.bat"	
+
+14. Zip the contents of the three folders 
+	  %BUILD_TREE%\winpcap_oem
+	  %BUILD_TREE%\winpcap
+	  %BUILD_TREE%\libpcap_<libpcap_version>
+		  |
+		  V
+	  %BUILD_TREE%\sources.zip
+
+15. Open %BUILD_TREE%\winpcap\wpcap\libpcap\win32\prj\libpcap.dsw from Visual 
+    Studio 6 and compile all the configurations using Build->Batch Build, 
+    selecting all the configurations and then Rebuild All. Close Visual Studio.
+    NOTE. a lot of warnings related to the libpcap sources are usually raised. 
+
+16. Open a Win 2000 DDK Free build environment. Go into 
+	  %BUILD_TREE%\winpcap_oem\packetntx. 
+	Execute "compile2k_oem.bat". Prefast should issue 3 warnings (20060126). 
+	Close the build environment.
+
+17. Open the WinNT4 DDK Release build environment. Go into 
+      %BUILD_TREE%\winpcap_oem\packetntx. 
+    Execute "compileNT4_oem.bat". An error "The system cannot find the file 
+    specified" should be issued (20060126), it's normal. Close the build 
+    environment. 
+    NOTE: DO NOT EXECUTE 16. and 17. at the same time, they overwrite files in 
+    the build process that are incompatible between the two builds.
+
+18. Open %BUILD_TREE%\winpcap_oem\WinPcap OEM.sln with Visual Studio 2003. 
+    Choose the Debug_TNT configuration, and then use Build->Rebuild Solution. 
+    NOTE: a linker warning (LNK4075: ignoring EDITANDCONTINUE...) should be 
+    issued. 
+    Choose the Release_TNT configuration, and then use Build->Rebuild Solution.
+    No warnings should be issued. 
+    Close Visual Studio.
+
+19. The build is complete.
+	The DLLs are in the following folders:
+
+		%BUILD_TREE%\winpcap_oem\wpcap\PRJ\release_REMOTE\wpcap.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release_TNT\packet.dll
+
+20. Check the DLLs/SYSs files for the versions
+		%BUILD_TREE%\winpcap_oem\wpcap\PRJ\release_REMOTE\wpcap.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release_TNT\packet.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\npf2k.sys
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\npfnt.sys
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packet2k.sys
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packetnt.sys
+
+
+SCM procedures
+--------------
+
+1.  %BUILD_TREE%\winpcap_oem\wpcap\PRJ\release_REMOTE\wpcap.dll
+	%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release_TNT\packet.dll
+		|
+		v
+	OEM_WinPcap_<version>_TNT_<TNT version>_Binaries.zip
+
+2. 	%BUILD_TREE%\Sources.zip
+		|
+		V
+	OEM_WinPcap_<version>_TNT_<TNT version>_Sources.zip
+
+3.  %BUILD_TREE%\
+		|
+		V
+	OEM_WinPcap_<version>_TNT_<TNT version>_Build_Tree.zip
+		
