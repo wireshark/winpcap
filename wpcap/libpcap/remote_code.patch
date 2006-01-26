@@ -1,6 +1,6 @@
-diff -urb libpcap-0.9.4/Makefile.in libpcap/Makefile.in
---- libpcap-0.9.4/Makefile.in	2003-12-14 17:35:04.000000000 -0800
-+++ libpcap/Makefile.in	2005-12-11 14:54:01.046875000 -0800
+diff -urb libpcap_0_9_2006_01_25/Makefile.in libpcap/Makefile.in
+--- libpcap_0_9_2006_01_25/Makefile.in	2003-12-14 17:35:03.000000000 -0800
++++ libpcap/Makefile.in	2006-01-25 10:00:52.375000000 -0800
 @@ -44,7 +44,8 @@
  CC = @CC@
  CCOPT = @V_CCOPT@
@@ -31,9 +31,9 @@ diff -urb libpcap-0.9.4/Makefile.in libpcap/Makefile.in
  HDR =	pcap.h pcap-int.h pcap-namedb.h pcap-nit.h pcap-pf.h \
  	ethertype.h gencode.h gnuc.h
  GENHDR = \
-diff -urb libpcap-0.9.4/Win32/Prj/libpcap.dsp libpcap/Win32/Prj/libpcap.dsp
---- libpcap-0.9.4/Win32/Prj/libpcap.dsp	2004-01-28 06:08:34.000000000 -0800
-+++ libpcap/Win32/Prj/libpcap.dsp	2005-12-11 14:54:01.078125000 -0800
+diff -urb libpcap_0_9_2006_01_25/Win32/Prj/libpcap.dsp libpcap/Win32/Prj/libpcap.dsp
+--- libpcap_0_9_2006_01_25/Win32/Prj/libpcap.dsp	2004-01-28 06:08:33.000000000 -0800
++++ libpcap/Win32/Prj/libpcap.dsp	2006-01-25 10:03:19.546875000 -0800
 @@ -4,7 +4,7 @@
  
  # TARGTYPE "Win32 (x86) Static Library" 0x0104
@@ -120,9 +120,9 @@ diff -urb libpcap-0.9.4/Win32/Prj/libpcap.dsp libpcap/Win32/Prj/libpcap.dsp
  # Begin Source File
  
  SOURCE=..\..\bpf_dump.c
-diff -urb libpcap-0.9.4/configure.in libpcap/configure.in
---- libpcap-0.9.4/configure.in	2005-07-06 23:56:04.000000000 -0700
-+++ libpcap/configure.in	2005-12-11 14:54:01.093750000 -0800
+diff -urb libpcap_0_9_2006_01_25/configure.in libpcap/configure.in
+--- libpcap_0_9_2006_01_25/configure.in	2005-07-06 23:56:03.000000000 -0700
++++ libpcap/configure.in	2006-01-25 10:00:52.390625000 -0800
 @@ -302,6 +302,58 @@
  		esac])
  fi
@@ -193,9 +193,9 @@ diff -urb libpcap-0.9.4/configure.in libpcap/configure.in
  AC_SUBST(V_RANLIB)
  AC_SUBST(V_YACC)
  AC_SUBST(SSRC)
-diff -urb libpcap-0.9.4/gencode.c libpcap/gencode.c
---- libpcap-0.9.4/gencode.c	2005-09-05 02:08:04.000000000 -0700
-+++ libpcap/gencode.c	2005-12-11 14:54:01.125000000 -0800
+diff -urb libpcap_0_9_2006_01_25/gencode.c libpcap/gencode.c
+--- libpcap_0_9_2006_01_25/gencode.c	2005-12-13 05:48:37.000000000 -0800
++++ libpcap/gencode.c	2006-01-25 10:00:52.421875000 -0800
 @@ -353,6 +353,35 @@
  	extern int n_errors;
  	int len;
@@ -232,9 +232,9 @@ diff -urb libpcap-0.9.4/gencode.c libpcap/gencode.c
  	no_optimize = 0;
  	n_errors = 0;
  	root = NULL;
-diff -urb libpcap-0.9.4/pcap-bpf.c libpcap/pcap-bpf.c
---- libpcap-0.9.4/pcap-bpf.c	2005-07-10 03:55:32.000000000 -0700
-+++ libpcap/pcap-bpf.c	2005-12-11 14:54:01.140625000 -0800
+diff -urb libpcap_0_9_2006_01_25/pcap-bpf.c libpcap/pcap-bpf.c
+--- libpcap_0_9_2006_01_25/pcap-bpf.c	2006-01-21 21:28:34.000000000 -0800
++++ libpcap/pcap-bpf.c	2006-01-25 10:00:52.437500000 -0800
 @@ -102,6 +102,10 @@
  #include "os-proto.h"
  #endif
@@ -284,10 +284,10 @@ diff -urb libpcap-0.9.4/pcap-bpf.c libpcap/pcap-bpf.c
  #ifdef HAVE_DAG_API
  	if (strstr(device, "dag")) {
  		return dag_open_live(device, snaplen, promisc, to_ms, ebuf);
-diff -urb libpcap-0.9.4/pcap-int.h libpcap/pcap-int.h
---- libpcap-0.9.4/pcap-int.h	2005-07-06 23:56:04.000000000 -0700
-+++ libpcap/pcap-int.h	2005-12-11 14:54:01.140625000 -0800
-@@ -106,6 +106,37 @@
+diff -urb libpcap_0_9_2006_01_25/pcap-int.h libpcap/pcap-int.h
+--- libpcap_0_9_2006_01_25/pcap-int.h	2005-11-24 11:28:23.000000000 -0800
++++ libpcap/pcap-int.h	2006-01-25 10:00:52.437500000 -0800
+@@ -107,6 +107,37 @@
  				 * Same as in linux above, introduce
  				 * generally? */
  #endif /* HAVE_DAG_API */
@@ -325,7 +325,7 @@ diff -urb libpcap-0.9.4/pcap-int.h libpcap/pcap-int.h
  };
  
  /*
-@@ -185,6 +216,22 @@
+@@ -186,6 +217,22 @@
  	u_int *dlt_list;
  
  	struct pcap_pkthdr pcap_header;	/* This is needed for the pcap_next_ex() to work */
@@ -348,9 +348,9 @@ diff -urb libpcap-0.9.4/pcap-int.h libpcap/pcap-int.h
  };
  
  /*
-diff -urb libpcap-0.9.4/pcap-linux.c libpcap/pcap-linux.c
---- libpcap-0.9.4/pcap-linux.c	2005-08-15 21:25:26.000000000 -0700
-+++ libpcap/pcap-linux.c	2005-12-11 14:54:01.171875000 -0800
+diff -urb libpcap_0_9_2006_01_25/pcap-linux.c libpcap/pcap-linux.c
+--- libpcap_0_9_2006_01_25/pcap-linux.c	2006-01-22 12:12:09.000000000 -0800
++++ libpcap/pcap-linux.c	2006-01-25 10:00:52.453125000 -0800
 @@ -101,6 +101,10 @@
  #include <linux/if_ether.h>
  #include <net/if_arp.h>
@@ -400,9 +400,9 @@ diff -urb libpcap-0.9.4/pcap-linux.c libpcap/pcap-linux.c
  #ifdef HAVE_DAG_API
  	if (strstr(device, "dag")) {
  		return dag_open_live(device, snaplen, promisc, to_ms, ebuf);
-diff -urb libpcap-0.9.4/pcap-win32.c libpcap/pcap-win32.c
---- libpcap-0.9.4/pcap-win32.c	2005-07-10 10:52:54.000000000 -0700
-+++ libpcap/pcap-win32.c	2005-12-11 14:54:01.187500000 -0800
+diff -urb libpcap_0_9_2006_01_25/pcap-win32.c libpcap/pcap-win32.c
+--- libpcap_0_9_2006_01_25/pcap-win32.c	2005-07-10 10:52:54.000000000 -0700
++++ libpcap/pcap-win32.c	2006-01-25 10:00:52.468750000 -0800
 @@ -47,6 +47,10 @@
  #define errno (*_errno())
  #endif /* __MINGW32__ */
@@ -521,9 +521,9 @@ diff -urb libpcap-0.9.4/pcap-win32.c libpcap/pcap-win32.c
  	if (p->adapter==NULL)
  	{
  		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "The kernel buffer size cannot be set while reading from a file");
-diff -urb libpcap-0.9.4/pcap.c libpcap/pcap.c
---- libpcap-0.9.4/pcap.c	2005-08-13 15:29:46.000000000 -0700
-+++ libpcap/pcap.c	2005-12-11 14:54:01.218750000 -0800
+diff -urb libpcap_0_9_2006_01_25/pcap.c libpcap/pcap.c
+--- libpcap_0_9_2006_01_25/pcap.c	2006-01-22 12:12:10.000000000 -0800
++++ libpcap/pcap.c	2006-01-25 10:05:18.250000000 -0800
 @@ -70,6 +70,10 @@
  #include <dagapi.h>
  #endif
@@ -579,7 +579,7 @@ diff -urb libpcap-0.9.4/pcap.c libpcap/pcap.c
  	if (p->sf.rfile != NULL) {
  		int status;
  
-@@ -536,6 +570,11 @@
+@@ -538,6 +572,11 @@
  int
  pcap_fileno(pcap_t *p)
  {
@@ -591,9 +591,18 @@ diff -urb libpcap-0.9.4/pcap.c libpcap/pcap.c
  #ifndef WIN32
  	return (p->fd);
  #else
-diff -urb libpcap-0.9.4/pcap.h libpcap/pcap.h
---- libpcap-0.9.4/pcap.h	2005-07-06 19:04:36.000000000 -0700
-+++ libpcap/pcap.h	2005-12-11 14:54:01.234375000 -0800
+@@ -818,7 +857,7 @@
+  * version numbers when building WinPcap.  (It'd be nice to do so for
+  * the packet.dll version number as well.)
+  */
+-static const char wpcap_version_string[] = "3.2 alpha1";
++static const char wpcap_version_string[] = "3.2 tnt1.0";
+ static const char pcap_version_string_fmt[] =
+     "WinPcap version %s, based on %s";
+ static const char pcap_version_string_packet_dll_fmt[] =
+diff -urb libpcap_0_9_2006_01_25/pcap.h libpcap/pcap.h
+--- libpcap_0_9_2006_01_25/pcap.h	2005-07-06 19:04:36.000000000 -0700
++++ libpcap/pcap.h	2006-01-25 10:00:52.484375000 -0800
 @@ -53,6 +53,19 @@
  
  #include <stdio.h>
@@ -641,10 +650,10 @@ diff -urb libpcap-0.9.4/pcap.h libpcap/pcap.h
  #ifdef __cplusplus
  }
  #endif
-diff -urb libpcap-0.9.4/savefile.c libpcap/savefile.c
---- libpcap-0.9.4/savefile.c	2005-08-29 14:05:46.000000000 -0700
-+++ libpcap/savefile.c	2005-12-11 14:54:01.234375000 -0800
-@@ -1123,6 +1123,11 @@
+diff -urb libpcap_0_9_2006_01_25/savefile.c libpcap/savefile.c
+--- libpcap_0_9_2006_01_25/savefile.c	2005-12-13 05:48:37.000000000 -0800
++++ libpcap/savefile.c	2006-01-25 10:00:52.484375000 -0800
+@@ -1130,6 +1130,11 @@
  	int status = 0;
  	int n = 0;
  
@@ -656,7 +665,7 @@ diff -urb libpcap-0.9.4/savefile.c libpcap/savefile.c
  	while (status == 0) {
  		struct pcap_pkthdr h;
  
-@@ -1152,6 +1157,36 @@
+@@ -1159,6 +1164,36 @@
  
  		if ((fcode = p->fcode.bf_insns) == NULL ||
  		    bpf_filter(fcode, p->buffer, h.len, h.caplen)) {
