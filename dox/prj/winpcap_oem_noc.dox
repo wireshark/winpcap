@@ -1,44 +1,59 @@
-# Doxyfile 1.2.13-20020210
+# Doxyfile 1.3.7
 
 #---------------------------------------------------------------------------
-# General configuration options
+# Project related configuration options
 #---------------------------------------------------------------------------
-PROJECT_NAME           = WinPcap OEM
+PROJECT_NAME           = "OEM WinPcap"
 PROJECT_NUMBER         = 3.2.1.337
 OUTPUT_DIRECTORY       = ./
+CREATE_SUBDIRS         = NO
 OUTPUT_LANGUAGE        = English
-EXTRACT_ALL            = YES
-EXTRACT_PRIVATE        = YES
-EXTRACT_STATIC         = YES
-EXTRACT_LOCAL_CLASSES  = YES
-HIDE_UNDOC_MEMBERS     = YES
-HIDE_UNDOC_CLASSES     = YES
-BRIEF_MEMBER_DESC      = YES
+USE_WINDOWS_ENCODING   = YES
+BRIEF_MEMBER_DESC      = NO
 REPEAT_BRIEF           = YES
+ABBREVIATE_BRIEF       = 
 ALWAYS_DETAILED_SEC    = NO
 INLINE_INHERITED_MEMB  = NO
 FULL_PATH_NAMES        = NO
 STRIP_FROM_PATH        = 
-INTERNAL_DOCS          = YES
-STRIP_CODE_COMMENTS    = YES
-CASE_SENSE_NAMES       = YES
+STRIP_FROM_INC_PATH    = 
 SHORT_NAMES            = NO
-HIDE_SCOPE_NAMES       = YES
-VERBATIM_HEADERS       = YES
-SHOW_INCLUDE_FILES     = YES
 JAVADOC_AUTOBRIEF      = NO
+MULTILINE_CPP_IS_BRIEF = NO
+DETAILS_AT_TOP         = NO
 INHERIT_DOCS           = YES
-INLINE_INFO            = YES
-SORT_MEMBER_DOCS       = YES
 DISTRIBUTE_GROUP_DOC   = NO
 TAB_SIZE               = 4
+ALIASES                = 
+OPTIMIZE_OUTPUT_FOR_C  = YES
+OPTIMIZE_OUTPUT_JAVA   = NO
+SUBGROUPING            = YES
+#---------------------------------------------------------------------------
+# Build related configuration options
+#---------------------------------------------------------------------------
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+EXTRACT_LOCAL_METHODS  = NO
+HIDE_UNDOC_MEMBERS     = YES
+HIDE_UNDOC_CLASSES     = YES
+HIDE_FRIEND_COMPOUNDS  = NO
+HIDE_IN_BODY_DOCS      = NO
+INTERNAL_DOCS          = YES
+CASE_SENSE_NAMES       = YES
+HIDE_SCOPE_NAMES       = YES
+SHOW_INCLUDE_FILES     = YES
+INLINE_INFO            = YES
+SORT_MEMBER_DOCS       = YES
+SORT_BRIEF_DOCS        = NO
+SORT_BY_SCOPE_NAME     = NO
 GENERATE_TODOLIST      = YES
 GENERATE_TESTLIST      = YES
 GENERATE_BUGLIST       = YES
-ALIASES                = 
+GENERATE_DEPRECATEDLIST= YES
 ENABLED_SECTIONS       = 
 MAX_INITIALIZER_LINES  = 30
-OPTIMIZE_OUTPUT_FOR_C  = YES
 SHOW_USED_FILES        = YES
 #---------------------------------------------------------------------------
 # configuration options related to warning and progress messages
@@ -46,28 +61,27 @@ SHOW_USED_FILES        = YES
 QUIET                  = NO
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
 WARN_FORMAT            = 
 WARN_LOGFILE           = 
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = ../../../winpcap/packetNtx/driver/Packet.h \
-                         ../../../winpcap/packetNtx/driver/jitter.h \
-			 ../../../winpcap/dox/libpcap/incs/pcap.h \
-			 ../../../winpcap/dox/libpcap/funcs/pcap.h \
+INPUT                  = ../../../winpcap/dox/libpcap/incs/pcap.h \
+                         ../../../winpcap/dox/libpcap/funcs/pcap.h \
                          ../../../winpcap/wpcap/Win32-Extensions/Win32-Extensions.h \
                          ../main.txt \
-                         ../../../winpcap/dox/wpcap_tut.txt \
-                         ../../../winpcap/dox/wpcap_tut1.txt \
-                         ../../../winpcap/dox/wpcap_tut2.txt \
-                         ../../../winpcap/dox/wpcap_tut3.txt \
-                         ../../../winpcap/dox/wpcap_tut4.txt \
-                         ../../../winpcap/dox/wpcap_tut5.txt \
-                         ../../../winpcap/dox/wpcap_tut6.txt \
-                         ../../../winpcap/dox/wpcap_tut7.txt \
-                         ../../../winpcap/dox/wpcap_tut8.txt \
-                         ../../../winpcap/dox/wpcap_tut9.txt \
-                         ../../../winpcap/dox/doxygen_groups.txt \
+                         ../wpcap_tut.txt \
+                         ../wpcap_tut1.txt \
+                         ../wpcap_tut2.txt \
+                         ../wpcap_tut3.txt \
+                         ../wpcap_tut4.txt \
+                         ../wpcap_tut5.txt \
+                         ../wpcap_tut6.txt \
+                         ../wpcap_tut7.txt \
+                         ../wpcap_tut8.txt \
+                         ../wpcap_tut9.txt \
+                         ../doxygen_groups.txt \
                          ../../../winpcap/dox/wpcap_remote.htm \
                          ../../../winpcap/wpcap/libpcap/pcap-remote.h \
                          ../../../winpcap/wpcap/libpcap/remote-ext.h \
@@ -76,30 +90,34 @@ INPUT                  = ../../../winpcap/packetNtx/driver/Packet.h \
                          ../../../winpcap/wpcap/libpcap/rpcapd/daemon.h \
                          ../../../winpcap/wpcap/libpcap/rpcapd/rpcapd.h \
                          ../../../winpcap/wpcap/libpcap/rpcapd/win32-svc.h \
-			 ../../wpcap/pcap_oem.c
+                         ../../wpcap/pcap_oem.c
 FILE_PATTERNS          = *.cpp \
-                          *.c \
+                         *.c \
                          *.h \
                          *.txt \
-                         *.htm 
+                         *.htm
 RECURSIVE              = YES
 EXCLUDE                = test
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 
-EXAMPLE_PATH           = ../../../Winpcap/Examples/ \
-                         ../../../WinPcap/dox
+EXAMPLE_PATH           = ../../Examples/ \
+                         ../../../WinPcap/dox/ \
+                         ../
 EXAMPLE_PATTERNS       = 
 EXAMPLE_RECURSIVE      = NO
-IMAGE_PATH             = ../../../Winpcap/dox/pics/
+IMAGE_PATH             = ../../../Winpcap/dox/pics/ \
+                         ../pics/
 INPUT_FILTER           = 
 FILTER_SOURCE_FILES    = NO
 #---------------------------------------------------------------------------
 # configuration options related to source browsing
 #---------------------------------------------------------------------------
-SOURCE_BROWSER         = YES
+SOURCE_BROWSER         = NO
 INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = YES
 REFERENCED_BY_RELATION = YES
 REFERENCES_RELATION    = YES
+VERBATIM_HEADERS       = YES
 #---------------------------------------------------------------------------
 # configuration options related to the alphabetical class index
 #---------------------------------------------------------------------------
@@ -112,23 +130,27 @@ IGNORE_PREFIX          =
 GENERATE_HTML          = YES
 HTML_OUTPUT            = docs
 HTML_FILE_EXTENSION    = .html
-HTML_HEADER            = 
+HTML_HEADER            = ../header.htm
 HTML_FOOTER            = ../footer.htm
 HTML_STYLESHEET        = ../../../Winpcap/dox/style.css
 HTML_ALIGN_MEMBERS     = YES
 GENERATE_HTMLHELP      = YES
+CHM_FILE               = 
+HHC_LOCATION           = 
 GENERATE_CHI           = NO
-BINARY_TOC             = YES
+BINARY_TOC             = NO
 TOC_EXPAND             = NO
-DISABLE_INDEX          = NO
+DISABLE_INDEX          = YES
 ENUM_VALUES_PER_LINE   = 4
-GENERATE_TREEVIEW      = YES
+GENERATE_TREEVIEW      = NO
 TREEVIEW_WIDTH         = 250
 #---------------------------------------------------------------------------
 # configuration options related to the LaTeX output
 #---------------------------------------------------------------------------
 GENERATE_LATEX         = NO
 LATEX_OUTPUT           = 
+LATEX_CMD_NAME         = latex
+MAKEINDEX_CMD_NAME     = makeindex
 COMPACT_LATEX          = NO
 PAPER_TYPE             = a4wide
 EXTRA_PACKAGES         = 
@@ -136,6 +158,7 @@ LATEX_HEADER           =
 PDF_HYPERLINKS         = NO
 USE_PDFLATEX           = NO
 LATEX_BATCHMODE        = NO
+LATEX_HIDE_INDICES     = NO
 #---------------------------------------------------------------------------
 # configuration options related to the RTF output
 #---------------------------------------------------------------------------
@@ -156,10 +179,21 @@ MAN_LINKS              = NO
 # configuration options related to the XML output
 #---------------------------------------------------------------------------
 GENERATE_XML           = NO
+XML_OUTPUT             = xml
+XML_SCHEMA             = 
+XML_DTD                = 
+XML_PROGRAMLISTING     = YES
 #---------------------------------------------------------------------------
 # configuration options for the AutoGen Definitions output
 #---------------------------------------------------------------------------
 GENERATE_AUTOGEN_DEF   = NO
+#---------------------------------------------------------------------------
+# configuration options related to the Perl module output
+#---------------------------------------------------------------------------
+GENERATE_PERLMOD       = NO
+PERLMOD_LATEX          = NO
+PERLMOD_PRETTY         = YES
+PERLMOD_MAKEVAR_PREFIX = 
 #---------------------------------------------------------------------------
 # Configuration options related to the preprocessor   
 #---------------------------------------------------------------------------
@@ -177,7 +211,7 @@ PREDEFINED             = WIN32 \
 EXPAND_AS_DEFINED      = 
 SKIP_FUNCTION_MACROS   = YES
 #---------------------------------------------------------------------------
-# Configuration::addtions related to external references   
+# Configuration::additions related to external references   
 #---------------------------------------------------------------------------
 TAGFILES               = 
 GENERATE_TAGFILE       = 
@@ -188,18 +222,25 @@ PERL_PATH              =
 # Configuration options related to the dot tool   
 #---------------------------------------------------------------------------
 CLASS_DIAGRAMS         = YES
+HIDE_UNDOC_RELATIONS   = YES
 HAVE_DOT               = NO
 CLASS_GRAPH            = YES
 COLLABORATION_GRAPH    = YES
+UML_LOOK               = NO
 TEMPLATE_RELATIONS     = YES
-HIDE_UNDOC_RELATIONS   = YES
 INCLUDE_GRAPH          = YES
 INCLUDED_BY_GRAPH      = YES
+CALL_GRAPH             = NO
 GRAPHICAL_HIERARCHY    = YES
 DOT_IMAGE_FORMAT       = gif
 DOT_PATH               = 
 DOTFILE_DIRS           = 
 MAX_DOT_GRAPH_WIDTH    = 1024
 MAX_DOT_GRAPH_HEIGHT   = 1024
+MAX_DOT_GRAPH_DEPTH    = 0
 GENERATE_LEGEND        = YES
 DOT_CLEANUP            = YES
+#---------------------------------------------------------------------------
+# Configuration::additions related to the search engine   
+#---------------------------------------------------------------------------
+SEARCHENGINE           = NO
