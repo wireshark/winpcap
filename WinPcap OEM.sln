@@ -19,6 +19,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinpcapOem", "OEM\WinpcapOe
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wpcap", "wpcap\PRJ\wpcap.vcproj", "{CAEF56E3-4959-4C10-81F5-06C8E86C301E}"
 	ProjectSection(ProjectDependencies) = postProject
+		{A3042039-CBC3-4F02-BD4E-A372F2BE2ED2} = {A3042039-CBC3-4F02-BD4E-A372F2BE2ED2}
 	EndProjectSection
 EndProject
 Global
