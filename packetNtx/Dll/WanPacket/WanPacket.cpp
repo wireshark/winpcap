@@ -904,6 +904,9 @@ BOOLEAN WanPacketAddPacketToRingBuffer(PWAN_ADAPTER pWanAdapter, LPFRAME_DESCRIP
 	// We need to change reference from January, 1st 1601 to January, 1st 1970 = 11644473600 seconds if I'm right!!
 	Header->bh_tstamp = PacketTime;
 
+	if (SnapToCopy > Header->bh_datalen)
+		SnapToCopy = Header->bh_datalen;
+
 	Header->bh_caplen = SnapToCopy;
 	Header->bh_datalen = lpFrameDesc->FrameLength;
 	Header->bh_hdrlen = sizeof(struct bpf_hdr);
