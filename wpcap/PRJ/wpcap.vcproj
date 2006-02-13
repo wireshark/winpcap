@@ -109,10 +109,9 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/FORCE:MULTIPLE"
 				AdditionalDependencies="odbc32.lib odbccp32.lib ws2_32.lib ../../../winpcap/wpcap/libpcap/win32/prj/debug_REMOTE/libpcap.lib ../../OEM\WinpcapOem\Debug_TNT/packet.lib"
 				OutputFile=".\Debug_REMOTE/wpcap.dll"
-				LinkIncremental="1"
+				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile=".\wpcap.def"
 				GenerateDebugInformation="TRUE"
