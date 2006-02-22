@@ -1,8 +1,14 @@
 @echo off
 
-IF "%2"=="" (set WPDPACKDESTDIR=.\WpdPack\) ELSE (set WPDPACKDESTDIR=%2)
+IF NOT EXIST .\Examples (
+	echo Copying the examples locally...
+	call create_local_examples.bat
+	)
 
-IF ""=="%1" (set WINPCAPSOURCEDIR=.\) ELSE (set WINPCAPSOURCEDIR=%1) 
+
+IF "%1"=="" (set WPDPACKDESTDIR=.\WpdPack\) ELSE (set WPDPACKDESTDIR=%1)
+
+set WINPCAPSOURCEDIR=.\
 
 echo Creating \Examples folder
 mkdir %WPDPACKDESTDIR% >nul 2>nul

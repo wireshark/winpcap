@@ -2,6 +2,11 @@
 
 IF "%1"=="" (set WPDPACKDESTDIR=.\WpdPack\) ELSE (set WPDPACKDESTDIR=%1)
 
+IF NOT EXIST .\Examples (
+	echo Copying the examples locally...
+	call create_local_examples.bat %1 %2 %3
+	)
+
 echo Creating \docs folder
 mkdir %WPDPACKDESTDIR% >nul 2>nul
 mkdir %WPDPACKDESTDIR%\docs >nul 2>nul
@@ -19,7 +24,7 @@ xcopy ..\pics\*.jpg docs\. /v /y /q
 
 popd
 
-xcopy /v /Y ..\winpcap\dox\WinPcap_docs.html	%WPDPACKDESTDIR%\docs\
+xcopy /v /Y .\dox\WinPcap_docs.html		%WPDPACKDESTDIR%\docs\
 xcopy /v /Y .\dox\prj\docs\*.*			%WPDPACKDESTDIR%\docs\html\
 xcopy /v /Y ..\winpcap\dox\*.gif		%WPDPACKDESTDIR%\docs\html\
 xcopy /v /Y ..\winpcap\dox\pics\*.gif		%WPDPACKDESTDIR%\docs\html\
