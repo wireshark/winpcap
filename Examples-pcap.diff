@@ -1,0 +1,169 @@
+diff -urb ..\winpcap\Examples-pcap/UDPdump/udpdump.c .\archive\Examples-pcap/UDPdump/udpdump.c
+--- ..\winpcap\Examples-pcap/UDPdump/udpdump.c	2006-02-22 09:26:53.140625000 -0800
++++ .\archive\Examples-pcap/UDPdump/udpdump.c	2006-02-13 12:56:33.203125000 -0800
+@@ -84,6 +83,13 @@
+ 	char packet_filter[] = "ip and udp";
+ 	struct bpf_program fcode;
+ 	
++	/* start OEM WinPcap */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		exit(1);
++	}
++	
+ 	/* Retrieve the device list */
+ 	if(pcap_findalldevs(&alldevs, errbuf) == -1)
+ 	{
+diff -urb ..\winpcap\Examples-pcap/basic_dump/basic_dump.c .\archive\Examples-pcap/basic_dump/basic_dump.c
+--- ..\winpcap\Examples-pcap/basic_dump/basic_dump.c	2005-08-11 09:05:03.593750000 -0700
++++ .\archive\Examples-pcap/basic_dump/basic_dump.c	2006-02-13 12:56:35.312500000 -0800
+@@ -12,6 +12,13 @@
+ 	pcap_t *adhandle;
+ 	char errbuf[PCAP_ERRBUF_SIZE];
+ 	
++	/* start OEM WinPcap */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	/* Retrieve the device list */
+ 	if(pcap_findalldevs(&alldevs, errbuf) == -1)
+ 	{
+diff -urb ..\winpcap\Examples-pcap/basic_dump_ex/basic_dump_ex.c .\archive\Examples-pcap/basic_dump_ex/basic_dump_ex.c
+--- ..\winpcap\Examples-pcap/basic_dump_ex/basic_dump_ex.c	2005-08-11 09:05:04.109375000 -0700
++++ .\archive\Examples-pcap/basic_dump_ex/basic_dump_ex.c	2006-02-13 12:56:35.234375000 -0800
+@@ -15,6 +15,12 @@
+ 	struct pcap_pkthdr *header;
+ 	const u_char *pkt_data;
+ 		
++	/* start OEM WinPcap */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		exit(1);
++	}
+     
+ 	/* Retrieve the device list */
+ 	if(pcap_findalldevs(&alldevs, errbuf) == -1)
+diff -urb ..\winpcap\Examples-pcap/iflist/iflist.c .\archive\Examples-pcap/iflist/iflist.c
+--- ..\winpcap\Examples-pcap/iflist/iflist.c	2006-02-22 09:25:45.703125000 -0800
++++ .\archive\Examples-pcap/iflist/iflist.c	2006-02-13 12:56:35.265625000 -0800
+@@ -54,6 +53,13 @@
+ 	pcap_if_t *d;
+ 	char errbuf[PCAP_ERRBUF_SIZE+1];
+ 	
++	/* start OEM WinPcap */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	/* Retrieve the device list */
+ 	if(pcap_findalldevs(&alldevs, errbuf) == -1)
+ 	{
+diff -urb ..\winpcap\Examples-pcap/pcap_filter/pcap_filter.c .\archive\Examples-pcap/pcap_filter/pcap_filter.c
+--- ..\winpcap\Examples-pcap/pcap_filter/pcap_filter.c	2006-02-22 09:25:57.937500000 -0800
++++ .\archive\Examples-pcap/pcap_filter/pcap_filter.c	2006-02-13 12:56:35.078125000 -0800
+@@ -90,6 +89,13 @@
+ 		}
+ 	}
+ 	
++	/* start OEM WinPcap */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	// open a capture from the network
+ 	if (source != NULL)
+ 	{
+diff -urb ..\winpcap\Examples-pcap/pktdump_ex/pktdump_ex.c .\archive\Examples-pcap/pktdump_ex/pktdump_ex.c
+--- ..\winpcap\Examples-pcap/pktdump_ex/pktdump_ex.c	2006-02-22 09:26:10.031250000 -0800
++++ .\archive\Examples-pcap/pktdump_ex/pktdump_ex.c	2006-02-13 12:56:35.343750000 -0800
+@@ -56,6 +55,13 @@
+ 		"      pktdump_ex -s file.acp\n"
+ 		"      pktdump_ex -s \\Device\\NPF_{C8736017-F3C3-4373-94AC-9A34B7DAD998}\n\n");
+ 
++	/* start OEM WinPcap */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	if(argc < 3)
+ 	{
+ 		printf("\nNo adapter selected: printing the device list:\n");
+diff -urb ..\winpcap\Examples-pcap/readfile/readfile.c .\archive\Examples-pcap/readfile/readfile.c
+--- ..\winpcap\Examples-pcap/readfile/readfile.c	2005-08-11 09:05:06.437500000 -0700
++++ .\archive\Examples-pcap/readfile/readfile.c	2006-02-13 12:56:35.015625000 -0800
+@@ -17,6 +17,13 @@
+ 
+ 	}
+ 	
++	/* start OEM WinPcap */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	/* Open the capture file */
+ 	if ((fp = pcap_open_offline(argv[1],			// name of the device
+ 						 errbuf					// error buffer
+diff -urb ..\winpcap\Examples-pcap/readfile_ex/readfile_ex.c .\archive\Examples-pcap/readfile_ex/readfile_ex.c
+--- ..\winpcap\Examples-pcap/readfile_ex/readfile_ex.c	2005-08-11 09:05:06.765625000 -0700
++++ .\archive\Examples-pcap/readfile_ex/readfile_ex.c	2006-02-13 12:56:35.187500000 -0800
+@@ -19,6 +19,13 @@
+ 
+ 	}
+ 	
++	/* start OEM WinPcap */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		exit(1);
++	}
++	
+ 	/* Open the capture file */
+ 	if ((fp = pcap_open_offline(argv[1],			// name of the device
+ 						 errbuf					// error buffer
+diff -urb ..\winpcap\Examples-pcap/savedump/savedump.c .\archive\Examples-pcap/savedump/savedump.c
+--- ..\winpcap\Examples-pcap/savedump/savedump.c	2005-08-11 09:05:07.015625000 -0700
++++ .\archive\Examples-pcap/savedump/savedump.c	2006-02-13 12:56:35.109375000 -0800
+@@ -21,6 +21,13 @@
+         return -1;
+     }
+     
++	/* start OEM WinPcap */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		exit(1);
++	}
++    
+ 	/* Retrieve the device list on the local machine */
+ 	if (pcap_findalldevs(&alldevs, errbuf) == -1)
+ 	{
+diff -urb ..\winpcap\Examples-pcap/sendpack/sendpack.c .\archive\Examples-pcap/sendpack/sendpack.c
+--- ..\winpcap\Examples-pcap/sendpack/sendpack.c	2005-08-11 09:05:07.531250000 -0700
++++ .\archive\Examples-pcap/sendpack/sendpack.c	2006-02-13 12:56:35.156250000 -0800
+@@ -18,6 +18,13 @@
+ 		return 1;
+ 	}
+     
++	/* start OEM WinPcap */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		exit(1);
++	}
++    
+ 	/* Open the adapter */
+ 	if ((fp = pcap_open_live(argv[1],		// name of the device
+ 							 65536,			// portion of the packet to capture. It doesn't matter in this case 
