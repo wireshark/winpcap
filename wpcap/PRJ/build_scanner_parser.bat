@@ -13,7 +13,7 @@ if not %ERRORLEVEL% == 0 (
 move y.tab.c ..\libpcap\grammar.c
 move y.tab.h ..\libpcap\tokdefs.h
 
-del /Q /F ..\libpcap\scanner.c
+del /Q /F ..\libpcap\scanner.c >/nul 2>/nul
 flex -Ppcap_ -t  ../libpcap/scanner.l > ../libpcap/scanner.c
 
 if not %ERRORLEVEL% == 0 (
