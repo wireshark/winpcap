@@ -45,7 +45,7 @@
 #define __PACKET32
 
 #include <winsock2.h>
-#include "devioctl.h"
+#include "Devioctl.h"
 #ifdef HAVE_DAG_API
 #include <dagc.h>
 #endif /* HAVE_DAG_API */
