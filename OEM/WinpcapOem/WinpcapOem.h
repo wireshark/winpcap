@@ -71,14 +71,14 @@ BOOL WoemCreateBinaryNames();
 
 #ifdef DEBUGTRACE
 #define TracePrint printf
-#define WoemReportError() do{MessageBox(NULL, g_LastWoemError, "WinPcap OEM error", MB_OK); g_InitError = TRUE;} while(0)
+#define WoemReportError() do{MessageBox(NULL, g_LastWoemError, "OEM WinPcap error", MB_OK); g_InitError = TRUE;} while(0)
 #else
 #define TracePrint
 #define WoemReportError() do{g_InitError = TRUE;}while(0)
 #endif // DEBUGTRACE
 
 #ifdef TRACE_MBOXES
-#define TraceEnter(X) MessageBox(NULL, X, "WinPcap OEM trace", MB_OK)
+#define TraceEnter(X) MessageBox(NULL, X, "OEM WinPcap trace", MB_OK)
 #elif defined TRACE_OUTPUTDEBUGSTRING
 #define TraceEnter(X) OutputDebugString(X)
 #else

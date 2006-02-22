@@ -7,7 +7,7 @@
 
 /*!
 	\ingroup wpcapfunc 
-	\brief This function starts WinPcap OEM.
+	\brief This function starts OEM WinPcap.
 	
 	\param err_str pointer to a user-allocated buffer (of minimum size PCAP_ERRBUF_SIZE) 
 		that will contain the error message in case of failure.
