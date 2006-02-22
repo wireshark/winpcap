@@ -14,7 +14,7 @@ call create_lib_oem.bat %__DEST_FOLDER%
 PAUSE
 call create_bin_oem.bat %__DEST_FOLDER%
 PAUSE
-call create_examples_oem.bat ..\winpcap\ %__DEST_FOLDER%
+call create_examples_oem.bat %__DEST_FOLDER%
 PAUSE
 call create_docs_oem.bat %__DEST_FOLDER%
 
