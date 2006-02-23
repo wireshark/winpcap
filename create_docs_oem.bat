@@ -24,7 +24,7 @@ xcopy ..\pics\*.jpg docs\. /v /y /q
 
 popd
 
-xcopy /v /Y .\dox\WinPcap_docs.html		%WPDPACKDESTDIR%\docs\
+xcopy /v /Y .\dox\OEM_WinPcap_docs.html		%WPDPACKDESTDIR%\docs\
 xcopy /v /Y .\dox\prj\docs\*.*			%WPDPACKDESTDIR%\docs\html\
 xcopy /v /Y ..\winpcap\dox\*.gif		%WPDPACKDESTDIR%\docs\html\
 xcopy /v /Y ..\winpcap\dox\pics\*.gif		%WPDPACKDESTDIR%\docs\html\
