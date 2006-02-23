@@ -4,12 +4,7 @@ OEM WINPCAP TOOLKIT RELEASE PROCEDURE
 Needed tools
 ------------
 - Visual Studio .NET 2003
-- Visual Studio 6 SP5 or SP6
-- A recent version of the Microsoft Platform Software Development Kit (SDK) that
-  is compatible with Visual Studio 6 (the latest compatible one is Platform SDK 
-  February 2003). This version of the SDK is available on the Microsoft web site
-  at http://www.microsoft.com/msdownload/platformsdk/sdkupdate/psdk-full.htm.
-- The cygnus environment on your path (needed to execute step 12 and 13).
+- The cygnus environment on your path (needed to execute step 10 and 11).
 
 
 How to compile OEM WinPcap for the toolkit.
@@ -44,14 +39,10 @@ How to compile OEM WinPcap for the toolkit.
 
 10. On the command line, type "patch -p1 < remote_code.patch"
 
-11. CD into win32\Prj
-
-12. Type unix2dos *
-
-13. CD into %BUILD_TREE%\winpcap\wpcap\prj and execute 
+11. CD into %BUILD_TREE%\winpcap\wpcap\prj and execute 
 	"build_scanner_parser.bat"	
 
-14. Zip the contents of the three folders 
+12. Zip the contents of the three folders 
 	  %BUILD_TREE%\winpcap_oem
 	  %BUILD_TREE%\winpcap
 	  %BUILD_TREE%\libpcap_<libpcap_version>
@@ -59,17 +50,12 @@ How to compile OEM WinPcap for the toolkit.
 		  V
 	  %BUILD_TREE%\sources.zip
 
-15. Open %BUILD_TREE%\winpcap\wpcap\libpcap\win32\prj\libpcap.dsw from Visual 
-    Studio 6 and compile all the configurations using Build->Batch Build, 
-    selecting all the configurations and then Rebuild All. Close Visual Studio.
-    NOTE. a lot of warnings related to the libpcap sources are usually raised. 
-
-16. Open a Win 2000 DDK Free build environment. Go into 
+13. Open a Win 2000 DDK Free build environment. Go into 
 	  %BUILD_TREE%\winpcap_oem\packetntx. 
-	Execute "compile2k_oem.bat". Prefast should issue 3 warnings (20060126). 
+	Execute "compile2k_oem.bat". Prefast 1.5.2402 should issue 18 warnings (20060222). 
 	Close the build environment.
 
-17. Open the WinNT4 DDK Release build environment. Go into 
+14. Open the WinNT4 DDK Release build environment. Go into 
       %BUILD_TREE%\winpcap_oem\packetntx. 
     Execute "compileNT4_oem.bat". An error "The system cannot find the file 
     specified" should be issued (20060126), it's normal. Close the build 
@@ -77,22 +63,22 @@ How to compile OEM WinPcap for the toolkit.
     NOTE: DO NOT EXECUTE 16. and 17. at the same time, they overwrite files in 
     the build process that are incompatible between the two builds.
 
-18. Open %BUILD_TREE%\winpcap_oem\WinPcap OEM.sln with Visual Studio 2003. 
+15. Open %BUILD_TREE%\winpcap_oem\WinPcap OEM.sln with Visual Studio 2003. 
     Choose the Debug_TNT configuration, and then use Build->Rebuild Solution. 
     NOTE: a linker warning (LNK4075: ignoring EDITANDCONTINUE...) should be 
     issued. 
     Choose the Release_TNT configuration, and then use Build->Rebuild Solution.
-    No warnings should be issued. 
+    Some warnings should be issued related to the wpcap.dll project, only.
     Close Visual Studio.
 
-19. The build is complete.
+16. The build is complete.
 	The DLLs are in the following folders:
 
-		%BUILD_TREE%\winpcap_oem\wpcap\PRJ\release_REMOTE\wpcap.dll
+		%BUILD_TREE%\winpcap_oem\wpcap\PRJ\release_REMOTE_TNT\wpcap.dll
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release_TNT\packet.dll
 
-20. Check the DLLs/SYSs files for the versions
-		%BUILD_TREE%\winpcap_oem\wpcap\PRJ\release_REMOTE\wpcap.dll
+17. Check the DLLs/SYSs files for the versions
+		%BUILD_TREE%\winpcap_oem\wpcap\PRJ\release_REMOTE_TNT\wpcap.dll
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release_TNT\packet.dll
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\npf2k.sys
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\npfnt.sys
@@ -103,7 +89,7 @@ How to compile OEM WinPcap for the toolkit.
 SCM procedures
 --------------
 
-1.  %BUILD_TREE%\winpcap_oem\wpcap\PRJ\release_REMOTE\wpcap.dll
+1.  %BUILD_TREE%\winpcap_oem\wpcap\PRJ\release_REMOTE_TNT\wpcap.dll
 	%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release_TNT\packet.dll
 		|
 		v
