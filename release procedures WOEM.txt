@@ -27,8 +27,12 @@ How to compile OEM WinPcap (NOT for the Toolkit)
 5.  Download the libpcap sources (usually 0_9 branch) into 
 	  %BUILD_TREE%\libpcap_<version>
 
-6.  Commit %BUILD_TREE%\winpcap_oem\version.h into the CVS. This should be the 
-    *only* modified file in this module.
+6.  Commit 
+
+		%BUILD_TREE%\winpcap_oem\version.h
+		%BUILD_TREE%\winpcap_oem\dox\prj\winpcap_oem_noc.dox 
+	
+	into the CVS. These should be the *only* modified filew in this module.
 
 7.  Tag the %BUILD_TREE%\winpcap_oem module with the tag 
 	  OEM_WINPCAP_<version>_WOEM_<OEM version>
