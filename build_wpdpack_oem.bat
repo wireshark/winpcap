@@ -17,5 +17,7 @@ PAUSE
 call create_examples_oem.bat %__DEST_FOLDER%
 PAUSE
 call create_docs_oem.bat %__DEST_FOLDER%
+echo Copying the license agreement file
+xcopy /v "OEM WinPcap License Agreement.pdf" %__DEST_FOLDER% 
 
 set __DEST_FOLDER=
