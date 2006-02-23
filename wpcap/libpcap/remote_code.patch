@@ -596,7 +596,7 @@ diff -urb libpcap_0_9_2006_01_25/pcap.c libpcap/pcap.c
   * the packet.dll version number as well.)
   */
 -static const char wpcap_version_string[] = "3.2 alpha1";
-+static const char wpcap_version_string[] = "3.2 tnt1.0";
++static const char wpcap_version_string[] = "3.2 OEM";
  static const char pcap_version_string_fmt[] =
      "WinPcap version %s, based on %s";
  static const char pcap_version_string_packet_dll_fmt[] =
