@@ -35,10 +35,10 @@ How to compile OEM WinPcap (NOT for the Toolkit)
 	into the CVS. These should be the *only* modified filew in this module.
 
 7.  Tag the %BUILD_TREE%\winpcap_oem module with the tag 
-	  OEM_WINPCAP_<version>_WOEM_<OEM version>
+	  OEM_WINPCAP_<OEM version>_WOEM
 
 8.  Tag the %BUILD_TREE%\winpcap module with the tag 
-	  OEM_WINPCAP_<version>_WOEM_<OEM version>
+	  OEM_WINPCAP_<OEM version>_WOEM
 
 9.  Take the contents of %BUILD_TREE%\libpcap_<version> and copy it into
 	  %BUILD_TREE%\winpcap\wpcap\libpcap 
@@ -118,15 +118,15 @@ SCM procedures
 1.  %BUILD_TREE%\winpcap_oem\wpdpack\
 		|
 		v
-	OEM_WinPcap_<version>_WOEM_<OEM version>_WpdPack.zip
+	OEM_WinPcap_<OEM version>_WOEM_WpdPack.zip
 
 2. 	%BUILD_TREE%\Sources.zip
 		|
 		V
-	OEM_WinPcap_<version>_WOEM_<OEM version>_Sources.zip
+	OEM_WinPcap_<OEM version>_WOEM_Sources.zip
 
 3.  %BUILD_TREE%\
 		|
 		V
-	OEM_WinPcap_<version>_WOEM_<OEM version>_Build_Tree.zip
+	OEM_WinPcap_<OEM version>_WOEM_Build_Tree.zip
 		
