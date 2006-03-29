@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999 - 2003
- * NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2005 - 2006 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,9 +12,10 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the Politecnico di Torino nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ * 3. Neither the name of the Politecnico di Torino, CACE Technologies 
+ * nor the names of its contributors may be used to endorse or promote 
+ * products derived from this software without specific prior written 
+ * permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -62,7 +63,7 @@ NPF_Write(
 
     Open=IrpSp->FileObject->FsContext;
 	
-	if( Open->Bound == FALSE )
+	if(NPF_StartUsingBinding(Open) == FALSE)
 	{ 
 		// The Network adapter was removed. 
 		EXIT_FAILURE(0); 
@@ -73,6 +74,9 @@ NPF_Write(
 	{
 		// Another write operation is currently in progress
 		NdisReleaseSpinLock(&Open->WriteLock);
+
+		NPF_StopUsingBinding(Open);
+
 		EXIT_FAILURE(0); 
 	}
 	else
@@ -91,6 +95,7 @@ NPF_Write(
 	{
 		IF_LOUD(DbgPrint("frame size out of range, send aborted\n");)
 
+		NPF_StopUsingBinding(Open);
 		EXIT_FAILURE(0); 
 	}
 
@@ -126,6 +131,9 @@ NPF_Write(
 			//  No free packets
 			Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
 			IoCompleteRequest (Irp, IO_NO_INCREMENT);
+		
+			NPF_StopUsingBinding(Open);
+
 			return STATUS_INSUFFICIENT_RESOURCES;
 		}
 		
@@ -160,6 +168,15 @@ NPF_Write(
 		}
 	}
 	
+	//
+	// NOTE: this is potentially wrong: we are telling that we do not use the 
+	// handler any more, but it's not completely true.
+	// a pending NdisSend can be in progress. However if the write
+	// operation is still pending, NDIS cannot call our Unbind handler, and
+	// probably the user will never call our NPF_Close handler.
+	//
+	NPF_StopUsingBinding(Open);
+
     return(STATUS_PENDING);
 }
 
@@ -185,20 +202,26 @@ NPF_BufferedWrite(
 	PCHAR				CurPos;
 	PCHAR				EndOfUserBuff = UserBuff + UserBuffSize;
 
-    IF_LOUD(DbgPrint("NPF: BufferedWrite, UserBuff=%x, Size=%u\n", UserBuff, UserBuffSize);)
+    IF_LOUD(DbgPrint("NPF: BufferedWrite, UserBuff=%p, Size=%u\n", UserBuff, UserBuffSize);)
 		
 	IrpSp = IoGetCurrentIrpStackLocation(Irp);
 	
     Open=IrpSp->FileObject->FsContext;
 	
-	if( Open->Bound == FALSE ){ 
+	if( NPF_StartUsingBinding(Open) == FALSE)
+	{ 
 		// The Network adapter was removed. 
 		return 0; 
 	} 
 
 	// Sanity check on the user buffer
-	if(UserBuff==0)
+	if(UserBuff == NULL)
 	{
+		// 
+		// release ownership of the NdisAdapter binding
+		//
+		NPF_StopUsingBinding(Open);
+
 		return 0;
 	}
 
@@ -207,6 +230,10 @@ NPF_BufferedWrite(
 	{
 		IF_LOUD(DbgPrint("BufferedWrite: Open->MaxFrameSize not initialized, probably because of a problem in the OID query\n");)
 
+		// 
+		// release ownership of the NdisAdapter binding
+		//
+		NPF_StopUsingBinding(Open);
 		return 0;
 	}
 
@@ -229,6 +256,10 @@ NPF_BufferedWrite(
 	{
 		IF_LOUD(DbgPrint("Buffered Write: bogus packet buffer\n");)
 
+		// 
+		// release ownership of the NdisAdapter binding
+		//
+		NPF_StopUsingBinding(Open);
 		return -1;
 	}
 	
@@ -261,6 +292,10 @@ NPF_BufferedWrite(
 			// Unable to map the memory: packet lost
 			IF_LOUD(DbgPrint("NPF_BufferedWrite: unable to allocate the MDL.\n");)
 
+			// 
+			// release ownership of the NdisAdapter binding
+			//
+			NPF_StopUsingBinding(Open);
 			return -1;
 		}
 		
@@ -302,6 +337,11 @@ NPF_BufferedWrite(
 			{
 				// Second failure, report an error
 				IoFreeMdl(TmpMdl);
+		
+				// 
+				// release ownership of the NdisAdapter binding
+				//
+				NPF_StopUsingBinding(Open);
 				return -1;
 			}
 
@@ -344,7 +384,12 @@ NPF_BufferedWrite(
 			// Wait the completion of pending sends
 			NPF_WaitEndOfBufferedWrite(Open);
 
-			return (PCHAR)winpcap_hdr - UserBuff;
+			// 
+			// release ownership of the NdisAdapter binding
+			//
+			NPF_StopUsingBinding(Open);
+	
+			return (INT)((PCHAR)winpcap_hdr - UserBuff);
 		}
 	
 		if( Sync ){
@@ -357,7 +402,11 @@ NPF_BufferedWrite(
 				// Wait the completion of pending sends
 				NPF_WaitEndOfBufferedWrite(Open);
 					
-				return (PCHAR)winpcap_hdr - UserBuff;
+				// 
+				// release ownership of the NdisAdapter binding
+				//
+				NPF_StopUsingBinding(Open);
+				return (INT)((PCHAR)winpcap_hdr - UserBuff);
 			}
 			
 			// Calculate the time interval to wait before sending the next packet
@@ -373,7 +422,12 @@ NPF_BufferedWrite(
 	
 	}
 
-	return (PCHAR)winpcap_hdr - UserBuff;
+	// 
+	// release ownership of the NdisAdapter binding
+	//
+	NPF_StopUsingBinding(Open);
+
+	return (INT)((PCHAR)winpcap_hdr - UserBuff);
 }
 
 //-------------------------------------------------------------------
@@ -408,7 +462,7 @@ NPF_SendComplete(
 	POPEN_INSTANCE      Open;
 	PMDL TmpMdl;
 
-	IF_LOUD(DbgPrint("NPF: SendComplete, BindingContext=%d\n",ProtocolBindingContext);)
+	IF_LOUD(DbgPrint("NPF: SendComplete, BindingContext=%p\n",ProtocolBindingContext);)
 		
 	Open= (POPEN_INSTANCE)ProtocolBindingContext;
 
