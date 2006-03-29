@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999 - 2003
- * NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2005 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,9 +12,10 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the Politecnico di Torino nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ * 3. Neither the name of the Politecnico di Torino, CACE Technologies 
+ * nor the names of its contributors may be used to endorse or promote 
+ * products derived from this software without specific prior written 
+ * permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -41,9 +42,12 @@
 #ifndef __PACKET_INCLUDE______
 #define __PACKET_INCLUDE______
 
+#ifdef __NPF_x86__
 #define NTKERNEL	///< Forces the compilation of the jitter with kernel calls 
-
 #include "jitter.h"
+#endif
+
+
 #include "win_bpf.h"
 
 #define  MAX_REQUESTS   32 ///< Maximum number of simultaneous IOCTL requests.
@@ -252,9 +256,12 @@ struct sf_pkthdr {
 */
 typedef struct _INTERNAL_REQUEST {
     LIST_ENTRY		ListElement;		///< Used to handle lists of requests.
-    PIRP			Irp;				///< Irp that performed the request
-	BOOLEAN			Internal;			///< True if the request is for internal use of npf.sys. False if the request is performed by the user through an IOCTL.
+//    PIRP			Irp;				///< Irp that performed the request
+//	BOOLEAN			Internal;			///< True if the request is for internal use of npf.sys. False if the request is performed by the user through an IOCTL.
+	NDIS_EVENT		InternalRequestCompletedEvent;
     NDIS_REQUEST	Request;			///< The structure with the actual request, that will be passed to NdisRequest().
+	NDIS_STATUS		RequestStatus;
+
 } INTERNAL_REQUEST, *PINTERNAL_REQUEST;
 
 /*!
@@ -333,7 +340,7 @@ typedef struct _OPEN_INSTANCE
 	UINT				Medium;				///< Type of physical medium the underlying NDIS driver uses. See the
 											///< documentation of NdisOpenAdapter in the MS DDK for details.
 	NDIS_HANDLE         PacketPool;			///< Pool of NDIS_PACKET structures used to transfer the packets from and to the NIC driver.
-	PIRP                OpenCloseIrp;		///< Pointer used to store the open/close IRP requests and provide them to the 
+//	PIRP                OpenCloseIrp;		///< Pointer used to store the open/close IRP requests and provide them to the 
 											///< callbacks of NDIS.
 	KSPIN_LOCK			RequestSpinLock;	///< SpinLock used to synchronize the OID requests.
 	LIST_ENTRY          RequestList;		///< List of pending OID requests.
@@ -351,8 +358,10 @@ typedef struct _OPEN_INSTANCE
 											///< from the NIC driver is stored in two non-consecutive buffers. In normal situations
 											///< the filtering routine created by the JIT compiler and pointed by the next field 
 											///< is used. See \ref NPF for details on the filtering process.
+#ifdef __NPF_x86__
 	JIT_BPF_Filter		*Filter;			///< Pointer to the native filtering function created by the jitter. 
 											///< See BPF_jitter() for details.
+#endif
 	UINT				MinToCopy;			///< Minimum amount of data in the circular buffer that unlocks a read. Set with the
 											///< BIOCSMINTOCOPY IOCTL. 
 	LARGE_INTEGER		TimeOut;			///< Timeout after which a read is released, also if the amount of data in the buffer is 
@@ -369,11 +378,9 @@ typedef struct _OPEN_INSTANCE
 	BOOLEAN				WriteInProgress;	///< True if a write is currently in progress. NPF currently allows a single wite on 
 											///< the same open instance.
 	NDIS_SPIN_LOCK		WriteLock;			///< SpinLock that protects the WriteInProgress variable.
+	NDIS_EVENT			NdisRequestEvent;	///< Event used to synchronize I/O requests with the callback structure of NDIS.
 	BOOLEAN				SkipSentPackets;	///< True if this instance should not capture back the packets that it transmits.
-	NDIS_EVENT			IOEvent;			///< Event used to synchronize I/O requests with the callback structure of NDIS.
 	NDIS_STATUS			IOStatus;			///< Maintains the status of and OID request call, that will be passed to the application.
-	BOOLEAN				Bound;				///< Specifies if NPF is still bound to the adapter used by this instance. Bound can be
-											///< FALSE if a Plug and Play adapter has been removed or disabled by the user.
 	HANDLE				DumpFileHandle;		///< Handle of the file used in dump mode.
 	PFILE_OBJECT		DumpFileObject;		///< Pointer to the object of the file used in dump mode.
 	PKTHREAD			DumpThreadObject;	///< Pointer to the object of the thread used in dump mode.
@@ -402,8 +409,22 @@ typedef struct _OPEN_INSTANCE
 											///< some "sensible" fields of the Open structure (e.g. they reallocate the pool of kernel buffers,
 											///< or change the filter program
 
+	ULONG			   AdapterHandleUsageCounter;
+	NDIS_SPIN_LOCK	   AdapterHandleLock;
+	ULONG			   AdapterBindingStatus;///< Specifies if NPF is still bound to the adapter used by this instance, it's unbinding or it's not bound.
+
+	NDIS_EVENT		   NdisOpenCloseCompleteEvent;
+	NTSTATUS		   OpenCloseStatus;
+
 }
 OPEN_INSTANCE, *POPEN_INSTANCE;
+
+enum ADAPTER_BINDING_STATUS
+{
+	ADAPTER_UNBOUND,
+	ADAPTER_BOUND,
+	ADAPTER_UNBINDING,
+};
 
 /*!
   \brief Structure prepended to each packet in the kernel buffer pool.
@@ -929,6 +950,27 @@ VOID NPF_WriteDumpFile(PFILE_OBJECT FileObject,
   \return The status of the operation. See ntstatus.h in the DDK.
 */
 NTSTATUS NPF_CloseDumpFile(POPEN_INSTANCE Open);
+
+VOID
+NPF_CloseOpenInstance(POPEN_INSTANCE pOpen);
+
+BOOLEAN
+NPF_StartUsingBinding(
+    IN POPEN_INSTANCE pOpen);
+
+VOID
+NPF_StopUsingBinding(
+    IN POPEN_INSTANCE pOpen);
+
+VOID
+NPF_CloseBinding(
+    IN POPEN_INSTANCE pOpen);
+
+NTSTATUS
+NPF_GetDeviceMTU(
+			 IN POPEN_INSTANCE pOpen,
+			 IN PIRP	pIrp,
+			 OUT PUINT  pMtu);
 
 /*!
   \brief Returns the amount of bytes present in the packet buffer.
