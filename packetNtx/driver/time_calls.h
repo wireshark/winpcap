@@ -1,22 +1,34 @@
 /*
- * Copyright (c) 2001
- *	Politecnico di Torino.  All rights reserved.
+ * Copyright (c) 2001 - 2005 NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2005 - 2006 CACE Technologies, Davis (California)
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that: (1) source code distributions
- * retain the above copyright notice and this paragraph in its entirety, (2)
- * distributions including binary code include the above copyright notice and
- * this paragraph in its entirety in the documentation or other materials
- * provided with the distribution, and (3) all advertising materials mentioning
- * features or use of this software display the following acknowledgement:
- * ``This product includes software developed by the Politecnico
- * di Torino, and its contributors.'' Neither the name of
- * the University nor the names of its contributors may be used to endorse
- * or promote products derived from this software without specific prior
- * written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the Politecnico di Torino, CACE Technologies 
+ * nor the names of its contributors may be used to endorse or promote 
+ * products derived from this software without specific prior written 
+ * permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 #ifndef _time_calls
@@ -27,14 +39,14 @@
 #include "debug.h"
 #include "ndis.h"
 
-#define	DEFAULT_TIMESTAMPMODE	0
+#define	DEFAULT_TIMESTAMPMODE								0
 
-#define TIMESTAMPMODE_SINGLE_SYNCHRONIZATION		0
-#define TIMESTAMPMODE_SYNCHRONIZATION_ON_CPU_WITH_FIXUP	1
-#define TIMESTAMPMODE_QUERYSYSTEMTIME			2
-#define TIMESTAMPMODE_RDTSC				3
+#define TIMESTAMPMODE_SINGLE_SYNCHRONIZATION				0
+#define TIMESTAMPMODE_SYNCHRONIZATION_ON_CPU_WITH_FIXUP		1
+#define TIMESTAMPMODE_QUERYSYSTEMTIME						2
+#define TIMESTAMPMODE_RDTSC									3
 
-#define TIMESTAMPMODE_SYNCHRONIZATION_ON_CPU_NO_FIXUP	99
+#define TIMESTAMPMODE_SYNCHRONIZATION_ON_CPU_NO_FIXUP		99
 
 #define TIMESTAMPMODE_REGKEY L"TimestampMode"
 
@@ -78,7 +90,7 @@ __inline void ReadTimeStampModeFromRegistry(PUNICODE_STRING RegistryPath)
 
 	NewLength = RegistryPath->Length/2;
 	
-	NullTerminatedString = ExAllocatePool(PagedPool, (NewLength+1) *sizeof(WCHAR));
+	NullTerminatedString = ExAllocatePoolWithTag(PagedPool, (NewLength+1) *sizeof(WCHAR), '2TWA');
 	
 	if (NullTerminatedString != NULL)
 	{
@@ -140,6 +152,18 @@ __inline void SynchronizeOnCpu(struct timeval *start)
 	}
 }	
 
+//
+// inline assembler is not supported with the current AMD64 compilers
+// At the moment we simply disable this timestamping mode on AMD64.
+// A solution would be to allocate a small memory from the non-paged
+// pool, dump the instructions on that buffer, and then execute them.
+// The non paged pool is needed since it's the only area of kernel
+// data memory that is not subject to the NX protection.
+// Or use some lower level trick, like using an assembler to assemble
+// a small function for this. 
+//
+
+#ifdef __NPF_x86__
 /*RDTSC timestamps			*/
 /* callers must be at IRQL=PASSIVE_LEVEL*/
 __inline VOID TimeSynchronizeRDTSC(struct time_conv *data)
@@ -253,6 +277,7 @@ __inline VOID TimeSynchronizeRDTSC(struct time_conv *data)
 
 	IF_LOUD(DbgPrint("Frequency %I64u MHz\n",data->reference);)
 }
+#endif //__NPF_x86__
 
 #pragma optimize ("g",on)  //Due to some weird behaviour of the optimizer of DDK build 2600 
 
@@ -285,11 +310,16 @@ __inline VOID TIME_SYNCHRONIZE(struct time_conv *data)
 		data->reference = 1;
 	}
 	else
+//
+// This timestamp mode is supported on x86 (32 bit) only
+//
+#ifdef __NPF_x86__
 	if ( TimestampMode == TIMESTAMPMODE_RDTSC )
 	{
 		TimeSynchronizeRDTSC(data);
 	}
 	else
+#endif // __NPF_x86__
 	{	//it should be only the normal case i.e. TIMESTAMPMODE_SINGLESYNCHRONIZATION
 		SynchronizeOnCpu(data->start);
 		data->reference = 1;
@@ -347,6 +377,18 @@ __inline void GetTimeKQPC(struct timeval *dst, struct time_conv *data)
 	}
 }
 
+//
+// inline assembler is not supported with the current AMD64 compilers
+// At the moment we simply disable this timestamping mode on AMD64.
+// A solution would be to allocate a small memory from the non-paged
+// pool, dump the instructions on that buffer, and then execute them.
+// The non paged pool is needed since it's the only area of kernel
+// data memory that is not subject to the NX protection.
+// Or use some lower level trick, like using an assembler to assemble
+// a small function for this. 
+//
+
+#ifdef __NPF_x86__
 __inline void GetTimeRDTSC(struct timeval *dst, struct time_conv *data)
 {
 
@@ -385,6 +427,7 @@ __inline void GetTimeRDTSC(struct timeval *dst, struct time_conv *data)
 
 
 }
+#endif //__NPF_x86__
 
 __inline void GetTimeQST(struct timeval *dst, struct time_conv *data)
 {
@@ -403,11 +446,16 @@ __inline void GetTimeQST(struct timeval *dst, struct time_conv *data)
 __inline void GET_TIME(struct timeval *dst, struct time_conv *data)
 {
 
+//
+// This timestamp mode is supported on x86 (32 bit) only
+//
+#ifdef __NPF_x86__
 	if ( TimestampMode == TIMESTAMPMODE_RDTSC )
 	{
 		GetTimeRDTSC(dst,data);
 	}
 	else
+#endif
 	if ( TimestampMode == TIMESTAMPMODE_QUERYSYSTEMTIME )
 	{
 		GetTimeQST(dst,data);
