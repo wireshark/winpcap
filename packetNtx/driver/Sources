@@ -1,22 +1,20 @@
 TARGETNAME=npf
-TARGETPATH=$(TARGETPATH)
-TARGETTYPE=DRIVER
-TARGETLIBS=$(DDK_LIB_PATH)\ndis.lib
-C_DEFINES=$(C_DEFINES) -DWIN_NT_DRIVER -DWIN32_EXT $(USER_C_DEFINES)
-INCLUDES=..\..\common
-SOURCES=packet.c    \
-	openclos.c  \
-	read.c      \
-	write.c     \
-	dump.c      \
-	jitter.c      \
-	win_bpf_filter.c \
-	tme.c \
-	count_packets.c \
-	win_bpf_filter_init.c \
-	tcp_session.c \
-	functions.c \
-	bucket_lookup.c \
-	normal_lookup.c \
-	NPF.rc
 
+TARGETPATH=$(TARGETPATH)
+
+TARGETTYPE=DRIVER
+
+TARGETLIBS=$(DDK_LIB_PATH)\ndis.lib 
+
+C_DEFINES=$(C_DEFINES) -DWIN_NT_DRIVER -DWIN32_EXT $(NPF_C_DEFINES)
+
+INCLUDES=..\..\common
+
+SOURCES=packet.c			\
+	openclos.c				\
+	read.c					\
+	write.c					\
+	dump.c					\
+	win_bpf_filter.c		\
+	NPF.rc					\
+	$(NPF_TME_JIT_FILES)
