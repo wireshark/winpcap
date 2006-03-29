@@ -275,7 +275,7 @@ VOID NPF_DumpThread(POPEN_INSTANCE Open)
 {
    ULONG      FrozenNic;
 
-    IF_LOUD(DbgPrint("NPF: In the work routine.  Parameter = 0x%0x\n",Open);)
+    IF_LOUD(DbgPrint("NPF: In the work routine.  Parameter = 0x%p\n",Open);)
 
    while(TRUE){
 
