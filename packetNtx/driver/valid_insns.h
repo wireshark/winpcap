@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2001 - 2003
- * NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2001 - 2005 NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2005 - 2006 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,9 +12,10 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the Politecnico di Torino nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ * 3. Neither the name of the Politecnico di Torino, CACE Technologies 
+ * nor the names of its contributors may be used to endorse or promote 
+ * products derived from this software without specific prior written 
+ * permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -38,12 +39,15 @@ u_short valid_instructions[]=
 		BPF_LDX|BPF_IMM,
 		BPF_LD|BPF_MEM,
 		BPF_LDX|BPF_MEM,
+
+#ifdef __NPF_x86__
 		BPF_LD|BPF_MEM_EX_IMM|BPF_B,
 		BPF_LD|BPF_MEM_EX_IMM|BPF_H,
 		BPF_LD|BPF_MEM_EX_IMM|BPF_W,
 		BPF_LD|BPF_MEM_EX_IND|BPF_B,
 		BPF_LD|BPF_MEM_EX_IND|BPF_H,
 		BPF_LD|BPF_MEM_EX_IND|BPF_W,
+#endif
 		BPF_LD|BPF_W|BPF_ABS,
 		BPF_LD|BPF_H|BPF_ABS,
 		BPF_LD|BPF_B|BPF_ABS,
@@ -58,6 +62,8 @@ u_short valid_instructions[]=
 		BPF_LDX|BPF_MSH|BPF_B,
 		BPF_ST,
 		BPF_STX,
+
+#ifdef __NPF_x86__
 		BPF_ST|BPF_MEM_EX_IMM|BPF_B,
 		BPF_STX|BPF_MEM_EX_IMM|BPF_B,
 		BPF_ST|BPF_MEM_EX_IMM|BPF_W,
@@ -67,6 +73,8 @@ u_short valid_instructions[]=
 		BPF_ST|BPF_MEM_EX_IND|BPF_B,
 		BPF_ST|BPF_MEM_EX_IND|BPF_W,
 		BPF_ST|BPF_MEM_EX_IND|BPF_H,
+#endif
+
 		BPF_JMP|BPF_JA,
 		BPF_JMP|BPF_JGT|BPF_K,
 		BPF_JMP|BPF_JGE|BPF_K,
@@ -95,11 +103,15 @@ u_short valid_instructions[]=
 		BPF_ALU|BPF_NEG,
 		BPF_MISC|BPF_TAX,
 		BPF_MISC|BPF_TXA,
+
+#ifdef __NPF_x86__
 		BPF_MISC|BPF_TME|BPF_LOOKUP,
 		BPF_MISC|BPF_TME|BPF_EXECUTE,
 		BPF_MISC|BPF_TME|BPF_SET_ACTIVE,
 		BPF_MISC|BPF_TME|BPF_GET_REGISTER_VALUE,
 		BPF_MISC|BPF_TME|BPF_SET_REGISTER_VALUE
+#endif
+
 	};
 
 #define VALID_INSTRUCTIONS_LEN (sizeof(valid_instructions)/sizeof(u_short))
