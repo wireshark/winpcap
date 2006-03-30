@@ -5,11 +5,13 @@ mkdir installer\distribution\NT
 mkdir installer\distribution\9x
 mkdir installer\distribution\x86-64
 
-copy \i386\npf.sys installer\distribution\2000\
-copy \i386\npf.pdb installer\distribution\2000\
-copy \i386\free\npf.sys installer\distribution\NT\
-copy \amd64\npf.sys installer\distribution\x86-64\
-copy \amd64\npf.pdb installer\distribution\x86-64\
+copy ..\packetNtx\driver\bin\2k\i386\npf.sys installer\distribution\2000\
+copy ..\packetNtx\driver\bin\2k\i386\npf.pdb installer\distribution\2000\
+
+copy ..\packetNtx\driver\bin\NT4\i386\free\npf.sys installer\distribution\NT\
+
+copy ..\packetNtx\driver\bin\xp\amd64\npf.sys installer\distribution\x86-64\
+copy ..\packetNtx\driver\bin\xp\amd64\npf.pdb installer\distribution\x86-64\
 
 copy ..\packetNtx\Dll\Project\Release\Packet.dll installer\distribution\2000\
 copy ..\packetNtx\Dll\Project\NT4_Release\Packet.dll installer\distribution\NT\
