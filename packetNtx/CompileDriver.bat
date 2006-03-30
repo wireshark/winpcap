@@ -46,7 +46,7 @@ mkdir driver\bin\xp 2> nul
 
 rem copy driver\NPF_NT5.RC driver\NPF.RC
 
-set TARGETPATH=driver\bin\xp
+set TARGETPATH=bin\xp
 set NPF_C_DEFINES=-D__NPF_AMD64__ -DNDIS50
 
 rem
