@@ -196,6 +196,17 @@
 */
 #define  BIOCISETLOBBEH 7410			
 
+/*!
+	\brief This IOCTL passes the read event HANDLE allocated by the user (packet.dll) to kernel level
+
+	Parameter: HANDLE
+	Parameter size: sizeof(HANDLE). If the caller is 32 bit, the parameter size is 4 bytes, even if sizeof(HANDLE) at kernel level
+		is 8 bytes. That's why in this IOCTL code handler we detect a 32bit calling process and do the necessary thunking.
+
+	TODO GV:I will go to hell for this ugly IOCTL definition. We should use CTL_CODE!!
+*/
+#define BIOCSETEVENTHANDLE 7920
+
 // Working modes
 #define MODE_CAPT 0x0		///< Capture working mode
 #define MODE_STAT 0x1		///< Statistical working mode
@@ -340,19 +351,12 @@ typedef struct _OPEN_INSTANCE
 	UINT				Medium;				///< Type of physical medium the underlying NDIS driver uses. See the
 											///< documentation of NdisOpenAdapter in the MS DDK for details.
 	NDIS_HANDLE         PacketPool;			///< Pool of NDIS_PACKET structures used to transfer the packets from and to the NIC driver.
-//	PIRP                OpenCloseIrp;		///< Pointer used to store the open/close IRP requests and provide them to the 
-											///< callbacks of NDIS.
 	KSPIN_LOCK			RequestSpinLock;	///< SpinLock used to synchronize the OID requests.
 	LIST_ENTRY          RequestList;		///< List of pending OID requests.
 	LIST_ENTRY          ResetIrpList;		///< List of pending adapter reset requests.
     INTERNAL_REQUEST    Requests[MAX_REQUESTS]; ///< Array of structures that wrap every single OID request.
 	PMDL				BufferMdl;			///< Pointer to a Memory descriptor list (MDL) that maps the circular buffer's memory.
 	PKEVENT				ReadEvent;			///< Pointer to the event on which the read calls on this instance must wait.
-	HANDLE				ReadEventHandle;	///< Handle of the event on which the read calls on this instance must wait.
-	UNICODE_STRING		ReadEventName;		///< Name of the event on which the read calls on this instance must wait.
-											///< The event is created with a name, so it can be used at user level to know when it 
-											///< is possible to access the driver without being blocked. This fiels stores the name 
-											///< that and is used by the BIOCGEVNAME IOCTL call.
 	PUCHAR				bpfprogram;			///< Pointer to the filtering pseudo-code associated with current instance of the driver.
 											///< This code is used only in particular situations (for example when the packet received
 											///< from the NIC driver is stored in two non-consecutive buffers. In normal situations
@@ -415,7 +419,6 @@ typedef struct _OPEN_INSTANCE
 
 	NDIS_EVENT		   NdisOpenCloseCompleteEvent;
 	NTSTATUS		   OpenCloseStatus;
-
 }
 OPEN_INSTANCE, *POPEN_INSTANCE;
 
@@ -566,10 +569,18 @@ NPF_OpenAdapterComplete(
   instance and closing the files. The network adapter is then closed with a call to NdisCloseAdapter. 
 */
 NTSTATUS
+NPF_Cleanup(
+    IN PDEVICE_OBJECT DeviceObject,
+    IN PIRP Irp
+    );
+
+NTSTATUS
 NPF_Close(
     IN PDEVICE_OBJECT DeviceObject,
     IN PIRP Irp
     );
+
+
 
 /*!
   \brief Ends the closing of an adapter.
