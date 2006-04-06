@@ -36,40 +36,51 @@ vice versa.</p>
 <p>If your system satisfies these requirements, follow these steps:</p>
 <ol>
   <li>From the Windows NT Start menu, select the folder <em>Programs</em> and
-    then <i>Development Kits</i>, then <em>Windows NT4 DDK.</em> From here select the voice <em>Checked Build
+    then <i>Development Kits</i>, then <em>Windows NT4 DDK.</em> From here select the voice 
+	<em>Checked Build
     Environment</em> if you want to build a debug version, or <em>Free Build
     Environment</em> if you want to build a release version.
   <li>A command prompt will be opened. Move to the directory PacketNTx inside the
-    WinPcap source folder and type the command<br>
-    <br>
-    <i>CompileNT4<br>
-    </i><br>
-    This script will generate the driver (npf.sys), that will be put in the
-    DDK output directory (usually \i386).
-  </ol>
+    WinPcap source folder and type the command<br><br><i>CompileDriver<br></i>
+	<br>This script will generate the driver (npf.sys). The binary will be put in 
+	one of these folders<ul>
+	<li><i>Free Build Environment: </i>winpcap\PacketNTx\driver\bin\NT4\i386\free</li>
+	<li><i>Checked Build Environment: </i>winpcap\PacketNTx\driver\bin\NT4\i386\checked</li>
+	</ul>
+</ol>
 <p><b>Warning</b>: sometimes, during the compilation of the driver, a lot of
 'last line incomplete' errors are generated. Ignore these errors and let the
 compilation process continue, they are due to bugs in some DDK versions.</p>
-<h3>Co<a name="#NT41">mpili</a>ng the driver on Windows 2000/XP/2003</h3>
+<h3>Co<a name="#NT41">mpili</a>ng the driver on Windows 2000/XP/2003 (32bit and 
+64bit AMD64)</h3>
 <p>Software requirements:</p>
 <ul>
-	<li>Microsoft Driver Developer Kit (DDK) for Windows 2000, Windows
-    XP or Windows Server 2003</li>
+	<li>Microsoft Driver Developer Kit (DDK) for Windows Windows
+    XP or Windows Server 2003.</li>
 </ul>
+<p>NOTE: it is possible to use older DDKs for Windows 2000, but you will need to 
+manually modify the compilation scripts in order to disable PREfast (PREfast is 
+a static code analysis tool shipped with recent versions of the DDK).</p>
 <p>If your system satisfies these requirements, follow these steps:</p>
 <ol>
   <li>From the Windows Start menu, select the folder <em>Programs</em> and
-    then <i>Development Kits</i>, then <em>Windows XXX DDK</em>, where XXX is
-    the target system<em>.</em> From here select the voice <em>Checked Build
-    Environment</em> if you want to build a debug version, or <em>Free Build
-    Environment</em> if you want to build a release version.
-  <li>A command prompt will be opened. Move to the directory PacketNTx inside the
-    WinPcap source folder and type the command<br>
-    <br>
-    <i>Compile2k<br>
-	</i><br>
-    This script will generate the driver (npf.sys), that will be put in the
-    DDK output directory (usually \i386).
+    then <i>Development Kits</i>, then <em>Windows XXX DDK</em>, where <em>XXX</em> is
+    the target system, then <em>Build Environments</em>.<ul>
+	<li>32bit driver: Choose <em>Windows 2000</em> and then <em>Windows 2000 Free Build 
+	Environment</em>if you want to build a release version or <em>Windows 2000 
+	Checked Build Environment </em>if you want to build a debug version . </li>
+	<li>64bit AMD64 driver: Choose <em>Windows Server 2003</em> and then <em>Windows 
+	Server 2003 Free&nbsp; x64 Build Environment </em>if you want to build a release version or
+	<em>Windows Server 2003 
+	Checked x64 Build Environment </em>if you want to build a debug version . </li>
+	</ul>
+	<li>A command prompt will be opened. Move to the directory PacketNTx inside the
+    WinPcap source folder and type the command<br><br><i>CompileDriver<br></i>
+	<br>This script will generate the driver (npf.sys). The binary will be put in 
+	one of these folders<ul>
+		<li><i>32bit driver (both Free and Checked Build): </i>winpcap\PacketNTx\driver\bin\2k\i386</li>
+		<li><i>64bit AMD64 driver (both Free and Checked Build): </i>winpcap\PacketNTx\driver\bin\xp\amd64</li>
+	</ul>
   </ol>
 <h3><a name="#95-98">Compili</a>ng the driver on Windows 9x</h3>
 <p>To compile the driver for Windows 9x you will need:</p>
