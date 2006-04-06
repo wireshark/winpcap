@@ -87,6 +87,7 @@
 #define  pBIOCSETDUMPLIMITS 9034		///< IOCTL code: Set the dump file limits. See the PacketSetDumpLimits() function.
 #define  pBIOCISDUMPENDED 7411			///< IOCTL code: Get the status of the kernel dump process. See the PacketIsDumpEnded() function.
 #define  pBIOCISETLOBBEH 7410			///< IOCTL code: Set the loopback behavior of the driver with packets sent by itself: capture or drop.
+#define  pBIOCSETEVENTHANDLE 7920		///< IOCTL code: Passes the read event HANDLE allocated by the user (packet.dll) to the kernel level driver.
 
 #define  pBIOCSTIMEZONE 7471			///< IOCTL code: set time zone. Used in Win9x only.
 
