@@ -52,8 +52,6 @@ static NDIS_MEDIUM MediumArray[] = {
 
 #define NUM_NDIS_MEDIA  (sizeof MediumArray / sizeof MediumArray[0])
 
-ULONG g_NamedEventsCounter = 0;
-
 //Itoa. Replaces the buggy RtlIntegerToUnicodeString
 void PacketItoa(UINT n,PUCHAR buf){
 int i;
@@ -173,9 +171,13 @@ NPF_CloseBinding(
 
 	if (Status == NDIS_STATUS_PENDING)
 	{
+		TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Pending NdisCloseAdapter");
 		NdisWaitEvent(&pOpen->NdisOpenCloseCompleteEvent, 0);
 	}
-
+	else
+	{
+		TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Not Pending NdisCloseAdapter");
+	}
 
 	NdisAcquireSpinLock(&pOpen->AdapterHandleLock);
 	pOpen->AdapterBindingStatus = ADAPTER_UNBOUND;
@@ -195,10 +197,6 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	UINT				i;
 	PUCHAR				tpointer;
 	PLIST_ENTRY			PacketListEntry;
-	PWCHAR				EventName;
-	WCHAR				EventPrefix[MAX_WINPCAP_KEY_CHARS] = NPF_EVENTS_NAMES_WIDECHAR;
-	ULONG				EventLengthChars;  // including the traling \0
-	WCHAR				EventOrdinalString[100];
 	NTSTATUS			returnStatus;
 
 //  
@@ -241,44 +239,7 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 //		RegStrLen,
 //		NPF_EVENTS_NAMES_WIDECHAR);
 //
-
-	_snwprintf(EventOrdinalString, 
-		sizeof(EventOrdinalString) / sizeof(EventOrdinalString[0]) - 1,
-		L"%.010u", 
-		InterlockedIncrement(&g_NamedEventsCounter));
-
-	//
-	// lets compute the needed size for the event name
-	//
-	// In chars, it's the length of the prefix (\BaseNamedObjects\) plus the name taken from the registry, plus the ordinal plus the trailing 0
-	//
-	EventLengthChars = wcslen(KERNEL_EVENT_NAMESPACE) + wcslen(EventPrefix) + wcslen(EventOrdinalString) + 1;
-
- 
-	EventName = ExAllocatePoolWithTag(NonPagedPool, EventLengthChars * sizeof(WCHAR), '1OWA');
- 
-    if (EventName == NULL) {
-		// no memory
-		ExFreePool(Open);
-		Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
-		IoCompleteRequest(Irp, IO_NO_INCREMENT);
-		return STATUS_INSUFFICIENT_RESOURCES;
-	}
-
-	swprintf(EventName, 
-		L"%s%s%s", 
-		KERNEL_EVENT_NAMESPACE,
-		EventPrefix,
-		EventOrdinalString);
-
-	//Create the string containing the name of the read event
-	RtlInitUnicodeString(&Open->ReadEventName, EventName);
-
-	TRACE_MESSAGE2(PACKET_DEBUG_LOUD, "Created the named event for the read; name=%ws, counter=%u", Open->ReadEventName.Buffer,g_NamedEventsCounter-1);
 		
-	//  Save or open here
-	IrpSp->FileObject->FsContext=Open;
-
 	Open->DeviceExtension=DeviceExtension;
 
 	//  Allocate a packet pool for our xmit and receive packets
@@ -293,23 +254,11 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 		TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Failed to allocate packet pool");
 
 		ExFreePool(Open);
-		ExFreePool(EventName);
 		Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
 		IoCompleteRequest(Irp, IO_NO_INCREMENT);
 		return STATUS_INSUFFICIENT_RESOURCES;
 	}
 
-	//allocate the event objects
-	Open->ReadEvent=IoCreateNotificationEvent(&Open->ReadEventName,&Open->ReadEventHandle);
-	if(Open->ReadEvent==NULL){
-		ExFreePool(Open);
-		ExFreePool(EventName);
-		Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
-		IoCompleteRequest(Irp, IO_NO_INCREMENT);
-		return STATUS_INSUFFICIENT_RESOURCES;
-	}
-
-	KeClearEvent(Open->ReadEvent);
 	NdisInitializeEvent(&Open->WriteEvent);
 	NdisInitializeEvent(&Open->NdisRequestEvent);
 	NdisInitializeEvent(&Open->DumpEvent);
@@ -330,9 +279,10 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	Open->mem_ex.buffer = ExAllocatePoolWithTag(NonPagedPool, DEFAULT_MEM_EX_SIZE, '2OWA');
 	if((Open->mem_ex.buffer) == NULL)
 	{
+		//
 		// no memory
+		//
 		ExFreePool(Open);
-		ExFreePool(EventName);
 		Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
 		IoCompleteRequest(Irp, IO_NO_INCREMENT);
 		return STATUS_INSUFFICIENT_RESOURCES;
@@ -361,6 +311,7 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	Open->ReaderSN=0;
 	Open->Size=0;
 	Open->SkipSentPackets = FALSE;
+	Open->ReadEvent = NULL;
 
 	//
 	//allocate the spinlock for the statistic counters
@@ -472,6 +423,11 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	{
 		NPF_CloseOpenInstance(Open);
 	}
+	else
+	{
+		//  Save or open here
+		IrpSp->FileObject->FsContext=Open;
+	}
 
 	Irp->IoStatus.Status = returnStatus;
 	Irp->IoStatus.Information = 0;
@@ -484,15 +440,15 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 VOID
 NPF_CloseOpenInstance(POPEN_INSTANCE pOpen)
 {
+		PKEVENT pEvent;
+
 		TRACE_ENTER();
 
 		ASSERT(pOpen != NULL);
 		ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
 
-		//
-		// we should be in the context of the process that created the event
-		// Can we check that PsGetCurrentProcess? It doesn't seem so.
-		//
+		TRACE_MESSAGE1(PACKET_DEBUG_LOUD, "Open= %p", pOpen);
+
         NdisFreePacketPool(pOpen->PacketPool);
 
 		//
@@ -516,15 +472,13 @@ NPF_CloseOpenInstance(POPEN_INSTANCE pOpen)
 		if(pOpen->Filter != NULL)
 			BPF_Destroy_JIT_Filter(pOpen->Filter);
 #endif
-		
-		ExFreePool(pOpen->ReadEventName.Buffer);
 
 		//
-		// Close the read event handle. 
-		// NOTE: this can be done in the context of the process that created the event, only.
-		// So we need to guarantee that this function gets called in one of the dispatcher handlers (Open/Close)
+		// Dereference the read event.
 		//
-		ZwClose(pOpen->ReadEventHandle);
+
+		if (pOpen->ReadEvent != NULL)
+            ObDereferenceObject(pOpen->ReadEvent);
 
 		//
 		// free the buffer
@@ -671,9 +625,24 @@ NPF_GetDeviceMTU(
 	}
 }
 
+
 //-------------------------------------------------------------------
 NTSTATUS
 NPF_Close(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
+{
+	TRACE_ENTER();
+
+	Irp->IoStatus.Status = STATUS_SUCCESS;
+	Irp->IoStatus.Information = 0;
+	IoCompleteRequest(Irp, IO_NO_INCREMENT);
+
+	TRACE_EXIT();
+	return STATUS_SUCCESS;
+}
+
+//-------------------------------------------------------------------
+NTSTATUS
+NPF_Cleanup(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 {
 
 	POPEN_INSTANCE    Open;
@@ -686,12 +655,15 @@ NPF_Close(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 	IrpSp = IoGetCurrentIrpStackLocation(Irp);
 	Open = IrpSp->FileObject->FsContext;
+	
+	TRACE_MESSAGE1(PACKET_DEBUG_LOUD, "Open = %p\n", Open);
 
 	ASSERT(Open != NULL);
 
 	NPF_CloseBinding(Open);
 	
-	KeSetEvent(Open->ReadEvent,0,FALSE);
+	if (Open->ReadEvent != NULL)
+		KeSetEvent(Open->ReadEvent,0,FALSE);
 
 	// NOTE:
 	// code commented out because the kernel dump feature is disabled
@@ -740,6 +712,8 @@ NPF_Close(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	//
 	NPF_CloseOpenInstance(Open);
 
+	IrpSp->FileObject->FsContext = NULL;
+	
 	//
 	// Decrease the counter of open instances
 	//
@@ -781,6 +755,8 @@ NPF_CloseAdapterComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  
     Open = (POPEN_INSTANCE)ProtocolBindingContext;
 
 	ASSERT(Open != NULL);
+
+	TRACE_MESSAGE1(PACKET_DEBUG_LOUD, "Open= %p", Open);
 
 	NdisSetEvent(&Open->NdisOpenCloseCompleteEvent);
 
@@ -844,7 +820,8 @@ NPF_UnbindAdapter(
  //	if(Open->mode & MODE_DUMP)
  //		NdisSetEvent(&Open->DumpEvent);
  //	else
- 	KeSetEvent(Open->ReadEvent,0,FALSE);
+	if (Open->ReadEvent != NULL)
+	 	KeSetEvent(Open->ReadEvent,0,FALSE);
 
 	//
 	// The following code has been disabled bcause the kernel dump feature has been disabled.
