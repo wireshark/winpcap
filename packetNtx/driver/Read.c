@@ -106,16 +106,19 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	//See if the buffer is full enough to be copied
 	if( Occupation <= Open->MinToCopy*NCpu || Open->mode & MODE_DUMP )
 	{
-		//wait until some packets arrive or the timeout expires		
-		if(Open->TimeOut.QuadPart != (LONGLONG)IMMEDIATE)
-			KeWaitForSingleObject(Open->ReadEvent,
-				UserRequest,
-				KernelMode,
-				TRUE,
-				(Open->TimeOut.QuadPart == (LONGLONG)0)? NULL: &(Open->TimeOut));
+		if (Open->ReadEvent != NULL)
+		{
+			//wait until some packets arrive or the timeout expires		
+			if(Open->TimeOut.QuadPart != (LONGLONG)IMMEDIATE)
+				KeWaitForSingleObject(Open->ReadEvent,
+					UserRequest,
+					KernelMode,
+					TRUE,
+					(Open->TimeOut.QuadPart == (LONGLONG)0)? NULL: &(Open->TimeOut));
 
-		KeClearEvent(Open->ReadEvent);
-		
+			KeClearEvent(Open->ReadEvent);
+		}		
+
 		if(Open->mode & MODE_STAT)
 		{   //this capture instance is in statistics mode
 #ifdef NDIS50
@@ -123,6 +126,12 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 #else
 			CurrBuff=(PUCHAR)MmGetSystemAddressForMdl(Irp->MdlAddress);
 #endif
+
+			if (CurrBuff == NULL)
+			{
+				EXIT_FAILURE(0);
+			}
+
 
 			//fill the bpf header for this packet
 			header=(struct bpf_hdr*)CurrBuff;
@@ -174,6 +183,11 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 #else
 			UserPointer=MmGetSystemAddressForMdl(Irp->MdlAddress);
 #endif
+
+			if (UserPointer == NULL)
+			{
+				EXIT_FAILURE(0);
+			}
 
 			if ((!IS_VALIDATED(Open->tme.validated_blocks,Open->tme.active_read))||(IrpSp->Parameters.Read.Length<sizeof(struct bpf_hdr)))
 			{	
@@ -262,8 +276,13 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	packp=(PUCHAR)MmGetSystemAddressForMdl(Irp->MdlAddress);
 #endif
 
+	if (packp == NULL)
+	{
+		EXIT_FAILURE(0);
+	}
 
-	KeClearEvent(Open->ReadEvent);
+	if (Open->ReadEvent != NULL)
+		KeClearEvent(Open->ReadEvent);
 
 	while (count < NCpu) //round robin on the CPUs, if count = NCpu there are no packets left to be copied
 	{
@@ -469,7 +488,12 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	// we are in monitor mode
 	{
 		if (fres==1) 
-			KeSetEvent(Open->ReadEvent,0,FALSE);
+		{
+			if (Open->ReadEvent != NULL)
+			{
+				KeSetEvent(Open->ReadEvent,0,FALSE);	
+			}
+		}
 		LocalData->Processing = 0;
 		return NDIS_STATUS_NOT_ACCEPTED;
 
@@ -532,7 +556,8 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 			NdisSetEvent(&Open->DumpEvent);
 
 			// Awake the application
-			KeSetEvent(Open->ReadEvent,0,FALSE);
+			if (Open->ReadEvent != NULL)
+				KeSetEvent(Open->ReadEvent,0,FALSE);
 
 			LocalData->Processing = 0;
 			return NDIS_STATUS_NOT_ACCEPTED;
@@ -671,7 +696,12 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 			if(Open->mode & MODE_DUMP)
 				NdisSetEvent(&Open->DumpEvent);
 			else
-				KeSetEvent(Open->ReadEvent,0,FALSE);	
+			{		
+				if (Open->ReadEvent != NULL)
+				{
+					KeSetEvent(Open->ReadEvent,0,FALSE);	
+				}
+			}
 		}
 
 		LocalData->Processing = 0;
@@ -860,7 +890,12 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 				if(Open->mode & MODE_DUMP)
 					NdisSetEvent(&Open->DumpEvent);
 				else
-					KeSetEvent(Open->ReadEvent,0,FALSE);	
+				{
+					if (Open->ReadEvent != NULL)
+					{
+						KeSetEvent(Open->ReadEvent,0,FALSE);	
+					}
+				}
 			}
 
 			LocalData->Processing = 0;
@@ -928,7 +963,12 @@ VOID NPF_TransferDataComplete (IN NDIS_HANDLE ProtocolBindingContext,IN PNDIS_PA
 		if(Open->mode & MODE_DUMP)
 			NdisSetEvent(&Open->DumpEvent);
 		else
-			KeSetEvent(Open->ReadEvent,0,FALSE);	
+		{
+			if (Open->ReadEvent != NULL)
+			{
+				KeSetEvent(Open->ReadEvent,0,FALSE);	
+			}
+		}
 	}
 
 	LocalData->TransferMdl1 = NULL;
@@ -941,7 +981,12 @@ VOID NPF_TransferDataComplete (IN NDIS_HANDLE ProtocolBindingContext,IN PNDIS_PA
  		if(Open->mode & MODE_DUMP)
  			NdisSetEvent(&Open->DumpEvent);
  		else
- 			KeSetEvent(Open->ReadEvent,0,FALSE);	
+		{
+			if (Open->ReadEvent != NULL)
+			{
+				KeSetEvent(Open->ReadEvent,0,FALSE);	
+			}
+		}
 	}
 	return;
 }
