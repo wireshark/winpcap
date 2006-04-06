@@ -514,68 +514,47 @@ BOOLEAN PacketSetMaxLookaheadsize (LPADAPTER AdapterObject)
 }
 
 /*! 
-  \brief Retrieves the event associated in the driver with a capture instance and stores it in an 
-   _ADAPTER structure.
-  \param AdapterObject Handle to the service control manager.
+  \brief Allocates the read event associated with the capture instance, passes it down to the kernel driver
+  and stores it in an _ADAPTER structure.
+  \param AdapterObject Handle to the adapter.
   \return If the function succeeds, the return value is nonzero.
 
-  This function is used by PacketOpenAdapter() to retrieve the read event from the driver by means of an ioctl
+  This function is used by PacketOpenAdapter() to allocate the read event and pass it to the driver by means of an ioctl
   call and set it in the _ADAPTER structure pointed by AdapterObject.
 */
-
 BOOLEAN PacketSetReadEvt(LPADAPTER AdapterObject)
 {
 	DWORD BytesReturned;
-	TCHAR EventName[MAX_WINPCAP_KEY_CHARS];
+	HANDLE hEvent;
 
- 	if (LOWORD(GetVersion()) == 4)
+	if (AdapterObject->ReadEvent != NULL)
 	{
-		// retrieve the name of the shared event from the driver without the "Global\\" prefix
-		if(DeviceIoControl(AdapterObject->hFile,
-			pBIOCEVNAME,NULL,
-			0,
-			EventName,
-			sizeof(EventName),
-			&BytesReturned,
-			NULL)==FALSE) 
-		{
-			return FALSE;
-		}
-
-		EventName[BytesReturned / sizeof(TCHAR)]=0; // null-terminate the string
-	}
-	else
-	{
-		// this tells Terminal Services to retrieve the event from the global namespace
-		wcsncpy(EventName,L"Global\\",sizeof(L"Global\\"));
-
-		// retrieve the name of the shared event from the driver with the "Global\\" prefix
-		if(DeviceIoControl(AdapterObject->hFile,
-			pBIOCEVNAME,
-			NULL,
-			0,
-			EventName + 7,
-			sizeof(EventName),
-			&BytesReturned,
-			NULL)==FALSE)
-		{
-			return FALSE;
-		}
-
-		EventName[BytesReturned/sizeof(TCHAR) + 7]=0; // null-terminate the string
-	}
-
-	// open the shared event
-	AdapterObject->ReadEvent=CreateEvent(NULL,
-										 TRUE,
-										 FALSE,
-										 EventName);
-
-	if(AdapterObject->ReadEvent==NULL || GetLastError()!=ERROR_ALREADY_EXISTS){
-        ODS("PacketSetReadEvt: error retrieving the event from the kernel\n");
+		SetLastError(ERROR_INVALID_FUNCTION);
 		return FALSE;
 	}
 
+ 	hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+	if (hEvent == NULL)
+	{
+		//SetLastError done by CreateEvent	
+		return FALSE;
+	}
+
+	if(DeviceIoControl(AdapterObject->hFile,
+			pBIOCSETEVENTHANDLE,
+			&hEvent,
+			sizeof(hEvent),
+			NULL,
+			0,
+			&BytesReturned,
+			NULL)==FALSE) 
+	{
+		//SetLastError done by DeviceIoControl
+		return FALSE;
+	}
+
+	AdapterObject->ReadEvent = hEvent;
 	AdapterObject->ReadTimeOut=0;
 
 	return TRUE;
@@ -1469,9 +1448,9 @@ VOID PacketCloseAdapter(LPADAPTER lpAdapter)
 #endif // HAVE_DAG_API
 #endif // _WINNT4
 	
-	CloseHandle(lpAdapter->hFile);
 	SetEvent(lpAdapter->ReadEvent);
     CloseHandle(lpAdapter->ReadEvent);
+	CloseHandle(lpAdapter->hFile);
     GlobalFreePtr(lpAdapter);
 }
 
