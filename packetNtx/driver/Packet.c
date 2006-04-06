@@ -228,6 +228,7 @@ DriverEntry(
 	//
     DriverObject->MajorFunction[IRP_MJ_CREATE] = NPF_Open;
     DriverObject->MajorFunction[IRP_MJ_CLOSE]  = NPF_Close;
+	DriverObject->MajorFunction[IRP_MJ_CLEANUP]= NPF_Cleanup; 
     DriverObject->MajorFunction[IRP_MJ_READ]   = NPF_Read;
     DriverObject->MajorFunction[IRP_MJ_WRITE]  = NPF_Write;
     DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL]  = NPF_IoControl;
@@ -708,6 +709,12 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	BOOLEAN				Flag;
 	PUINT				pStats;
 
+	HANDLE				hUserEvent;
+	PKEVENT				pKernelEvent;
+#ifdef __NPF_AMD64__
+    VOID*POINTER_32		hUserEvent32Bit;
+#endif
+
 	TRACE_ENTER();
 
 	IrpSp = IoGetCurrentIrpStackLocation(Irp);
@@ -758,35 +765,14 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 		TRACE_MESSAGE(PACKET_DEBUG_LOUD, "BIOCGEVNAME");
 
-		StringLength = Open->ReadEventName.Length / 2;
-		
-		if (StringLength < wcslen(KERNEL_EVENT_NAMESPACE))
-		{
-			NeededBytes = 0;
-		}
-		else
-		{
-			NeededBytes = ( StringLength - wcslen(KERNEL_EVENT_NAMESPACE)) * sizeof(WCHAR);
-		}
-
 		//
-		// Check input
+		// Since 20060405, the event handling has been changed:
+		// we no longer use named events, instead the user level app creates an event,
+		// and passes it back to the kernel, that references it (ObReferenceObjectByHandle), and
+		// signals it.
+		// For the time being, we still leave this ioctl code here, and we simply fail.
 		//
-		if(IrpSp->Parameters.DeviceIoControl.OutputBufferLength < NeededBytes) // The string we pass to user-level is not 0-termianted
-		{
-			SET_FAILURE_BUFFER_SMALL();
-			break;
-		}
-
-		//
-		// Copy the name of the event associated with this open instance
-		//
-		RtlCopyMemory(Irp->UserBuffer, 
-			Open->ReadEventName.Buffer + wcslen(KERNEL_EVENT_NAMESPACE), 
-			NeededBytes);
-
-		SET_RESULT_SUCCESS(NeededBytes);
-		
+		SET_FAILURE_INVALID_REQUEST();
 		break;
 
 	case BIOCSENDPACKETSSYNC:
@@ -1230,6 +1216,67 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		}
 
 #endif // !__NPF_NT4__
+		break;
+
+	case BIOCSETEVENTHANDLE:
+		
+		TRACE_MESSAGE(PACKET_DEBUG_LOUD, "BIOCSETEVENTHANDLE");
+		
+#ifdef __NPF_AMD64__
+		if (IoIs32bitProcess(Irp))
+		{
+            //
+			// validate the input
+			//
+			if (IrpSp->Parameters.DeviceIoControl.InputBufferLength != sizeof (hUserEvent32Bit))
+			{
+				SET_FAILURE_INVALID_REQUEST();
+				break;
+			}
+
+			hUserEvent32Bit = *(VOID*POINTER_32*)Irp->AssociatedIrp.SystemBuffer;
+			hUserEvent = hUserEvent32Bit;
+		}
+		else
+#endif //__NPF_AMD64__
+		{
+            //
+			// validate the input
+			//
+			if (IrpSp->Parameters.DeviceIoControl.InputBufferLength != sizeof (hUserEvent))
+			{
+				SET_FAILURE_INVALID_REQUEST();
+				break;
+			}
+	
+			hUserEvent = *(PHANDLE)Irp->AssociatedIrp.SystemBuffer;
+		}
+
+		Status = ObReferenceObjectByHandle(hUserEvent,
+			EVENT_MODIFY_STATE, *ExEventObjectType, Irp->RequestorMode,
+			(PVOID*) &pKernelEvent, NULL);
+		
+		if (!NT_SUCCESS(Status))
+		{
+			// Status = ??? already set
+			Information = 0;
+			break;
+		}
+
+		if (InterlockedCompareExchangePointer(&Open->ReadEvent, pKernelEvent, NULL) != NULL)
+		{
+			//
+			// dereference the new pointer
+			//
+			
+			ObDereferenceObject(pKernelEvent);
+			SET_FAILURE_INVALID_REQUEST();
+			break;
+		}
+
+		KeResetEvent(Open->ReadEvent);
+
+		SET_RESULT_SUCCESS(0);
 		break;
 
 	case BIOCSETBUFFERSIZE:
