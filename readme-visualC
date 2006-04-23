@@ -17,13 +17,15 @@ Compiling the driver on Windows NT4
 
 Software requirements:
 - Microsoft Driver Developer Kit (DDK) for Windows NT4
-- A recent version of the Microsoft Platform Software Development Kit (SDK)
-  that is compatible with Visual Studio 6 (the latest compatible one is
-  Platform SDK February 2003). This version of the PSDK is no longer
-  available on the Microsoft web site. It can be ordered online at
-  http://www.qmedia.ca/launch/psdk.htm, and it's also available to Microsoft
-  MSDN subscribers on the Subscribers Downloads web site.
-- Microsoft Visual C++ 6.0 with Service Pack 5 or 6 (both the service packs
+- A recent version of the Microsoft Platform Software Development Kit (SDK) 
+  that is compatible with Visual Studio 6 (the latest compatible one is 
+  Platform SDK February 2003). This version of the PSDK is available on the 
+  Microsoft web site at 
+  http://www.microsoft.com/msdownload/platformsdk/sdkupdate/psdk-full.htm. 
+  It can be ordered online at http://www.qmedia.ca/launch/psdk.htm, and it's 
+  also available to Microsoft MSDN subscribers on the Subscribers Downloads 
+  web site.
+  - Microsoft Visual C++ 6.0 with Service Pack 5 or 6 (both the service packs
   are available online on the Microsoft web site).
 
 If your system satisfies these requirements, follow these steps:
@@ -71,12 +73,14 @@ Compiling the driver on Windows 9x
 
 To compile the driver for Windows 9x you will need:
 - Driver Developer Kit (DDK) for Windows 95/98/ME
-- A recent version of the Microsoft Platform Software Development Kit (SDK)
-  that is compatible with Visual Studio 6 (the latest compatible one is
-  Platform SDK February 2003). This version of the PSDK is no longer
-  available on the Microsoft web site. It can be ordered online at
-  http://www.qmedia.ca/launch/psdk.htm, and it's also available to Microsoft
-  MSDN subscribers on the Subscribers Downloads web site.
+- A recent version of the Microsoft Platform Software Development Kit (SDK) 
+  that is compatible with Visual Studio 6 (the latest compatible one is 
+  Platform SDK February 2003). This version of the PSDK is available on the 
+  Microsoft web site at 
+  http://www.microsoft.com/msdownload/platformsdk/sdkupdate/psdk-full.htm. 
+  It can be ordered online at http://www.qmedia.ca/launch/psdk.htm, and it's 
+  also available to Microsoft MSDN subscribers on the Subscribers Downloads 
+  web site.
 - Microsoft Visual C++ 6.0 with Service Pack 5 or 6 (both the service packs
   are available online on the Microsoft web site).
 
@@ -120,12 +124,14 @@ Like the NPF driver, two source trees are available for compilation: the
 Windows NTx one and the Windows 9x one. They are located in PacketNTx\dll\
 and in Packet9x\dll\.
 Software requirements:
-- A recent version of the Microsoft Platform Software Development Kit (SDK)
-  that is compatible with Visual Studio 6 (the latest compatible one is
-  Platform SDK February 2003). This version of the PSDK is no longer
-  available on the Microsoft web site. It can be ordered online at
-  http://www.qmedia.ca/launch/psdk.htm, and it's also available to Microsoft
-  MSDN subscribers on the Subscribers Downloads web site.
+- A recent version of the Microsoft Platform Software Development Kit (SDK) 
+  that is compatible with Visual Studio 6 (the latest compatible one is 
+  Platform SDK February 2003). This version of the PSDK is available on the 
+  Microsoft web site at 
+  http://www.microsoft.com/msdownload/platformsdk/sdkupdate/psdk-full.htm. 
+  It can be ordered online at http://www.qmedia.ca/launch/psdk.htm, and it's 
+  also available to Microsoft MSDN subscribers on the Subscribers Downloads 
+  web site.
   Note: if you use Microsoft Visual Studio .NET the platform SDK is not
   needed to compile packet.dll.
 - Microsoft Visual C++ 6.0 with Service Pack 5 or 6 (both the service packs
@@ -156,12 +162,14 @@ system independent.
 System Requirements:
 - Microsoft Visual C++ 6.0 with Service Pack 5 or 6 (both the service packs
   are available online on the Microsoft web site).
-- A recent version of the Microsoft Platform Software Development Kit (SDK)
-  that is compatible with Visual Studio 6 (the latest compatible one is
-  Platform SDK February 2003). This version of the PSDK is no longer
-  available on the Microsoft web site. It can be ordered online at
-  http://www.qmedia.ca/launch/psdk.htm, and it's also available to Microsoft
-  MSDN subscribers on the Subscribers Downloads web site.
+-- A recent version of the Microsoft Platform Software Development Kit (SDK) 
+  that is compatible with Visual Studio 6 (the latest compatible one is 
+  Platform SDK February 2003). This version of the PSDK is available on the 
+  Microsoft web site at 
+  http://www.microsoft.com/msdownload/platformsdk/sdkupdate/psdk-full.htm. 
+  It can be ordered online at http://www.qmedia.ca/launch/psdk.htm, and it's 
+  also available to Microsoft MSDN subscribers on the Subscribers Downloads 
+  web site.
   Note: if you use Microsoft Visual Studio .Net the platform SDK is not
   needed to compile wpcap.dll.
 
