@@ -1252,10 +1252,20 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			hUserEvent = *(PHANDLE)Irp->AssociatedIrp.SystemBuffer;
 		}
 
+		//
+		// NT4 doesn't seem to have EVENT_MODIFY_STATE, so on NT4 we request a wider set
+		// of privileges for the event handle
+		//
+#ifdef __NPF_NT4__
+		Status = ObReferenceObjectByHandle(hUserEvent,
+			OBJECT_TYPE_ALL_ACCESS, *ExEventObjectType, Irp->RequestorMode,
+			(PVOID*) &pKernelEvent, NULL);
+#else   //__NPF_NT4__
 		Status = ObReferenceObjectByHandle(hUserEvent,
 			EVENT_MODIFY_STATE, *ExEventObjectType, Irp->RequestorMode,
 			(PVOID*) &pKernelEvent, NULL);
-		
+#endif  //__NPF_NT4__		
+
 		if (!NT_SUCCESS(Status))
 		{
 			// Status = ??? already set
@@ -1263,7 +1273,17 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			break;
 		}
 
+
+		//
+		// NT4 does not have InterlockedCompareExchangePointer
+		// InterlockedCompareExchange on NT4 has the same prototype of InterlockedCompareExchange
+		// on NT5x, so we use this one.
+		//
+#ifdef __NPF_NT4__
+		if (InterlockedCompareExchange(&Open->ReadEvent, pKernelEvent, NULL) != NULL)
+#else
 		if (InterlockedCompareExchangePointer(&Open->ReadEvent, pKernelEvent, NULL) != NULL)
+#endif
 		{
 			//
 			// dereference the new pointer
