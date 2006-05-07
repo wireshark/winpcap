@@ -1,4 +1,4 @@
-; Copyright (c) 2005
+; Copyright (c) 2005 - 2006
 ; CACE Technologies
 ; All rights reserved.
 ; 
@@ -11,7 +11,7 @@
 ; 2. Redistributions in binary form must reproduce the above copyright 
 ; notice, this list of conditions and the following disclaimer in the 
 ; documentation and/or other materials provided with the distribution. 
-; 3. Neither the name of the Politecnico di Torino nor the names of its 
+; 3. Neither the name of CACE            nor the names of its 
 ; contributors may be used to endorse or promote products derived from 
 ; this software without specific prior written permission. 
 ; 
@@ -41,15 +41,22 @@
 ;--------------------------------
 ;Project definitions
 
-  !define WINPCAP_PRJ_MAJOR "3"
-  !define WINPCAP_PRJ_MINOR "2"
+  !define WINPCAP_PRJ_MAJOR "4"
+  !define WINPCAP_PRJ_MINOR "0"
   !define WINPCAP_PRJ_REV "0"
-  !define WINPCAP_PRJ_BUILD "29"
-  !define WINPCAP_PROJ_VERSION_DOTTED "3.2.0.29"
-  !define WINPCAP_LEGAL_COPYRIGHT "© 2005 CACE Technologies"
-  !define WINPCAP_PRODUCT_NAME "WinPcap 3.2 alpha1"
+  !define WINPCAP_PRJ_BUILD "120"
+  !define WINPCAP_PROJ_VERSION_DOTTED "4.0.0.120"
+  !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2006 CACE Technologies"
+  !define WINPCAP_PRODUCT_NAME "WinPcap 4.0 alpha1"
   !define WINPCAP_COMPANY_NAME "CACE Technologies"
   !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_alpha1.exe"
+
+; letter 'r'
+  !define REINSTALL_FLAG "114"  
+; letter u
+  !define UNINSTALL_FLAG	"117"
+; letter 'i'   
+  !define INSTALL_FLAG "105"
  
   ;Default installation folder
   InstallDir "$PROGRAMFILES\WinPcap"
@@ -95,6 +102,7 @@
   Var VARIABLE_1
   Var WOW_FS_REDIR_OLD_VAL
   Var BOOL_RET  
+  Var INT_RET  
 ;--------------------------------
 ;General
 
@@ -114,6 +122,7 @@
   !define MUI_ABORTWARNING
   !define MUI_CUSTOMFUNCTION_GUIINIT myGuiInit
   !define MUI_CUSTOMFUNCTION_ABORT .onInstFailed
+  !define MUI_WELCOMEPAGE_TEXT "This Wizard will guide you through the entire WinPcap installation.\r\nFor more information or support about WinPcap, check out the WinPcap website.\r\n\r\nhttp://www.winpcap.org"
   
 ; This is needed to give focus to the main window after the initial "installer loading..." dialog is shown.
   Function myGUIInit
@@ -124,7 +133,9 @@
 ;Installer Pages
 
   ;Installer
-  Page custom "ShowHtmlPage" "" ""
+;  Page custom "ShowHtmlPage" "" ""
+  
+  !insertmacro MUI_PAGE_WELCOME
   !insertmacro MUI_PAGE_LICENSE "distribution\license.txt"
   !insertmacro MUI_PAGE_INSTFILES
   !define MUI_FINISHPAGE_TEXT_REBOOT "An old version of WinPcap was present on the system. You should reboot the system in order for the new version to work properly."
@@ -240,6 +251,19 @@ AmdInstallationWarning:
 
 NormalInstallation:
 
+; -------------------------------------------------------
+; NOTE: the following code has been disabled. It downloads
+;       the banner page from the internet, and shows it to 
+;       the user in a custom page.
+;       To enable it again, 
+;	1. Remove the "goto"
+;	2. Uncomment the line
+;		Page custom "ShowHtmlPage" "" ""
+;       3. Uncomment the content of function CleanupTempFiles
+;
+
+   goto SkipWebPageStuff
+
 ; if the OS is windows 2000/XP/2003 or similar, the installer will download the winpcap banner from the website.
 ; on OT windows, downloading that banner is not working properly: when no internet connection is available, the timeout in NSISdl::download is ignored
 ; As a consequence, we use our local copy.
@@ -317,6 +341,8 @@ WindowsOTBanner:
     File /oname=$TEMP\WpBann.htm WpBann.htm
 Ended:
 
+SkipWebPageStuff:
+
   FunctionEnd
 
 
@@ -357,13 +383,13 @@ NormalUninstallation:
 ;--------------------------------
 ;Remove any temp file used during the installation
   Function CleanupTempFiles
-    Delete /REBOOTOK $TEMP\WpBann.htm
-    Delete /REBOOTOK $TEMP\1.gif
-    Delete /REBOOTOK $TEMP\1.jpg
-    Delete /REBOOTOK $TEMP\2.gif
-    Delete /REBOOTOK $TEMP\2.jpg
-    Delete /REBOOTOK $TEMP\3.gif
-    Delete /REBOOTOK $TEMP\3.jpg
+;   Delete /REBOOTOK $TEMP\WpBann.htm
+;   Delete /REBOOTOK $TEMP\1.gif
+;   Delete /REBOOTOK $TEMP\1.jpg
+;   Delete /REBOOTOK $TEMP\2.gif
+;   Delete /REBOOTOK $TEMP\2.jpg
+;   Delete /REBOOTOK $TEMP\3.gif
+;   Delete /REBOOTOK $TEMP\3.jpg
   FunctionEnd
 
 ;--------------------------------
@@ -397,7 +423,7 @@ Section "Main Installer Section" MainInstall
 ; if it's not detected, ok
 ; if it's detected, check if some app is still using it: try to rename packet.dll.
 ; If it fails, then maybe some user is using it. Warn the user (stop the app and restart the installation), and abort the installation.
-; If it succeeds, if the uninsntaller is present, warn the user and call the uninstaller (advising to choose not to reboot). Then continue.
+; If it succeeds, if the uninsntaller is present, warn the user and call the uninstaller (advising to choose not to reboot). Then continue anyway.
 ; If rename succeeds and the uninstaller is not present, ask the user what to do (abort, continue+reboot).
     CopyFiles "$SYSDIR\packet.dll" "$SYSDIR\_packet.dlluninstall"
     Delete "$SYSDIR\packet.dll"
@@ -467,13 +493,12 @@ MainInstallationProcedure:
 ;
 
 ;Common Files
-    File "Distribution\2000\daemon_mgm.exe"
-    File "Distribution\2000\NetMonInstaller.exe"
-    File "Distribution\2000\npf_mgm.exe"
     File "Distribution\2000\rpcapd.exe"
+    File "Distribution\2000\WinPcapInstall.dll"
 
 ;Move to the system folder, whatever system we are
     SetOutPath "$SYSDIR"
+
 
 ;Copy wpcap and the pthreads
     File "Distribution\wpcap.dll"
@@ -509,32 +534,16 @@ CopyAMD64DriverLabel:
 CopiedNT5Files:    
   
 ;Run install commands
-; Todo add error checking for these apps
-    ExecDos::exec '$INSTDIR\npf_mgm.exe -r'
-    Pop $R0
-    StrCmp $R0 "0" NpfMgmOkLabel1
-    
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while registering the NPF service (npf_mgm.exe -r failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
 
-NpfMgmOkLabel1:    
-    ExecDos::exec '$INSTDIR\daemon_mgm.exe -r'
-    Pop $R0
-    StrCmp $R0 "0" DaemonMgmOkLabel1
-    
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while registering the rpcapd service (daemon_mgm.exe -r failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
-
-DaemonMgmOkLabel1:    
+	Call InstallNpfService
+    Call InstallRpcapdService
 
 ; The NetMon component is not available on x64 and on vista!
 	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" EndCopy
     StrCmp $WINPCAP_TARGET_OS "vista" EndCopy
     
-    ExecDos::exec '$INSTDIR\NetMonInstaller.exe i'
-    Pop $R0
-    StrCmp $R0 "0" EndCopy
+    Call InstallNetMon
     
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NetMon service (NetMonInstaller.exe i failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
-
     Goto EndCopy
 
 CopyFilesNT4:
@@ -542,11 +551,9 @@ CopyFilesNT4:
     Call CopyNT4Driver
 
 ;Run install commands
-; Todo add error checking for these apps
-    ExecDos::exec '$INSTDIR\npf_mgm.exe -r'
-    Pop $R0
-    ExecDos::exec '$INSTDIR\daemon_mgm.exe -r'
-    Pop $R0
+
+    Call InstallNpfService
+    Call InstallRpcapdService
 
     Goto EndCopy
 
@@ -572,11 +579,9 @@ CopyAMD64DriverVistaLabel:
 CopiedVistaFiles:    
   
 ;Run install commands
-; Todo add error checking for these apps
-    ExecDos::exec '$INSTDIR\npf_mgm.exe -r'
-    Pop $R0
-    ExecDos::exec '$INSTDIR\daemon_mgm.exe -r'
-    Pop $R0
+
+    Call InstallNpfService
+    Call InstallRpcapdService
 
     Goto EndCopy
 
@@ -689,21 +694,9 @@ RmFilesNT5:
 RmFilesVista:
 
 ;Run uninstall commands
-; Todo add error checking for these apps
-    ExecDos::exec '"$INSTDIR\npf_mgm.exe" "-u"'
-    Pop $R0
-    StrCmp $R0 "0" NpfMgmOkLabel1
-    
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while deregistering the NPF service (npf_mgm.exe -u failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
 
-NpfMgmOkLabel1:    
-    ExecDos::exec '"$INSTDIR\daemon_mgm.exe" "-u"'
-    Pop $R0
-    StrCmp $R0 "0" DaemonMgmOkLabel1
-    
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while deregistering the rpcapd service (daemon_mgm.exe -u failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
-
-DaemonMgmOkLabel1:    
+    Call un.UninstallNpfService	
+    Call un.UninstallRpcapdService
 
 ;Delete files
 ; The rebootok is used to delete the files on reboot if they are in use.
@@ -729,13 +722,11 @@ EndRm:
 
 ;Delete common files
     Delete /REBOOTOK "$INSTDIR\INSTALL.LOG" ;may be present after removing winpcap 2.3
-    Delete /REBOOTOK "$INSTDIR\daemon_mgm.exe"
-    Delete /REBOOTOK "$INSTDIR\NetMonInstaller.exe"
-    Delete /REBOOTOK "$INSTDIR\npf_mgm.exe"
     Delete /REBOOTOK "$INSTDIR\rpcapd.exe"
     Delete /REBOOTOK "$SYSDIR\packet.dll"
     Delete /REBOOTOK "$SYSDIR\wpcap.dll"
     Delete /REBOOTOK "$SYSDIR\pthreadVC.dll"
+    Delete /REBOOTOK "$INSTDIR\WinPcapInstall.dll"
 
 ;
 ;remove start menu entries
@@ -771,11 +762,15 @@ SectionEnd
 
 Function CopyAMD64Driver
 	
-	; these two stupid assignments are used to avoid a compilation warning...
-	StrCpy $BOOL_RET "1"
-	StrCpy $WOW_FS_REDIR_OLD_VAL "1"
+	push $0
+	push $1
 	
-	System::Call 'kernel32::Wow64DisableWow64FsRedirection(*i .$WOW_FS_REDIR_OLD_VAL).$BOOL_RET'
+	System::Call 'kernel32::Wow64DisableWow64FsRedirection(*i .r1).r0'
+	
+	StrCpy $BOOL_RET $0
+	StrCpy $WOW_FS_REDIR_OLD_VAL $1
+	pop $1
+	pop $0
 	
 	StrCmp $BOOL_RET "error" ErrorCannotLoadDll
 	StrCmp $BOOL_RET 0 ErrorCannotDisableFsRedirector
@@ -788,7 +783,15 @@ Function CopyAMD64Driver
 	SetOutPath $R0
 	pop $R0
 
-	System::Call 'kernel32::Wow64RevertWow64FsRedirection(*i $WOW_FS_REDIR_OLD_VAL).$BOOL_RET'
+	push $0
+	push $1
+	
+	StrCpy $1 $WOW_FS_REDIR_OLD_VAL
+	System::Call 'kernel32::Wow64RevertWow64FsRedirection(*i .r1).r0'
+	StrCpy $BOOL_RET $0
+	pop $1
+	pop $0
+
 
 	StrCmp $BOOL_RET "error" ErrorCannotLoadDll2
 	StrCmp $BOOL_RET 0 ErrorCannotRevertFsRedirector
@@ -796,28 +799,167 @@ Function CopyAMD64Driver
 	goto End
 
 	ErrorCannotLoadDll:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installer will now continue anyway."
 		SetErrors
 		goto End
 		
 	ErrorCannotDisableFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installer will now continue anyway."
 		SetErrors
 		goto End
 
 	ErrorCannotLoadDll2:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installer will now continue anyway."
 		SetErrors
 		goto End
 		
 	ErrorCannotRevertFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installer will now continue anyway."
 		SetErrors
 		goto End
 		
 End:
 
 FunctionEnd
+
+Function InstallNpfService
+	
+	push $0
+	
+	System::Call '$INSTDIR\WinPcapInstall::manage_npf_driver(t, i) i("",${REINSTALL_FLAG}).r0 ? u'
+	
+	StrCpy $INT_RET  $0
+	
+	pop $0
+
+	StrCmp $INT_RET "error" ErrorCannotLoadDll
+	StrCmp $INT_RET 0 End ErrorCannotInstallNpfDriver
+ 
+ErrorCannotLoadDll:
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installation will now continue anyway."
+	SetErrors
+	goto End
+		
+ErrorCannotInstallNpfDriver:
+
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installation will now continue anyway."
+	SetErrors
+	goto End
+
+End:
+
+FunctionEnd
+
+Function un.UninstallNpfService
+	
+	push $0
+	
+	System::Call '$INSTDIR\WinPcapInstall::manage_npf_driver(t, i) i("",${UNINSTALL_FLAG}).r0 ? u'
+	
+	StrCpy $INT_RET  $0
+	
+	pop $0
+
+	StrCmp $INT_RET "error" ErrorCannotLoadDll
+	StrCmp $INT_RET 0 End ErrorCannotUninstallNpfDriver
+ 
+ErrorCannotLoadDll:
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe uninstallation will now continue anyway."
+	SetErrors
+	goto End
+		
+ErrorCannotUninstallNpfDriver:
+
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe uninstallation will now continue"
+	SetErrors
+	goto End
+
+End:
+
+FunctionEnd
+
+Function InstallRpcapdService
+	push $0
+	
+	System::Call '$INSTDIR\WinPcapInstall::manage_rpcapd_service(t, i) i("",${REINSTALL_FLAG}).r0 ? u'
+	
+	StrCpy $INT_RET  $0
+	
+	pop $0
+
+	StrCmp $INT_RET "error" ErrorCannotLoadDll
+	StrCmp $INT_RET 0 End ErrorCannotInstallRpcapd
+ 
+ErrorCannotLoadDll:
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installation will now continue anyway."
+	SetErrors
+	goto End
+		
+ErrorCannotInstallRpcapd:
+
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installation will now continue"
+	SetErrors
+	goto End
+
+End:
+
+FunctionEnd
+
+Function un.UninstallRpcapdService
+	push $0
+	
+	System::Call '$INSTDIR\WinPcapInstall::manage_rpcapd_service(t, i) i("",${UNINSTALL_FLAG}).r0 ? u'
+	
+	StrCpy $INT_RET  $0
+	
+	pop $0
+
+	StrCmp $INT_RET "error" ErrorCannotLoadDll
+	StrCmp $INT_RET 0 End ErrorCannotUninstallRpcapd
+ 
+ErrorCannotLoadDll:
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe uninstallation will now continue anyway."
+	SetErrors
+	goto End
+		
+ErrorCannotUninstallRpcapd:
+
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe uninstallation will now continue"
+	SetErrors
+	goto End
+
+End:
+
+FunctionEnd
+
+Function InstallNetmon
+	
+	push $0
+	
+	System::Call '$INSTDIR\WinPcapInstall::manage_netmon(t, i) i("",${INSTALL_FLAG}).r0 ? u'
+	
+	StrCpy $INT_RET  $0
+	
+	pop $0
+
+	StrCmp $INT_RET "error" ErrorCannotLoadDll
+	StrCmp $INT_RET 0 End ErrorCannotInstallNetmon
+ 
+ErrorCannotLoadDll:
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installation will now continue anyway."
+	SetErrors
+	goto End
+		
+ErrorCannotInstallNetmon:
+
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installation will now continue"
+	SetErrors
+	goto End
+
+End:
+
+FunctionEnd
+
 
 Function CopyX86Driver
 	
@@ -843,21 +985,32 @@ Function CopyNT4Driver
 
 FunctionEnd
 
-
 Function un.RemoveAMD64Driver
 	
-	; these two stupid assignments are used to avoid a compilation warning...
-	StrCpy $BOOL_RET "1"
-	StrCpy $WOW_FS_REDIR_OLD_VAL "1"
+	push $0
+	push $1
 	
-	System::Call 'kernel32::Wow64DisableWow64FsRedirection(*i .$WOW_FS_REDIR_OLD_VAL).$BOOL_RET'
+	System::Call 'kernel32::Wow64DisableWow64FsRedirection(*i .r1).r0'
 	
+	StrCpy $BOOL_RET $0
+	StrCpy $WOW_FS_REDIR_OLD_VAL $1
+	pop $1
+	pop $0
+
 	StrCmp $BOOL_RET "error" ErrorCannotLoadDll
 	StrCmp $BOOL_RET 0 ErrorCannotDisableFsRedirector
     
     Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
 
-	System::Call 'kernel32::Wow64RevertWow64FsRedirection(*i $WOW_FS_REDIR_OLD_VAL).$BOOL_RET'
+	push $0
+	push $1
+	
+	StrCpy $1 $WOW_FS_REDIR_OLD_VAL
+	System::Call 'kernel32::Wow64RevertWow64FsRedirection(*i .r1).r0'
+	StrCpy $BOOL_RET $0
+	pop $1
+	pop $0
+
 
 	StrCmp $BOOL_RET "error" ErrorCannotLoadDll2
 	StrCmp $BOOL_RET 0 ErrorCannotRevertFsRedirector
@@ -865,22 +1018,22 @@ Function un.RemoveAMD64Driver
 	goto End
 
 	ErrorCannotLoadDll:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe uninstallation will now continue anyway."
 		SetErrors
 		goto End
 		
 	ErrorCannotDisableFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe uninstallation will now continue anyway."
 		SetErrors
 		goto End
 
 	ErrorCannotLoadDll2:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe uninstallation will now continue anyway."
 		SetErrors
 		goto End
 		
 	ErrorCannotRevertFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe uninstallation will now continue anyway."
 		SetErrors
 		goto End
 		
