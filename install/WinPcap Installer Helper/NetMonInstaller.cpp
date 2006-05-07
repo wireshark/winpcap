@@ -461,7 +461,10 @@ extern "C" int WINAPI manage_netmon(LPCTSTR LogFileName, char operation)
 	FILE *log;
 	int ReturnValue;
 
-	log = fopen(LogFileName, "a");
+	if (LogFileName != NULL)
+		log = fopen(LogFileName, "a");
+	else
+		log = NULL;
 
 	switch (operation)
 	{

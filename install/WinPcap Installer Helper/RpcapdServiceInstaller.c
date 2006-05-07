@@ -63,7 +63,10 @@ int WINAPI manage_rpcapd_service(LPCTSTR LogFileName, char operation)
 	FILE *log;
 	int ReturnValue;
 
-	log = fopen(LogFileName, "a");
+	if (LogFileName != NULL)
+		log = fopen(LogFileName, "a");
+	else
+		log = NULL;
 
 	switch(operation)
 	{
