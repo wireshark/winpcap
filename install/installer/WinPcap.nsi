@@ -122,7 +122,7 @@
   !define MUI_ABORTWARNING
   !define MUI_CUSTOMFUNCTION_GUIINIT myGuiInit
   !define MUI_CUSTOMFUNCTION_ABORT .onInstFailed
-  !define MUI_WELCOMEPAGE_TEXT "This Wizard will guide you through the entire WinPcap installation.\r\nFor more information or support about WinPcap, check out the WinPcap website.\r\n\r\nhttp://www.winpcap.org"
+  !define MUI_WELCOMEPAGE_TEXT "This Wizard will guide you through the entire WinPcap installation.\r\nFor more information or support, please visit the WinPcap home page.\r\n\r\nhttp://www.winpcap.org"
   
 ; This is needed to give focus to the main window after the initial "installer loading..." dialog is shown.
   Function myGUIInit
