@@ -653,6 +653,9 @@ NoWinpcapIcon:
 ;Create uninstaller
     WriteUninstaller "$INSTDIR\Uninstall.exe"
 
+    Delete /REBOOTOK "$INSTDIR\winpcapinstall.dll"
+
+
 EndInstallation:
 
 SectionEnd
@@ -672,6 +675,9 @@ SectionEnd
 Section "Uninstall" MainUnistall
 
     SetShellVarContext all
+
+	SetOutPath "$INSTDIR"
+	File "distribution\2000\WinPcapInstall.dll"
 
 ;Move to the system folder, whatever system we are
     SetOutPath "$SYSDIR"
