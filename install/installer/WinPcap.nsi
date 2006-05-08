@@ -245,9 +245,10 @@ CheckX86:
     
 AmdInstallationWarning: 
     
-    MessageBox MB_ICONEXCLAMATION|MB_OKCANCEL  "You are about to install ${WINPCAP_PRODUCT_NAME} on Windows x64.$\nThe support for this operating system is still *highly* experimental.$\nPress Ok if you want to continue, or Cancel if you want to abort the installation." IDOK NormalInstallation
-
-    Quit
+;   I think we can remove this warning about 64 bits..
+;    MessageBox MB_ICONEXCLAMATION|MB_OKCANCEL  "You are about to install ${WINPCAP_PRODUCT_NAME} on Windows x64.$\nThe support for this operating system is still *highly* experimental.$\nPress Ok if you want to continue, or Cancel if you want to abort the installation." IDOK NormalInstallation
+;
+;    Quit
 
 NormalInstallation:
 
@@ -831,11 +832,20 @@ FunctionEnd
 Function InstallNpfService
 	
 	push $0
+	push $1
 	
-	System::Call '$INSTDIR\WinPcapInstall::manage_npf_driver(t, i) i("",${REINSTALL_FLAG}).r0 ? u'
+	StrCpy $1 $OUTDIR
+	
+	SetOutPath $INSTDIR
+	
+; NOTE: NEVER EVER pass the path to the DLL to System::Call. On x64, it crashes the system.dll DLL.
+	System::Call 'WinPcapInstall::manage_npf_driver(t, i) i("",${REINSTALL_FLAG}).r0 ? u'
+	
+	SetOutPath $1
 	
 	StrCpy $INT_RET  $0
 	
+	pop $1
 	pop $0
 
 	StrCmp $INT_RET "error" ErrorCannotLoadDll
@@ -859,11 +869,20 @@ FunctionEnd
 Function un.UninstallNpfService
 	
 	push $0
+	push $1
 	
-	System::Call '$INSTDIR\WinPcapInstall::manage_npf_driver(t, i) i("",${UNINSTALL_FLAG}).r0 ? u'
+	StrCpy $1 $OUTDIR
+	
+	SetOutPath $INSTDIR
+	
+; NOTE: NEVER EVER pass the path to the DLL to System::Call. On x64, it crashes the system.dll DLL.
+	System::Call 'WinPcapInstall::manage_npf_driver(t, i) i("",${UNINSTALL_FLAG}).r0 ? u'
+	
+	SetOutPath $1
 	
 	StrCpy $INT_RET  $0
 	
+	pop $1
 	pop $0
 
 	StrCmp $INT_RET "error" ErrorCannotLoadDll
@@ -886,11 +905,20 @@ FunctionEnd
 
 Function InstallRpcapdService
 	push $0
+	push $1
 	
-	System::Call '$INSTDIR\WinPcapInstall::manage_rpcapd_service(t, i) i("",${REINSTALL_FLAG}).r0 ? u'
+	StrCpy $1 $OUTDIR
+	
+	SetOutPath $INSTDIR
+	
+; NOTE: NEVER EVER pass the path to the DLL to System::Call. On x64, it crashes the system.dll DLL.
+	System::Call 'WinPcapInstall::manage_rpcapd_service(t, i) i("",${REINSTALL_FLAG}).r0 ? u'
+	
+	SetOutPath $1
 	
 	StrCpy $INT_RET  $0
 	
+	pop $1
 	pop $0
 
 	StrCmp $INT_RET "error" ErrorCannotLoadDll
@@ -913,11 +941,20 @@ FunctionEnd
 
 Function un.UninstallRpcapdService
 	push $0
+	push $1
 	
-	System::Call '$INSTDIR\WinPcapInstall::manage_rpcapd_service(t, i) i("",${UNINSTALL_FLAG}).r0 ? u'
+	StrCpy $1 $OUTDIR
+	
+	SetOutPath $INSTDIR
+	
+; NOTE: NEVER EVER pass the path to the DLL to System::Call. On x64, it crashes the system.dll DLL.
+	System::Call 'WinPcapInstall::manage_rpcapd_service(t, i) i("",${UNINSTALL_FLAG}).r0 ? u'
+	
+	SetOutPath $1
 	
 	StrCpy $INT_RET  $0
 	
+	pop $1
 	pop $0
 
 	StrCmp $INT_RET "error" ErrorCannotLoadDll
@@ -941,11 +978,20 @@ FunctionEnd
 Function InstallNetmon
 	
 	push $0
+	push $1
 	
-	System::Call '$INSTDIR\WinPcapInstall::manage_netmon(t, i) i("",${INSTALL_FLAG}).r0 ? u'
+	StrCpy $1 $OUTDIR
+	
+	SetOutPath $INSTDIR
+	
+; NOTE: NEVER EVER pass the path to the DLL to System::Call. On x64, it crashes the system.dll DLL.
+	System::Call 'WinPcapInstall::manage_netmon(t, i) i("",${INSTALL_FLAG}).r0 ? u'
+	
+	SetOutPath $1
 	
 	StrCpy $INT_RET  $0
 	
+	pop $1
 	pop $0
 
 	StrCmp $INT_RET "error" ErrorCannotLoadDll
