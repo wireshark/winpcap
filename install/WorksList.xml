@@ -186,7 +186,7 @@
     <Cell ss:StyleID="s32"><NamedCell ss:Name="Print_Area"/></Cell>
     <Cell ss:StyleID="s33"/>
     <Cell ss:MergeAcross="1" ss:StyleID="s35" ss:Formula="=NOW()"><Data
-      ss:Type="DateTime">2006-05-08T10:39:33.850</Data></Cell>
+      ss:Type="DateTime">2006-05-08T10:44:19.460</Data></Cell>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="25.5" ss:StyleID="s36">
     <Cell ss:StyleID="s40"><Data ss:Type="String">Bug ID</Data><NamedCell
@@ -469,7 +469,7 @@
     <Cell><Data ss:Type="String">Create a dynamic report system to create a database of working and non-working cards. The non-working cards can be reported explicitly or automatically by winpcap. The users will be able to query the database from the WinPcap website.</Data></Cell>
     <Cell ss:Index="9"><Data ss:Type="String">LOW</Data></Cell>
    </Row>
-   <Row>
+   <Row ss:AutoFitHeight="0">
     <Cell><Data ss:Type="Number">28</Data></Cell>
     <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data></Cell>
     <Cell><Data ss:Type="String">LD</Data></Cell>
@@ -478,7 +478,7 @@
     <Cell><Data ss:Type="String">integration of ntar with libpcap.</Data></Cell>
     <Cell ss:Index="9"><Data ss:Type="String">LOW</Data></Cell>
    </Row>
-   <Row>
+   <Row ss:AutoFitHeight="0">
     <Cell><Data ss:Type="Number">29</Data></Cell>
     <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data></Cell>
     <Cell><Data ss:Type="String">LD</Data></Cell>
@@ -487,7 +487,7 @@
     <Cell><Data ss:Type="String">Add statistic counters for packet transmission</Data></Cell>
     <Cell ss:Index="9"><Data ss:Type="String">LOW</Data></Cell>
    </Row>
-   <Row ss:Height="26.25">
+   <Row ss:AutoFitHeight="0" ss:Height="26.25">
     <Cell><Data ss:Type="Number">30</Data></Cell>
     <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data></Cell>
     <Cell><Data ss:Type="String">LD</Data></Cell>
@@ -505,8 +505,15 @@
     <Cell><Data ss:Type="String">Cleanup the installer. At the moment there is some spaghetti code in the script.</Data></Cell>
     <Cell ss:Index="9"><Data ss:Type="String">LOW</Data></Cell>
    </Row>
-   <Row ss:AutoFitHeight="0">
-    <Cell ss:Index="2" ss:StyleID="s44"/>
+   <Row ss:Height="26.25">
+    <Cell><Data ss:Type="Number">32</Data></Cell>
+    <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data></Cell>
+    <Cell><Data ss:Type="String">Examples</Data></Cell>
+    <Cell><Data ss:Type="String">Some of the samples do not use the const keyword for the packet returned by pcap_next_ex and similar. As a consequence, the code compiles in a .c file, but not on a CPP file.</Data></Cell>
+    <Cell><Data ss:Type="String">4.0 RTM</Data></Cell>
+    <Cell><Data ss:Type="String">LOW</Data></Cell>
    </Row>
   </Table>
   <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
@@ -525,7 +532,7 @@
    <Selected/>
    <FreezePanes/>
    <SplitHorizontal>4</SplitHorizontal>
-   <TopRowBottomPane>4</TopRowBottomPane>
+   <TopRowBottomPane>16</TopRowBottomPane>
    <ActivePane>2</ActivePane>
    <Panes>
     <Pane>
@@ -535,8 +542,8 @@
     </Pane>
     <Pane>
      <Number>2</Number>
-     <ActiveRow>0</ActiveRow>
-     <RangeSelection>R1C1:R1C10</RangeSelection>
+     <ActiveRow>35</ActiveRow>
+     <ActiveCol>5</ActiveCol>
     </Pane>
    </Panes>
    <ProtectObjects>False</ProtectObjects>
