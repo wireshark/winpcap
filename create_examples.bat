@@ -19,6 +19,13 @@ rd /S /Q %WPDPACKDESTDIR%\Examples-remote\kdump\
 
 xcopy /s/e/v /Y %WINPCAPSOURCEDIR%\Examples-pcap		%WPDPACKDESTDIR%\Examples-pcap
 
+rem *** Delete WinPcapStress, since it's not a real example ***
+rd /S /Q %WPDPACKDESTDIR%\Examples-pcap\winpcap_stress
+
+rem *** Delete stats, since it's not a real example ***
+rd /S /Q %WPDPACKDESTDIR%\Examples-pcap\stats
+
+
 echo Folder \Examples created successfully
 set WPDPACKDESTDIR=
 set WINPCAPSOURCEDIR=
