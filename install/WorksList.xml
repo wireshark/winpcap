@@ -1,0 +1,447 @@
+<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Author>Gianluca Varenni</Author>
+  <LastAuthor>Gianluca Varenni</LastAuthor>
+  <LastPrinted>2006-04-20T14:54:12Z</LastPrinted>
+  <Created>2005-11-21T21:34:13Z</Created>
+  <LastSaved>2006-04-23T20:41:12Z</LastSaved>
+  <Company>Microsoft Corporation</Company>
+  <Version>11.6568</Version>
+ </DocumentProperties>
+ <ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel">
+  <WindowHeight>13245</WindowHeight>
+  <WindowWidth>19305</WindowWidth>
+  <WindowTopX>3945</WindowTopX>
+  <WindowTopY>60</WindowTopY>
+  <ProtectStructure>False</ProtectStructure>
+  <ProtectWindows>False</ProtectWindows>
+ </ExcelWorkbook>
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Bottom"/>
+   <Borders/>
+   <Font/>
+   <Interior/>
+   <NumberFormat/>
+   <Protection/>
+  </Style>
+  <Style ss:ID="s22">
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Size="9"/>
+  </Style>
+  <Style ss:ID="s23">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Size="9"/>
+  </Style>
+  <Style ss:ID="s24">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Size="9" ss:Bold="1"/>
+   <NumberFormat ss:Format="@"/>
+  </Style>
+  <Style ss:ID="s25">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Size="9"/>
+   <NumberFormat ss:Format="@"/>
+  </Style>
+  <Style ss:ID="s26">
+   <Alignment ss:Vertical="Bottom" ss:WrapText="1"/>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss"/>
+   <NumberFormat/>
+  </Style>
+  <Style ss:ID="s27">
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Size="9"/>
+   <NumberFormat ss:Format="dd/mm/yy;@"/>
+  </Style>
+  <Style ss:ID="s29">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Bottom"/>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Size="14" ss:Bold="1"/>
+   <Interior ss:Color="#CCFFFF" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="s30">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Size="9"/>
+   <Interior ss:Color="#CCFFFF" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="s31">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Size="9" ss:Bold="1"/>
+   <Interior ss:Color="#CCFFFF" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="@"/>
+  </Style>
+  <Style ss:ID="s32">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Size="9"/>
+   <Interior ss:Color="#CCFFFF" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="@"/>
+  </Style>
+  <Style ss:ID="s33">
+   <Alignment ss:Vertical="Bottom" ss:WrapText="1"/>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss"/>
+   <Interior ss:Color="#CCFFFF" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="General Date"/>
+  </Style>
+  <Style ss:ID="s34">
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Size="9"/>
+   <Interior ss:Color="#CCFFFF" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="s36">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Bottom"/>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Size="9" ss:Italic="1"/>
+   <Interior ss:Color="#CCFFFF" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="d/m/yy\ h:mm;@"/>
+  </Style>
+  <Style ss:ID="s37">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="s41">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Bold="1"/>
+   <Interior ss:Color="#CCFFFF" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="s42">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Bold="1"/>
+   <Interior ss:Color="#CCFFFF" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="@"/>
+  </Style>
+  <Style ss:ID="s43">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss"/>
+   <Interior ss:Color="#CCFFFF" ss:Pattern="Solid"/>
+   <NumberFormat/>
+  </Style>
+  <Style ss:ID="s44">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Bold="1"/>
+   <Interior ss:Color="#CCFFFF" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="dd/mm/yy;@"/>
+  </Style>
+  <Style ss:ID="s45">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Size="9" ss:Color="#339966"
+    ss:Bold="1"/>
+   <NumberFormat ss:Format="@"/>
+  </Style>
+  <Style ss:ID="s46">
+   <Alignment ss:Vertical="Bottom" ss:WrapText="1"/>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss"/>
+   <Interior/>
+   <NumberFormat/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="BugList">
+  <Names>
+   <NamedRange ss:Name="_FilterDatabase" ss:RefersTo="=BugList!R4C1:R5C10"
+    ss:Hidden="1"/>
+   <NamedRange ss:Name="Print_Area" ss:RefersTo="=BugList!R1C1:R5C7"/>
+  </Names>
+  <Table ss:ExpandedColumnCount="10" ss:ExpandedRowCount="25" x:FullColumns="1"
+   x:FullRows="1" ss:StyleID="s22" ss:DefaultRowHeight="13.5">
+   <Column ss:StyleID="s23" ss:Width="51"/>
+   <Column ss:StyleID="s24" ss:Width="49.5"/>
+   <Column ss:StyleID="s25" ss:Width="50.25"/>
+   <Column ss:StyleID="s25" ss:Width="60"/>
+   <Column ss:StyleID="s25" ss:Width="59.25" ss:Span="1"/>
+   <Column ss:Index="7" ss:StyleID="s26" ss:AutoFitWidth="0" ss:Width="404.25"/>
+   <Column ss:StyleID="s22" ss:Width="63"/>
+   <Column ss:StyleID="s22" ss:Width="51.75"/>
+   <Column ss:StyleID="s27" ss:AutoFitWidth="0" ss:Width="50.25"/>
+   <Row ss:AutoFitHeight="0" ss:Height="18">
+    <Cell ss:MergeAcross="9" ss:StyleID="s29"><Data ss:Type="String">Product: WinPcap</Data><NamedCell
+      ss:Name="Print_Area"/></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0" ss:Height="18">
+    <Cell ss:MergeAcross="9" ss:StyleID="s29"><Data ss:Type="String">Version: 3.2 a2</Data><NamedCell
+      ss:Name="Print_Area"/></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell ss:StyleID="s30"><NamedCell ss:Name="Print_Area"/></Cell>
+    <Cell ss:StyleID="s31"><NamedCell ss:Name="Print_Area"/></Cell>
+    <Cell ss:StyleID="s32"><NamedCell ss:Name="Print_Area"/></Cell>
+    <Cell ss:StyleID="s32"><NamedCell ss:Name="Print_Area"/></Cell>
+    <Cell ss:StyleID="s32"><NamedCell ss:Name="Print_Area"/></Cell>
+    <Cell ss:StyleID="s32"><NamedCell ss:Name="Print_Area"/></Cell>
+    <Cell ss:StyleID="s33"><NamedCell ss:Name="Print_Area"/></Cell>
+    <Cell ss:StyleID="s34"/>
+    <Cell ss:MergeAcross="1" ss:StyleID="s36" ss:Formula="=NOW()"><Data
+      ss:Type="DateTime">2006-04-23T13:44:16.400</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0" ss:Height="25.5" ss:StyleID="s37">
+    <Cell ss:StyleID="s41"><Data ss:Type="String">Bug ID</Data><NamedCell
+      ss:Name="Print_Area"/><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell ss:StyleID="s42"><Data ss:Type="String">Status</Data><NamedCell
+      ss:Name="Print_Area"/><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell ss:StyleID="s42"><Data ss:Type="String">Author</Data><NamedCell
+      ss:Name="Print_Area"/><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell ss:StyleID="s42"><Data ss:Type="String">Resp.</Data><NamedCell
+      ss:Name="Print_Area"/><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell ss:StyleID="s42"><Data ss:Type="String">Category</Data><NamedCell
+      ss:Name="Print_Area"/><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell ss:StyleID="s42"><Data ss:Type="String">Tool</Data><NamedCell
+      ss:Name="Print_Area"/><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell ss:StyleID="s43"><Data ss:Type="String">Notes</Data><NamedCell
+      ss:Name="Print_Area"/><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell ss:StyleID="s41"><Data ss:Type="String">In version</Data><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+    <Cell ss:StyleID="s41"><Data ss:Type="String">Priority</Data><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+    <Cell ss:StyleID="s44"><Data ss:Type="String">Closing date</Data><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+   </Row>
+   <Row ss:Height="26.25">
+    <Cell><Data ss:Type="Number">1</Data><NamedCell ss:Name="Print_Area"/><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data><NamedCell
+      ss:Name="Print_Area"/><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">GV</Data><NamedCell ss:Name="Print_Area"/><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Feature</Data><NamedCell
+      ss:Name="Print_Area"/><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">Installer</Data><NamedCell ss:Name="Print_Area"/><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+    <Cell ss:StyleID="s46"><Data ss:Type="String">Integrate npf_mgmt, and all the other scripts to a DLL invoked by the installer. This should hopefully prevent people from screwing up the installer.</Data><NamedCell
+      ss:Name="Print_Area"/><NamedCell ss:Name="_FilterDatabase"/></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">2</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Feature</Data></Cell>
+    <Cell><Data ss:Type="String">Installer</Data></Cell>
+    <Cell><Data ss:Type="String">Try to recompile nsis to have support for installation logging. Or find another solution for the logging.</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">3</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data></Cell>
+    <Cell><Data ss:Type="String">Installer</Data></Cell>
+    <Cell><Data ss:Type="String">Some users reported that the installer detects winpcap as already installer, while it's not there.</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">4</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data></Cell>
+    <Cell><Data ss:Type="String">packet.dll NT</Data></Cell>
+    <Cell><Data ss:Type="String">There's a memory leak while listing the adapters.</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">5</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data></Cell>
+    <Cell><Data ss:Type="String">Driver NT</Data></Cell>
+    <Cell><Data ss:Type="String">Convert all the IOCTL codes using the CTL_CODE macro instead of random numbers (as it is now).</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">6</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Feature</Data></Cell>
+    <Cell><Data ss:Type="String">Driver NT</Data></Cell>
+    <Cell><Data ss:Type="String">Implement security of the adapters, using the code provided someone last year.</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">7</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data></Cell>
+    <Cell><Data ss:Type="String">Documentation</Data></Cell>
+    <Cell><Data ss:Type="String">Clean up the documentation layout using the approach used in OEM WinPcap/</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">8</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data></Cell>
+    <Cell><Data ss:Type="String">Build system</Data></Cell>
+    <Cell><Data ss:Type="String">Use a single version file for all the binaries, as we do for OEM WinPcap.</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">9</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data></Cell>
+    <Cell><Data ss:Type="String">Installer</Data></Cell>
+    <Cell><Data ss:Type="String">Remove the code that downloads the first page from the WinPcap web site.</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">10</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data></Cell>
+    <Cell><Data ss:Type="String">Driver NT</Data></Cell>
+    <Cell><Data ss:Type="String">Clean up the read and write routines, trying to remove the PREfast errors.</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">11</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Feature</Data></Cell>
+    <Cell><Data ss:Type="String">Build system</Data></Cell>
+    <Cell><Data ss:Type="String">Migrate to Visual Studio .NET (2003? 2005?).</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">12</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Feature</Data></Cell>
+    <Cell><Data ss:Type="String">Driver NT</Data></Cell>
+    <Cell><Data ss:Type="String">Implement some mechanism to notify the user of an unbinding operation, or cable unplugged.</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">13</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Feature</Data></Cell>
+    <Cell><Data ss:Type="String">Driver NT</Data></Cell>
+    <Cell><Data ss:Type="String">kernel dump feature</Data></Cell>
+   </Row>
+   <Row ss:Height="26.25">
+    <Cell><Data ss:Type="Number">14</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data></Cell>
+    <Cell><Data ss:Type="String">packet.dll NT</Data></Cell>
+    <Cell><Data ss:Type="String">Cleanup the dllMain function: at the moment we are calling functions that are not allowed to be called from within DllMain (like &quot;system()&quot;).</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">15</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Feature</Data></Cell>
+    <Cell><Data ss:Type="String">Driver NT</Data></Cell>
+    <Cell><Data ss:Type="String">Test the driver against the NDIStest and against the normal HCT tests.</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">16</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data></Cell>
+    <Cell><Data ss:Type="String">wpcap.dll</Data></Cell>
+    <Cell><Data ss:Type="String">Try to fix all the compilation warnings.</Data></Cell>
+   </Row>
+   <Row ss:Height="115.5">
+    <Cell><Data ss:Type="Number">17</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Feature</Data></Cell>
+    <Cell><Data ss:Type="String">Build system</Data></Cell>
+    <Cell><Data ss:Type="String">Write down a (better) document that details how to &#10;1. integrate the libpcap sources&#10;2. update the versions&#10;3. compile every binary&#10;4. generate the documentation&#10;5. update the installer&#10;6. compile the installer&#10;7. package everything for the release&#10;8. package everything for SCM</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="Number">18</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">CLOSED</Data></Cell>
+   </Row>
+   <Row>
+    <Cell><Data ss:Type="Number">19</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">CLOSED</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">20</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">CLOSED</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">21</Data></Cell>
+    <Cell ss:StyleID="s45"><Data ss:Type="String">CLOSED</Data></Cell>
+   </Row>
+  </Table>
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+   <PageSetup>
+    <PageMargins x:Bottom="0.984251969" x:Left="0.3" x:Right="0.25" x:Top="0.47"/>
+   </PageSetup>
+   <Unsynced/>
+   <FitToPage/>
+   <Print>
+    <ValidPrinterInfo/>
+    <Scale>72</Scale>
+    <HorizontalResolution>300</HorizontalResolution>
+    <VerticalResolution>300</VerticalResolution>
+   </Print>
+   <PageBreakZoom>60</PageBreakZoom>
+   <Selected/>
+   <FreezePanes/>
+   <SplitHorizontal>4</SplitHorizontal>
+   <TopRowBottomPane>4</TopRowBottomPane>
+   <ActivePane>2</ActivePane>
+   <Panes>
+    <Pane>
+     <Number>3</Number>
+     <ActiveRow>4</ActiveRow>
+     <ActiveCol>1</ActiveCol>
+    </Pane>
+    <Pane>
+     <Number>2</Number>
+     <ActiveRow>21</ActiveRow>
+     <ActiveCol>6</ActiveCol>
+    </Pane>
+   </Panes>
+   <ProtectObjects>False</ProtectObjects>
+   <ProtectScenarios>False</ProtectScenarios>
+  </WorksheetOptions>
+  <AutoFilter x:Range="R4C1:R5C10"
+   xmlns="urn:schemas-microsoft-com:office:excel">
+  </AutoFilter>
+  <ConditionalFormatting xmlns="urn:schemas-microsoft-com:office:excel">
+   <Range>R5C9</Range>
+   <Condition>
+    <Qualifier>Equal</Qualifier>
+    <Value1>&quot;No&quot;</Value1>
+    <Format Style='color:maroon;font-style:italic;font-weight:700'/>
+   </Condition>
+   <Condition>
+    <Qualifier>Equal</Qualifier>
+    <Value1>&quot;Yes&quot;</Value1>
+    <Format Style='color:red;font-weight:700;background:#CCFFCC'/>
+   </Condition>
+  </ConditionalFormatting>
+  <ConditionalFormatting xmlns="urn:schemas-microsoft-com:office:excel">
+   <Range>R5C4:R5C6</Range>
+   <Condition>
+    <Qualifier>Equal</Qualifier>
+    <Value1>&quot;???&quot;</Value1>
+    <Format Style='color:maroon;font-style:italic;font-weight:400'/>
+   </Condition>
+  </ConditionalFormatting>
+  <ConditionalFormatting xmlns="urn:schemas-microsoft-com:office:excel">
+   <Range>R5C2:R5C3,R6C2:R25C2</Range>
+   <Condition>
+    <Qualifier>Equal</Qualifier>
+    <Value1>&quot;open&quot;</Value1>
+    <Format Style='color:red;font-style:italic;font-weight:700;background:lime'/>
+   </Condition>
+   <Condition>
+    <Qualifier>Equal</Qualifier>
+    <Value1>&quot;working&quot;</Value1>
+    <Format Style='color:red;font-style:italic;font-weight:700'/>
+   </Condition>
+   <Condition>
+    <Qualifier>Equal</Qualifier>
+    <Value1>&quot;to test&quot;</Value1>
+    <Format Style='color:#FF9900;font-style:italic;font-weight:700'/>
+   </Condition>
+  </ConditionalFormatting>
+ </Worksheet>
+</Workbook>
