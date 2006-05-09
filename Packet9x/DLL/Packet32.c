@@ -844,6 +844,8 @@ BOOLEAN PacketGetAdapterNames (PTSTR pStr,
 		*BufferSize = NeededBytes;
 		GlobalFree(OidData);
 		RegCloseKey(Key);
+
+		SetLastError(ERROR_INSUFFICIENT_BUFFER);
 		return FALSE;
 	}
 
