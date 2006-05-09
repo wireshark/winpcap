@@ -1562,7 +1562,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 		if (Status == NDIS_STATUS_SUCCESS)
 		{
-			SET_RESULT_SUCCESS(OidData->Length + sizeof(*OidData));
+			SET_RESULT_SUCCESS(sizeof(PACKET_OID_DATA) - 1 + OidData->Length);
 		}
 		else
 		{
