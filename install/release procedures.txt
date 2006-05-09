@@ -1,6 +1,7 @@
+$Header$
+
 WINPCAP RELEASE PROCEDURE
 =========================
-GV20060423
 
 This document explain how to 
 - update the version
@@ -16,17 +17,18 @@ Needed tools/libraries (32bit and 64bit AMD)
 - Microsoft Platform SDK Febrary 2003 (more recent versions do not work with VS6)
 - Microsoft Driver Development Kit for Windows 2003 SP1
 - The cygnus environment on your path (needed to execute step 11 and 12).
-   In particular you will need to have flex, bison, patch, touch.
+  In particular you will need to have flex, bison, patch, touch.
 - Doxygen 1.3.7 installed and on the path
 
 How to compile WinPcap
 ------------------------------------------------
 
 1.  Download winpcap (HEAD) from the CVS into %BUILD_TREE%
-NOTE: DO NOT USE A %BUILD_TREE% path containing spaces, the NT4 DDK build gets screwed up with spaces in the paths!!
+    NOTE: DO NOT USE A %BUILD_TREE% path containing spaces, the NT4 DDK build 
+          gets screwed up with spaces in the paths!!
 
-
-2.  Modify the version info into these files (version is x.y.0.z for release versions, 1-2 for OEM, 99,98... for previews &co).
+2.  Modify the version info into these files (version is x.y.0.z for release 
+    versions, 1-2 for OEM, 99,98... for previews &co).
     If necessary, modify the copyright year.
 	  %BUILD_TREE%\WinPcap\Packet9x\DLL\version.rc (the version is repeated 4 times)
 	  %BUILD_TREE%\winpcap\packetNtx\Dll\version.rc (the version is repeated 4 times)
@@ -35,20 +37,33 @@ NOTE: DO NOT USE A %BUILD_TREE% path containing spaces, the NT4 DDK build gets s
 	  %BUILD_TREE%\winpcap\install\WinPcap Installer Helper\version.rc (the version is repeated 4 times)
 	  %BUILD_TREE%\winpcap\packet9x\dll\packet32.c line 92
 	  %BUILD_TREE%\winpcap\wpcap\Win32-Extensions\version.rc (the version is repeated 4 times)
-	  
+	Also update the libpcap version (...wpcap.dll based on libpcap x.x.x) in this file
+	  %BUILD_TREE%\winpcap\wpcap\Win32-Extensions\version.rc
+
 3.  Modify the documentation version in the file
 	  %BUILD_TREE%\winpcap\dox\prj\winpcap_noc.dox (the version is repeated once)
 
 4.  Modify the device string into
 	  %BUILD_TREE%\winpcap\common\wpcapnames.h (first two defines). It should be "NPF"
 
-5.  Download the libpcap sources (usually 0_9 branch) into 
-	  %BUILD_TREE%\libpcap_<libpcap_version>
+5.  Open 
+	  %BUILd_TREE%\winpcap\install\installer\winpcap.nsi with an editor.
 
-6.  Be sure that the sources of libpcap do *not* contain any CVS folder. The tarball usually
-    contains the CVS folders if it's a daily snapshot. If any, remove them.
+6.  Edit the following version defines
+      !define WINPCAP_PRJ_MAJOR "4"
+      !define WINPCAP_PRJ_MINOR "0"
+      !define WINPCAP_PRJ_REV "0"
+      !define WINPCAP_PRJ_BUILD "120"
+      !define WINPCAP_PROJ_VERSION_DOTTED "4.0.0.120"
+      !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2006 CACE Technologies"
+      !define WINPCAP_PRODUCT_NAME "WinPcap 4.0 alpha1"
+      !define WINPCAP_COMPANY_NAME "CACE Technologies"
+      !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_alpha1.exe"
 
-7.  Commit 
+7.  Update the license year at the beginning of the file:
+	  %BUILd_TREE%\winpcap\install\installer\license.txt 
+
+8.  Commit 
 	  %BUILD_TREE%\WinPcap\Packet9x\DLL\version.rc
 	  %BUILD_TREE%\winpcap\packetNtx\Dll\version.rc
 	  %BUILD_TREE%\winpcap\packetNtx\Dll\WanPacket\version.rc
@@ -57,175 +72,153 @@ NOTE: DO NOT USE A %BUILD_TREE% path containing spaces, the NT4 DDK build gets s
 	  %BUILD_TREE%\winpcap\packet9x\dll\packet32.c
 	  %BUILD_TREE%\winpcap\wpcap\Win32-Extensions\version.rc
 	  %BUILD_TREE%\winpcap\dox\prj\winpcap_noc.dox
+	  %BUILd_TREE%\winpcap\install\installer\license.txt 
+	  %BUILd_TREE%\winpcap\install\installer\winpcap.nsi with an editor.
 	
 	into the CVS. These should be the *only* modified files in this module.
 
-8.  Tag the %BUILD_TREE%\winpcap module with the tag 
-	  WINPCAP_????????????
+9.  Tag the %BUILD_TREE%\winpcap module with the tag 
+	  WINPCAP_<MAJOR>_<MINOR>_<REV>_<BUILD>
 
-9.  Take the contents of %BUILD_TREE%\libpcap_<version> and copy it into
+10. Download the libpcap sources (usually 0_9 branch) into 
+	  %BUILD_TREE%\libpcap_<libpcap_version>
+
+11. Be sure that the sources of libpcap do *not* contain any CVS folder. The tarball usually
+    contains the CVS folders if it's a daily snapshot. If any, remove them.
+
+12. Take the contents of %BUILD_TREE%\libpcap_<version> and copy it into
 	  %BUILD_TREE%\winpcap\wpcap\libpcap 
 
-10. From the command line, go to folder 
+13. From the command line, go to folder 
       %BUILD_TREE%\winpcap\wpcap\libpcap
 
-11. On the command line, type "patch -p1 < remote_code.patch"
+14. On the command line, type "patch -p1 < remote_code.patch"
 
-12. CD into %BUILD_TREE%\winpcap\wpcap\prj and execute 
-	"build_scanner_parser.bat"	
+15. CD into %BUILD_TREE%\winpcap\wpcap\prj and execute 
+	  "build_scanner_parser.bat"	
 
-12a. Check that the version of libpcap in
-     %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 865
-        "static const char pcap_version_string[] = "libpcap version 0.9[.x]";"
-     makes sense (??? WHAT DOES IT MEAN???)
+16. CD into %BUILD_TREE%\winpcap\wpcap\libpcap\win32\prj and execute
+      "unix2dos libpcap.dsp"
 
-12b. Check that the version of wpcap in  
-     %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 875
+17. Check that the version of libpcap in
+      %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 865
+      "static const char pcap_version_string[] = "libpcap version 0.9[.x]";"
+    makes sense (??? WHAT DOES IT MEAN???)
+
+18. Check that the version of wpcap in  
+      %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 875
         "static const char wpcap_version_string[] = "3.1";"
-     is correct. This is a sort of hardcoded patch. If we want to fix this number, we
-     should patch the remote_code.patch file as well.
+    is correct. This is a sort of hardcoded patch. If we want to fix this number, we
+    should patch the remote_code.patch file as well.
 
-12c. At this point we should have rezipped the modified files to overwritten_files.zip.
-     TODO
+19. NOT DONE. At this point we should have rezipped the modified files to overwritten_files.zip.
      
-13. Zip the contents of the two folders 
+20. Zip the contents of the two folders 
 	  %BUILD_TREE%\winpcap
 	  %BUILD_TREE%\libpcap_<libpcap_version>
 		  |
 		  V
 	  %BUILD_TREE%\sources.zip
 
-14. Open a Win 2000 DDK Free build environment. Go into 
+21. Open a Win 2000 DDK Free build environment. Go into 
 	  %BUILD_TREE%\winpcap\packetntx. 
 	Execute "compileDriver.bat". Prefast 1.5.2402 should issue 9 warnings 
 	(20060423). 
 	Close the build environment.
 
-14a. Open the Win 2003 DDK free x64 build environment.  Go into 
+22. Open the Win 2003 DDK free x64 build environment.  Go into 
 	  %BUILD_TREE%\winpcap\packetntx. 
 	Execute "compileDriver.bat". 
 	Close the build environment.
 	
-15. Open the WinNT4 DDK Release build environment. Go into 
+23. Open the WinNT4 DDK Release build environment. Go into 
       %BUILD_TREE%\winpcap\packetntx. 
     Execute "compileDriver.bat". 
     Close the build environment. 
 	NOTE: TODO add how to check if the build was ok or not.
 
-16. Open %BUILD_TREE%\winpcap\packet9x\dll\project\packet.dsw with Visual Studio 6. 
+24. Open %BUILD_TREE%\winpcap\packet9x\dll\project\packet.dsw with Visual Studio 6. 
 	Go to Build->Batch Build, choose *all* the configurations and hit "rebuild all".
 	[20060423]No warnings should be generated.
     Close Visual Studio.
 
-16a. Open %BUILD_TREE%\winpcap\packetNtx\dll\project\packet.dsw with Visual Studio 6. 
+25. Open %BUILD_TREE%\winpcap\packetNtx\dll\project\packet.dsw with Visual Studio 6. 
 	Go to Build->Batch Build, choose *all* the configurations and hit "rebuild all".
 	[20060423]No warnings should be generated.
     Close Visual Studio.
 
-16b. Open %BUILD_TREE%\winpcap\wpcap\prj\wpcap.dsw with Visual Studio 6. 
+26. Open %BUILD_TREE%\winpcap\wpcap\prj\wpcap.dsw with Visual Studio 6. 
 	Go to Build->Batch Build, choose *all* the configurations that do *not* contain "DAG" in their name, and hit "rebuild all".
 	[20060423]A number of warnings are generated by all the libraries, ignore them.
 	TODO we should get rid of them.
     Close Visual Studio.
 
-16c. Open %BUILD_TREE%\winpcap\install\daemon_mgm\daemon_mgm.dsw with Visual Studio 6. 
+27. Open %BUILD_TREE%\winpcap\install\WinPcap Installer Helper\WinPcapInstallerHelper.dsw with Visual Studio 6. 
 	Go to Build->Batch Build, choose *all* the configurations and hit "rebuild all".
 	[20060423]No warnings should be generated.
     Close Visual Studio.
 
-16d. Open %BUILD_TREE%\winpcap\install\npf_mgm\npf_mgm.dsw with Visual Studio 6. 
-	Go to Build->Batch Build, choose *all* the configurations and hit "rebuild all".
-	[20060423]No warnings should be generated.
-    Close Visual Studio.
-
-16e. Open a Win 2000 DDK Free Build environment. go into
-	 %BUILD_TREE%\winpcap\install\NetMonInstaller
-	 Execute "compile.bat".
-	[20060423]No warnings should be generated.
-    Close the build environment. 
-
-17. Cygwin compilation (needed for the developer's pack).
+28. Cygwin compilation (needed for the developer's pack).
     Open a cygwin shell.
 
-17a. Go into 
-	%BUILD_TREE\winpcap\packetntx\dll\project
+29. Go into 
+	  %BUILD_TREE\winpcap\packetntx\dll\project
 	
-17b. Type "make". It should spit out 3 warnings.
+30. Type "make". It should spit out 3 warnings.
 
-17c. Go into 
+31. Go into 
 	 %BUILD_TREE\winpcap\wpcap\PRJ
 
-17d. Type "make". A copuple of warnings should be generated.
+32. Type "make". A copuple of warnings should be generated.
 
-    
-
-17. The build is complete.
+33. The build is complete.
 
 How to create the installer for WinPcap
 ---------------------------------------
-1. Open a command prompt, go to 
-	%BUILD_TREE%\winpcap\install
-	and execute "copy_installer_files.bat"
-2. Manually copy npf.vxd from a previous version of winpcap to
-    %BUILD_TREE%\winpcap\install\installer\distribution\9x.
-
-3. Open 
-	%BUILd_TREE%\winpcap\install\installer\winpcap.nsi with an editor.
-
-4. Edit the following version defines
-
-  !define WINPCAP_PRJ_MAJOR "4"
-  !define WINPCAP_PRJ_MINOR "0"
-  !define WINPCAP_PRJ_REV "0"
-  !define WINPCAP_PRJ_BUILD "120"
-  !define WINPCAP_PROJ_VERSION_DOTTED "4.0.0.120"
-  !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2006 CACE Technologies"
-  !define WINPCAP_PRODUCT_NAME "WinPcap 4.0 alpha1"
-  !define WINPCAP_COMPANY_NAME "CACE Technologies"
-  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_alpha1.exe"
-
-5. Update the license year:
-	%BUILd_TREE%\winpcap\install\installer\license.txt
-	
-5. Open 
-	%BUILd_TREE%\winpcap\install\installer\winpcap.nsi with NSIS and create the installer. 
-	NSIS will fail if not all the binaries have been created correctly.
+1.  Open a command prompt, go to 
+	  %BUILD_TREE%\winpcap\install
+    and execute "copy_installer_files.bat"
+2.  Manually copy npf.vxd from a previous version of winpcap to
+      %BUILD_TREE%\winpcap\install\installer\distribution\9x.
+3.  Open 
+	  %BUILd_TREE%\winpcap\install\installer\winpcap.nsi with NSIS and create the installer. 
+    NSIS will fail if not all the binaries have been created correctly.
 
 How to create the developer's pack for WinPcap
 ----------------------------------------------
 
-1. After the build is completed, in a command prompt go to 
-		
-		%BUILD_TREE%\winpcap
+1.  After the build is completed, in a command prompt go to 
+ 	  %BUILD_TREE%\winpcap
 
-2. Run "build_wpdpack.bat". The script will pause after each step of the
-   build:
+2.  Run "build_wpdpack.bat". The script will pause after each step of the
+    build:
 	a. Creation of the include folder (no errors/warnings)
 	b. Creation of the lib folder (no errors/warnings)
-	c. Creation of the bin folder (no errors/warnings)
-	d. Creation of the Examples and Examples-pcap folders (no errors/warnings)
-	e. creation of the documentation. Some warnings/errors are generated:
+	c. Creation of the Examples and Examples-pcap folders (no errors/warnings)
+	d. creation of the documentation. Some warnings/errors are generated:
 	   - a Doxygen warning processing the file winpcap/dox/libpcap/funcs/pcap.h
-	   - an error copying some *.gif files.
 	   
 
 How to create the public sources zip file
 -----------------------------------------
-1. Uncompress the file 
-	%BUILD_TREE\Sources.zip into a folder named 
-	%BUILD_TREE\Sources
+1.  Uncompress the file 
+	  %BUILD_TREE\Sources.zip into a folder named 
+	  %BUILD_TREE\Sources
 	
-2. Delete the following folder:
-	%BUILD_TREE\Sources\winpcap\install
+2.  Delete the following folder:
+	  %BUILD_TREE\Sources\winpcap\install
 
-3. Delete the following file:
-	%BUILD_TREE\Sources\winpcap\wpcap\libpcap\remote_overwritten_files.zip
-	
-4. Perform a search under
-	%BUILD_TREE%\Sources\winpcap\
+3.  Delete the following file:
+	  %BUILD_TREE\Sources\winpcap\wpcap\libpcap\remote_overwritten_files.zip
+
+4.  Delete the following folder:	
+	  %BUILD_TREE\Sources\libpcap_<version>
+
+5.  Perform a search under
+	  %BUILD_TREE%\Sources\winpcap\
 	and delete *all* the folders named "CVS".
 
-5. Done.
+6.  Done.
 	
 SCM procedures
 --------------
@@ -238,7 +231,7 @@ SCM procedures
 2. 	%BUILD_TREE%\Sources.zip
 		|
 		V
-	WinPcap_<version>_Sources.zip
+	WinPcap_<version>_InternalSources.zip
 
 3.  %BUILD_TREE%\
 		|
@@ -248,9 +241,21 @@ SCM procedures
 4.  %BUILD_TREE%\Sources\winpcap
         |
         V
-    WinPcap_<version>_Sources.zip
+    WinPcap_<version>_PluginSources.zip
  
 5.  %BUILD_TREE%\winpcap\install\installer\WinPcap_<version>.exe
         |
         V
     WinPcap_<version>_Installer.exe
+    
+    
+TODO (20060509):
+=====
+
+Document:
+- Testing version of files
+- Testing devpack
+- Testing installer
+- MD5sum
+- LOG_TO_FILE for Win95 is not there
+- create Web folder (log_to_file).
