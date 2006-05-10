@@ -126,10 +126,9 @@ user-level applications.&nbsp;
     the packet to the application; if it is false the packet is discarded. NPF
     packet filter is a bit more complex, because it determines not only if the
     packet should be kept, but also the amount of bytes to keep. The filtering
-    system adopted by NPF derives from the <b>BSD Packet Filter</b> (BPF), a
-    virtual processor able to execute filtering programs expressed in a
-    pseudo-assembler and created at user level. The
-    the application takes a user-defined filter (e.g. “pick up all UDP packets”)
+    system adopted by NPF derives from the <b>BSD Packet Filter</b> (BPF), a 
+	virtual processor able to execute filtering programs expressed in a 
+	pseudo-assembler and created at user level. The application takes a user-defined filter (e.g. “pick up all UDP packets”)
     and, using wpcap.dll, compiles them into a BPF program (e.g. “if the
     packet is IP and the <i>protocol type</i>  field is equal to 17, then return
     true”). Then, the application uses the <i>BIOCSETF</i>
