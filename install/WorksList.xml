@@ -10,9 +10,9 @@
   <LastAuthor>Gianluca Varenni</LastAuthor>
   <LastPrinted>2006-04-20T14:54:12Z</LastPrinted>
   <Created>2005-11-21T21:34:13Z</Created>
-  <LastSaved>2006-04-28T17:52:59Z</LastSaved>
+  <LastSaved>2006-05-29T15:13:28Z</LastSaved>
   <Company>Microsoft Corporation</Company>
-  <Version>11.5606</Version>
+  <Version>11.6568</Version>
  </DocumentProperties>
  <ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel">
   <WindowHeight>13245</WindowHeight>
@@ -162,7 +162,7 @@
     ss:Hidden="1"/>
    <NamedRange ss:Name="Print_Area" ss:RefersTo="=BugList!R1C1:R5C7"/>
   </Names>
-  <Table ss:ExpandedColumnCount="10" ss:ExpandedRowCount="39" x:FullColumns="1"
+  <Table ss:ExpandedColumnCount="10" ss:ExpandedRowCount="40" x:FullColumns="1"
    x:FullRows="1" ss:StyleID="s21" ss:DefaultRowHeight="13.5">
    <Column ss:StyleID="s22" ss:Width="51"/>
    <Column ss:StyleID="s23" ss:Width="49.5"/>
@@ -191,7 +191,7 @@
     <Cell ss:StyleID="s32"><NamedCell ss:Name="Print_Area"/></Cell>
     <Cell ss:StyleID="s33"/>
     <Cell ss:MergeAcross="1" ss:StyleID="s35" ss:Formula="=NOW()"><Data
-      ss:Type="DateTime">2006-05-18T11:22:33.890</Data></Cell>
+      ss:Type="DateTime">2006-05-29T08:04:13.280</Data></Cell>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="25.5" ss:StyleID="s36">
     <Cell ss:StyleID="s40"><Data ss:Type="String">Bug ID</Data><NamedCell
@@ -547,6 +547,15 @@
     <Cell><Data ss:Type="String">IOCTL-like system to get and set adapter options, or use the OIDs from wpcap.dll</Data></Cell>
     <Cell ss:Index="9"><Data ss:Type="String">LOW</Data></Cell>
    </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">36</Data></Cell>
+    <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV (reported by Jim Gibbons)</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data></Cell>
+    <Cell><Data ss:Type="String">driver</Data></Cell>
+    <Cell><Data ss:Type="String">winpcap seems to crash when transmitting 0-length packets.</Data></Cell>
+    <Cell ss:Index="9"><Data ss:Type="String">HIGH</Data></Cell>
+   </Row>
   </Table>
   <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
    <PageSetup>
@@ -564,7 +573,7 @@
    <Selected/>
    <FreezePanes/>
    <SplitHorizontal>4</SplitHorizontal>
-   <TopRowBottomPane>15</TopRowBottomPane>
+   <TopRowBottomPane>30</TopRowBottomPane>
    <ActivePane>2</ActivePane>
    <Panes>
     <Pane>
@@ -574,7 +583,7 @@
     </Pane>
     <Pane>
      <Number>2</Number>
-     <ActiveCol>8</ActiveCol>
+     <ActiveRow>40</ActiveRow>
     </Pane>
    </Panes>
    <ProtectObjects>False</ProtectObjects>
@@ -605,7 +614,7 @@
    </Condition>
   </ConditionalFormatting>
   <ConditionalFormatting xmlns="urn:schemas-microsoft-com:office:excel">
-   <Range>R5C2:R5C3,R6C2:R39C2</Range>
+   <Range>R5C2:R5C3,R6C2:R40C2</Range>
    <Condition>
     <Qualifier>Equal</Qualifier>
     <Value1>&quot;open&quot;</Value1>
