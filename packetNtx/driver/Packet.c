@@ -1518,12 +1518,16 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 					);
 				
         } else {
+			//
+			// Release ownership of the Ndis Handle
+			//
+			NPF_StopUsingBinding(Open);
+
             //
             //  buffer too small
             //
 			SET_FAILURE_BUFFER_SMALL();
 			break;
-			
         }
 		
         if (Status == NDIS_STATUS_PENDING) 
