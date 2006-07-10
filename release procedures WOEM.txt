@@ -62,14 +62,13 @@ How to compile OEM WinPcap (NOT for the Toolkit)
 
 14. Open a Win 2000 DDK Free build environment. Go into 
 	  %BUILD_TREE%\winpcap_oem\packetntx. 
-	Execute "compile2k_oem.bat". Prefast 1.5.2402 should issue 18 warnings 
-	(20060222). 
+	Execute "compileDriver.bat". Prefast 1.5.2402 should issue 9 warnings 
+	(20060710). 
 	Close the build environment.
 
 15. Open the WinNT4 DDK Release build environment. Go into 
       %BUILD_TREE%\winpcap_oem\packetntx. 
-    Execute "compileNT4_oem.bat". An error "The system cannot find the file 
-    specified" should be issued (20060126), it's normal. Close the build 
+    Execute "compileDriver.bat". Close the build 
     environment. 
     NOTE: DO NOT EXECUTE 14. and 15. at the same time, they overwrite files in 
     the build process that are incompatible between the two builds.
