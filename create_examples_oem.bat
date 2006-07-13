@@ -23,6 +23,13 @@ rd /S /Q %WPDPACKDESTDIR%\Examples-remote\NetMeter\
 rem *** Delete kdump since the feature is not available at the moment *** 
 rd /S /Q %WPDPACKDESTDIR%\Examples-remote\kdump\
 
+rem *** Delete WinPcapStress, since it's not a real example ***
+rd /S /Q %WPDPACKDESTDIR%\Examples-pcap\winpcap_stress
+
+rem *** Delete stats, since it's not a real example ***
+rd /S /Q %WPDPACKDESTDIR%\Examples-pcap\stats
+
+
 xcopy /s/e/v /Y %WINPCAPSOURCEDIR%\Examples-pcap		%WPDPACKDESTDIR%\Examples-pcap
 
 echo Folder \Examples created successfully
