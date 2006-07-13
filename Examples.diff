@@ -1,6 +1,6 @@
-diff -urb ..\winpcap\Examples\/PacketDriver/GetMacAddress/GetMacAddress.c .\Examples/PacketDriver/GetMacAddress/GetMacAddress.c
---- ..\winpcap\Examples\/PacketDriver/GetMacAddress/GetMacAddress.c	2006-02-22 08:28:16.000000000 -0800
-+++ .\Examples/PacketDriver/GetMacAddress/GetMacAddress.c	2006-04-18 09:07:30.000000000 -0700
+diff -urb ..\winpcap\Examples/PacketDriver/GetMacAddress/GetMacAddress.c .\Examples/PacketDriver/GetMacAddress/GetMacAddress.c
+--- ..\winpcap\Examples/PacketDriver/GetMacAddress/GetMacAddress.c	2006-02-22 09:28:16.000000000 -0800
++++ .\Examples/PacketDriver/GetMacAddress/GetMacAddress.c	2006-07-12 17:25:44.703125000 -0700
 @@ -50,6 +50,16 @@
  	ULONG		AdapterLength;
  	PPACKET_OID_DATA  OidData;
@@ -18,9 +18,9 @@ diff -urb ..\winpcap\Examples\/PacketDriver/GetMacAddress/GetMacAddress.c .\Exam
  	
  	//
  	// Obtain the name of the adapters installed on this machine
-diff -urb ..\winpcap\Examples\/PacketDriver/TestPacketCapture/TestPacketCapture.c .\Examples/PacketDriver/TestPacketCapture/TestPacketCapture.c
---- ..\winpcap\Examples\/PacketDriver/TestPacketCapture/TestPacketCapture.c	2006-02-22 08:28:16.000000000 -0800
-+++ .\Examples/PacketDriver/TestPacketCapture/TestPacketCapture.c	2006-04-18 09:07:30.000000000 -0700
+diff -urb ..\winpcap\Examples/PacketDriver/TestPacketCapture/TestPacketCapture.c .\Examples/PacketDriver/TestPacketCapture/TestPacketCapture.c
+--- ..\winpcap\Examples/PacketDriver/TestPacketCapture/TestPacketCapture.c	2006-02-22 09:28:16.000000000 -0800
++++ .\Examples/PacketDriver/TestPacketCapture/TestPacketCapture.c	2006-07-12 17:25:44.703125000 -0700
 @@ -72,6 +72,17 @@
  
  struct bpf_stat stat;
@@ -39,9 +39,9 @@ diff -urb ..\winpcap\Examples\/PacketDriver/TestPacketCapture/TestPacketCapture.
  	//
  	// Obtain the name of the adapters installed on this machine
  	//
-diff -urb ..\winpcap\Examples\/PacketDriver/TestPacketSend/TestPacketSend.c .\Examples/PacketDriver/TestPacketSend/TestPacketSend.c
---- ..\winpcap\Examples\/PacketDriver/TestPacketSend/TestPacketSend.c	2006-02-22 08:28:16.000000000 -0800
-+++ .\Examples/PacketDriver/TestPacketSend/TestPacketSend.c	2006-04-18 09:30:31.515625000 -0700
+diff -urb ..\winpcap\Examples/PacketDriver/TestPacketSend/TestPacketSend.c .\Examples/PacketDriver/TestPacketSend/TestPacketSend.c
+--- ..\winpcap\Examples/PacketDriver/TestPacketSend/TestPacketSend.c	2006-02-22 09:28:16.000000000 -0800
++++ .\Examples/PacketDriver/TestPacketSend/TestPacketSend.c	2006-07-12 17:25:44.703125000 -0700
 @@ -71,6 +71,7 @@
  ULONG		AdapterLength;
  
@@ -65,9 +65,9 @@ diff -urb ..\winpcap\Examples\/PacketDriver/TestPacketSend/TestPacketSend.c .\Ex
  	
  	AdapterName[0]=0;
  	
-diff -urb ..\winpcap\Examples\/UDPdump/udpdump.c .\Examples/UDPdump/udpdump.c
---- ..\winpcap\Examples\/UDPdump/udpdump.c	2006-02-22 08:28:16.000000000 -0800
-+++ .\Examples/UDPdump/udpdump.c	2006-04-18 09:07:28.203125000 -0700
+diff -urb ..\winpcap\Examples/UDPdump/udpdump.c .\Examples/UDPdump/udpdump.c
+--- ..\winpcap\Examples/UDPdump/udpdump.c	2006-02-22 09:28:15.000000000 -0800
++++ .\Examples/UDPdump/udpdump.c	2006-07-12 17:25:44.703125000 -0700
 @@ -80,6 +80,13 @@
  char packet_filter[] = "ip and udp";
  struct bpf_program fcode;
@@ -82,9 +82,26 @@ diff -urb ..\winpcap\Examples\/UDPdump/udpdump.c .\Examples/UDPdump/udpdump.c
  	/* Retrieve the device list */
  	if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf) == -1)
  	{
-diff -urb ..\winpcap\Examples\/iflist/iflist.c .\Examples/iflist/iflist.c
---- ..\winpcap\Examples\/iflist/iflist.c	2006-02-22 08:28:16.000000000 -0800
-+++ .\Examples/iflist/iflist.c	2006-04-18 09:07:28.203125000 -0700
+diff -urb ..\winpcap\Examples/UserLevelBridge/UserBridge.c .\Examples/UserLevelBridge/UserBridge.c
+--- ..\winpcap\Examples/UserLevelBridge/UserBridge.c	2006-07-12 17:15:46.437500000 -0700
++++ .\Examples/UserLevelBridge/UserBridge.c	2006-07-12 17:27:30.578125000 -0700
+@@ -78,6 +78,13 @@
+ 	struct bpf_program fcode;
+ 	in_out_adapters couple0, couple1;
+ 
++	/* start OEM WinPcap */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	/* 
+ 	 * Retrieve the device list 
+ 	 */
+diff -urb ..\winpcap\Examples/iflist/iflist.c .\Examples/iflist/iflist.c
+--- ..\winpcap\Examples/iflist/iflist.c	2006-02-22 09:28:16.000000000 -0800
++++ .\Examples/iflist/iflist.c	2006-07-12 17:25:44.703125000 -0700
 @@ -54,6 +54,13 @@
    char errbuf[PCAP_ERRBUF_SIZE+1];
    char source[PCAP_ERRBUF_SIZE+1];
@@ -99,9 +116,9 @@ diff -urb ..\winpcap\Examples\/iflist/iflist.c .\Examples/iflist/iflist.c
    printf("Enter the device you want to list:\n"
  			"rpcap://              ==> lists interfaces in the local machine\n"
  			"rpcap://hostname:port ==> lists interfaces in a remote machine\n"
-diff -urb ..\winpcap\Examples\/misc/basic_dump.c .\Examples/misc/basic_dump.c
---- ..\winpcap\Examples\/misc/basic_dump.c	2003-07-07 23:21:30.000000000 -0700
-+++ .\Examples/misc/basic_dump.c	2006-04-18 09:07:28.203125000 -0700
+diff -urb ..\winpcap\Examples/misc/basic_dump.c .\Examples/misc/basic_dump.c
+--- ..\winpcap\Examples/misc/basic_dump.c	2003-07-08 00:21:29.000000000 -0700
++++ .\Examples/misc/basic_dump.c	2006-07-12 17:25:44.703125000 -0700
 @@ -12,6 +12,13 @@
  pcap_t *adhandle;
  char errbuf[PCAP_ERRBUF_SIZE];
@@ -116,9 +133,9 @@ diff -urb ..\winpcap\Examples\/misc/basic_dump.c .\Examples/misc/basic_dump.c
  	/* Retrieve the device list on the local machine */
  	if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf) == -1)
  	{
-diff -urb ..\winpcap\Examples\/misc/basic_dump_ex.c .\Examples/misc/basic_dump_ex.c
---- ..\winpcap\Examples\/misc/basic_dump_ex.c	2003-07-07 23:21:30.000000000 -0700
-+++ .\Examples/misc/basic_dump_ex.c	2006-04-18 09:07:28.203125000 -0700
+diff -urb ..\winpcap\Examples/misc/basic_dump_ex.c .\Examples/misc/basic_dump_ex.c
+--- ..\winpcap\Examples/misc/basic_dump_ex.c	2003-07-08 00:21:29.000000000 -0700
++++ .\Examples/misc/basic_dump_ex.c	2006-07-12 17:25:44.718750000 -0700
 @@ -15,6 +15,12 @@
  struct pcap_pkthdr *header;
  u_char *pkt_data;
@@ -132,9 +149,9 @@ diff -urb ..\winpcap\Examples\/misc/basic_dump_ex.c .\Examples/misc/basic_dump_e
      
  	/* Retrieve the device list on the local machine */
  	if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf) == -1)
-diff -urb ..\winpcap\Examples\/pcap_filter/pcap_filter.c .\Examples/pcap_filter/pcap_filter.c
---- ..\winpcap\Examples\/pcap_filter/pcap_filter.c	2006-02-22 08:28:16.000000000 -0800
-+++ .\Examples/pcap_filter/pcap_filter.c	2006-04-18 09:07:28.218750000 -0700
+diff -urb ..\winpcap\Examples/pcap_filter/pcap_filter.c .\Examples/pcap_filter/pcap_filter.c
+--- ..\winpcap\Examples/pcap_filter/pcap_filter.c	2006-02-22 09:28:16.000000000 -0800
++++ .\Examples/pcap_filter/pcap_filter.c	2006-07-12 17:25:44.718750000 -0700
 @@ -90,6 +90,13 @@
  		}
  	}
@@ -149,9 +166,9 @@ diff -urb ..\winpcap\Examples\/pcap_filter/pcap_filter.c .\Examples/pcap_filter/
  	// open a capture from the network
  	if (source != NULL)
  	{
-diff -urb ..\winpcap\Examples\/pktdump_ex/pktdump_ex.c .\Examples/pktdump_ex/pktdump_ex.c
---- ..\winpcap\Examples\/pktdump_ex/pktdump_ex.c	2006-02-22 08:28:16.000000000 -0800
-+++ .\Examples/pktdump_ex/pktdump_ex.c	2006-04-18 09:07:28.218750000 -0700
+diff -urb ..\winpcap\Examples/pktdump_ex/pktdump_ex.c .\Examples/pktdump_ex/pktdump_ex.c
+--- ..\winpcap\Examples/pktdump_ex/pktdump_ex.c	2006-02-22 09:28:16.000000000 -0800
++++ .\Examples/pktdump_ex/pktdump_ex.c	2006-07-12 17:25:44.718750000 -0700
 @@ -56,6 +56,13 @@
  		   "      pktdump_ex -s file://c:/temp/file.acp\n"
  		   "      pktdump_ex -s rpcap://\\Device\\NPF_{C8736017-F3C3-4373-94AC-9A34B7DAD998}\n\n");
@@ -166,9 +183,9 @@ diff -urb ..\winpcap\Examples\/pktdump_ex/pktdump_ex.c .\Examples/pktdump_ex/pkt
  	if(argc < 3)
  	{
  
-diff -urb ..\winpcap\Examples\/smp_1/smp_1.c .\Examples/smp_1/smp_1.c
---- ..\winpcap\Examples\/smp_1/smp_1.c	2006-02-22 08:28:16.000000000 -0800
-+++ .\Examples/smp_1/smp_1.c	2006-04-18 09:07:28.218750000 -0700
+diff -urb ..\winpcap\Examples/smp_1/smp_1.c .\Examples/smp_1/smp_1.c
+--- ..\winpcap\Examples/smp_1/smp_1.c	2006-02-22 09:28:16.000000000 -0800
++++ .\Examples/smp_1/smp_1.c	2006-07-12 17:25:44.718750000 -0700
 @@ -57,6 +57,13 @@
  	printf("and that the caplen is equal to the packet length.\n");
  	printf("If there is an error, it will print out a message saying \"Inconsistent XXX\"\n");
