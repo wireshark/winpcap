@@ -11,9 +11,9 @@ mkdir %WPDPACKDESTDIR%\Include  2>nul >nul
 xcopy /v /Y %WINPCAPSOURCEDIR%\wpcap\libpcap\Win32\Include\bittypes.h 		%WPDPACKDESTDIR%\Include\	
 xcopy /v /Y %WINPCAPSOURCEDIR%\wpcap\libpcap\Win32\Include\Gnuc.h 		%WPDPACKDESTDIR%\Include\	
 xcopy /v /Y %WINPCAPSOURCEDIR%\wpcap\libpcap\Win32\Include\ip6_misc.h		%WPDPACKDESTDIR%\Include\	
-xcopy /v /Y %WINPCAPSOURCEDIR%\wpcap\libpcap\rpcapd\win32-pthreads\pthread.h	%WPDPACKDESTDIR%\Include\	
-xcopy /v /Y %WINPCAPSOURCEDIR%\wpcap\libpcap\rpcapd\win32-pthreads\sched.h 	%WPDPACKDESTDIR%\Include\	
-xcopy /v /Y %WINPCAPSOURCEDIR%\wpcap\libpcap\rpcapd\win32-pthreads\semaphore.h	%WPDPACKDESTDIR%\Include\	
+rem xcopy /v /Y %WINPCAPSOURCEDIR%\wpcap\libpcap\rpcapd\win32-pthreads\pthread.h	%WPDPACKDESTDIR%\Include\	
+rem xcopy /v /Y %WINPCAPSOURCEDIR%\wpcap\libpcap\rpcapd\win32-pthreads\sched.h 	%WPDPACKDESTDIR%\Include\	
+rem xcopy /v /Y %WINPCAPSOURCEDIR%\wpcap\libpcap\rpcapd\win32-pthreads\semaphore.h	%WPDPACKDESTDIR%\Include\	
 xcopy /v /Y %WINPCAPSOURCEDIR%\wpcap\libpcap\PCAP-INT.H		 		%WPDPACKDESTDIR%\Include\	
 xcopy /v /Y %WINPCAPSOURCEDIR%\wpcap\libpcap\pcap-bpf.h		 		%WPDPACKDESTDIR%\Include\	
 xcopy /v /Y %WINPCAPSOURCEDIR%\wpcap\libpcap\pcap-stdinc.h		 	%WPDPACKDESTDIR%\Include\	
