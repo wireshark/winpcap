@@ -601,6 +601,12 @@
 			RelativePath="binaries\Packetnt.dll">
 		</File>
 		<File
+			RelativePath=".\prebuild_debug.bat">
+		</File>
+		<File
+			RelativePath=".\prebuild_release.bat">
+		</File>
+		<File
 			RelativePath="WinpcapOem.def">
 		</File>
 	</Files>
