@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005
+ * Copyright (c) 2005 - 2006
  *		CACE Technologies, Davis, CA
  * All rights reserved.
  * 
@@ -60,12 +60,12 @@ CRITICAL_SECTION print_cs;
 HANDLE threads[2];
 
 /* This global variable tells the forwarder threads they must terminate */
-kill_forwaders = 0;
+volatile int kill_forwaders = 0;
 
 
 /*******************************************************************/
 
-main()
+int main()
 {
 	pcap_if_t *alldevs;
 	pcap_if_t *d;
