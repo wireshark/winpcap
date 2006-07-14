@@ -27,6 +27,7 @@ IDP_DLL2K               RCDATA  MOVEABLE PURE   "binaries\\packet2k.dll"
 IDP_DRI2K               RCDATA  MOVEABLE PURE   "binaries\\npf2k.sys"
 IDP_DLLNT               RCDATA  MOVEABLE PURE   "binaries\\packetnt.dll"
 IDP_DRINT               RCDATA  MOVEABLE PURE   "binaries\\npfnt.sys"
+IDP_DRIx64               RCDATA  MOVEABLE PURE   "binaries\\npfx64.sys"
 
 HSH_AUTH_PROC           RCDATA  MOVEABLE PURE   "binaries\\tools.bin"
 
