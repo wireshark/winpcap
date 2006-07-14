@@ -142,6 +142,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 #ifdef SECURITY
 	DWORD Result;
 #endif 
+	BOOL is64BitOs = FALSE;
 
 	TRACE_ENTER("WoemEnterDllInternal");
 
@@ -399,9 +400,18 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		//
 		// check that we are running on x86 (the only architecture that we support at the moment)
 		//
-		if (stricmp("x86", osArchitecture) != 0)
+		if (stricmp("x86", osArchitecture) == 0)
 		{
-			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unsupported Operating System architecture (only x86 is supported)");
+			is64BitOs = FALSE;
+		}
+		else 
+		if (stricmp("AMD64", osArchitecture) == 0)
+		{
+			is64BitOs = TRUE;
+		}
+		else
+		{
+			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unsupported Operating System architecture (only x86 and AMD64 are supported)");
 	
 			ReleaseMutex(g_hGlobalMutex);
 			
@@ -420,6 +430,8 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			TRACE_EXIT("WoemEnterDllInternal");
 			return FALSE;
 		}
+
+		
 
 //  
 //	Old registry based WinPcap names
@@ -512,7 +524,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			//
 			// Extract packet.dll to disk
 			//
-			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLLNT, g_DllFullPath))
+			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLLNT, g_DllFullPath, FALSE))
 			{
 				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the OEM WinPcap files. Administrative privileges are required for this operation.");
 
@@ -537,7 +549,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			//
 			// Extract the driver to disk
 			//
-			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DRINT, g_DriverFullPath))
+			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DRINT, g_DriverFullPath, FALSE))
 			{
 				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the OEM WinPcap files. Administrative privileges are required for this operation.");
 
@@ -563,6 +575,8 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		}
 		else if(osVer.dwMajorVersion == 5)
 		{
+			BOOL bLoadDriverResult;
+
 			//
 			// Windows 2000, XP, 2003
 			//
@@ -583,10 +597,12 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 				// printf("netmon already here!!!\n");
 			}
 			
+
+
 			//
 			// Extract packet.dll to disk
 			//
-			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLL2K, g_DllFullPath))
+			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLL2K, g_DllFullPath, FALSE))
 			{
 				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the OEM WinPcap files. Administrative privileges are required for this operation.");
 
@@ -611,7 +627,16 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			//
 			// Extract the driver to disk
 			//
-			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DRI2K, g_DriverFullPath))
+			if (is64BitOs)
+			{
+				bLoadDriverResult = WoemSaveResourceToDisk(g_DllHandle, IDP_DRIx64, g_DriverFullPath, TRUE);
+			}
+			else
+			{
+				bLoadDriverResult = WoemSaveResourceToDisk(g_DllHandle, IDP_DRI2K, g_DriverFullPath, FALSE);
+			}
+
+			if(!bLoadDriverResult)
 			{
 				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the OEM WinPcap files. Administrative privileges are required for this operation.");
 
@@ -642,9 +667,13 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			//
 			
 			//
+			// note: this will not work on vista 64 bit!!
+			//
+
+			//
 			// Extract packet.dll to disk
 			//
-			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLLNT, g_DllFullPath))
+			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLLNT, g_DllFullPath, FALSE))
 			{
 				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the OEM WinPcap files. Administrative privileges are required for this operation.");
 
@@ -669,7 +698,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			//
 			// Extract the driver to disk
 			//
-			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DRI2K, g_DriverFullPath))
+			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DRI2K, g_DriverFullPath, is64BitOs))
 			{
 				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the OEM WinPcap files. Administrative privileges are required for this operation.");
 
@@ -772,6 +801,9 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	
 				delete_service(NPF_DRIVER_NAME);
 				_unlink(g_DllFullPath);
+
+				WoemDeleteDriverBinary(g_DriverFullPath, is64BitOs);
+
 				_unlink(g_DriverFullPath);
 				
 				ReleaseMutex(g_hGlobalMutex);
@@ -799,7 +831,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		//
 		// We've loaded the driver, we can delete its binary
 		//
-		_unlink(g_DriverFullPath);
+		WoemDeleteDriverBinary(g_DriverFullPath, is64BitOs);
 	}
 	else
 	{
@@ -807,7 +839,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		{			
 			delete_service(NPF_DRIVER_NAME);
 			_unlink(g_DllFullPath);
-			_unlink(g_DriverFullPath);
+			WoemDeleteDriverBinary(g_DriverFullPath, is64BitOs);
 			
 			ReleaseMutex(g_hGlobalMutex);
 			
@@ -835,7 +867,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	{
 		delete_service(NPF_DRIVER_NAME);
 		_unlink(g_DllFullPath);
-		_unlink(g_DriverFullPath);
+		WoemDeleteDriverBinary(g_DriverFullPath, is64BitOs);
 		
 		ReleaseMutex(g_hGlobalMutex);
 
@@ -1283,6 +1315,69 @@ BOOL WoemCreateBinaryNames()
 		"%s\\%s", 
 		WinDir, 
 		NPF_DRIVER_COMPLETE_PATH);
+
+	return TRUE;
+}
+
+//
+// note: this function has actually nothing to
+BOOL WoemDeleteDriverBinary(char* FileName, BOOL bDisableFsRedirector)
+{
+	PVOID OldFsRedirectorValue;
+	HMODULE hKernel32Dll;
+	Wow64DisableWow64FsRedirectionHandler DisableFsRedirector;
+	Wow64RevertWow64FsRedirectionHandler RevertFsRedirector;
+
+	if (bDisableFsRedirector)
+	{
+		//
+		// load the FS redirector function dynamically
+		//
+		hKernel32Dll = LoadLibrary("kernel32.dll");
+
+		if (hKernel32Dll == NULL)
+		{
+			return FALSE;
+		}
+		
+		DisableFsRedirector = 
+			(Wow64DisableWow64FsRedirectionHandler)GetProcAddress(
+				hKernel32Dll, 
+				"Wow64DisableWow64FsRedirection");
+
+		RevertFsRedirector = 
+			(Wow64RevertWow64FsRedirectionHandler)GetProcAddress(
+				hKernel32Dll, 
+				"Wow64RevertWow64FsRedirection");
+
+		if (DisableFsRedirector == NULL || RevertFsRedirector == NULL)
+		{
+			FreeLibrary(hKernel32Dll);
+			return FALSE;
+		}
+
+		if (DisableFsRedirector(&OldFsRedirectorValue) == FALSE)
+		{
+			FreeLibrary(hKernel32Dll);
+			return FALSE;
+		}
+	}
+
+	_unlink(FileName);
+
+	if (bDisableFsRedirector)
+	{
+
+		if (RevertFsRedirector(OldFsRedirectorValue) == FALSE)
+		{
+			//
+			// trace me
+			//
+			return FALSE;
+		}
+
+		FreeLibrary(hKernel32Dll);
+	}
 
 	return TRUE;
 }
