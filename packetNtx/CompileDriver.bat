@@ -49,7 +49,7 @@ mkdir driver\bin\xp 2> nul
 
 rem copy driver\NPF_NT5.RC driver\NPF.RC
 
-set TARGETPATH=bin\xp
+set TARGETPATH=..\..\..\winpcap_oem\PacketNtx\driver\bin\xp
 set NPF_C_DEFINES=-D__NPF_AMD64__ -DNDIS50  -DWPCAP_OEM
 
 rem
