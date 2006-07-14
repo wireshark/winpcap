@@ -50,8 +50,22 @@ volatile extern BOOL g_StillToInit;
 ////////////////////////////////////////////////////////////////////
 // Resources handling prototypes
 ////////////////////////////////////////////////////////////////////
-BOOL WoemSaveResourceToDisk(HINSTANCE hInst, int ResID, char* FileName);
+BOOL WoemSaveResourceToDisk(HINSTANCE hInst, int ResID, char* FileName, BOOL bDisableFsRedirector);
 BOOL WoemGetResource(HINSTANCE hInst, int ResID, LPVOID * lpResMem, LPDWORD dwResSize);
+
+////////////////////////////////////////////////////////////////////
+// Definitions of the Win32 functions to disable/enable FS 
+// redirectors on WOW64. We need these prototypes because we load
+// the functions dynamically.
+////////////////////////////////////////////////////////////////////
+typedef WINBASEAPI BOOL (WINAPI *Wow64DisableWow64FsRedirectionHandler)( PVOID *OldValue);
+typedef WINBASEAPI BOOL (WINAPI *Wow64RevertWow64FsRedirectionHandler)( PVOID OlValue);
+
+////////////////////////////////////////////////////////////////////
+// Function to delete the driver binary, taking care of running
+// on win32 or WOW64
+////////////////////////////////////////////////////////////////////
+BOOL WoemDeleteDriverBinary(char* FileName, BOOL bDisableFsRedirector);
 
 ////////////////////////////////////////////////////////////////////
 // Registry and names-related functions
@@ -59,37 +73,5 @@ BOOL WoemGetResource(HINSTANCE hInst, int ResID, LPVOID * lpResMem, LPDWORD dwRe
 //BOOL WoemCreateNameRegistryEntries();
 //BOOL WoemDeleteNameRegistryEntries();
 BOOL WoemCreateBinaryNames();
-
-////////////////////////////////////////////////////////////////////
-// Debug definitions
-////////////////////////////////////////////////////////////////////
-
-#if 0
-
-#define DEBUGTRACE
-#define TRACE_OUTPUTDEBUGSTRING
-
-#ifdef DEBUGTRACE
-#define TracePrint printf
-#define WoemReportError() do{MessageBox(NULL, g_LastWoemError, "OEM WinPcap error", MB_OK); g_InitError = TRUE;} while(0)
-#else
-#define TracePrint
-#define WoemReportError() do{g_InitError = TRUE;}while(0)
-#endif // DEBUGTRACE
-
-#ifdef TRACE_MBOXES
-#define TraceEnter(X) MessageBox(NULL, X, "OEM WinPcap trace", MB_OK)
-#elif defined TRACE_OUTPUTDEBUGSTRING
-#define TraceEnter(X) OutputDebugString(X)
-#else
-#define TraceEnter(X)
-#endif
-
-#endif
-
-////////////////////////////////////////////////////////////////////
-// Error codes
-////////////////////////////////////////////////////////////////////
-
 
 #endif //__WINPCAP_OEM_H_E4C69242_4757_4139_A7E4_CA06F37A5B73
