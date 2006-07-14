@@ -7,4 +7,5 @@ copy ..\..\packetNtx\Dll\Project\Packet_Debug_2k\packet.dll .\Binaries\packet2k.
 echo Copying drivers
 copy ..\..\packetNtx\Driver\bin\2k\i386\npf.sys .\Binaries\npf2k.sys
 copy ..\..\packetNtx\Driver\bin\NT4\i386\checked\npf.sys .\Binaries\npfnt.sys
+copy ..\..\packetNtx\Driver\bin\xp\AMD64\npf.sys .\Binaries\npfx64.sys
 
