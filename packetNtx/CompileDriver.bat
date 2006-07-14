@@ -47,7 +47,7 @@ echo *******************************************************
 mkdir driver\bin 2> nul
 mkdir driver\bin\xp 2> nul
 
-rem copy driver\NPF_NT5.RC driver\NPF.RC
+copy driver\NPF_NT5_x64.RC ..\..\winpcap\packetntx\driver\NPF.RC
 
 set TARGETPATH=..\..\..\winpcap_oem\PacketNtx\driver\bin\xp
 set NPF_C_DEFINES=-D__NPF_AMD64__ -DNDIS50  -DWPCAP_OEM
