@@ -3,5 +3,6 @@
 #define IDP_DRI2K         110
 #define IDP_DLLNT         111
 #define IDP_DRINT         112
+#define IDP_DRIx64         114
 
 #define HSH_AUTH_PROC			113
