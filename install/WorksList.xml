@@ -10,12 +10,12 @@
   <LastAuthor>Gianluca Varenni</LastAuthor>
   <LastPrinted>2006-04-20T14:54:12Z</LastPrinted>
   <Created>2005-11-21T21:34:13Z</Created>
-  <LastSaved>2006-05-29T15:13:28Z</LastSaved>
+  <LastSaved>2006-07-14T22:17:29Z</LastSaved>
   <Company>Microsoft Corporation</Company>
   <Version>11.6568</Version>
  </DocumentProperties>
  <ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel">
-  <WindowHeight>13245</WindowHeight>
+  <WindowHeight>13050</WindowHeight>
   <WindowWidth>19305</WindowWidth>
   <WindowTopX>3945</WindowTopX>
   <WindowTopY>60</WindowTopY>
@@ -195,7 +195,7 @@
     <Cell ss:StyleID="s32"><NamedCell ss:Name="Print_Area"/></Cell>
     <Cell ss:StyleID="s33"/>
     <Cell ss:MergeAcross="1" ss:StyleID="s35" ss:Formula="=NOW()"><Data
-      ss:Type="DateTime">2006-06-16T08:42:48.980</Data></Cell>
+      ss:Type="DateTime">2006-07-14T16:27:25.700</Data></Cell>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="25.5" ss:StyleID="s36">
     <Cell ss:StyleID="s40"><Data ss:Type="String">Bug ID</Data><NamedCell
@@ -553,22 +553,22 @@
     <Cell><Data ss:Type="String">IOCTL-like system to get and set adapter options, or use the OIDs from wpcap.dll</Data></Cell>
     <Cell ss:Index="9"><Data ss:Type="String">LOW</Data></Cell>
    </Row>
-   <Row ss:AutoFitHeight="0">
+   <Row ss:Height="39">
     <Cell><Data ss:Type="Number">36</Data></Cell>
     <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data></Cell>
     <Cell><Data ss:Type="String">GV (reported by Jim Gibbons)</Data></Cell>
     <Cell ss:Index="5"><Data ss:Type="String">Bug</Data></Cell>
     <Cell><Data ss:Type="String">driver</Data></Cell>
-    <Cell><Data ss:Type="String">winpcap seems to crash when transmitting 0-length packets.</Data></Cell>
+    <Cell><Data ss:Type="String">winpcap seems to crash when transmitting 0-length packets. &#10;NOTE GV (20060713): tried to replicate the problem on a XP VM, the driver fails the write request if the packet is 0 bytes. Asked Jsimmons to report a crash dump in order to analyze what's going on.</Data></Cell>
     <Cell ss:Index="9"><Data ss:Type="String">HIGH</Data></Cell>
    </Row>
-   <Row ss:AutoFitHeight="0" ss:Height="39">
+   <Row ss:Height="77.25">
     <Cell><Data ss:Type="Number">37</Data></Cell>
     <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data></Cell>
     <Cell><Data ss:Type="String">GV (reported by Powell, William)</Data></Cell>
     <Cell ss:Index="5"><Data ss:Type="String">Bug</Data></Cell>
     <Cell><Data ss:Type="String">driver?</Data></Cell>
-    <Cell><Data ss:Type="String">WinPcap interacts really badly with the SonicWall VPN client package. (http://help.mysonicwall.com/applications/vpnclient/). After installing WinPcap, the network stack seems to be dead. Uninstalling doesn't help.</Data></Cell>
+    <Cell><Data ss:Type="String">WinPcap interacts really badly with the SonicWall VPN client package. (http://help.mysonicwall.com/applications/vpnclient/). After installing WinPcap, the network stack seems to be dead. Uninstalling doesn't help. &#10;NOTE GV (20060714): tried the vpn software on a XP virtual machine, installing winpcap after VPN software. No problems have been encountered. I haven't tried to connect to a VPN to verify problems when a VPN is running.</Data></Cell>
     <Cell ss:Index="9"><Data ss:Type="String">LOW</Data></Cell>
    </Row>
    <Row ss:AutoFitHeight="0">
@@ -606,8 +606,8 @@
     </Pane>
     <Pane>
      <Number>2</Number>
-     <ActiveRow>42</ActiveRow>
-     <ActiveCol>4</ActiveCol>
+     <ActiveRow>40</ActiveRow>
+     <ActiveCol>6</ActiveCol>
     </Pane>
    </Panes>
    <ProtectObjects>False</ProtectObjects>
