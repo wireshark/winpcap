@@ -35,10 +35,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+//
+// NOTE: remember to include WPCAP and HAVE_REMOTE among your
+// preprocessor definitions.
+//
+
 #include <pcap.h>
 
 #define LINE_LEN 16
-
 
 main(int argc, char **argv)
 {	
@@ -48,7 +52,7 @@ u_int inum, i=0;
 char errbuf[PCAP_ERRBUF_SIZE];
 int res;
 struct pcap_pkthdr *header;
-u_char *pkt_data;
+const u_char *pkt_data;
 
 	printf("pktdump_ex: prints the packets of the network using WinPcap.\n");
 	printf("   Usage: pktdump_ex [-s source]\n\n"
@@ -64,7 +68,7 @@ u_char *pkt_data;
 		if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf) == -1)
 		{
 			fprintf(stderr,"Error in pcap_findalldevs_ex: %s\n", errbuf);
-			exit(1);
+			return -1;
 		}
 		
 		/* Print the list */
@@ -80,7 +84,7 @@ u_char *pkt_data;
 		
 		if (i==0)
 		{
-			printf("\nNo interfaces found! Make sure WinPcap is installed.\n");
+			fprintf(stderr,"No interfaces found! Exiting.\n");
 			return -1;
 		}
 		
@@ -151,7 +155,7 @@ u_char *pkt_data;
 
 	if(res == -1)
 	{
-		printf("Error reading the packets: %s\n", pcap_geterr(fp));
+		fprintf(stderr, "Error reading the packets: %s\n", pcap_geterr(fp));
 		return -1;
 	}
 
