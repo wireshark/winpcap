@@ -53,22 +53,66 @@ NPF_Write(
     POPEN_INSTANCE		Open;
     PIO_STACK_LOCATION	IrpSp;
     PNDIS_PACKET		pPacket;
-	UINT				i;
     NDIS_STATUS		    Status;
+	ULONG				NumSends;
+	ULONG				numSentPackets;
 
-	IF_LOUD(DbgPrint("NPF_Write\n");)
+	TRACE_ENTER();
 
 	IrpSp = IoGetCurrentIrpStackLocation(Irp);
 
-
     Open=IrpSp->FileObject->FsContext;
 	
+	NumSends = Open->Nwrites;
+
+	//
+	// validate the send parameters set by the IOCTL
+	//
+	if (NumSends == 0)
+	{
+		Irp->IoStatus.Information = 0;
+		Irp->IoStatus.Status = STATUS_SUCCESS;
+		IoCompleteRequest(Irp, IO_NO_INCREMENT);
+		
+		TRACE_EXIT();
+		return STATUS_SUCCESS;
+	}
+
+	//
+	// Validate input parameters: 
+	// 1. The packet size should be greater than 0,
+	// 2. less-equal than max frame size for the link layer and
+	// 3. the maximum frame size of the link layer should not be zero.
+	//
+	if(IrpSp->Parameters.Write.Length == 0 || 	// Check that the buffer provided by the user is not empty
+		Open->MaxFrameSize == 0 ||	// Check that the MaxFrameSize is correctly initialized
+		IrpSp->Parameters.Write.Length > Open->MaxFrameSize) // Check that the fame size is smaller that the MTU
+	{
+		TRACE_MESSAGE(PACKET_DEBUG_LOUD,"Frame size out of range, or maxFrameSize = 0. Send aborted");
+
+		Irp->IoStatus.Information = 0;
+		Irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
+		IoCompleteRequest(Irp, IO_NO_INCREMENT);
+		
+		TRACE_EXIT();
+		return STATUS_UNSUCCESSFUL;
+	}
+
+	// 
+	// Increment the ref counter of the binding handle, if possible
+	//
 	if(NPF_StartUsingBinding(Open) == FALSE)
 	{ 
-		// The Network adapter was removed. 
-		EXIT_FAILURE(0); 
+		TRACE_MESSAGE(PACKET_DEBUG_LOUD,"Adapter is probably unbinding, cannot send packets");
+
+		Irp->IoStatus.Information = 0;
+		Irp->IoStatus.Status = STATUS_INVALID_DEVICE_REQUEST;
+		IoCompleteRequest(Irp, IO_NO_INCREMENT);
+		
+		TRACE_EXIT();
+		return STATUS_INVALID_DEVICE_REQUEST;
 	} 
-	
+
 	NdisAcquireSpinLock(&Open->WriteLock);
 	if(Open->WriteInProgress)
 	{
@@ -77,107 +121,135 @@ NPF_Write(
 
 		NPF_StopUsingBinding(Open);
 
-		EXIT_FAILURE(0); 
+		TRACE_MESSAGE(PACKET_DEBUG_LOUD,"Another Send operation is in progress, aborting.");
+
+		Irp->IoStatus.Information = 0;
+		Irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
+		IoCompleteRequest(Irp, IO_NO_INCREMENT);
+		
+		TRACE_EXIT();
+
+		return STATUS_UNSUCCESSFUL;
 	}
 	else
 	{
 		Open->WriteInProgress = TRUE;
+		NdisResetEvent(&Open->NdisWriteCompleteEvent);
 	}
 
 	NdisReleaseSpinLock(&Open->WriteLock);
 
-	IF_LOUD(DbgPrint("Max frame size = %d, packet size = %d\n", Open->MaxFrameSize, IrpSp->Parameters.Write.Length);)
+	TRACE_MESSAGE2(PACKET_DEBUG_LOUD,"Max frame size = %u, packet size = %u", Open->MaxFrameSize, IrpSp->Parameters.Write.Length);
 
-
-	if(IrpSp->Parameters.Write.Length == 0 || 	// Check that the buffer provided by the user is not empty
-		Open->MaxFrameSize == 0 ||	// Check that the MaxFrameSize is correctly initialized
-		IrpSp->Parameters.Write.Length > Open->MaxFrameSize) // Check that the fame size is smaller that the MTU
-	{
-		IF_LOUD(DbgPrint("frame size out of range, send aborted\n");)
-
-		NPF_StopUsingBinding(Open);
-		EXIT_FAILURE(0); 
-	}
-
-
-    IoMarkIrpPending(Irp);
-
-	Open->Multiple_Write_Counter=Open->Nwrites;
+	//
+	// reset the number of packets pending the SendComplete
+	//
+	Open->TransmitPendingPackets = 0;
 
 	NdisResetEvent(&Open->WriteEvent);
 
-
-	for(i=0;i<Open->Nwrites;i++){
-		
-		//  Try to get a packet from our list of free ones
+	numSentPackets = 0;
+	
+	while( numSentPackets < NumSends )
+	{
 		NdisAllocatePacket(
 			&Status,
 			&pPacket,
 			Open->PacketPool
 			);
 
-		// If asked, set the flags for this packet.
-		// Currently, the only situation in which we set the flags is to disable the reception of loopback
-		// packets, i.e. of the packets sent by us.
-		if(Open->SkipSentPackets)
+		if (Status == NDIS_STATUS_SUCCESS) 
 		{
-			NdisSetPacketFlags(
-				pPacket,
-				g_SendPacketFlags);
-		}
-
-		if (Status != NDIS_STATUS_SUCCESS) {
+			//
+			// packet is available, prepare it and send it with NdisSend.
+			//
 			
-			//  No free packets
-			Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
-			IoCompleteRequest (Irp, IO_NO_INCREMENT);
-		
-			NPF_StopUsingBinding(Open);
+			//
+			// If asked, set the flags for this packet.
+			// Currently, the only situation in which we set the flags is to disable the reception of loopback
+			// packets, i.e. of the packets sent by us.
+			//
+			if(Open->SkipSentPackets)
+			{
+				NdisSetPacketFlags(
+					pPacket,
+					g_SendPacketFlags);
+			}
 
-			return STATUS_INSUFFICIENT_RESOURCES;
-		}
-		
-		// The packet hasn't a buffer that needs not to be freed after every single write
-		RESERVED(pPacket)->FreeBufAfterWrite = FALSE;
 
-		// Save the IRP associated with the packet
-		RESERVED(pPacket)->Irp=Irp;
-		
-		//  Attach the writes buffer to the packet
-		NdisChainBufferAtFront(pPacket,Irp->MdlAddress);
-		
-		//  Call the MAC
-		NdisSend(
-			&Status,
-			Open->AdapterHandle,
-			pPacket);
+			// The packet hasn't a buffer that needs not to be freed after every single write
+			RESERVED(pPacket)->FreeBufAfterWrite = FALSE;
 
-		if (Status != NDIS_STATUS_PENDING) {
-			//  The send didn't pend so call the completion handler now
-			NPF_SendComplete(
-				Open,
-				pPacket,
-				Status
-				);
+//			// Save the IRP associated with the packet
+//			RESERVED(pPacket)->Irp=Irp;
+
+			//  Attach the writes buffer to the packet
+			NdisChainBufferAtFront(pPacket,Irp->MdlAddress);
+
+			InterlockedIncrement(&Open->TransmitPendingPackets);
 			
+			NdisResetEvent(&Open->NdisWriteCompleteEvent);
+
+			//
+			//  Call the MAC
+			//
+			NdisSend(
+				&Status,
+				Open->AdapterHandle,
+				pPacket);
+
+			if (Status != NDIS_STATUS_PENDING) 
+			{
+				//  The send didn't pend so call the completion handler now
+				NPF_SendComplete(
+					Open,
+					pPacket,
+					Status
+					);
+			}
+
+			numSentPackets ++;
 		}
-		
-		if(i%100==99){
-			NdisWaitEvent(&Open->WriteEvent,1000);  
-			NdisResetEvent(&Open->WriteEvent);
+		else
+		{
+			//
+			// no packets are available in the Transmit pool, wait some time. The 
+			// event gets signalled when at least half of the TX packet pool packets
+			// are available
+			//
+			NdisWaitEvent(&Open->WriteEvent,1);  
 		}
 	}
-	
+
 	//
-	// NOTE: this is potentially wrong: we are telling that we do not use the 
-	// handler any more, but it's not completely true.
-	// a pending NdisSend can be in progress. However if the write
-	// operation is still pending, NDIS cannot call our Unbind handler, and
-	// probably the user will never call our NPF_Close handler.
+	// when we reach this point, all the packets have been enqueued to NdisSend,
+	// we just need to wait for all the packets to be completed by the SendComplete
+	// (if any of the NdisSend requests returned STATUS_PENDING)
+	//
+	NdisWaitEvent(&Open->NdisWriteCompleteEvent, 0);
+
+	//
+	// all the packets have been transmitted, release the use of the adapter binding
 	//
 	NPF_StopUsingBinding(Open);
 
-    return(STATUS_PENDING);
+	//
+	// no more writes are in progress
+	//
+	NdisAcquireSpinLock(&Open->WriteLock);
+	Open->WriteInProgress = FALSE;
+	NdisReleaseSpinLock(&Open->WriteLock);
+
+	//
+	// Complete the Irp and return success
+	//
+	Irp->IoStatus.Status = STATUS_SUCCESS;
+	Irp->IoStatus.Information = IrpSp->Parameters.Write.Length;
+	IoCompleteRequest(Irp, IO_NO_INCREMENT);
+			
+	TRACE_EXIT();
+	
+	return STATUS_SUCCESS;
 }
 
 //-------------------------------------------------------------------
@@ -277,6 +349,10 @@ NPF_BufferedWrite(
 			// Malformed header
 			IF_LOUD(DbgPrint("NPF_BufferedWrite: malformed or bogus user buffer, aborting write.\n");)
 			
+			// 
+			// release ownership of the NdisAdapter binding
+			//
+			NPF_StopUsingBinding(Open);
 			return -1;
 		}
 
@@ -457,13 +533,11 @@ NPF_SendComplete(
 				   )
 				   
 {
-	PIRP              Irp;
-	PIO_STACK_LOCATION  irpSp;
 	POPEN_INSTANCE      Open;
 	PMDL TmpMdl;
+	
+	TRACE_ENTER();
 
-	IF_LOUD(DbgPrint("NPF: SendComplete, BindingContext=%p\n",ProtocolBindingContext);)
-		
 	Open= (POPEN_INSTANCE)ProtocolBindingContext;
 
 	if( RESERVED(pPacket)->FreeBufAfterWrite )
@@ -488,6 +562,7 @@ NPF_SendComplete(
 
 		NdisSetEvent(&Open->WriteEvent);
 		
+		TRACE_EXIT();
 		return;
 	}
 	else
@@ -496,31 +571,37 @@ NPF_SendComplete(
 		// Packet sent by NPF_Write()
 		//
 
-		if((Open->Nwrites - Open->Multiple_Write_Counter) %100 == 99)
-			NdisSetEvent(&Open->WriteEvent);
-		
-		Open->Multiple_Write_Counter--;
+		ULONG stillPendingPackets = InterlockedDecrement(&Open->TransmitPendingPackets);
 
-		if(Open->Multiple_Write_Counter == 0){
-			// Release the buffer and awake the application
-			NdisUnchainBufferAtFront(pPacket, &TmpMdl);
-			
-			// Complete the request
-			Irp=RESERVED(pPacket)->Irp;
-			irpSp = IoGetCurrentIrpStackLocation(Irp);
-
-			Irp->IoStatus.Status = Status;
-			Irp->IoStatus.Information = irpSp->Parameters.Write.Length;
-			IoCompleteRequest(Irp, IO_NO_INCREMENT);
-			
-			NdisAcquireSpinLock(&Open->WriteLock);
-			Open->WriteInProgress = FALSE;
-			NdisReleaseSpinLock(&Open->WriteLock);
-		}
-
+		//
 		//  Put the packet back on the free list
+		//
 		NdisFreePacket(pPacket);
 
+		//
+		// if the number of packets submitted to NdisSend and not acknoledged is less than half the
+		// packets in the TX pool, wake up any transmitter waiting for available packets in the TX
+		// packet pool
+		//
+		if (stillPendingPackets < TRANSMIT_PACKETS/2)
+		{
+			NdisSetEvent(&Open->WriteEvent);
+		}
+		else
+		{
+			//
+			// otherwise, reset the event, so that we are sure that the NPF_Write will eventually block to
+			// waitg for availability of packets in the TX packet pool
+			//
+			NdisResetEvent(&Open->WriteEvent);
+		}
+
+		if(stillPendingPackets == 0)
+		{
+			NdisSetEvent(&Open->NdisWriteCompleteEvent);
+		}
+
+		TRACE_EXIT();
 		return;
 	}
 	
