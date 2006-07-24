@@ -46,12 +46,12 @@ u_int inum, i=0;
 char errbuf[PCAP_ERRBUF_SIZE];
 int res;
 struct pcap_pkthdr *header;
-u_char *pkt_data;
+const u_char *pkt_data;
 struct pcap_pkthdr old;
 
 char a[11];
 
-	printf("SMP_1. (Copyright 2003 Gianluca Varenni - NetGroup, Politecnico di Torino)\n");
+	printf("SMP_1\n");
 	printf("\nThis program tests the WinPcap kernel driver on SMP machines.\n");
 	printf("The program tests that timestamps on the captured packets are consistent,\n");
 	printf("and that the caplen is equal to the packet length.\n");
