@@ -415,10 +415,12 @@ typedef struct _OPEN_INSTANCE
 
 	ULONG			   AdapterHandleUsageCounter;
 	NDIS_SPIN_LOCK	   AdapterHandleLock;
-	ULONG			   AdapterBindingStatus;///< Specifies if NPF is still bound to the adapter used by this instance, it's unbinding or it's not bound.
+	ULONG			   AdapterBindingStatus;	///< Specifies if NPF is still bound to the adapter used by this instance, it's unbinding or it's not bound.	
 
 	NDIS_EVENT		   NdisOpenCloseCompleteEvent;
+	NDIS_EVENT		   NdisWriteCompleteEvent;	///< Event that is signalled when all the packets have been successfully sent by NdisSend (and corresponfing sendComplete has been called)
 	NTSTATUS		   OpenCloseStatus;
+	ULONG			   TransmitPendingPackets;	///< Specifies the number of packets that are pending to be transmitted, i.e. have been submitted to NdisSendXXX but the SendComplete has not been called yet.
 }
 OPEN_INSTANCE, *POPEN_INSTANCE;
 
