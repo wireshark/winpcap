@@ -97,7 +97,12 @@ VOID NPF_StopUsingBinding(
     IN POPEN_INSTANCE pOpen)
 {
 	ASSERT(pOpen != NULL);
-	ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
+//
+//  There is no risk in calling this function from abobe passive level 
+//  (i.e. DISPATCH, in this driver) as we acquire a spinlock and decrement a 
+//  counter.
+//
+//	ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
 
 	NdisAcquireSpinLock(&pOpen->AdapterHandleLock);
 
@@ -261,6 +266,7 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 
 	NdisInitializeEvent(&Open->WriteEvent);
 	NdisInitializeEvent(&Open->NdisRequestEvent);
+	NdisInitializeEvent(&Open->NdisWriteCompleteEvent);
 	NdisInitializeEvent(&Open->DumpEvent);
 	NdisAllocateSpinLock(&Open->MachineLock);
 	NdisAllocateSpinLock(&Open->WriteLock);
@@ -660,11 +666,11 @@ NPF_Cleanup(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 	ASSERT(Open != NULL);
 
-	NPF_CloseBinding(Open);
-	
 	if (Open->ReadEvent != NULL)
 		KeSetEvent(Open->ReadEvent,0,FALSE);
 
+	NPF_CloseBinding(Open);
+	
 	// NOTE:
 	// code commented out because the kernel dump feature is disabled
 	//
