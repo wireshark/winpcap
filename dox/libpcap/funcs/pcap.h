@@ -439,7 +439,6 @@ returns the link layer type; link layer types it can return include:
 			-# packet was multicast, but not broadcast, by somebody else 
 			-# packet was sent by somebody else to somebody else 
 			-# packet was sent by us 
-
 		- a 2-byte field, in network byte order, containing a Linux ARPHRD_ value for the link layer device type;
 		- a 2-byte field, in network byte order, containing the length of the link layer address of the sender of the packet (which could be 0);
 		- an 8-byte field containing that number of bytes of the link layer header (if there are more than 8 bytes, only the first 8 are present);
