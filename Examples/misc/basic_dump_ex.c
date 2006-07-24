@@ -13,7 +13,7 @@ char errbuf[PCAP_ERRBUF_SIZE];
 struct tm *ltime;
 char timestr[16];
 struct pcap_pkthdr *header;
-u_char *pkt_data;
+const u_char *pkt_data;
 	
     
 	/* Retrieve the device list on the local machine */

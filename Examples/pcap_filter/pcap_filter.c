@@ -57,7 +57,7 @@ struct bpf_program fcode;
 bpf_u_int32 NetMask;
 int res;
 struct pcap_pkthdr *header;
-u_char *pkt_data;
+const u_char *pkt_data;
 
 	if (argc == 1)
 	{

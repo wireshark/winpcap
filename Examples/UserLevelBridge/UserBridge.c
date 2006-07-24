@@ -364,7 +364,7 @@ int main()
 DWORD WINAPI CaptureAndForwardThread(LPVOID lpParameter)
 {
 	struct pcap_pkthdr *header;
-	u_char *pkt_data;
+	const u_char *pkt_data;
 	int res;
 	in_out_adapters* ad_couple = lpParameter;
 	unsigned int n_fwd = 0;

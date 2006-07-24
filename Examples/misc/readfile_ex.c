@@ -9,7 +9,7 @@ pcap_t *fp;
 char errbuf[PCAP_ERRBUF_SIZE];
 char source[PCAP_BUF_SIZE];
 struct pcap_pkthdr *header;
-u_char *pkt_data;
+const u_char *pkt_data;
 u_int i=0;
 int res;
 
