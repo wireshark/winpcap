@@ -1,6 +1,5 @@
 //Microsoft Developer Studio generated resource script.
 //
-#include "resource.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -8,6 +7,7 @@
 // Generated from the TEXTINCLUDE 2 resource.
 //
 #include "afxres.h"
+#include "..\..\version.h"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -29,7 +29,8 @@ LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 
 1 TEXTINCLUDE DISCARDABLE 
 BEGIN
-    "resource.h\0"
+    "\r\n"
+    "\0"
 END
 
 2 TEXTINCLUDE DISCARDABLE 
@@ -40,7 +41,7 @@ END
 
 3 TEXTINCLUDE DISCARDABLE 
 BEGIN
-    "\r\n"
+    "#include ""../../../version.h""\r\n"
     "\0"
 END
 
@@ -54,8 +55,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 4,0,0,375
- PRODUCTVERSION 4,0,0,375
+ FILEVERSION WINPCAP_MAJOR,WINPCAP_MINOR,WINPCAP_REV,WINPCAP_BUILD
+ PRODUCTVERSION WINPCAP_MAJOR,WINPCAP_MINOR,WINPCAP_REV,WINPCAP_BUILD
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -70,18 +71,22 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "Comments", "\0"
-            VALUE "CompanyName", "CACE Technologies\0"
-            VALUE "FileDescription", "npf\0"
-            VALUE "FileVersion", "4, 0, 0, 375\0"
-            VALUE "InternalName", "NPF + TME \0"
-            VALUE "LegalCopyright", "Copyright © 2005-2006 CACE Technologies. Copyright © 2003-2005 NetGroup, Politecnico di Torino.\0"
-            VALUE "LegalTrademarks", "\0"
-            VALUE "OriginalFilename", "npf.sys\0"
-            VALUE "PrivateBuild", "\0"
-            VALUE "ProductName", "WinPcap Netgroup Packet Filter Driver\0"
-            VALUE "ProductVersion", "4, 0, 0, 375\0"
-            VALUE "SpecialBuild", "Internal build\0"
+			VALUE "CompanyName",       WINPCAP_COMPANY_NAME
+#ifdef __NPF_NT4__
+			VALUE "FileDescription",   "npf.sys (NT4) Kernel Driver"
+#elif defined(__NPF_AMD64__)
+			VALUE "FileDescription",   "npf.sys (NT5/6 AMD64) Kernel Driver"
+#else
+			VALUE "FileDescription",   "npf.sys (NT5/6 x86) Kernel Driver"
+#endif
+			VALUE "FileVersion",       WINPCAP_VER_STRING
+			VALUE "InternalName",      "NPF + TME"
+			VALUE "LegalCopyright",    WINPCAP_COPYRIGHT_STRING
+			VALUE "LegalTrademarks",   ""
+			VALUE "OriginalFilename",  "npf.sys"
+			VALUE "ProductName",       WINPCAP_PRODUCT_NAME
+			VALUE "ProductVersion",    WINPCAP_VER_STRING
+            VALUE "Build Description", WINPCAP_BUILD_DESCRIPTION
         END
     END
     BLOCK "VarFileInfo"
