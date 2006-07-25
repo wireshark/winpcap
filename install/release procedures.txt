@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.2 2006/05/09 15:01:32 gianlucav Exp $
+$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.3 2006/07/25 00:41:15 gianlucav Exp $
 
 WINPCAP RELEASE PROCEDURE
 =========================
@@ -150,12 +150,12 @@ How to compile WinPcap
 29. Go into 
 	  %BUILD_TREE\winpcap\packetntx\dll\project
 	
-30. Type "make". It should spit out 3 warnings.
+30. Type "make".
 
 31. Go into 
 	 %BUILD_TREE\winpcap\wpcap\PRJ
 
-32. Type "make". A couple of warnings should be generated.
+32. Type "make". 1 warning should be generated.
 
 33. The build is complete.
 
@@ -166,7 +166,8 @@ How to create the installer for WinPcap
     and execute "copy_installer_files.bat"
 2.  Manually copy npf.vxd from a previous version of winpcap to
       %BUILD_TREE%\winpcap\install\installer\distribution\9x.
-3.  Open 
+      (HINT: a copy of the most recently compiled driver is in \\homer\projects\WinPcap\Driver9x\
+	3.  Open 
 	  %BUILd_TREE%\winpcap\install\installer\winpcap.nsi with NSIS and create the installer. 
     NSIS will fail if not all the binaries have been created correctly.
 
@@ -227,7 +228,7 @@ SCM procedures
 4.  %BUILD_TREE%\Sources\winpcap
         |
         V
-    WinPcap_<version>_PluginSources.zip
+    WinPcap_<version>_PublicSources.zip
  
 5.  %BUILD_TREE%\winpcap\install\installer\WinPcap_<version>.exe
         |
