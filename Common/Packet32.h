@@ -76,8 +76,8 @@
 #define	 pBIOCSMODE 7412				///< IOCTL code: set working mode.
 #define	 pBIOCSWRITEREP 7413			///< IOCTL code: set number of physical repetions of every packet written by the app.
 #define	 pBIOCSMINTOCOPY 7414			///< IOCTL code: set minimum amount of data in the kernel buffer that unlocks a read call.
-#define	 pBIOCSETOID 2147483648			///< IOCTL code: set an OID value.
-#define	 pBIOCQUERYOID 2147483652		///< IOCTL code: get an OID value.
+#define	 pBIOCSETOID 2147483648U		///< IOCTL code: set an OID value.
+#define	 pBIOCQUERYOID 2147483652U		///< IOCTL code: get an OID value.
 #define	 pATTACHPROCESS 7117			///< IOCTL code: attach a process to the driver. Used in Win9x only.
 #define	 pDETACHPROCESS 7118			///< IOCTL code: detach a process from the driver. Used in Win9x only.
 #define  pBIOCSETDUMPFILENAME 9029		///< IOCTL code: set the name of a the file used by kernel dump mode.
