@@ -962,7 +962,7 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 		}
 		
 		TmpAdInfo->NNetworkAddresses = MAX_NETWORK_ADDRESSES;
-		if(!PacketGetAddressesFromRegistry((LPTSTR)TmpAdInfo->Name, TmpAdInfo->NetworkAddresses, &TmpAdInfo->NNetworkAddresses))
+		if(!PacketGetAddressesFromRegistry((LPTSTR)TmpAdInfo->Name, TmpAdInfo->NetworkAddresses, (long*)&TmpAdInfo->NNetworkAddresses))
 		{
 #ifndef _WINNT4
 			// Try to see if the interface has some IPv6 addresses
@@ -1615,7 +1615,7 @@ BOOLEAN PacketAddFakeNdisWanAdapter()
 	// Scan the adapters list to see if this one is already present
 	if (!WanPacketTestAdapter())
 	{
- 		ODS("Cannot add the wan adapter, since it cannot be opened.");
+ 		ODS("Cannot add the wan adapter, since it cannot be opened.\n");
   		//the adapter cannot be opened, we do not list it, but we return t
  		TRACE_EXIT("PacketAddFakeNdisWanAdapter");
   		return FALSE;
