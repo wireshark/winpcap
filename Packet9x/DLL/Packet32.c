@@ -47,6 +47,8 @@
 #include <crtdbg.h>
 #endif /* __MINGW32__ */
 
+#include "../../version.h"
+
 
 #ifdef __cplusplus
 extern "C"
@@ -89,7 +91,7 @@ BOOLEAN StartPacketDriver (LPTSTR ServiceName);
 BOOLEAN StopPacketDriver (void);
 BOOLEAN PacketSetMaxLookaheadsize (LPADAPTER AdapterObject);
 
-char PacketLibraryVersion[] = "4.0 alpha1"; 
+char PacketLibraryVersion[] = WINPCAP_PACKET9x_STRING_VERSION; 
 
 //---------------------------------------------------------------------------
 
