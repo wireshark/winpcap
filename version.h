@@ -2,14 +2,10 @@
 // Microsoft Developer Studio generated include file.
 //
 
-// 0 Feb = 31 + 0 = 31
-// 0 Mar = 31 + 28 + 0 = 59
-// o Apr = 31 + 28 + 31 = 90
-// 0 May = 31 + 28 + 31 + 30 = 120
-// 0 Jun = 31 + 28 + 31 + 30 + 31 = 151 
-// 0 Jul = 31 + 28 + 31 + 30 + 31 + 30 = 181
-// 0 Nov = 181 + (Jul) 31 + (Aug) 31 + (Sept)30 + (Oct)31 = 324
-// 0 Dec = 324 + 30 = 334
+// 3.1.0.24   -->  WinPcap  3.1 beta4
+// 3.1.0.27   -->  WinPcap  3.1 RTM
+// 3.2.0.29	  -->  WinPcap  3.2 alpha1
+// 4.0.0.374  -->  WinPcap  4.0 alpha1
 
 #define WINPCAP_MAJOR	4
 #define WINPCAP_MINOR	0
