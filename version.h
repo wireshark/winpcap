@@ -9,10 +9,11 @@
 
 #define WINPCAP_MAJOR	4
 #define WINPCAP_MINOR	0
-#define WINPCAP_REV		2
-#define WINPCAP_BUILD	480
-#define WINPCAP_VER_STRING	"4.0.2.480"
-#define WINPCAP_PACKET9x_STRING_VERSION	"4.0 beta1"
+#define WINPCAP_REV		0
+#define WINPCAP_BUILD	571
+#define WINPCAP_VER_STRING	"4.0.0.571"
+#define WINPCAP_PACKET9x_STRING_VERSION	"4.0 beta1 build 571"
+#define WINPCAP_WPCAP_STRING_VERSION "4.0 beta1 build 571"
 
 #define WINPCAP_COMPANY_NAME 			"CACE Technologies"
 
@@ -21,7 +22,8 @@
 #define WINPCAP_COPYRIGHT_STRING 		"Copyright © 2005-2006 CACE Technologies. Copyright © 1999-2005 NetGroup, Politecnico di Torino."
 #define WINPCAP_WANPACKET_COPYRIGHT_STRING "Copyright © 2005-2006 CACE Technologies. Copyright © 2003-2005 NetGroup, Politecnico di Torino."
 #define WINPCAP_INSTALLERHELPER_COPYRIGHT_STRING "Copyright © 2006 CACE Technologies."
+#define WINPCAP_RPCAPD_COPYRIGHT_STRING "Copyright © 2005-2006 CACE Technologies. Copyright © 2003-2005 NetGroup, Politecnico di Torino."
 
 #define WINPCAP_BUILD_DESCRIPTION 		""
 #define WINPCAP_PRIVATE_BUILD			""
-#define WINPCAP_LIBPCAP_VERSION			"0.9.4"
+#define WINPCAP_LIBPCAP_VERSION			"0.9.4 branch"
