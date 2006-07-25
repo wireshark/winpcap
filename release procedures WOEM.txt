@@ -62,36 +62,48 @@ How to compile OEM WinPcap (NOT for the Toolkit)
 
 14. Open a Win 2000 DDK Free build environment. Go into 
 	  %BUILD_TREE%\winpcap_oem\packetntx. 
-	Execute "compileDriver.bat". Prefast 1.5.2402 should issue 9 warnings 
+	Execute "compileDriver.bat". Prefast 1.5.2402 should issue 8 warnings 
 	(20060710). 
 	Close the build environment.
+    NOTE: DO NOT EXECUTE 14. and 15 and 16. at the same time, they overwrite files in 
+    the build process that are incompatible between the two builds.
 
 15. Open the WinNT4 DDK Release build environment. Go into 
       %BUILD_TREE%\winpcap_oem\packetntx. 
     Execute "compileDriver.bat". Close the build 
     environment. 
-    NOTE: DO NOT EXECUTE 14. and 15. at the same time, they overwrite files in 
+    NOTE: DO NOT EXECUTE 14. and 15 and 16. at the same time, they overwrite files in 
     the build process that are incompatible between the two builds.
 
-16. Open %BUILD_TREE%\winpcap_oem\WinPcap OEM.sln with Visual Studio 2003. 
-    Choose the Debug configuration, and then use Build->Rebuild Solution. 
+16. Open the Windows Server 2003 Free x64 build environment. Go into 
+      %BUILD_TREE%\winpcap_oem\packetntx. 
+    Execute "compileDriver.bat". Close the build 
+    environment. 
+    NOTE: DO NOT EXECUTE 14. and 15 and 16. at the same time, they overwrite files in 
+    the build process that are incompatible between the two builds.
+
+17. Open %BUILD_TREE%\winpcap_oem\WinPcap OEM.sln with Visual Studio 2003. 
     Choose the Release configuration, and then use Build->Rebuild Solution.
     Some warnings should be issued only for the Wpcap.dll project.
+    If you choose the Debug configuration, and then use Build->Rebuild Solution, the 
+    compilation will fail beacuse the debug version of the NT4 driver is missing. Repeat
+    step 15 choosing the NT4 Checked build environment.
     Close Visual Studio.
 
-17. The build is complete.
+18. The build is complete.
 	The DLLs are in the following folders:
 
 		%BUILD_TREE%\winpcap_oem\wpcap\PRJ\release_REMOTE\wpcap.dll
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release\packet.dll
 
-18. Check the DLLs/SYSs files for the versions
+19. Check the DLLs/SYSs files for the versions
 		%BUILD_TREE%\winpcap_oem\wpcap\PRJ\release_REMOTE\wpcap.dll
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release\packet.dll
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\npf2k.sys
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\npfnt.sys
-		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packet2k.sys
-		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packetnt.sys
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\npfx64.sys
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packet2k.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packetnt.dll
 
 How to create the developer's pack for OEM WinPcap (NOT for the Toolkit)
 ------------------------------------------------------------------------
