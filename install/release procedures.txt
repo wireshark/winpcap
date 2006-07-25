@@ -1,4 +1,4 @@
-$Header$
+$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.2 2006/05/09 15:01:32 gianlucav Exp $
 
 WINPCAP RELEASE PROCEDURE
 =========================
@@ -30,15 +30,7 @@ How to compile WinPcap
 2.  Modify the version info into these files (version is x.y.0.z for release 
     versions, 1-2 for OEM, 99,98... for previews &co).
     If necessary, modify the copyright year.
-	  %BUILD_TREE%\WinPcap\Packet9x\DLL\version.rc (the version is repeated 4 times)
-	  %BUILD_TREE%\winpcap\packetNtx\Dll\version.rc (the version is repeated 4 times)
-	  %BUILD_TREE%\winpcap\packetNtx\Dll\WanPacket\version.rc (the version is repeated 4 times)
-	  %BUILD_TREE%\winpcap\packetNtx\driver\npf.rc  (the version is repeated 4 times)
-	  %BUILD_TREE%\winpcap\install\WinPcap Installer Helper\version.rc (the version is repeated 4 times)
-	  %BUILD_TREE%\winpcap\packet9x\dll\packet32.c line 92
-	  %BUILD_TREE%\winpcap\wpcap\Win32-Extensions\version.rc (the version is repeated 4 times)
-	Also update the libpcap version (...wpcap.dll based on libpcap x.x.x) in this file
-	  %BUILD_TREE%\winpcap\wpcap\Win32-Extensions\version.rc
+	  %BUILD_TREE%\winpcap\version.h
 
 3.  Modify the documentation version in the file
 	  %BUILD_TREE%\winpcap\dox\prj\winpcap_noc.dox (the version is repeated once)
@@ -64,13 +56,7 @@ How to compile WinPcap
 	  %BUILd_TREE%\winpcap\install\installer\license.txt 
 
 8.  Commit 
-	  %BUILD_TREE%\WinPcap\Packet9x\DLL\version.rc
-	  %BUILD_TREE%\winpcap\packetNtx\Dll\version.rc
-	  %BUILD_TREE%\winpcap\packetNtx\Dll\WanPacket\version.rc
-	  %BUILD_TREE%\winpcap\packetNtx\driver\npf.rc
-	  %BUILD_TREE%\winpcap\install\WinPcap Installer Helper\version.rc
-	  %BUILD_TREE%\winpcap\packet9x\dll\packet32.c
-	  %BUILD_TREE%\winpcap\wpcap\Win32-Extensions\version.rc
+	  %BUILD_TREE%\winpcap\version.h
 	  %BUILD_TREE%\winpcap\dox\prj\winpcap_noc.dox
 	  %BUILd_TREE%\winpcap\install\installer\license.txt 
 	  %BUILd_TREE%\winpcap\install\installer\winpcap.nsi with an editor.
@@ -122,8 +108,8 @@ How to compile WinPcap
 
 21. Open a Win 2000 DDK Free build environment. Go into 
 	  %BUILD_TREE%\winpcap\packetntx. 
-	Execute "compileDriver.bat". Prefast 1.5.2402 should issue 9 warnings 
-	(20060423). 
+	Execute "compileDriver.bat". Prefast 1.5.2402 should issue 8 warnings 
+	(20060724). 
 	Close the build environment.
 
 22. Open the Win 2003 DDK free x64 build environment.  Go into 
@@ -169,7 +155,7 @@ How to compile WinPcap
 31. Go into 
 	 %BUILD_TREE\winpcap\wpcap\PRJ
 
-32. Type "make". A copuple of warnings should be generated.
+32. Type "make". A couple of warnings should be generated.
 
 33. The build is complete.
 
