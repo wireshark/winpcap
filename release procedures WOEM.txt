@@ -118,9 +118,7 @@ How to create the developer's pack for OEM WinPcap (NOT for the Toolkit)
 	b. Creation of the lib folder (no errors/warnings)
 	c. Creation of the bin folder (no errors/warnings)
 	d. Creation of the Examples and Examples-pcap folders (no errors/warnings)
-	e. creation of the documentation. Some warnings/errors are generated:
-	   - a Doxygen warning processing the file winpcap/dox/libpcap/funcs/pcap.h
-	   - an error copying some *.gif files.
+	e. creation of the documentation. One error copying some *.gif files is reported.
 	   
 
 SCM procedures
