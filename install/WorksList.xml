@@ -129,15 +129,6 @@
    <Interior ss:Color="#CCFFFF" ss:Pattern="Solid"/>
    <NumberFormat/>
   </Style>
-  <Style ss:ID="s43">
-   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
-   <Borders>
-    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
-   </Borders>
-   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Bold="1"/>
-   <Interior ss:Color="#CCFFFF" ss:Pattern="Solid"/>
-   <NumberFormat ss:Format="dd/mm/yy;@"/>
-  </Style>
   <Style ss:ID="s44">
    <Alignment ss:Vertical="Center"/>
    <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Size="9" ss:Color="#339966"
@@ -159,6 +150,15 @@
    <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Size="9"/>
    <NumberFormat ss:Format="[ENG][$-409]d\-mmm\-yy;@"/>
   </Style>
+  <Style ss:ID="s50">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <Font ss:FontName="Arial Narrow" x:Family="Swiss" ss:Bold="1"/>
+   <Interior ss:Color="#CCFFFF" ss:Pattern="Solid"/>
+   <NumberFormat ss:Format="[ENG][$-409]d\-mmm\-yy;@"/>
+  </Style>
  </Styles>
  <Worksheet ss:Name="BugList">
   <Names>
@@ -166,7 +166,7 @@
     ss:Hidden="1"/>
    <NamedRange ss:Name="Print_Area" ss:RefersTo="=BugList!R1C1:R5C7"/>
   </Names>
-  <Table ss:ExpandedColumnCount="10" ss:ExpandedRowCount="42" x:FullColumns="1"
+  <Table ss:ExpandedColumnCount="10" ss:ExpandedRowCount="43" x:FullColumns="1"
    x:FullRows="1" ss:StyleID="s21" ss:DefaultRowHeight="13.5">
    <Column ss:StyleID="s22" ss:Width="51"/>
    <Column ss:StyleID="s23" ss:Width="49.5"/>
@@ -176,7 +176,7 @@
    <Column ss:Index="7" ss:StyleID="s25" ss:AutoFitWidth="0" ss:Width="404.25"/>
    <Column ss:StyleID="s21" ss:Width="63"/>
    <Column ss:StyleID="s21" ss:AutoFitWidth="0" ss:Width="74.25"/>
-   <Column ss:StyleID="s26" ss:AutoFitWidth="0" ss:Width="50.25"/>
+   <Column ss:StyleID="s47" ss:AutoFitWidth="0" ss:Width="50.25"/>
    <Row ss:AutoFitHeight="0" ss:Height="18">
     <Cell ss:MergeAcross="9" ss:StyleID="s28"><Data ss:Type="String">Product: WinPcap</Data><NamedCell
       ss:Name="Print_Area"/></Cell>
@@ -195,7 +195,7 @@
     <Cell ss:StyleID="s32"><NamedCell ss:Name="Print_Area"/></Cell>
     <Cell ss:StyleID="s33"/>
     <Cell ss:MergeAcross="1" ss:StyleID="s35" ss:Formula="=NOW()"><Data
-      ss:Type="DateTime">2006-07-25T16:34:19.730</Data></Cell>
+      ss:Type="DateTime">2006-07-25T17:22:30.140</Data></Cell>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="25.5" ss:StyleID="s36">
     <Cell ss:StyleID="s40"><Data ss:Type="String">Bug ID</Data><NamedCell
@@ -216,7 +216,7 @@
       ss:Name="_FilterDatabase"/></Cell>
     <Cell ss:StyleID="s40"><Data ss:Type="String">Priority</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
-    <Cell ss:StyleID="s43"><Data ss:Type="String">Closing date</Data><NamedCell
+    <Cell ss:StyleID="s50"><Data ss:Type="String">Closing date</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="26.25" ss:Hidden="1">
@@ -236,7 +236,7 @@
       ss:Name="Print_Area"/><NamedCell ss:Name="_FilterDatabase"/></Cell>
     <Cell><Data ss:Type="String">4.0a</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
     <Cell><Data ss:Type="String">MEDIUM</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
-    <Cell><Data ss:Type="DateTime">2006-05-08T00:00:00.000</Data><NamedCell
+    <Cell ss:StyleID="s26"><Data ss:Type="DateTime">2006-05-08T00:00:00.000</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
    </Row>
    <Row ss:AutoFitHeight="0">
@@ -325,7 +325,7 @@
    </Row>
    <Row ss:AutoFitHeight="0">
     <Cell><Data ss:Type="Number">8</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
-    <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data><NamedCell
+    <Cell ss:StyleID="s44"><Data ss:Type="String">CLOSED</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
     <Cell><Data ss:Type="String">GV</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
     <Cell ss:Index="5"><Data ss:Type="String">Bug</Data><NamedCell
@@ -335,6 +335,8 @@
     <Cell><Data ss:Type="String">Use a single version file for all the binaries, as we do for OEM WinPcap.</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
     <Cell ss:Index="9"><Data ss:Type="String">LOW</Data><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="DateTime">2006-07-25T00:00:00.000</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Hidden="1">
@@ -350,7 +352,7 @@
       ss:Name="_FilterDatabase"/></Cell>
     <Cell><Data ss:Type="String">4.0a</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
     <Cell><Data ss:Type="String">HIGH</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
-    <Cell><Data ss:Type="DateTime">2006-05-08T00:00:00.000</Data><NamedCell
+    <Cell ss:StyleID="s26"><Data ss:Type="DateTime">2006-05-08T00:00:00.000</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="26.25">
@@ -685,7 +687,7 @@
       ss:Name="_FilterDatabase"/></Cell>
     <Cell ss:Index="9"><Data ss:Type="String">HIGH</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
-    <Cell ss:StyleID="s47"><Data ss:Type="DateTime">2006-06-10T00:00:00.000</Data><NamedCell
+    <Cell><Data ss:Type="DateTime">2006-06-10T00:00:00.000</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
    </Row>
    <Row ss:AutoFitHeight="0">
@@ -729,7 +731,7 @@
       ss:Name="_FilterDatabase"/></Cell>
     <Cell ss:Index="9"><Data ss:Type="String">HIGH</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
-    <Cell><Data ss:Type="DateTime">2006-07-25T00:00:00.000</Data><NamedCell
+    <Cell ss:StyleID="s26"><Data ss:Type="DateTime">2006-07-25T00:00:00.000</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="77.25">
@@ -758,6 +760,17 @@
       ss:Name="_FilterDatabase"/></Cell>
     <Cell><Data ss:Type="String">The installer fails to install npf.sys on XPMCE installed on D:</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
+    <Cell ss:Index="9"><Data ss:Type="String">LOW</Data><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">39</Data></Cell>
+    <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data></Cell>
+    <Cell><Data ss:Type="String">packet.dll Vista</Data></Cell>
+    <Cell><Data ss:Type="String">Change the ifdefs for wanpacket on vista: we need to disable wanpacket, and don’t use the NT4 ifdef</Data></Cell>
+    <Cell ss:Index="9"><Data ss:Type="String">MEDIUM</Data></Cell>
    </Row>
   </Table>
   <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
@@ -777,7 +790,7 @@
    <FreezePanes/>
    <FilterOn/>
    <SplitHorizontal>4</SplitHorizontal>
-   <TopRowBottomPane>25</TopRowBottomPane>
+   <TopRowBottomPane>4</TopRowBottomPane>
    <ActivePane>2</ActivePane>
    <Panes>
     <Pane>
@@ -787,8 +800,8 @@
     </Pane>
     <Pane>
      <Number>2</Number>
-     <ActiveRow>39</ActiveRow>
-     <ActiveCol>9</ActiveCol>
+     <ActiveRow>8</ActiveRow>
+     <ActiveCol>8</ActiveCol>
     </Pane>
    </Panes>
    <ProtectObjects>False</ProtectObjects>
@@ -822,7 +835,7 @@
    </Condition>
   </ConditionalFormatting>
   <ConditionalFormatting xmlns="urn:schemas-microsoft-com:office:excel">
-   <Range>R5C2:R5C3,R6C2:R42C2</Range>
+   <Range>R5C2:R5C3,R6C2:R43C2</Range>
    <Condition>
     <Qualifier>Equal</Qualifier>
     <Value1>&quot;open&quot;</Value1>
