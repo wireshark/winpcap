@@ -63,7 +63,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\ 
+PostBuild_Cmds=copy           $(OutDir)\packet.lib           ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug"
@@ -95,7 +95,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Debug
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\ 
+PostBuild_Cmds=copy           $(OutDir)\packet.lib           ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Debug"
@@ -115,9 +115,9 @@ PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../common" /D "WIN32" /D "_WINDOWS" /YX /FD /c
 # ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../common" /D "WIN32" /D "_WINDOWS" /D "_WINNT4" /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
-# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
+# ADD MTL /nologo /D "_DEBUG" /D "_WINNT4" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "_DEBUG"
-# ADD RSC /l 0x410 /d "_DEBUG"
+# ADD RSC /l 0x410 /d "_DEBUG" /d "_WINNT4"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -129,7 +129,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\NT4_Debug
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\ 
+PostBuild_Cmds=copy           $(OutDir)\packet.lib           ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Release"
@@ -149,9 +149,9 @@ PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /I "../../../common" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /YX /FD /c
 # ADD CPP /nologo /MT /W3 /GX /O2 /I "../../../common" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_WINNT4" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
-# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
+# ADD MTL /nologo /D "NDEBUG" /D "_WINNT4" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "NDEBUG"
-# ADD RSC /l 0x410 /d "NDEBUG"
+# ADD RSC /l 0x410 /d "NDEBUG"  /d "_WINNT4"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -161,7 +161,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\NT4_Release
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\ 
+PostBuild_Cmds=copy           $(OutDir)\packet.lib           ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug LOG_TO_FILE"
@@ -195,7 +195,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Debug_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\ 
+PostBuild_Cmds=copy           $(OutDir)\packet.lib           ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release LOG_TO_FILE"
@@ -227,7 +227,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\ 
+PostBuild_Cmds=copy           $(OutDir)\packet.lib           ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Debug LOG_TO_FILE"
@@ -247,9 +247,9 @@ PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../common" /D "WIN32" /D "_WINDOWS" /D "_WINNT4" /YX /FD /c
 # ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../common" /D "WIN32" /D "_WINDOWS" /D "_WINNT4" /D "_DEBUG_TO_FILE" /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
-# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
+# ADD MTL /nologo /D "_DEBUG" /D "_WINNT4" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "_DEBUG"
-# ADD RSC /l 0x410 /d "_DEBUG"
+# ADD RSC /l 0x410 /d "_DEBUG" /d "_WINNT4"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -261,7 +261,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\NT4_Debug_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\ 
+PostBuild_Cmds=copy           $(OutDir)\packet.lib           ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Release LOG_TO_FILE"
@@ -281,9 +281,9 @@ PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /I "../../../common" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_WINNT4" /YX /FD /c
 # ADD CPP /nologo /MT /W3 /GX /O2 /I "../../../common" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_WINNT4" /D "_DEBUG_TO_FILE" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
-# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
+# ADD MTL /nologo /D "NDEBUG" /D "_WINNT4" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "NDEBUG"
-# ADD RSC /l 0x410 /d "NDEBUG"
+# ADD RSC /l 0x410 /d "NDEBUG" /d "_WINNT4"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -294,7 +294,7 @@ LINK32=link.exe
 OutDir=.\NT4_Release_LOG_TO_FILE
 SOURCE="$(InputPath)"
 PostBuild_Desc=Copy packet.lib into Common
-PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\ 
+PostBuild_Cmds=copy           $(OutDir)\packet.lib           ..\..\..\Common\ 
 # End Special Build Tool
 
 !ENDIF 
