@@ -60,6 +60,11 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
 # ADD LINK32 Ws2_32.lib ..\wanpacket\release\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /machine:I386
+# Begin Special Build Tool
+OutDir=.\Release
+SOURCE="$(InputPath)"
+PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\ 
+# End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug"
 
@@ -87,6 +92,11 @@ LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
 # ADD LINK32 wsock32.lib ..\wanpacket\debug\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none /incremental:no
+# Begin Special Build Tool
+OutDir=.\Debug
+SOURCE="$(InputPath)"
+PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\ 
+# End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Debug"
 
@@ -116,6 +126,11 @@ LINK32=link.exe
 # SUBTRACT BASE LINK32 /pdb:none /incremental:no
 # ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none /incremental:no
+# Begin Special Build Tool
+OutDir=.\NT4_Debug
+SOURCE="$(InputPath)"
+PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\ 
+# End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Release"
 
@@ -143,6 +158,11 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib Ws2_32.lib /nologo /subsystem:windows /dll /machine:I386
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib Ws2_32.lib /nologo /subsystem:windows /dll /machine:I386
+# Begin Special Build Tool
+OutDir=.\NT4_Release
+SOURCE="$(InputPath)"
+PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\ 
+# End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug LOG_TO_FILE"
 
@@ -172,6 +192,11 @@ LINK32=link.exe
 # SUBTRACT BASE LINK32 /pdb:none /incremental:no
 # ADD LINK32 wsock32.lib ..\wanpacket\debug\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none /incremental:no
+# Begin Special Build Tool
+OutDir=.\Debug_LOG_TO_FILE
+SOURCE="$(InputPath)"
+PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\ 
+# End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release LOG_TO_FILE"
 
@@ -199,6 +224,11 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 Ws2_32.lib ..\wanpacket\release\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /machine:I386
 # ADD LINK32 Ws2_32.lib ..\wanpacket\release\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /machine:I386
+# Begin Special Build Tool
+OutDir=.\Release_LOG_TO_FILE
+SOURCE="$(InputPath)"
+PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\ 
+# End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Debug LOG_TO_FILE"
 
@@ -228,6 +258,11 @@ LINK32=link.exe
 # SUBTRACT BASE LINK32 /pdb:none /incremental:no
 # ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
 # SUBTRACT LINK32 /pdb:none /incremental:no
+# Begin Special Build Tool
+OutDir=.\NT4_Debug_LOG_TO_FILE
+SOURCE="$(InputPath)"
+PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\ 
+# End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Release LOG_TO_FILE"
 
@@ -255,6 +290,12 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib Ws2_32.lib /nologo /subsystem:windows /dll /machine:I386
 # ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib Ws2_32.lib /nologo /subsystem:windows /dll /machine:I386
+# Begin Special Build Tool
+OutDir=.\NT4_Release_LOG_TO_FILE
+SOURCE="$(InputPath)"
+PostBuild_Desc=Copy packet.lib into Common
+PostBuild_Cmds=copy          $(OutDir)\packet.lib          ..\..\..\Common\ 
+# End Special Build Tool
 
 !ENDIF 
 
