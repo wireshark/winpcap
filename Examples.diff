@@ -200,3 +200,53 @@ diff -urb ..\winpcap\Examples/smp_1/smp_1.c .\Examples/smp_1/smp_1.c
  	if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf) == -1)
  	{
  		fprintf(stderr,"Error in pcap_findalldevs: %s\n", errbuf);
+diff -urb ..\winpcap\Examples/misc/savedump.c .\Examples/misc/savedump.c
+--- ..\winpcap\Examples/misc/savedump.c	2003-07-08 00:21:30.000000000 -0700
++++ .\Examples/misc/savedump.c	2006-07-26 17:44:37.484375000 -0700
+@@ -14,6 +14,12 @@
+ pcap_dumper_t *dumpfile;
+ 
+ 
++	/* start OEM WinPcap */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		return -1;
++	}
+ 	
+     /* Check command line */
+ 	if(argc != 2)
+diff -urb ..\winpcap\Examples/sendcap/sendcap.c .\Examples/sendcap/sendcap.c
+--- ..\winpcap\Examples/sendcap/sendcap.c	2006-02-22 09:28:16.000000000 -0800
++++ .\Examples/sendcap/sendcap.c	2006-07-26 17:44:37.500000000 -0700
+@@ -53,6 +53,13 @@
+ 	float cpu_time;
+ 	u_int npacks = 0;
+ 	
++	/* start OEM WinPcap */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	/* Check the validity of the command line */
+ 	if (argc <= 2 || argc >= 5)
+ 	{
+diff -urb ..\winpcap\Examples/tcptop/tcptop.c .\Examples/tcptop/tcptop.c
+--- ..\winpcap\Examples/tcptop/tcptop.c	2006-02-22 09:28:15.000000000 -0800
++++ .\Examples/tcptop/tcptop.c	2006-07-26 17:45:13.750000000 -0700
+@@ -56,6 +56,13 @@
+ 		return;
+ 	}
+ 		
++	/* start OEM WinPcap */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	/* Open the output adapter */
+ 	if ( (fp= pcap_open(argv[1], 100, PCAP_OPENFLAG_PROMISCUOUS, 1000, NULL, errbuf) ) == NULL)
+ 	{
