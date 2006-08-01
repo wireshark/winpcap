@@ -100,6 +100,7 @@ void dispatcher_handler(u_char *state, const struct pcap_pkthdr *header, const u
 	LARGE_INTEGER Bps,Pps;
 	struct tm *ltime;
 	char timestr[16];
+	time_t local_tv_sec;
 
 	/* Calculate the delay in microseconds from the last sample. */
 	/* This value is obtained from the timestamp that the associated with the sample. */
@@ -119,7 +120,8 @@ void dispatcher_handler(u_char *state, const struct pcap_pkthdr *header, const u
 	Pps.QuadPart=(((*(LONGLONG*)(pkt_data)) * 1000000) / (delay));
 
 	/* Convert the timestamp to readable format */
-	ltime=localtime(&header->ts.tv_sec);
+	local_tv_sec = header->ts.tv_sec;
+	ltime=localtime(&local_tv_sec);
 	strftime( timestr, sizeof timestr, "%H:%M:%S", ltime);
 
 	/* Print timestamp*/
