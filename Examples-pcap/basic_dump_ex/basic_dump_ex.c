@@ -14,6 +14,7 @@ int main()
 	char timestr[16];
 	struct pcap_pkthdr *header;
 	const u_char *pkt_data;
+	time_t local_tv_sec;
 		
     
 	/* Retrieve the device list */
@@ -81,7 +82,8 @@ int main()
 			continue;
 		
 		/* convert the timestamp to readable format */
-		ltime=localtime(&header->ts.tv_sec);
+		local_tv_sec = header->ts.tv_sec;
+		ltime=localtime(&local_tv_sec);
 		strftime( timestr, sizeof timestr, "%H:%M:%S", ltime);
 		
 		printf("%s,%.6d len:%d\n", timestr, header->ts.tv_usec, header->len);

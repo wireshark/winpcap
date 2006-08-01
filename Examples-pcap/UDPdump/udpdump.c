@@ -193,9 +193,11 @@ void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_cha
 	udp_header *uh;
 	u_int ip_len;
 	u_short sport,dport;
+	time_t local_tv_sec;
 
 	/* convert the timestamp to readable format */
-	ltime=localtime(&header->ts.tv_sec);
+	local_tv_sec = header->ts.tv_sec;
+	ltime=localtime(&local_tv_sec);
 	strftime( timestr, sizeof timestr, "%H:%M:%S", ltime);
 
 	/* print timestamp and length of the packet */
