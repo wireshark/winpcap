@@ -1,4 +1,4 @@
-@echo off
+rem @echo off
 
 IF NOT EXIST .\Examples (
 	echo Copying the examples locally...
@@ -23,6 +23,9 @@ rd /S /Q %WPDPACKDESTDIR%\Examples-remote\NetMeter\
 rem *** Delete kdump since the feature is not available at the moment *** 
 rd /S /Q %WPDPACKDESTDIR%\Examples-remote\kdump\
 
+xcopy /s/e/v /Y %WINPCAPSOURCEDIR%\Examples-pcap		%WPDPACKDESTDIR%\Examples-pcap
+
+
 rem *** Delete WinPcapStress, since it's not a real example ***
 rd /S /Q %WPDPACKDESTDIR%\Examples-pcap\winpcap_stress
 
@@ -30,7 +33,6 @@ rem *** Delete stats, since it's not a real example ***
 rd /S /Q %WPDPACKDESTDIR%\Examples-pcap\stats
 
 
-xcopy /s/e/v /Y %WINPCAPSOURCEDIR%\Examples-pcap		%WPDPACKDESTDIR%\Examples-pcap
 
 echo Folder \Examples created successfully
 set WPDPACKDESTDIR=
