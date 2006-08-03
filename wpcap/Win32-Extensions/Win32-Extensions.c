@@ -363,3 +363,14 @@ int pcap_offline_filter(struct bpf_program *prog, const struct pcap_pkthdr *head
 	else
 		return 0;
 }
+
+PAirpcapHandle pcap_get_airpcap_handle(pcap_t *p)
+{
+	if (p->adapter == NULL)
+	{
+		sprintf(p->errbuf, "wrong interface type. A physical interface is needed");
+		return NULL;
+	}
+
+	return p->adapter->AirpcapAd;
+}

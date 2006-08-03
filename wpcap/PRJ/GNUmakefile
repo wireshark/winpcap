@@ -23,12 +23,13 @@ INSTALL_DIR = ${SYSTEMROOT}\system32
 CFLAGS = -I ../libpcap -I ../libpcap/bpf -I ../libpcap/lbl \
 	-I ../libpcap/Win32/Include -I../libpcap/Win32/Include/ipv6kit \
 	-I ../../common -I ../Win32-Extensions \
+	-I ../../../z1211u/airpcap \
 	-DLIBPCAP_EXPORTS -DYY_NEVER_INTERACTIVE -Dyylval=pcap_lval \
 	-DHAVE_STRERROR -DNEED_ADDRINFO_H -DINET6 -DWIN32 \
 	-DSIZEOF_CHAR=1 -DSIZEOF_SHORT=2 -DSIZEOF_INT=4 -DSIZEOF_LONG_LONG=8 -DWPCAP -D'_U_=' \
 	-DHAVE_SNPRINTF -DHAVE_VSNPRINTF \
 	-DSIZEOF_LONG_LONG=8 \
-	-DHAVE_REMOTE \
+	-DHAVE_REMOTE -DHAVE_AIRPCAP_API \
 	-mno-cygwin -shared ${OPTFLAGS}
 LDFLAGS = -Wl,--out-implib,../lib/libwpcap.a
 LIBS = -L ../../${PACKET_DIR}/DLL/Project -lPacket -lws2_32

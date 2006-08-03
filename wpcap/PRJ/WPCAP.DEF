@@ -83,3 +83,4 @@ EXPORTS
 		pcap_lib_version
 		pcap_dump_file
 		pcap_dump_ftell
+		pcap_get_airpcap_handle
