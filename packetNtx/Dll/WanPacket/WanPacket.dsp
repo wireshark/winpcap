@@ -4,7 +4,7 @@
 
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
 
-CFG=WanPacket - Win32 Debug
+CFG=WANPACKET - WIN32 DEBUG
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
@@ -13,7 +13,7 @@ CFG=WanPacket - Win32 Debug
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "WanPacket.mak" CFG="WanPacket - Win32 Debug"
+!MESSAGE NMAKE /f "WanPacket.mak" CFG="WANPACKET - WIN32 DEBUG"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "WANPACKET_EXPORTS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\..\..\Common" /I "..\..\driver" /I "../../../dag/include" /I "../../../dag/drv/windows" /D "NDEBUG" /D "_MBCS" /D "_USRDLL" /D "WANPACKET_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "HAVE_DAG_API" /D "__NPF_x86__" /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\..\..\Common" /I "..\..\driver" /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../../z1211u/airpcap/" /D "NDEBUG" /D "_MBCS" /D "_USRDLL" /D "WANPACKET_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "HAVE_DAG_API" /D "__NPF_x86__" /FD /c
 # SUBTRACT CPP /YX /Yc /Yu
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -70,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "WANPACKET_EXPORTS" /Yu"stdafx.h" /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\Common" /I "..\..\driver" /I "../../../dag/include" /I "../../../dag/drv/windows" /D "_DEBUG" /D "_MBCS" /D "_USRDLL" /D "WANPACKET_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "HAVE_DAG_API" /D "__NPF_x86__" /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "..\..\..\Common" /I "..\..\driver" /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../../z1211u/airpcap/" /D "_DEBUG" /D "_MBCS" /D "_USRDLL" /D "WANPACKET_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "HAVE_DAG_API" /D "__NPF_x86__" /FD /GZ /c
 # SUBTRACT CPP /YX /Yc /Yu
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
