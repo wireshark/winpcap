@@ -35,11 +35,11 @@
 
 #include <stdio.h>
 #include <packet32.h>
+#include "Packet32-Int.h"
 #include "wanpacket/wanpacket.h"
 #include "debug.h"
 
 CHAR g_LogFileName[1024] = "winpcap_debug.txt";
-
 
 #include <windows.h>
 #include <windowsx.h>
@@ -50,18 +50,27 @@ CHAR g_LogFileName[1024] = "winpcap_debug.txt";
 
 #include <WpcapNames.h>
 
-/// Current packet.dll Version. It can be retrieved directly or through the PacketGetVersion() function.
+//
+// Current packet.dll Version. It can be retrieved directly or through the PacketGetVersion() function.
+//
 char PacketLibraryVersion[64]; 
-/// Current NPF.sys Version. It can be retrieved directly or through the PacketGetVersion() function.
+
+//
+// Current NPF.sys Version. It can be retrieved directly or through the PacketGetVersion() function.
+//
 char PacketDriverVersion[64]; 
 
-/// WinPcap global registry key
-HKEY g_WinpcapKey = NULL;
-WCHAR WinPcapKeyBuffer[MAX_WINPCAP_KEY_CHARS];
+//
+// WinPcap global registry key
+//
+//WCHAR g_WinPcapKeyBuffer[MAX_WINPCAP_KEY_CHARS];
+//HKEY g_WinpcapKey = NULL;
 
-// Global adapters list
-extern PADAPTER_INFO AdaptersInfoList;
-extern HANDLE AdaptersInfoMutex;
+//
+// Global adapters list related variables
+//
+extern PADAPTER_INFO g_AdaptersInfoList;
+extern HANDLE g_AdaptersInfoMutex;
 #ifndef _WINNT4
 typedef VOID (*GAAHandler)(
   ULONG,
@@ -69,23 +78,46 @@ typedef VOID (*GAAHandler)(
   PVOID,
   PIP_ADAPTER_ADDRESSES,
   PULONG);
-GAAHandler GetAdaptersAddressesPointer = NULL;
+GAAHandler g_GetAdaptersAddressesPointer = NULL;
 #endif // _WINNT4
 
+//
+// Dynamic dependencies variables and declarations
+//
+volatile LONG g_DynamicLibrariesLoaded = 0;
+HANDLE g_DynamicLibrariesMutex;
+
+#ifdef HAVE_AIRPCAP_API
+// We load dinamically the dag library in order link it only when it's present on the system
+AirpcapGetLastErrorHandler g_PAirpcapGetLastError;
+AirpcapGetDeviceListHandler g_PAirpcapGetDeviceList;
+AirpcapFreeDeviceListHandler g_PAirpcapFreeDeviceList;
+AirpcapOpenHandler g_PAirpcapOpen;
+AirpcapCloseHandler g_PAirpcapClose;
+AirpcapGetLinkTypeHandler g_PAirpcapGetLinkType;
+AirpcapSetKernelBufferHandler g_PAirpcapSetKernelBuffer;
+AirpcapSetFilterHandler g_PAirpcapSetFilter;
+AirpcapGetMacAddressHandler g_PAirpcapGetMacAddress;
+AirpcapSetMinToCopyHandler g_PAirpcapSetMinToCopy;
+AirpcapGetReadEventHandler g_PAirpcapGetReadEvent;
+AirpcapReadHandler g_PAirpcapRead;
+AirpcapGetStatsHandler g_PAirpcapGetStats;
+#endif // HAVE_AIRPCAP_API
+
 #ifdef HAVE_DAG_API
-/* We load dinamically the dag library in order link it only when it's present on the system */
-dagc_open_handler p_dagc_open = NULL;
-dagc_close_handler p_dagc_close = NULL;
-dagc_getlinktype_handler p_dagc_getlinktype = NULL;
-dagc_getlinkspeed_handler p_dagc_getlinkspeed = NULL;
-dagc_getfcslen_handler p_dagc_getfcslen = NULL;
-dagc_receive_handler p_dagc_receive = NULL;
-dagc_wait_handler p_dagc_wait = NULL;
-dagc_stats_handler p_dagc_stats = NULL;
-dagc_setsnaplen_handler p_dagc_setsnaplen = NULL;
-dagc_finddevs_handler p_dagc_finddevs = NULL;
-dagc_freedevs_handler p_dagc_freedevs = NULL;
-#endif /* HAVE_DAG_API */
+// We load dinamically the dag library in order link it only when it's present on the system
+dagc_open_handler g_p_dagc_open = NULL;
+dagc_close_handler g_p_dagc_close = NULL;
+dagc_getlinktype_handler g_p_dagc_getlinktype = NULL;
+dagc_getlinkspeed_handler g_p_dagc_getlinkspeed = NULL;
+dagc_getfcslen_handler g_p_dagc_getfcslen = NULL;
+dagc_receive_handler g_p_dagc_receive = NULL;
+dagc_wait_handler g_p_dagc_wait = NULL;
+dagc_stats_handler g_p_dagc_stats = NULL;
+dagc_setsnaplen_handler g_p_dagc_setsnaplen = NULL;
+dagc_finddevs_handler g_p_dagc_finddevs = NULL;
+dagc_freedevs_handler g_p_dagc_freedevs = NULL;
+#endif // HAVE_DAG_API
 
 BOOLEAN PacketAddAdapterDag(PCHAR name, PCHAR description, BOOLEAN IsAFile);
 
@@ -94,11 +126,11 @@ BOOLEAN PacketAddAdapterDag(PCHAR name, PCHAR description, BOOLEAN IsAFile);
 //
 #ifdef WPCAP_OEM_UNLOAD_H
 typedef BOOL (*WoemLeaveDllHandler)(void);
-WoemLeaveDllHandler	WoemLeaveDllH = NULL;
+WoemLeaveDllHandler	g_WoemLeaveDllH = NULL;
 
 __declspec (dllexport) VOID PacketRegWoemLeaveHandler(PVOID Handler)
 {
-	WoemLeaveDllH = Handler;
+	g_WoemLeaveDllH = Handler;
 }
 #endif // WPCAP_OEM_UNLOAD_H
 
@@ -111,11 +143,8 @@ __declspec (dllexport) VOID PacketRegWoemLeaveHandler(PVOID Handler)
 BOOL APIENTRY DllMain(HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 {
     BOOLEAN Status=TRUE;
-	HMODULE IPHMod;
 	PADAPTER_INFO NewAdInfo;
-#ifdef HAVE_DAG_API
-	HMODULE DagcLib;
-#endif // HAVE_DAG_API
+
 	TCHAR DllFileName[MAX_PATH];
 
     switch(Reason)
@@ -146,13 +175,16 @@ BOOL APIENTRY DllMain(HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 #endif
 
 		// Create the mutex that will protect the adapter information list
-		AdaptersInfoMutex = CreateMutex(NULL, FALSE, NULL);
+		g_AdaptersInfoMutex = CreateMutex(NULL, FALSE, NULL);
+		
+		// Create the mutex that will protect the PacketLoadLibrariesDynamically() function		
+		g_DynamicLibrariesMutex = CreateMutex(NULL, FALSE, NULL);
 
 		//
 		// Retrieve packet.dll version information from the file
 		//
 		// XXX We want to replace this with a constant. We leave it out for the moment
-		if (GetModuleFileName(DllHandle, DllFileName, sizeof(DllFileName) / sizeof(DllFileName[0])) > 0)
+		if(GetModuleFileName(DllHandle, DllFileName, sizeof(DllFileName) / sizeof(DllFileName[0])) > 0)
 		{
 			PacketGetFileVersion(DllFileName, PacketLibraryVersion, sizeof(PacketLibraryVersion));
 		}
@@ -162,62 +194,30 @@ BOOL APIENTRY DllMain(HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 		// XXX We want to replace this with a constant. We leave it out for the moment
 		// TODO fixme. Those hardcoded strings are terrible...
 		PacketGetFileVersion(TEXT("drivers\\") TEXT(NPF_DRIVER_NAME) TEXT(".sys"), PacketDriverVersion, sizeof(PacketDriverVersion));
-
-		//
-		// Locate GetAdaptersAddresses dinamically since it is not present in Win2k
-		//
-		IPHMod = GetModuleHandle(TEXT("Iphlpapi"));
 		
-#ifndef _WINNT4
-		GetAdaptersAddressesPointer = (GAAHandler) GetProcAddress(IPHMod ,"GetAdaptersAddresses");
-#endif // _WINNT4
-
-#ifdef HAVE_DAG_API
-		/* We load dinamically the dag library in order link it only when it's present on the system */
-		if((DagcLib =  LoadLibrary(TEXT("dagc.dll"))) == NULL)
-		{
-			// Report the error but go on
-			ODS("dag capture library not found on this system\n");
-			break;
-		}
-
-		p_dagc_open = (dagc_open_handler) GetProcAddress(DagcLib, "dagc_open");
-		p_dagc_close = (dagc_close_handler) GetProcAddress(DagcLib, "dagc_close");
-		p_dagc_setsnaplen = (dagc_setsnaplen_handler) GetProcAddress(DagcLib, "dagc_setsnaplen");
-		p_dagc_getlinktype = (dagc_getlinktype_handler) GetProcAddress(DagcLib, "dagc_getlinktype");
-		p_dagc_getlinkspeed = (dagc_getlinkspeed_handler) GetProcAddress(DagcLib, "dagc_getlinkspeed");
-		p_dagc_getfcslen = (dagc_getfcslen_handler) GetProcAddress(DagcLib, "dagc_getfcslen");
-		p_dagc_receive = (dagc_receive_handler) GetProcAddress(DagcLib, "dagc_receive");
-		p_dagc_wait = (dagc_wait_handler) GetProcAddress(DagcLib, "dagc_wait");
-		p_dagc_stats = (dagc_stats_handler) GetProcAddress(DagcLib, "dagc_stats");
-		p_dagc_finddevs = (dagc_finddevs_handler) GetProcAddress(DagcLib, "dagc_finddevs");
-		p_dagc_freedevs = (dagc_freedevs_handler) GetProcAddress(DagcLib, "dagc_freedevs");
-		
-#endif /* HAVE_DAG_API */
-
 		break;
 		
 	case DLL_PROCESS_DETACH:
 
-		CloseHandle(AdaptersInfoMutex);
+		CloseHandle(g_AdaptersInfoMutex);
 		
-		AdaptersInfoList;
+		g_AdaptersInfoList;
 		
-		while(AdaptersInfoList != NULL)
+		while(g_AdaptersInfoList != NULL)
 		{
 			
-			NewAdInfo = AdaptersInfoList->Next;
-			if (AdaptersInfoList->NetworkAddresses != NULL)
-				GlobalFreePtr(AdaptersInfoList->NetworkAddresses);
-			GlobalFreePtr(AdaptersInfoList);
+			NewAdInfo = g_AdaptersInfoList->Next;
+			if (g_AdaptersInfoList->NetworkAddresses != NULL)
+				GlobalFreePtr(g_AdaptersInfoList->NetworkAddresses);
+			GlobalFreePtr(g_AdaptersInfoList);
 			
-			AdaptersInfoList = NewAdInfo;
+			g_AdaptersInfoList = NewAdInfo;
 		}
 
 #ifdef WPCAP_OEM_UNLOAD_H 
-		if(WoemLeaveDllH)
+		if(g_WoemLeaveDllH)
 		{
-			WoemLeaveDllH();
+			g_WoemLeaveDllH();
 		}
 #endif // WPCAP_OEM_UNLOAD_H
 
@@ -228,6 +228,126 @@ BOOL APIENTRY DllMain(HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
     }
 	
     return Status;
+}
+
+
+/*! 
+  \brief This function is used to dynamically load some of the libraries winpcap depends on, 
+   and that are not guaranteed to be in the system
+  \param cp A string containing the address.
+  \return the converted 32-bit numeric address.
+
+   Doesn't check to make sure the address is valid.
+*/
+VOID PacketLoadLibrariesDynamically()
+{
+	HMODULE IPHMod;
+#ifdef HAVE_AIRPCAP_API
+	HMODULE AirpcapLib;
+#endif // HAVE_DAG_API	
+#ifdef HAVE_DAG_API
+	HMODULE DagcLib;
+#endif // HAVE_DAG_API
+
+	//
+	// Acquire the global mutex, so we wait until other threads are done
+	//
+	WaitForSingleObject(g_DynamicLibrariesMutex, INFINITE);
+
+	//
+	// Only the first thread should do the initialization
+	//
+	if(InterlockedIncrement(&g_DynamicLibrariesLoaded) != 1)
+	{
+		ReleaseMutex(g_DynamicLibrariesMutex);
+		return;
+	}
+
+	//
+	// Locate GetAdaptersAddresses dinamically since it is not present in Win2k
+	//
+	IPHMod = GetModuleHandle(TEXT("Iphlpapi"));
+	
+#ifndef _WINNT4
+	g_GetAdaptersAddressesPointer = (GAAHandler) GetProcAddress(IPHMod ,"GetAdaptersAddresses");
+#endif // _WINNT4
+	
+#ifdef HAVE_AIRPCAP_API
+	/* We dinamically load the airpcap library in order link it only when it's present on the system */
+	if((AirpcapLib =  LoadLibrary(TEXT("airpcap.dll"))) == NULL)
+	{
+		// Report the error but go on
+		ODS("airpcap library not found on this system\n");
+	}
+	else
+	{
+		//
+		// Find the exports
+		//
+		g_PAirpcapGetLastError = (AirpcapGetLastErrorHandler) GetProcAddress(AirpcapLib, "AirpcapGetLastError");
+		g_PAirpcapGetDeviceList = (AirpcapGetDeviceListHandler) GetProcAddress(AirpcapLib, "AirpcapGetDeviceList");
+		g_PAirpcapFreeDeviceList = (AirpcapFreeDeviceListHandler) GetProcAddress(AirpcapLib, "AirpcapFreeDeviceList");
+		g_PAirpcapOpen = (AirpcapOpenHandler) GetProcAddress(AirpcapLib, "AirpcapOpen");
+		g_PAirpcapClose = (AirpcapCloseHandler) GetProcAddress(AirpcapLib, "AirpcapClose");
+		g_PAirpcapGetLinkType = (AirpcapGetLinkTypeHandler) GetProcAddress(AirpcapLib, "AirpcapGetLinkType");
+		g_PAirpcapSetKernelBuffer = (AirpcapSetKernelBufferHandler) GetProcAddress(AirpcapLib, "AirpcapSetKernelBuffer");
+		g_PAirpcapSetFilter = (AirpcapSetFilterHandler) GetProcAddress(AirpcapLib, "AirpcapSetFilter");
+		g_PAirpcapGetMacAddress = (AirpcapGetMacAddressHandler) GetProcAddress(AirpcapLib, "AirpcapGetMacAddress");
+		g_PAirpcapSetMinToCopy = (AirpcapSetMinToCopyHandler) GetProcAddress(AirpcapLib, "AirpcapSetMinToCopy");
+		g_PAirpcapGetReadEvent = (AirpcapGetReadEventHandler) GetProcAddress(AirpcapLib, "AirpcapGetReadEvent");
+		g_PAirpcapRead = (AirpcapReadHandler) GetProcAddress(AirpcapLib, "AirpcapRead");
+		g_PAirpcapGetStats = (AirpcapGetStatsHandler) GetProcAddress(AirpcapLib, "AirpcapGetStats");
+
+		//
+		// Make sure that we found everything
+		//
+		if(g_PAirpcapGetLastError == NULL ||
+			g_PAirpcapGetDeviceList == NULL ||
+			g_PAirpcapFreeDeviceList == NULL ||
+			g_PAirpcapClose == NULL ||
+			g_PAirpcapGetLinkType == NULL ||
+			g_PAirpcapSetKernelBuffer == NULL ||
+			g_PAirpcapSetFilter == NULL ||
+			g_PAirpcapGetMacAddress == NULL ||
+			g_PAirpcapSetMinToCopy == NULL ||
+			g_PAirpcapGetReadEvent == NULL ||
+			g_PAirpcapRead == NULL ||
+			g_PAirpcapGetStats == NULL)
+		{
+			// Some problem. A NULL g_PAirpcapOpen disables airpcap adapters check
+			g_PAirpcapOpen = NULL;
+		}
+	}
+#endif // HAVE_DAG_API
+	
+#ifdef HAVE_DAG_API
+	/* We dinamically load the dag library in order link it only when it's present on the system */
+	if((DagcLib =  LoadLibrary(TEXT("dagc.dll"))) == NULL)
+	{
+		// Report the error but go on
+		ODS("dag capture library not found on this system\n");
+	}
+	else
+	{
+		g_p_dagc_open = (dagc_open_handler) GetProcAddress(DagcLib, "dagc_open");
+		g_p_dagc_close = (dagc_close_handler) GetProcAddress(DagcLib, "dagc_close");
+		g_p_dagc_setsnaplen = (dagc_setsnaplen_handler) GetProcAddress(DagcLib, "dagc_setsnaplen");
+		g_p_dagc_getlinktype = (dagc_getlinktype_handler) GetProcAddress(DagcLib, "dagc_getlinktype");
+		g_p_dagc_getlinkspeed = (dagc_getlinkspeed_handler) GetProcAddress(DagcLib, "dagc_getlinkspeed");
+		g_p_dagc_getfcslen = (dagc_getfcslen_handler) GetProcAddress(DagcLib, "dagc_getfcslen");
+		g_p_dagc_receive = (dagc_receive_handler) GetProcAddress(DagcLib, "dagc_receive");
+		g_p_dagc_wait = (dagc_wait_handler) GetProcAddress(DagcLib, "dagc_wait");
+		g_p_dagc_stats = (dagc_stats_handler) GetProcAddress(DagcLib, "dagc_stats");
+		g_p_dagc_finddevs = (dagc_finddevs_handler) GetProcAddress(DagcLib, "dagc_finddevs");
+		g_p_dagc_freedevs = (dagc_freedevs_handler) GetProcAddress(DagcLib, "dagc_freedevs");
+	}
+#endif /* HAVE_DAG_API */
+
+	//
+	// Done. Release the mutex and return
+	//
+	ReleaseMutex(g_DynamicLibrariesMutex);
+	return;
 }
 
 /*
@@ -428,7 +548,6 @@ BOOLEAN QueryWinPcapRegistryStringW(WCHAR *SubKeyName,
 
    Doesn't check to make sure the address is valid.
 */
-
 ULONG inet_addrU(const WCHAR *cp)
 {
 	ULONG val, part;
@@ -1099,6 +1218,57 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 }
 
 /*! 
+  \brief Opens an adapter using the aircap dll.
+  \param AdapterName A string containing the name of the device to open. 
+  \return If the function succeeds, the return value is the pointer to a properly initialized ADAPTER object,
+   otherwise the return value is NULL.
+
+  \note internal function used by PacketOpenAdapter()
+*/
+#ifdef HAVE_AIRPCAP_API
+LPADAPTER PacketOpenAdapterAirpcap(PCHAR AdapterName)
+{
+	CHAR Ebuf[AIRPCAP_ERRBUF_SIZE];
+    LPADAPTER lpAdapter;
+
+	//
+	// Make sure that the airpcap API has been linked
+	//
+	if(!g_PAirpcapOpen)
+	{
+		return NULL;
+	}
+	
+	lpAdapter = (LPADAPTER) GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,
+		sizeof(ADAPTER));
+	if (lpAdapter == NULL)
+	{
+		return NULL;
+	}
+
+	//
+	// Indicate that this is a aircap card
+	//
+	lpAdapter->Flags = INFO_FLAG_AIRPCAP_CARD;
+		  
+	//
+	// Open the adapter
+	//
+	lpAdapter->AirpcapAd = g_PAirpcapOpen(AdapterName, Ebuf);
+	
+	if(lpAdapter->AirpcapAd == NULL)
+	{
+		GlobalFreePtr(lpAdapter);
+		return NULL;					
+	}
+		  				
+	_snprintf(lpAdapter->Name, ADAPTER_NAME_LENGTH, "%s", AdapterName);
+	
+	return lpAdapter;
+}
+#endif // HAVE_AIRPCAP_API
+
+/*! 
   \brief Opens an adapter using the DAG capture API.
   \param AdapterName A string containing the name of the device to open. 
   \return If the function succeeds, the return value is the pointer to a properly initialized ADAPTER object,
@@ -1193,7 +1363,7 @@ LPADAPTER PacketOpenAdapterDAG(PCHAR AdapterName, BOOLEAN IsAFile)
 	//
 	// Open the card
 	//
-	lpAdapter->pDagCard = p_dagc_open(AdapterName,
+	lpAdapter->pDagCard = g_p_dagc_open(AdapterName,
 	 0, 
 	 DagEbuf);
 	
@@ -1205,7 +1375,7 @@ LPADAPTER PacketOpenAdapterDAG(PCHAR AdapterName, BOOLEAN IsAFile)
 		return NULL;					
 	}
 		  
-	lpAdapter->DagFcsLen = p_dagc_getfcslen(lpAdapter->pDagCard);
+	lpAdapter->DagFcsLen = g_p_dagc_getfcslen(lpAdapter->pDagCard);
 				
 	_snprintf(lpAdapter->Name, ADAPTER_NAME_LENGTH, "%s", AdapterName);
 	
@@ -1344,10 +1514,18 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
  
  	TRACE_ENTER("PacketOpenAdapter");	
  
- 	TRACE_PRINT_OS_INFO();
- 
- 	ODSEx("Trying to open the adapter= %s \n",AdapterName);
+	TRACE_PRINT_OS_INFO();
+	
+	ODSEx("Trying to open the adapter= %s \n",AdapterName);
+	
+	//
+	// Check the presence on some libraries we rely on, and load them if we found them
+	//
+	PacketLoadLibrariesDynamically();
 
+	//
+	// Ugly heuristic to detect if the adapter is ASCII
+	//
 	if(AdapterName[1]!=0)
 	{ 
 		//
@@ -1369,7 +1547,7 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 
 #ifndef _WINNT4
 
-	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
+	WaitForSingleObject(g_AdaptersInfoMutex, INFINITE);
  	
  	ODS("Looking for the adapter in our list 1st time...\n");
 
@@ -1389,15 +1567,21 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 			ODS("Adapter not found in our list. Try to open it as a DAG/ERF file...\n");
 			
 			lpAdapter = NULL;
+
+#ifdef HAVE_DAG_API
 			//can be an ERF file?
-			lpAdapter = PacketOpenAdapterDAG(AdapterNameA, TRUE);
+			if(!lpAdapter)
+			{
+				lpAdapter = PacketOpenAdapterDAG(AdapterNameA, TRUE);
+			}
+#endif // HAVE_DAG_API
 
 			if (AdapterNameU != NULL) 
 				GlobalFreePtr(AdapterNameU);
 			else 
 				GlobalFreePtr(AdapterNameA);
 			
-			ReleaseMutex(AdaptersInfoMutex);
+			ReleaseMutex(g_AdaptersInfoMutex);
 			if (lpAdapter == NULL)
 			{
 				ODS("Failed to open it as a DAG/ERF file, failing with ERROR_BAD_UNIT\n");
@@ -1441,7 +1625,7 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 					GlobalFreePtr(AdapterNameU);
 				else 
 					GlobalFreePtr(AdapterNameA);
-				ReleaseMutex(AdaptersInfoMutex);
+				ReleaseMutex(g_AdaptersInfoMutex);
 				TRACE_EXIT("PacketOpenAdapter");	
 				SetLastError(ERROR_BAD_UNIT);
 				return NULL;
@@ -1462,7 +1646,7 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 				else GlobalFreePtr(AdapterNameA);
 				
 				GlobalFreePtr(lpAdapter);
-				ReleaseMutex(AdaptersInfoMutex);
+				ReleaseMutex(g_AdaptersInfoMutex);
 				TRACE_EXIT("PacketOpenAdapter");	
 				SetLastError(ERROR_BAD_UNIT);
 				return NULL;
@@ -1477,13 +1661,48 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 			else 
 				GlobalFreePtr(AdapterNameA);
 			
-			ReleaseMutex(AdaptersInfoMutex);
+			ReleaseMutex(g_AdaptersInfoMutex);
 			
 			ODS("Successfully opened the Wan Adapter.\n");
 			TRACE_EXIT("PacketOpenAdapter");	
 
 			return lpAdapter;
 		}
+#ifdef HAVE_AIRPCAP_API
+		else
+			if(TAdInfo->Flags & INFO_FLAG_AIRPCAP_CARD)
+			{
+				//
+				// This is an airpcap card. Open it using the airpcap api
+				//								
+				lpAdapter = PacketOpenAdapterAirpcap(AdapterNameA);
+	
+				if (AdapterNameU != NULL) 
+					GlobalFreePtr(AdapterNameU);
+				else 
+					GlobalFreePtr(AdapterNameA);
+
+				ReleaseMutex(g_AdaptersInfoMutex);
+				if(lpAdapter == NULL)
+					SetLastError(ERROR_BAD_UNIT);
+
+				//
+				// Airpcap provides a read event
+				//
+				if(lpAdapter)
+				{
+					if(!g_PAirpcapGetReadEvent(lpAdapter->AirpcapAd, &lpAdapter->ReadEvent))
+					{
+						PacketCloseAdapter(lpAdapter);
+						return NULL;
+					}
+				}
+
+				return lpAdapter;
+			}
+#endif // HAVE_AIRPCAP_API
+
+#ifdef HAVE_DAG_API
 		else
 			if(TAdInfo->Flags & INFO_FLAG_DAG_CARD)
 			{
@@ -1498,7 +1717,7 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 				else 
 					GlobalFreePtr(AdapterNameA);
 
-				ReleaseMutex(AdaptersInfoMutex);
+				ReleaseMutex(g_AdaptersInfoMutex);
 				if (lpAdapter == NULL)
 				{
 					ODS("Failed opening the DAG adapter with PacketOpenAdapterDAG. Failing. (BAD_UNIT)\n");
@@ -1512,6 +1731,7 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 					return lpAdapter;
 				}
 			}
+#endif // HAVE_DAG_API
 		else
 			if(TAdInfo->Flags == INFO_FLAG_DONT_EXPORT)
 			{
@@ -1522,14 +1742,14 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 				ODSEx("Trying to open the adapter %s which is flagged as not exported. Failing (BAD_UNIT)", AdapterNameA);
 				if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
 				else GlobalFreePtr(AdapterNameA);
-				ReleaseMutex(AdaptersInfoMutex);
+				ReleaseMutex(g_AdaptersInfoMutex);
 				TRACE_EXIT("PacketOpenAdapter");	
 				SetLastError(ERROR_BAD_UNIT);
 				return NULL;
 			}
 	}
 	
-	ReleaseMutex(AdaptersInfoMutex);
+	ReleaseMutex(g_AdaptersInfoMutex);
 
 #endif // _WINNT4
    
@@ -1569,6 +1789,18 @@ VOID PacketCloseAdapter(LPADAPTER lpAdapter)
 		GlobalFreePtr(lpAdapter);
 		return;
 	}
+#ifdef HAVE_AIRPCAP_API
+	else
+		if(lpAdapter->AirpcapAd != NULL)
+		{
+			if(lpAdapter->Flags & INFO_FLAG_AIRPCAP_CARD)
+			{
+				g_PAirpcapClose(lpAdapter->AirpcapAd);
+			}
+
+			return;
+		}
+#endif // HAVE_AIRPCAP_API
 #ifdef HAVE_DAG_API
 	else
 		if(lpAdapter->pDagCard != NULL)
@@ -1580,7 +1812,7 @@ VOID PacketCloseAdapter(LPADAPTER lpAdapter)
 				// This is a file. We must remove the entry in the adapter description list
 				PacketUpdateAdInfo(lpAdapter->Name);
 			}
-			p_dagc_close(lpAdapter->pDagCard);
+			g_p_dagc_close(lpAdapter->pDagCard);
 		}
 #endif // HAVE_DAG_API
 #endif // _WINNT4
@@ -1711,14 +1943,38 @@ BOOLEAN PacketReceivePacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sy
 		TRACE_EXIT("PacketReceivePacket");
 		return TRUE;
 	}
+
+#ifdef HAVE_AIRPCAP_API
+	else
+		if(AdapterObject->AirpcapAd != NULL)
+		{
+			//
+			// Wait for data, only if the user requested us to do that
+			//
+			if((int)AdapterObject->ReadTimeOut != -1)
+			{
+				WaitForSingleObject(AdapterObject->ReadEvent, (AdapterObject->ReadTimeOut==0)? INFINITE: AdapterObject->ReadTimeOut);
+			}
+
+			//
+			// Read the data.
+			// g_PAirpcapRead always returns immediately.
+			//
+			return g_PAirpcapRead(AdapterObject->AirpcapAd, 
+				lpPacket->Buffer, 
+				lpPacket->Length, 
+				&lpPacket->ulBytesReceived);
+		}
+#endif // HAVE_AIRPCAP_API
+
 #ifdef HAVE_DAG_API
 	else
 		if(AdapterObject->pDagCard != NULL)
 		{
 
-			p_dagc_wait(AdapterObject->pDagCard, &AdapterObject->DagReadTimeout);
+			g_p_dagc_wait(AdapterObject->pDagCard, &AdapterObject->DagReadTimeout);
 
-			if(p_dagc_receive(AdapterObject->pDagCard, &AdapterObject->DagBuffer, &lpPacket->ulBytesReceived) == 0)
+			if(g_p_dagc_receive(AdapterObject->pDagCard, &AdapterObject->DagBuffer, &lpPacket->ulBytesReceived) == 0)
 			{
 				TRACE_EXIT("PacketReceivePacket");
 				return TRUE;
@@ -1919,6 +2175,19 @@ BOOLEAN PacketSetMinToCopy(LPADAPTER AdapterObject,int nbytes)
 		return Result;
 	}
 	
+#ifdef HAVE_AIRPCAP_API
+	else
+	{
+		if(AdapterObject->Flags & INFO_FLAG_AIRPCAP_CARD)
+		{
+			Result = g_PAirpcapSetMinToCopy(AdapterObject->AirpcapAd, nbytes);
+			TRACE_EXIT("PacketSetMinToCopy");
+		
+			return Result;
+		}
+	}
+#endif // HAVE_AIRPCAP_API
+	
 #ifdef HAVE_DAG_API
 	else
 		if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
@@ -1933,8 +2202,7 @@ BOOLEAN PacketSetMinToCopy(LPADAPTER AdapterObject,int nbytes)
 		Result = DeviceIoControl(AdapterObject->hFile,pBIOCSMINTOCOPY,&nbytes,4,NULL,0,&BytesReturned,NULL);
 		TRACE_EXIT("PacketSetMinToCopy");
 		
-		return Result;
-		
+		return Result; 		
 }
 
 /*!
@@ -2247,7 +2515,7 @@ BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
 	}
 #endif // _WINNT4
 	
-	AdapterObject->ReadTimeOut=timeout;
+	AdapterObject->ReadTimeOut = timeout;
 	
 #ifdef HAVE_DAG_API
 	// Under DAG, we simply store the timeout value and then 
@@ -2311,6 +2579,17 @@ BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim)
 #ifndef _WINNT4
 	if (AdapterObject->pWanAdapter != NULL)
 		return WanPacketSetBufferSize(AdapterObject->pWanAdapter, dim);
+
+#ifdef HAVE_AIRPCAP_API
+	else
+	{
+		if(AdapterObject->Flags & INFO_FLAG_AIRPCAP_CARD)
+		{
+			return g_PAirpcapSetKernelBuffer(AdapterObject->AirpcapAd, dim);
+		}
+	}
+#endif // HAVE_AIRPCAP_API
+
 #ifdef HAVE_DAG_API
 	else
 		if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
@@ -2343,9 +2622,9 @@ BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim)
   set of bpf_insn instructions.
 
   A filter can be automatically created by using the pcap_compile() function of wpcap. This function 
-  converts a human readable text expression with the syntax of WinDump (see the manual of WinDump at 
-  http://netgroup.polito.it/windump for details) into a BPF program. If your program doesn't link wpcap, but 
-  you need to know the code of a particular filter, you can launch WinDump with the -d or -dd or -ddd 
+  converts a human readable text expression with the tcpdump/libpcap syntax (see the manual of WinDump at 
+  http://www.winpcap.org/windump for details) into a BPF program. If your program doesn't link wpcap, but 
+  you need to know the code of a particular filter, you can run WinDump with the -d or -dd or -ddd 
   flags to obtain the pseudocode.
 
 */
@@ -2363,7 +2642,19 @@ BOOLEAN PacketSetBpf(LPADAPTER AdapterObject, struct bpf_program *fp)
 		TRACE_EXIT("PacketSetBpf");
 		return Result;
 	}
-	
+#ifdef HAVE_AIRPCAP_API
+	else
+	if(AdapterObject->Flags & INFO_FLAG_AIRPCAP_CARD)
+	{
+		// Airpcap is always in promiscuous mode for the moment
+		Result = g_PAirpcapSetFilter(AdapterObject->AirpcapAd, 
+			(char*)fp->bf_insns,
+			fp->bf_len * sizeof(struct bpf_insn));
+
+		TRACE_EXIT("PacketSetBpf");
+		return Result;
+	}
+#endif // HAVE_AIRPCAP_API
 #ifdef HAVE_DAG_API
 	else
 		if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
@@ -2427,7 +2718,7 @@ INT PacketSetSnapLen(LPADAPTER AdapterObject, int snaplen)
 
 #ifdef HAVE_DAG_API
 	if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
-		Result = p_dagc_setsnaplen(AdapterObject->pDagCard, snaplen);
+		Result = g_p_dagc_setsnaplen(AdapterObject->pDagCard, snaplen);
 	else
 #endif // HAVE_DAG_API
 		Result = 0;
@@ -2460,6 +2751,28 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
 	TRACE_ENTER("PacketGetStats");
 
 #ifndef _WINNT4
+
+#ifdef HAVE_AIRPCAP_API
+	if(AdapterObject->Flags & INFO_FLAG_AIRPCAP_CARD)
+	{
+		AirpcapStats tas;
+
+		if(!g_PAirpcapGetStats(AdapterObject->AirpcapAd, &tas))
+		{
+			return FALSE;
+		}
+
+		s->bs_capt = tas.Capt;
+		s->bs_drop = tas.Drops;
+		s->bs_recv = tas.Recvs;
+		s->ps_ifdrop = tas.IfDrops;
+
+		// Airpcap is always in promiscuous mode for the moment
+		return TRUE;
+	}
+#endif // HAVE_AIRPCAP_API
+
+
 #ifdef HAVE_DAG_API
 	if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
 	{
@@ -2467,7 +2780,7 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
 		
 		// Note: DAG cards are currently very limited from the statistics reporting point of view,
 		// so most of the values returned by dagc_stats() are zero at the moment
-		if(p_dagc_stats(AdapterObject->pDagCard, &DagStats) == 0)
+		if(g_p_dagc_stats(AdapterObject->pDagCard, &DagStats) == 0)
 		{
 			// XXX: Only copy the dropped packets for now, since the received counter is not supported by
 			// DAGS at the moment
@@ -2536,7 +2849,7 @@ BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s)
 
 			// Note: DAG cards are currently very limited from the statistics reporting point of view,
 			// so most of the values returned by dagc_stats() are zero at the moment
-			p_dagc_stats(AdapterObject->pDagCard, &DagStats);
+			g_p_dagc_stats(AdapterObject->pDagCard, &DagStats);
 			s->bs_recv = (ULONG)DagStats.received;
 			s->bs_drop = (ULONG)DagStats.dropped;
 			s->ps_ifdrop = 0;
@@ -2629,8 +2942,16 @@ BOOLEAN PacketSetHwFilter(LPADAPTER  AdapterObject,ULONG Filter)
     BOOLEAN    Status;
     ULONG      IoCtlBufferLength=(sizeof(PACKET_OID_DATA)+sizeof(ULONG)-1);
     PPACKET_OID_DATA  OidData;
-
+	
 	TRACE_ENTER("PacketSetHwFilter");
+
+#ifdef HAVE_AIRPCAP_API
+	if(AdapterObject->Flags & INFO_FLAG_AIRPCAP_CARD)
+	{
+		// Airpcap for the moment is always in promiscuous mode, and ignores any other filters
+		return TRUE;
+	}
+#endif // HAVE_AIRPCAP_API
 
 #ifndef _WINNT4
 	if(AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
@@ -2651,7 +2972,7 @@ BOOLEAN PacketSetHwFilter(LPADAPTER  AdapterObject,ULONG Filter)
     *((PULONG)OidData->Data)=Filter;
     Status=PacketRequest(AdapterObject,TRUE,OidData);
     GlobalFreePtr(OidData);
-
+	
 	TRACE_EXIT("PacketSetHwFilter");
     return Status;
 }
@@ -2692,17 +3013,22 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	ODSEx("PacketGetAdapterNames: BufferSize=%d\n", *BufferSize);
 
 	//
+	// Check the presence on some libraries we rely on, and load them if we found them
+	//
+	PacketLoadLibrariesDynamically();
+
+	//
 	// Create the adapter information list
 	//
 	ODS("Populating the adapter list...\n");
 
 	PacketPopulateAdaptersInfoList();
 
-	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
+	WaitForSingleObject(g_AdaptersInfoMutex, INFINITE);
 
-	if(!AdaptersInfoList) 
+	if(!g_AdaptersInfoList) 
 	{
-		ReleaseMutex(AdaptersInfoMutex);
+		ReleaseMutex(g_AdaptersInfoMutex);
 		*BufferSize = 0;
 
 		ODS("No adapters found in the system. Failing.\n");
@@ -2716,7 +3042,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	// 
 	// First scan of the list to calculate the offsets and check the sizes
 	//
-	for(TAdInfo = AdaptersInfoList; TAdInfo != NULL; TAdInfo = TAdInfo->Next)
+	for(TAdInfo = g_AdaptersInfoList; TAdInfo != NULL; TAdInfo = TAdInfo->Next)
 	{
 		if(TAdInfo->Flags != INFO_FLAG_DONT_EXPORT)
 		{
@@ -2730,7 +3056,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	// Note: 2 is the number of additional separators needed inside the list
 	if(SizeNeeded + 2 > *BufferSize || pStr == NULL)
 	{
-		ReleaseMutex(AdaptersInfoMutex);
+		ReleaseMutex(g_AdaptersInfoMutex);
 
  		ODSEx("PacketGetAdapterNames: input buffer too small, we need %u bytes\n", *BufferSize);
  
@@ -2746,7 +3072,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	// 
 	// Second scan of the list to copy the information
 	//
-	for(TAdInfo = AdaptersInfoList, SizeNames = 0, SizeDesc = 0; TAdInfo != NULL; TAdInfo = TAdInfo->Next)
+	for(TAdInfo = g_AdaptersInfoList, SizeNames = 0, SizeDesc = 0; TAdInfo != NULL; TAdInfo = TAdInfo->Next)
 	{
 		if(TAdInfo->Flags != INFO_FLAG_DONT_EXPORT)
 		{
@@ -2767,7 +3093,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	((PCHAR)pStr)[SizeNeeded + 1] = 0;
 
 
-	ReleaseMutex(AdaptersInfoMutex);
+	ReleaseMutex(g_AdaptersInfoMutex);
 	TRACE_EXIT("PacketGetAdapterNames");
 	return TRUE;
 }
@@ -2819,7 +3145,7 @@ BOOLEAN PacketGetNetInfoEx(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntrie
 		return FALSE;
 	}
 	
-	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
+	WaitForSingleObject(g_AdaptersInfoMutex, INFINITE);
 	// Find the PADAPTER_INFO structure associated with this adapter 
 	TAdInfo = PacketFindAdInfo(Tname);
 
@@ -2838,7 +3164,7 @@ BOOLEAN PacketGetNetInfoEx(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntrie
 		Res = FALSE;
 	}
 	
-	ReleaseMutex(AdaptersInfoMutex);
+	ReleaseMutex(g_AdaptersInfoMutex);
 	
 	if(FreeBuff)GlobalFreePtr(Tname);
 	
@@ -2868,7 +3194,7 @@ BOOLEAN PacketGetNetType(LPADAPTER AdapterObject, NetType *type)
 	BOOLEAN ret;	
 	TRACE_ENTER("PacketGetNetType");
 
-	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
+	WaitForSingleObject(g_AdaptersInfoMutex, INFINITE);
 	// Find the PADAPTER_INFO structure associated with this adapter 
 	TAdInfo = PacketFindAdInfo(AdapterObject->Name);
 
@@ -2885,7 +3211,7 @@ BOOLEAN PacketGetNetType(LPADAPTER AdapterObject, NetType *type)
 		ret =  FALSE;
 	}
 
-	ReleaseMutex(AdaptersInfoMutex);
+	ReleaseMutex(g_AdaptersInfoMutex);
 
 	TRACE_EXIT("PacketGetNetType");
 	return ret;

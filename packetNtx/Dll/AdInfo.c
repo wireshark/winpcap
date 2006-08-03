@@ -44,6 +44,7 @@
 
 #include <stdio.h>
 #include <packet32.h>
+#include "Packet32-Int.h"
 #include "debug.h"
 #include "WanPacket/WanPacket.h"
 
@@ -60,18 +61,34 @@
 LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName);
 BOOLEAN PacketAddFakeNdisWanAdapter();
 
-PADAPTER_INFO AdaptersInfoList = NULL;	///< Head of the adapter information list. This list is populated when packet.dll is linked by the application.
-HANDLE AdaptersInfoMutex = NULL;		///< Mutex that protects the adapter information list. NOTE: every API that takes an ADAPTER_INFO as parameter assumes that it has been called with the mutex acquired.
+PADAPTER_INFO g_AdaptersInfoList = NULL;	///< Head of the adapter information list. This list is populated when packet.dll is linked by the application.
+HANDLE g_AdaptersInfoMutex = NULL;		///< Mutex that protects the adapter information list. NOTE: every API that takes an ADAPTER_INFO as parameter assumes that it has been called with the mutex acquired.
 
-extern FARPROC GetAdaptersAddressesPointer;
+extern FARPROC g_GetAdaptersAddressesPointer;
+
+#ifdef HAVE_AIRPCAP_API
+extern AirpcapGetLastErrorHandler g_PAirpcapGetLastError;
+extern AirpcapGetDeviceListHandler g_PAirpcapGetDeviceList;
+extern AirpcapFreeDeviceListHandler g_PAirpcapFreeDeviceList;
+extern AirpcapOpenHandler g_PAirpcapOpen;
+extern AirpcapCloseHandler g_PAirpcapClose;
+extern AirpcapGetLinkTypeHandler g_PAirpcapGetLinkType;
+extern AirpcapSetKernelBufferHandler g_PAirpcapSetKernelBuffer;
+extern AirpcapSetFilterHandler g_PAirpcapSetFilter;
+extern AirpcapGetMacAddressHandler g_PAirpcapGetMacAddress;
+extern AirpcapSetMinToCopyHandler g_PAirpcapSetMinToCopy;
+extern AirpcapGetReadEventHandler g_PAirpcapGetReadEvent;
+extern AirpcapReadHandler g_PAirpcapRead;
+extern AirpcapGetStatsHandler g_PAirpcapGetStats;
+#endif /* HAVE_AIRPCAP_API */
 
 #ifdef HAVE_DAG_API
-extern dagc_open_handler p_dagc_open;
-extern dagc_close_handler p_dagc_close;
-extern dagc_getlinktype_handler p_dagc_getlinktype;
-extern dagc_getlinkspeed_handler p_dagc_getlinkspeed;
-extern dagc_finddevs_handler p_dagc_finddevs;
-extern dagc_freedevs_handler p_dagc_freedevs;
+extern dagc_open_handler g_p_dagc_open;
+extern dagc_close_handler g_p_dagc_close;
+extern dagc_getlinktype_handler g_p_dagc_getlinktype;
+extern dagc_getlinkspeed_handler g_p_dagc_getlinkspeed;
+extern dagc_finddevs_handler g_p_dagc_finddevs;
+extern dagc_freedevs_handler g_p_dagc_freedevs;
 #endif /* HAVE_DAG_API */
 
 /// Title of error windows
@@ -428,7 +445,7 @@ fail:
   must be a valid capture device name.
   \note uses the GetAdaptersAddresses() Ip Helper API function, so it works only on systems where IP Helper API
   provides it (WinXP and successive).
-  \note we suppose that we are called after having acquired the AdaptersInfoMutex mutex
+  \note we suppose that we are called after having acquired the g_AdaptersInfoMutex mutex
 */
 #ifndef _WINNT4
 BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
@@ -448,7 +465,7 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 
 	TRACE_ENTER("PacketAddIP6Addresses");
 
-	if(GetAdaptersAddressesPointer == NULL)	
+	if(g_GetAdaptersAddressesPointer == NULL)	
 	{
 		ODS("GetAdaptersAddressesPointer not available on the system, simply returning success...\n");
 
@@ -456,7 +473,7 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 		return TRUE;	// GetAdaptersAddresses() not present on this system,
 	}											// return immediately.
 
- 	if(GetAdaptersAddressesPointer(AF_UNSPEC, GAA_FLAG_SKIP_ANYCAST| GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_FRIENDLY_NAME, NULL, NULL, &BufLen) != ERROR_BUFFER_OVERFLOW)
+ 	if(g_GetAdaptersAddressesPointer(AF_UNSPEC, GAA_FLAG_SKIP_ANYCAST| GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_FRIENDLY_NAME, NULL, NULL, &BufLen) != ERROR_BUFFER_OVERFLOW)
 	{
 		ODS("PacketAddIP6Addresses: GetAdaptersAddresses Failed while retrieving the needed buffer size\n");
 
@@ -473,7 +490,7 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 		return FALSE;
 	}
 
- 	if(GetAdaptersAddressesPointer(AF_UNSPEC,  GAA_FLAG_SKIP_ANYCAST| GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_FRIENDLY_NAME, NULL, AdBuffer, &BufLen) != ERROR_SUCCESS)
+ 	if(g_GetAdaptersAddressesPointer(AF_UNSPEC,  GAA_FLAG_SKIP_ANYCAST| GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_FRIENDLY_NAME, NULL, AdBuffer, &BufLen) != ERROR_SUCCESS)
 	{
 		ODS("PacketGetIP6Addresses: GetAdaptersAddresses Failed while retrieving the addresses\n");
 		GlobalFreePtr(AdBuffer);
@@ -565,7 +582,7 @@ BOOLEAN IsFireWire(TCHAR *AdapterDesc)
   \brief Adds an entry to the adapter description list, gathering its values from the IP Helper API.
   \param IphAd PIP_ADAPTER_INFO IP Helper API structure containing the parameters of the adapter that must be added to the list.
   \return If the function succeeds, the return value is TRUE.
-  \note we suppose that we are called after having acquired the AdaptersInfoMutex mutex
+  \note we suppose that we are called after having acquired the g_AdaptersInfoMutex mutex
 */
 #ifndef _WINNT4
 BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
@@ -615,7 +632,7 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	TRACE_ENTER("AddAdapterIPH");
 	
 	// Scan the adapters list to see if this one is already present
-	for(SAdInfo = AdaptersInfoList; SAdInfo != NULL; SAdInfo = SAdInfo->Next)
+	for(SAdInfo = g_AdaptersInfoList; SAdInfo != NULL; SAdInfo = SAdInfo->Next)
 	{
 		if(strcmp(TName, SAdInfo->Name) == 0)
 		{
@@ -729,8 +746,8 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	}
 	
 	// Update the AdaptersInfo list
-	TmpAdInfo->Next = AdaptersInfoList;
-	AdaptersInfoList = TmpAdInfo;
+	TmpAdInfo->Next = g_AdaptersInfoList;
+	g_AdaptersInfoList = TmpAdInfo;
 	
 SkipAd:
 
@@ -806,7 +823,7 @@ BOOLEAN PacketGetAdaptersIPH()
 */
 BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 {
-	//this function should acquire the AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
+	//this function should acquire the g_AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
 	DWORD		RegKeySize=0;
 	LONG		Status;
 	LPADAPTER	adapter;
@@ -829,14 +846,14 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 		return FALSE;
 	}
 
-	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
+	WaitForSingleObject(g_AdaptersInfoMutex, INFINITE);
 	
-	for(TAdInfo = AdaptersInfoList; TAdInfo != NULL; TAdInfo = TAdInfo->Next)
+	for(TAdInfo = g_AdaptersInfoList; TAdInfo != NULL; TAdInfo = TAdInfo->Next)
 	{
 		if(strcmp(AdName, TAdInfo->Name) == 0)
 		{
 			ODS("AddAdapter: Adapter already present in the list\n");
-			ReleaseMutex(AdaptersInfoMutex);
+			ReleaseMutex(g_AdaptersInfoMutex);
 			TRACE_EXIT("AddAdapter");
 			return TRUE;
 		}
@@ -854,29 +871,96 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 		// Try to Open the adapter
 		adapter = PacketOpenAdapterNPF((PCHAR)UAdName);
 		
-		GlobalFreePtr(UAdName);
-		
-		if(adapter == NULL)
+		if(adapter != NULL)
 		{
-			ODS("NPF Adapter not available, do not add it to the global list\n");
-			// We are not able to open this adapter. Skip to the next one.
-			ReleaseMutex(AdaptersInfoMutex);
-			TRACE_EXIT("AddAdapter");
-			return FALSE;
+			GlobalFreePtr(UAdName);
+			
+			// Allocate a buffer to get the vendor description from the driver
+			OidData = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,512);
+			if (OidData == NULL) 
+			{
+				ODS("AddAdapter: GlobalAlloc Failed allocating the buffer for the OID request to obtain the NIC description. Returning.\n"); 				
+				PacketCloseAdapter(adapter);
+				ReleaseMutex(g_AdaptersInfoMutex);
+				TRACE_EXIT("AddAdapter");
+				return FALSE;
+			}
 		}
+#ifdef HAVE_AIRPCAP_API
+		else
+		{
+			BOOL GllRes;
+			AirpcapLinkType AirpcapLinkLayer;
 
-		ODS("NPF Adapter available, try to add it to the global list...\n");
-		
-		// Allocate a buffer to get the vendor description from the driver
-		OidData = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,512);
-		if (OidData == NULL) 
-		{
-			ODS("AddAdapter: GlobalAlloc Failed allocating the buffer for the OID request to obtain the NIC description. Returning.\n");
+			// Before giving up, try to Open the adapter with aircap
+			adapter = PacketOpenAdapterAirpcap((PCHAR)AdName);
+						
+			GlobalFreePtr(UAdName);
+			
+			if(adapter == NULL)
+			{
+				ODS("NPF Adapter not available, do not add it to the global list\n");
+				// We are not able to open this adapter. Skip to the next one.
+				ReleaseMutex(g_AdaptersInfoMutex);
+				TRACE_EXIT("AddAdapter");
+				return FALSE;
+			}
+
+			TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));	
+			if (TmpAdInfo == NULL) 
+			{
+				// No luck. Report an error
+				PacketCloseAdapter(adapter);
+				ReleaseMutex(g_AdaptersInfoMutex);
+				TRACE_EXIT("AddAdapter");
+				return FALSE;
+			}
+
+			GllRes = g_PAirpcapGetLinkType(adapter->AirpcapAd, &AirpcapLinkLayer);
+			if(!GllRes)
+			{
+				PacketCloseAdapter(adapter);
+				ReleaseMutex(g_AdaptersInfoMutex);
+				TRACE_EXIT("AddAdapter");
+				return FALSE;
+			}
+
+			switch(AirpcapLinkLayer) 
+			{
+			case AIRPCAP_LT_802_11:
+				TmpAdInfo->LinkLayer.LinkType = NdisMediumBare80211;
+				break;
+			case AIRPCAP_LT_802_11_PLUS_RADIO:
+				TmpAdInfo->LinkLayer.LinkType = NdisMediumRadio80211;
+				break;
+			default:
+				TmpAdInfo->LinkLayer.LinkType = NdisMediumNull; // Note: custom linktype, NDIS doesn't provide an equivalent
+				break;
+			}			
+
+			//
+			// For the moment, we always set the speed to 54Mbps, since the speed is not channel-specific,
+			// but per packet
+			//
+			TmpAdInfo->LinkLayer.LinkSpeed = 54000000; 
+						
+			TmpAdInfo->NetworkAddresses = NULL;
+			TmpAdInfo->Flags = INFO_FLAG_AIRPCAP_CARD;
+			
+			// Copy the device name
+			strncpy(TmpAdInfo->Name, AdName, sizeof(TmpAdInfo->Name) / sizeof(TmpAdInfo->Name[0]) - 1);
+
+			// Update the AdaptersInfo list
+			TmpAdInfo->Next = g_AdaptersInfoList;
+			g_AdaptersInfoList = TmpAdInfo;
+			
+			// Done ok
 			PacketCloseAdapter(adapter);
-			ReleaseMutex(AdaptersInfoMutex);
+			ReleaseMutex(g_AdaptersInfoMutex);
 			TRACE_EXIT("AddAdapter");
-			return FALSE;
+			return TRUE;
 		}
+#endif // HAVE_AIRPCAP_API
 	}
 	
 	//
@@ -894,9 +978,9 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 	 		ODS("AddAdapter: GlobalAlloc Failed allocating the buffer for the AdInfo to be added to the global list. Returning.\n");
 			GlobalFreePtr(OidData);
 			PacketCloseAdapter(adapter);
-		}
+		}		
 		
-		ReleaseMutex(AdaptersInfoMutex);
+		ReleaseMutex(g_AdaptersInfoMutex);
  		TRACE_EXIT("AddAdapter");
 		return FALSE;
 	}
@@ -968,7 +1052,7 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 			PacketCloseAdapter(adapter);
 			GlobalFreePtr(OidData);
 			GlobalFreePtr(TmpAdInfo);
-			ReleaseMutex(AdaptersInfoMutex);
+			ReleaseMutex(g_AdaptersInfoMutex);
 			TRACE_EXIT("AddAdapter");
 			return FALSE;
 		}
@@ -1011,10 +1095,10 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 	}
 	
 	// Update the AdaptersInfo list
-	TmpAdInfo->Next = AdaptersInfoList;
-	AdaptersInfoList = TmpAdInfo;
+	TmpAdInfo->Next = g_AdaptersInfoList;
+	g_AdaptersInfoList = TmpAdInfo;
 	
-	ReleaseMutex(AdaptersInfoMutex);
+	ReleaseMutex(g_AdaptersInfoMutex);
 
 	TRACE_EXIT("AddAdapter");
 	return TRUE;
@@ -1251,6 +1335,127 @@ tcpip_linkage:
 	return TRUE;
 }
 
+#ifdef HAVE_AIRPCAP_API
+/*!
+  \brief Add an airpcap adapter to the adapters info list, gathering information from the airpcap dll
+  \param name Name of the adapter.
+  \param description description of the adapter.
+  \return If the function succeeds, the return value is nonzero.
+*/
+BOOLEAN PacketAddAdapterAirpcap(PCHAR name, PCHAR description)
+{
+	//this function should acquire the g_AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
+	CHAR ebuf[AIRPCAP_ERRBUF_SIZE];
+	PADAPTER_INFO TmpAdInfo;
+	PAirpcapHandle AirpcapAdapter;
+	BOOL GllRes;
+	AirpcapLinkType AirpcapLinkLayer;
+
+	//XXX what about checking if the adapter already exists???
+	
+	//
+	// Allocate a descriptor for this adapter
+	//			
+	//here we do not acquire the mutex, since we are not touching the list, yet.
+    TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));
+	if (TmpAdInfo == NULL) 
+	{
+		ODS("PacketAddAdapterDag: GlobalAlloc Failed\n");
+		return FALSE;
+	}
+
+	// Copy the device name and description
+	_snprintf(TmpAdInfo->Name, 
+		sizeof(TmpAdInfo->Name), 
+		"%s", 
+		name);
+
+	_snprintf(TmpAdInfo->Description, 
+		sizeof(TmpAdInfo->Description), 
+		"%s", 
+		description);
+
+	TmpAdInfo->Flags = INFO_FLAG_AIRPCAP_CARD;
+
+	AirpcapAdapter = g_PAirpcapOpen(name, ebuf);
+
+	if(!AirpcapAdapter)
+	{
+		GlobalFreePtr(TmpAdInfo);
+		return FALSE;
+	}
+
+	GllRes = g_PAirpcapGetLinkType(AirpcapAdapter, &AirpcapLinkLayer);
+	if(!GllRes)
+	{
+		g_PAirpcapClose(AirpcapAdapter);
+		GlobalFreePtr(TmpAdInfo);
+		return FALSE;
+	}
+
+	switch(AirpcapLinkLayer) 
+	{
+	case AIRPCAP_LT_802_11:
+		TmpAdInfo->LinkLayer.LinkType = NdisMediumBare80211;
+		break;
+	case AIRPCAP_LT_802_11_PLUS_RADIO:
+		TmpAdInfo->LinkLayer.LinkType = NdisMediumRadio80211;
+		break;
+	default:
+		TmpAdInfo->LinkLayer.LinkType = NdisMediumNull; // Note: custom linktype, NDIS doesn't provide an equivalent
+		break;
+	}			
+	
+	//
+	// For the moment, we always set the speed to 54Mbps, since the speed is not channel-specific,
+	// but per packet
+	//
+	TmpAdInfo->LinkLayer.LinkSpeed = 54000000; 
+	
+	g_PAirpcapClose(AirpcapAdapter);
+
+	WaitForSingleObject(g_AdaptersInfoMutex, INFINITE);
+
+	// Update the AdaptersInfo list
+	TmpAdInfo->Next = g_AdaptersInfoList;
+	g_AdaptersInfoList = TmpAdInfo;
+
+	ReleaseMutex(g_AdaptersInfoMutex);
+
+	return TRUE;
+}
+
+/*!
+  \brief Updates the list of the adapters using the airpcap dll.
+  \return If the function succeeds, the return value is nonzero.
+
+  This function populates the list of adapter descriptions, looking for DAG cards on the system. 
+*/
+BOOLEAN PacketGetAdaptersAirpcap()
+{
+	CHAR Ebuf[AIRPCAP_ERRBUF_SIZE];
+	AirpcapDeviceDescription *Devs = NULL, *TmpDevs;
+	UINT i;
+	
+	if(!g_PAirpcapGetDeviceList(&Devs, Ebuf))
+	{
+		// No airpcap cards found on this system
+		return FALSE;
+	}
+	else
+	{
+		for(TmpDevs = Devs, i = 0; TmpDevs != NULL; TmpDevs = TmpDevs->next)
+		{
+			PacketAddAdapterAirpcap(TmpDevs->Name, TmpDevs->Description);
+		}
+	}
+	
+	g_PAirpcapFreeDeviceList(Devs);
+	
+	return TRUE;
+}
+#endif // HAVE_AIRPCAP_API
+
 #ifdef HAVE_DAG_API
 /*!
   \brief Add a dag adapter to the adapters info list, gathering information from the dagc API
@@ -1260,7 +1465,7 @@ tcpip_linkage:
 */
 BOOLEAN PacketAddAdapterDag(PCHAR name, PCHAR description, BOOLEAN IsAFile)
 {
-	//this function should acquire the AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
+	//this function should acquire the g_AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
 	CHAR ebuf[DAGC_ERRBUF_SIZE];
 	PADAPTER_INFO TmpAdInfo;
 	dagc_t *dagfd;
@@ -1297,8 +1502,8 @@ BOOLEAN PacketAddAdapterDag(PCHAR name, PCHAR description, BOOLEAN IsAFile)
 	else
 		TmpAdInfo->Flags = INFO_FLAG_DAG_CARD;
 
-	if(p_dagc_open)
-		dagfd = p_dagc_open(name, 0, ebuf);
+	if(g_p_dagc_open)
+		dagfd = g_p_dagc_open(name, 0, ebuf);
 	else
 		dagfd = NULL;
 
@@ -1309,9 +1514,9 @@ BOOLEAN PacketAddAdapterDag(PCHAR name, PCHAR description, BOOLEAN IsAFile)
 		return FALSE;
 	}
 
-	TmpAdInfo->LinkLayer.LinkType = p_dagc_getlinktype(dagfd);
+	TmpAdInfo->LinkLayer.LinkType = g_p_dagc_getlinktype(dagfd);
 
-	switch(p_dagc_getlinktype(dagfd)) 
+	switch(g_p_dagc_getlinktype(dagfd)) 
 	{
 	case TYPE_HDLC_POS:
 		TmpAdInfo->LinkLayer.LinkType = NdisMediumCHDLC; // Note: custom linktype, NDIS doesn't provide an equivalent
@@ -1330,19 +1535,19 @@ BOOLEAN PacketAddAdapterDag(PCHAR name, PCHAR description, BOOLEAN IsAFile)
 		break;
 	}			
 
-	TmpAdInfo->LinkLayer.LinkSpeed = (p_dagc_getlinkspeed(dagfd) == -1)?
+	TmpAdInfo->LinkLayer.LinkSpeed = (g_p_dagc_getlinkspeed(dagfd) == -1)?
 		100000000:  // Unknown speed, default to 100Mbit
-	p_dagc_getlinkspeed(dagfd) * 1000000; 
+	g_p_dagc_getlinkspeed(dagfd) * 1000000; 
 
-	p_dagc_close(dagfd);
+	g_p_dagc_close(dagfd);
 
-	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
+	WaitForSingleObject(g_AdaptersInfoMutex, INFINITE);
 
 	// Update the AdaptersInfo list
-	TmpAdInfo->Next = AdaptersInfoList;
-	AdaptersInfoList = TmpAdInfo;
+	TmpAdInfo->Next = g_AdaptersInfoList;
+	g_AdaptersInfoList = TmpAdInfo;
 
-	ReleaseMutex(AdaptersInfoMutex);
+	ReleaseMutex(g_AdaptersInfoMutex);
 
 	TRACE_EXIT("PacketAddAdapterDag");
 	return TRUE;
@@ -1360,7 +1565,7 @@ BOOLEAN PacketGetAdaptersDag()
 	dagc_if_t *devs = NULL, *tmpdevs;
 	UINT i;
 	
-	if(p_dagc_finddevs(&devs, ebuf))
+	if(g_p_dagc_finddevs(&devs, ebuf))
 		// No dag cards found on this system
 		return FALSE;
 	else
@@ -1371,7 +1576,7 @@ BOOLEAN PacketGetAdaptersDag()
 		}
 	}
 	
-	p_dagc_freedevs(devs);
+	g_p_dagc_freedevs(devs);
 	
 	return TRUE;
 }
@@ -1384,18 +1589,18 @@ BOOLEAN PacketGetAdaptersDag()
 */
 PADAPTER_INFO PacketFindAdInfo(PCHAR AdapterName)
 {
-	//this function should NOT acquire the AdaptersInfoMutex, since it does return an ADAPTER_INFO structure
+	//this function should NOT acquire the g_AdaptersInfoMutex, since it does return an ADAPTER_INFO structure
 	PADAPTER_INFO TAdInfo;
 
 	TRACE_ENTER("PacketFindAdInfo");
 	
-	if (AdaptersInfoList == NULL)
+	if (g_AdaptersInfoList == NULL)
 	{
 		ODS("Repopulating the adapters info list...\n");
 		PacketPopulateAdaptersInfoList();
 	}
 
-	TAdInfo = AdaptersInfoList;
+	TAdInfo = g_AdaptersInfoList;
 	
 	while(TAdInfo != NULL)
 	{
@@ -1427,7 +1632,7 @@ PADAPTER_INFO PacketFindAdInfo(PCHAR AdapterName)
 */
 BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 {
-	//this function should acquire the AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
+	//this function should acquire the g_AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
 	PADAPTER_INFO TAdInfo, PrevAdInfo;
 	CHAR	FakeNdisWanAdapterName[MAX_WINPCAP_KEY_CHARS] = FAKE_NDISWAN_ADAPTER_NAME;
 
@@ -1446,9 +1651,9 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 
 	ODSEx("Updating adapter info for adapter %s\n", AdapterName);
 	
-	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
+	WaitForSingleObject(g_AdaptersInfoMutex, INFINITE);
 	
-	PrevAdInfo = TAdInfo = AdaptersInfoList;
+	PrevAdInfo = TAdInfo = g_AdaptersInfoList;
 
 	//
 	// If an entry for this adapter is present in the list, we destroy it
@@ -1459,14 +1664,14 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 		{
 			if (strcmp(AdapterName, FakeNdisWanAdapterName) == 0)
 			{
-				ReleaseMutex(AdaptersInfoMutex);
+				ReleaseMutex(g_AdaptersInfoMutex);
 				TRACE_EXIT("PacketUpdateAdInfo");
 				return TRUE;
 			}
 
-			if(TAdInfo == AdaptersInfoList)
+			if(TAdInfo == g_AdaptersInfoList)
 			{
-				AdaptersInfoList = TAdInfo->Next;
+				g_AdaptersInfoList = TAdInfo->Next;
 			}
 			else
 			{
@@ -1485,7 +1690,7 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 		TAdInfo = TAdInfo->Next;
 	}
 
-	ReleaseMutex(AdaptersInfoMutex);
+	ReleaseMutex(g_AdaptersInfoMutex);
 
 	//
 	// Now obtain the information about this adapter
@@ -1503,7 +1708,7 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 	PacketGetAdaptersIPH();
 	PacketAddFakeNdisWanAdapter();
 #ifdef HAVE_DAG_API
-	if(p_dagc_open == NULL)	
+	if(g_p_dagc_open == NULL)	
 	{
 		TRACE_EXIT("PacketUpdateAdInfo");
 		return TRUE;	// dagc.dll not present on this system.
@@ -1527,18 +1732,18 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 */
 void PacketPopulateAdaptersInfoList()
 {
-	//this function should acquire the AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
+	//this function should acquire the g_AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
 	PADAPTER_INFO TAdInfo;
 	PVOID Mem1, Mem2;
 
 	TRACE_ENTER("PacketPopulateAdaptersInfoList");
 
-	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
+	WaitForSingleObject(g_AdaptersInfoMutex, INFINITE);
 
-	if(AdaptersInfoList)
+	if(g_AdaptersInfoList)
 	{
 		// Free the old list
-		TAdInfo = AdaptersInfoList;
+		TAdInfo = g_AdaptersInfoList;
 		while(TAdInfo != NULL)
 		{
 			Mem1 = TAdInfo->NetworkAddresses;
@@ -1551,7 +1756,7 @@ void PacketPopulateAdaptersInfoList()
 			GlobalFreePtr(Mem2);
 		}
 		
-		AdaptersInfoList = NULL;
+		g_AdaptersInfoList = NULL;
 	}
 
 	//
@@ -1574,8 +1779,19 @@ void PacketPopulateAdaptersInfoList()
 		ODS("PacketPopulateAdaptersInfoList: adding fake NdisWan adapter failed.\n");
 	}
 
+#ifdef HAVE_AIRPCAP_API
+	if(g_PAirpcapGetDeviceList)	// Ensure that the airpcap dll is present
+	{
+		if(!PacketGetAdaptersAirpcap())
+		{
+			// No info about adapters in the registry. 
+			ODS("PacketPopulateAdaptersInfoList: lookup of airpcap adapters failed!\n");
+		}
+	}
+#endif // HAVE_DAG_API
+
 #ifdef HAVE_DAG_API
-	if(p_dagc_open == NULL)	
+	if(g_p_dagc_open == NULL)	
 	{}	// dagc.dll not present on this system.
 	else
 	{
@@ -1589,7 +1805,7 @@ void PacketPopulateAdaptersInfoList()
 
 #endif // _WINNT4
 
-	ReleaseMutex(AdaptersInfoMutex);
+	ReleaseMutex(g_AdaptersInfoMutex);
 	TRACE_EXIT("PacketPopulateAdaptersInfoList");
 }
 
@@ -1597,7 +1813,7 @@ void PacketPopulateAdaptersInfoList()
 
 BOOLEAN PacketAddFakeNdisWanAdapter()
 {
-	//this function should acquire the AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
+	//this function should acquire the g_AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
 	PADAPTER_INFO TmpAdInfo, SAdInfo;
 //  
 //	Old registry based WinPcap names
@@ -1633,14 +1849,14 @@ BOOLEAN PacketAddFakeNdisWanAdapter()
   		return FALSE;
 	}
 
-	WaitForSingleObject(AdaptersInfoMutex, INFINITE);
+	WaitForSingleObject(g_AdaptersInfoMutex, INFINITE);
 	
-	for(SAdInfo = AdaptersInfoList; SAdInfo != NULL; SAdInfo = SAdInfo->Next)
+	for(SAdInfo = g_AdaptersInfoList; SAdInfo != NULL; SAdInfo = SAdInfo->Next)
 	{
 		if(strcmp(DialupName, SAdInfo->Name) == 0)
 		{
 			ODS("PacketAddFakeNdisWanAdapter: Adapter already present in the list\n");
-			ReleaseMutex(AdaptersInfoMutex);
+			ReleaseMutex(g_AdaptersInfoMutex);
 			TRACE_EXIT("PacketAddFakeNdisWanAdapter");
 			return TRUE;
 		}
@@ -1650,7 +1866,7 @@ BOOLEAN PacketAddFakeNdisWanAdapter()
 	if (TmpAdInfo == NULL) 
 	{
 		ODS("PacketAddFakeNdisWanAdapter: GlobalAlloc Failed allocating memory for the AdInfo structure\n");
-		ReleaseMutex(AdaptersInfoMutex);
+		ReleaseMutex(g_AdaptersInfoMutex);
 		TRACE_EXIT("PacketAddFakeNdisWanAdapter");
 		return FALSE;
 	}
@@ -1665,9 +1881,9 @@ BOOLEAN PacketAddFakeNdisWanAdapter()
 	TmpAdInfo->NetworkAddresses = NULL;
 	TmpAdInfo->NNetworkAddresses = 0;
 
-	TmpAdInfo->Next = AdaptersInfoList;
-	AdaptersInfoList = TmpAdInfo;
-	ReleaseMutex(AdaptersInfoMutex);
+	TmpAdInfo->Next = g_AdaptersInfoList;
+	g_AdaptersInfoList = TmpAdInfo;
+	ReleaseMutex(g_AdaptersInfoMutex);
 
 	TRACE_EXIT("PacketAddFakeNdisWanAdapter");
 	return TRUE;
