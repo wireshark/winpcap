@@ -648,6 +648,20 @@ void pcap_dump_close(pcap_dumper_t *p);
  */
 //\{ 
 
+/*!	\brief Returns the AirPcap handler associated with an adapter. This handler can be used to change
+           the wireless-related settings of the CACE Technologies AirPcap wireless capture adapters.
+	
+This function allows to obtain the airpcap handle of an open adapter. This handle can be used with
+the airpcap API functions to perform wireless-releated operations, e.g. changing the channel or enabling 
+WEP decryption. For more details about the AirPcap wireless capture adapters, see 
+http://www.cacetech.com/products/airpcap.htm
+	
+\param p: handle to an open libpcap adapter
+
+\return a pointer to an open AirPcap handle, used internally by the libpcap open adapter.
+*/
+PAirpcapHandle pcap_get_airpcap_handle(pcap_t *p);
+
 /*!	\brief Returns if a given filter applies to an offline packet.
 	
 This function is used to apply a filter to a packet that is currently in memory.
