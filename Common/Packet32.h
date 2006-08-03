@@ -46,7 +46,13 @@
 #define __PACKET32
 
 #include <winsock2.h>
-#include "Devioctl.h"
+
+#include "devioctl.h"
+
+#ifdef HAVE_AIRPCAP_API
+#include <airpcap.h>
+#endif /* HAVE_AIRPCAP_API */
+
 #ifdef HAVE_DAG_API
 #include <dagc.h>
 #endif /* HAVE_DAG_API */
@@ -100,6 +106,8 @@
 #define NdisMediumNull	-1		///< Custom linktype: NDIS doesn't provide an equivalent
 #define NdisMediumCHDLC	-2		///< Custom linktype: NDIS doesn't provide an equivalent
 #define NdisMediumPPPSerial	-3	///< Custom linktype: NDIS doesn't provide an equivalent
+#define NdisMediumBare80211	-4	///< Custom linktype: NDIS doesn't provide an equivalent
+#define NdisMediumRadio80211	-5	///< Custom linktype: NDIS doesn't provide an equivalent
 
 // Loopback behaviour definitions
 #define NPF_DISABLE_LOOPBACK	1	///< Drop the packets sent by the NPF driver
@@ -233,6 +241,7 @@ typedef WAN_ADAPTER *PWAN_ADAPTER; ///< Describes an opened wan (dialup, VPN...)
 #define INFO_FLAG_DAG_CARD			2	///< Flag for ADAPTER_INFO: this is a DAG card
 #define INFO_FLAG_DAG_FILE			6	///< Flag for ADAPTER_INFO: this is a DAG file
 #define INFO_FLAG_DONT_EXPORT		8	///< Flag for ADAPTER_INFO: when this flag is set, the adapter will not be listed or openend by winpcap. This allows to prevent exporting broken network adapters, like for example FireWire ones.
+#define INFO_FLAG_AIRPCAP_CARD		16	///< Flag for ADAPTER_INFO: this is an airpcap card
 
 /*!
   \brief Contains comprehensive information about a network adapter.
@@ -278,6 +287,11 @@ typedef struct _ADAPTER  {
 	CHAR Name[ADAPTER_NAME_LENGTH];
 	PWAN_ADAPTER pWanAdapter;
 	UINT Flags;					///< Adapter's flags. Tell if this adapter must be treated in a different way, using the Netmon API or the dagc API.
+
+#ifdef HAVE_AIRPCAP_API
+	PAirpcapHandle	AirpcapAd;
+#endif // HAVE_AIRPCAP_API
+
 #ifdef HAVE_DAG_API
 	dagc_t *pDagCard;			///< Pointer to the dagc API adapter descriptor for this adapter
 	PCHAR DagBuffer;			///< Pointer to the buffer with the packets that is received from the DAG card
@@ -319,21 +333,6 @@ struct _PACKET_OID_DATA {
 }; 
 typedef struct _PACKET_OID_DATA PACKET_OID_DATA, *PPACKET_OID_DATA;
 
-/* We load dinamically the dag library in order link it only when it's present on the system */
-#ifdef HAVE_DAG_API
-typedef dagc_t* (*dagc_open_handler)(const char *source, unsigned flags, char *ebuf);	///< prototype used to dynamically load the dag dll
-typedef void (*dagc_close_handler)(dagc_t *dagcfd);										///< prototype used to dynamically load the dag dll
-typedef int (*dagc_getlinktype_handler)(dagc_t *dagcfd);								///< prototype used to dynamically load the dag dll
-typedef int (*dagc_getlinkspeed_handler)(dagc_t *dagcfd);								///< prototype used to dynamically load the dag dll
-typedef int (*dagc_setsnaplen_handler)(dagc_t *dagcfd, unsigned snaplen);				///< prototype used to dynamically load the dag dll
-typedef unsigned (*dagc_getfcslen_handler)(dagc_t *dagcfd);								///< prototype used to dynamically load the dag dll
-typedef int (*dagc_receive_handler)(dagc_t *dagcfd, u_char **buffer, u_int *bufsize);	///< prototype used to dynamically load the dag dll
-typedef int (*dagc_stats_handler)(dagc_t *dagcfd, dagc_stats_t *ps);					///< prototype used to dynamically load the dag dll
-typedef int (*dagc_wait_handler)(dagc_t *dagcfd, struct timeval *timeout);				///< prototype used to dynamically load the dag dll
-typedef int (*dagc_finddevs_handler)(dagc_if_t **alldevsp, char *ebuf);					///< prototype used to dynamically load the dag dll
-typedef int (*dagc_freedevs_handler)(dagc_if_t *alldevsp);								///< prototype used to dynamically load the dag dll
-#endif // HAVE_DAG_API
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -341,18 +340,6 @@ extern "C" {
 /**
  *  @}
  */
-
-// The following is used to check the adapter name in PacketOpenAdapterNPF and prevent 
-// opening of firewire adapters 
-#define FIREWIRE_SUBSTR L"1394"
-
-void PacketPopulateAdaptersInfoList();
-PWCHAR SChar2WChar(PCHAR string);
-PCHAR WChar2SChar(PWCHAR string);
-BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLen);
-PADAPTER_INFO PacketFindAdInfo(PCHAR AdapterName);
-BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName);
-BOOLEAN IsFireWire(TCHAR *AdapterDesc);
 
 /*
 BOOLEAN QueryWinPcapRegistryStringA(CHAR *SubKeyName,
@@ -401,7 +388,6 @@ BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync);
 BOOL PacketStopDriver();
 VOID PacketCloseAdapter(LPADAPTER lpAdapter);
 BOOLEAN PacketStartOem(PCHAR errorString, UINT errorStringLength);
-
 #ifdef __cplusplus
 }
 #endif 
