@@ -47,7 +47,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBPCAP_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../libpcap/" /I "../libpcap/bpf" /I "../libpcap/lbl" /I "../libpcap/Win32/Include" /I "../../common" /I "../Win32-Extensions" /D HAVE_ADDRINFO=1 /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "WPCAP" /D "NDEBUG" /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "WIN32" /D "_MBCS" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "../libpcap/" /I "../libpcap/bpf" /I "../libpcap/lbl" /I "../libpcap/Win32/Include" /I "../../common" /I "../Win32-Extensions" /I "../../../Airpcap_Devpack/include" /D HAVE_ADDRINFO=1 /D "NDEBUG" /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "WPCAP" /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "WIN32" /D "_MBCS" /D "HAVE_AIRPCAP_API" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x410 /d "NDEBUG"
@@ -74,7 +74,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBPCAP_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../libpcap/" /I "../libpcap/bpf" /I "../libpcap/lbl" /I "../libpcap/Win32/Include" /I "../../common" /I "../Win32-Extensions" /D "HAVE_ADDRINFO" /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "WPCAP" /D "_DEBUG" /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "WIN32" /D "_MBCS" /D "HAVE_DAG_API" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../libpcap/" /I "../libpcap/bpf" /I "../libpcap/lbl" /I "../libpcap/Win32/Include" /I "../../common" /I "../Win32-Extensions" /I "../../../Airpcap_Devpack/include" /D "HAVE_ADDRINFO" /D "_DEBUG" /D "HAVE_DAG_API" /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "WPCAP" /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "WIN32" /D "_MBCS" /D "HAVE_AIRPCAP_API" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x410 /d "_DEBUG"
@@ -102,7 +102,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../libpcap/" /I "../libpcap/bpf" /I "../libpcap/lbl" /I "../libpcap/Win32/Include" /I "../../common" /I "../Win32-Extensions" /D "HAVE_ADDRINFO" /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "WPCAP" /D "_DEBUG" /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "WIN32" /D "_MBCS" /D "HAVE_REMOTE" /FR /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../libpcap/" /I "../libpcap/bpf" /I "../libpcap/lbl" /I "../libpcap/Win32/Include" /I "../../common" /I "../Win32-Extensions" /D "HAVE_ADDRINFO" /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "WPCAP" /D "_DEBUG" /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "WIN32" /D "_MBCS" /D "HAVE_REMOTE" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../libpcap/" /I "../libpcap/bpf" /I "../libpcap/lbl" /I "../libpcap/Win32/Include" /I "../../common" /I "../Win32-Extensions" /I "../../../Airpcap_Devpack/include" /D "HAVE_ADDRINFO" /D "_DEBUG" /D "HAVE_REMOTE" /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "WPCAP" /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "WIN32" /D "_MBCS" /D "HAVE_AIRPCAP_API" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x410 /d "_DEBUG"
@@ -119,7 +119,7 @@ LINK32=link.exe
 OutDir=.\Debug_REMOTE
 SOURCE="$(InputPath)"
 PostBuild_Desc=copy wpcap.lib file
-PostBuild_Cmds=mkdir  $(OutDir)\..\..\LIB  >  nul 	copy         $(OutDir)\wpcap.lib         $(OutDir)\..\..\LIB\ 
+PostBuild_Cmds=mkdir   $(OutDir)\..\..\LIB   >   nul  	copy          $(OutDir)\wpcap.lib          $(OutDir)\..\..\LIB\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "wpcap - Win32 Debug REMOTE DAG"
@@ -137,7 +137,7 @@ PostBuild_Cmds=mkdir  $(OutDir)\..\..\LIB  >  nul 	copy         $(OutDir)\wpcap.
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../libpcap/" /I "../libpcap/bpf" /I "../libpcap/lbl" /I "../libpcap/Win32/Include" /I "../../common" /I "../Win32-Extensions" /D "HAVE_ADDRINFO" /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "WPCAP" /D "_DEBUG" /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "WIN32" /D "_MBCS" /D "HAVE_REMOTE" /FR /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../libpcap/" /I "../libpcap/bpf" /I "../libpcap/lbl" /I "../libpcap/Win32/Include" /I "../../common" /I "../Win32-Extensions" /D "HAVE_ADDRINFO" /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "WPCAP" /D "_DEBUG" /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "WIN32" /D "_MBCS" /D "HAVE_REMOTE" /D "HAVE_DAG_API" /FR /YX /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../libpcap/" /I "../libpcap/bpf" /I "../libpcap/lbl" /I "../libpcap/Win32/Include" /I "../../common" /I "../Win32-Extensions" /I "../../../Airpcap_Devpack/include" /D "HAVE_ADDRINFO" /D "_DEBUG" /D "HAVE_REMOTE" /D "HAVE_DAG_API" /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "WPCAP" /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "WIN32" /D "_MBCS" /D "HAVE_AIRPCAP_API" /FR /YX /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x410 /d "_DEBUG"
@@ -154,7 +154,7 @@ LINK32=link.exe
 OutDir=.\Debug_REMOTE_DAG
 SOURCE="$(InputPath)"
 PostBuild_Desc=copy wpcap.lib file
-PostBuild_Cmds=mkdir  $(OutDir)\..\..\LIB  >  nul 	copy         $(OutDir)\wpcap.lib         $(OutDir)\..\..\LIB\ 
+PostBuild_Cmds=mkdir   $(OutDir)\..\..\LIB   >   nul  	copy          $(OutDir)\wpcap.lib          $(OutDir)\..\..\LIB\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "wpcap - Win32 Release REMOTE"
@@ -172,7 +172,7 @@ PostBuild_Cmds=mkdir  $(OutDir)\..\..\LIB  >  nul 	copy         $(OutDir)\wpcap.
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /I "../libpcap/" /I "../libpcap/bpf" /I "../libpcap/lbl" /I "../libpcap/Win32/Include" /I "../../common" /I "../Win32-Extensions" /D HAVE_ADDRINFO=1 /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "WPCAP" /D "NDEBUG" /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "WIN32" /D "_MBCS" /D "HAVE_REMOTE" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../libpcap/" /I "../libpcap/bpf" /I "../libpcap/lbl" /I "../libpcap/Win32/Include" /I "../../common" /I "../Win32-Extensions" /D HAVE_ADDRINFO=1 /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "WPCAP" /D "NDEBUG" /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "WIN32" /D "_MBCS" /D "HAVE_REMOTE" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "../libpcap/" /I "../libpcap/bpf" /I "../libpcap/lbl" /I "../libpcap/Win32/Include" /I "../../common" /I "../Win32-Extensions" /I "../../../Airpcap_Devpack/include" /D HAVE_ADDRINFO=1 /D "NDEBUG" /D "HAVE_REMOTE" /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "WPCAP" /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "WIN32" /D "_MBCS" /D "HAVE_AIRPCAP_API" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x410 /d "NDEBUG"
@@ -189,7 +189,7 @@ LINK32=link.exe
 OutDir=.\Release_REMOTE
 SOURCE="$(InputPath)"
 PostBuild_Desc=copy wpcap.lib file
-PostBuild_Cmds=mkdir  $(OutDir)\..\..\LIB  >  nul 	copy         $(OutDir)\wpcap.lib         $(OutDir)\..\..\LIB\ 
+PostBuild_Cmds=mkdir   $(OutDir)\..\..\LIB   >   nul  	copy          $(OutDir)\wpcap.lib          $(OutDir)\..\..\LIB\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "wpcap - Win32 Release REMOTE DAG"
@@ -207,7 +207,7 @@ PostBuild_Cmds=mkdir  $(OutDir)\..\..\LIB  >  nul 	copy         $(OutDir)\wpcap.
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /I "../libpcap/" /I "../libpcap/bpf" /I "../libpcap/lbl" /I "../libpcap/Win32/Include" /I "../../common" /I "../Win32-Extensions" /D HAVE_ADDRINFO=1 /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "WPCAP" /D "NDEBUG" /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "WIN32" /D "_MBCS" /D "HAVE_REMOTE" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../libpcap/" /I "../libpcap/bpf" /I "../libpcap/lbl" /I "../libpcap/Win32/Include" /I "../../common" /I "../Win32-Extensions" /D HAVE_ADDRINFO=1 /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "WPCAP" /D "NDEBUG" /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "WIN32" /D "_MBCS" /D "HAVE_REMOTE" /D "HAVE_DAG_API" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "../libpcap/" /I "../libpcap/bpf" /I "../libpcap/lbl" /I "../libpcap/Win32/Include" /I "../../common" /I "../Win32-Extensions" /I "../../../Airpcap_Devpack/include" /D HAVE_ADDRINFO=1 /D "NDEBUG" /D "HAVE_REMOTE" /D "HAVE_DAG_API" /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "WPCAP" /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "WIN32" /D "_MBCS" /D "HAVE_AIRPCAP_API" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x410 /d "NDEBUG"
@@ -224,7 +224,7 @@ LINK32=link.exe
 OutDir=.\Release_REMOTE_DAG
 SOURCE="$(InputPath)"
 PostBuild_Desc=copy wpcap.lib file
-PostBuild_Cmds=mkdir  $(OutDir)\..\..\LIB  >  nul 	copy         $(OutDir)\wpcap.lib         $(OutDir)\..\..\LIB\ 
+PostBuild_Cmds=mkdir   $(OutDir)\..\..\LIB   >   nul  	copy          $(OutDir)\wpcap.lib          $(OutDir)\..\..\LIB\ 
 # End Special Build Tool
 
 !ENDIF 
