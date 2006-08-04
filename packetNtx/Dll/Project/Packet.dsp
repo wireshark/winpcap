@@ -51,7 +51,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../z1211u/airpcap/" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "HAVE_AIRPCAP_API" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "HAVE_AIRPCAP_API" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "NDEBUG"
@@ -61,11 +61,11 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 Ws2_32.lib ..\wanpacket\release\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /machine:I386
+# ADD LINK32 Ws2_32.lib ..\wanpacket\release\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /machine:I386 /libpath:"../../../../Airpcap_Devpack/lib/"
 # Begin Special Build Tool
 OutDir=.\Release
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\ 
+PostBuild_Cmds=copy              $(OutDir)\packet.lib              ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug"
@@ -82,7 +82,7 @@ PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../z1211u/airpcap/" /D "WIN32" /D "_WINDOWS" /D "HAVE_AIRPCAP_API" /YX /FD /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /D "WIN32" /D "_WINDOWS" /D "HAVE_AIRPCAP_API" /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "_DEBUG"
@@ -92,12 +92,12 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 wsock32.lib ..\wanpacket\debug\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 wsock32.lib ..\wanpacket\debug\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept /libpath:"../../../../Airpcap_Devpack/lib/"
 # SUBTRACT LINK32 /pdb:none /incremental:no
 # Begin Special Build Tool
 OutDir=.\Debug
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\ 
+PostBuild_Cmds=copy              $(OutDir)\packet.lib              ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Debug"
@@ -115,7 +115,7 @@ PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../common" /D "WIN32" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../common" /I "../../../../z1211u/airpcap/" /D "WIN32" /D "_WINDOWS" /D "_WINNT4" /YX /FD /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /D "WIN32" /D "_WINDOWS" /D "_WINNT4" /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "_DEBUG" /D "_WINNT4" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "_DEBUG"
@@ -126,12 +126,12 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
 # SUBTRACT BASE LINK32 /pdb:none /incremental:no
-# ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept /libpath:"../../../../Airpcap_Devpack/lib/"
 # SUBTRACT LINK32 /pdb:none /incremental:no
 # Begin Special Build Tool
 OutDir=.\NT4_Debug
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\ 
+PostBuild_Cmds=copy              $(OutDir)\packet.lib              ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Release"
@@ -149,7 +149,7 @@ PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /I "../../../common" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../../common" /I "../../../../z1211u/airpcap/" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_WINNT4" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_WINNT4" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "NDEBUG" /D "_WINNT4" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "NDEBUG"
@@ -159,11 +159,11 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib Ws2_32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib Ws2_32.lib /nologo /subsystem:windows /dll /machine:I386
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib Ws2_32.lib /nologo /subsystem:windows /dll /machine:I386 /libpath:"../../../../Airpcap_Devpack/lib/"
 # Begin Special Build Tool
 OutDir=.\NT4_Release
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\ 
+PostBuild_Cmds=copy              $(OutDir)\packet.lib              ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug LOG_TO_FILE"
@@ -181,7 +181,7 @@ PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../common" /I "../../../dag/include" /I "../../../dag/drv/windows" /D "WIN32" /D "_WINDOWS" /D "HAVE_DAG_API" /YX /FD /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../z1211u/airpcap/" /D "WIN32" /D "_WINDOWS" /D "HAVE_DAG_API" /D "_DEBUG_TO_FILE" /FR /YX /FD /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /D "WIN32" /D "_WINDOWS" /D "HAVE_AIRPCAP_API" /D "_DEBUG_TO_FILE" /FR /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "_DEBUG"
@@ -192,12 +192,12 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 wsock32.lib ..\wanpacket\debug\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
 # SUBTRACT BASE LINK32 /pdb:none /incremental:no
-# ADD LINK32 wsock32.lib ..\wanpacket\debug\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 wsock32.lib ..\wanpacket\debug\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept /libpath:"../../../../Airpcap_Devpack/lib/"
 # SUBTRACT LINK32 /pdb:none /incremental:no
 # Begin Special Build Tool
 OutDir=.\Debug_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\ 
+PostBuild_Cmds=copy              $(OutDir)\packet.lib              ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release LOG_TO_FILE"
@@ -215,7 +215,7 @@ PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /I "../../../common" /I "../../../dag/include" /I "../../../dag/drv/windows" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "HAVE_DAG_API" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../z1211u/airpcap/" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "HAVE_DAG_API" /D "_DEBUG_TO_FILE" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "HAVE_AIRPCAP_API" /D "_DEBUG_TO_FILE" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "NDEBUG"
@@ -225,11 +225,11 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 Ws2_32.lib ..\wanpacket\release\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 Ws2_32.lib ..\wanpacket\release\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /machine:I386
+# ADD LINK32 Ws2_32.lib ..\wanpacket\release\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /machine:I386 /libpath:"../../../../Airpcap_Devpack/lib/"
 # Begin Special Build Tool
 OutDir=.\Release_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\ 
+PostBuild_Cmds=copy              $(OutDir)\packet.lib              ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Debug LOG_TO_FILE"
@@ -247,7 +247,7 @@ PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../common" /D "WIN32" /D "_WINDOWS" /D "_WINNT4" /YX /FD /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../common" /I "../../../../z1211u/airpcap/" /D "WIN32" /D "_WINDOWS" /D "_WINNT4" /D "_DEBUG_TO_FILE" /YX /FD /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /D "WIN32" /D "_WINDOWS" /D "_WINNT4" /D "_DEBUG_TO_FILE" /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "_DEBUG" /D "_WINNT4" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "_DEBUG"
@@ -258,12 +258,12 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
 # SUBTRACT BASE LINK32 /pdb:none /incremental:no
-# ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept /libpath:"../../../../Airpcap_Devpack/lib/"
 # SUBTRACT LINK32 /pdb:none /incremental:no
 # Begin Special Build Tool
 OutDir=.\NT4_Debug_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\ 
+PostBuild_Cmds=copy              $(OutDir)\packet.lib              ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Release LOG_TO_FILE"
@@ -281,7 +281,7 @@ PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /I "../../../common" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_WINNT4" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../../common" /I "../../../../z1211u/airpcap/" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_WINNT4" /D "_DEBUG_TO_FILE" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "_WINNT4" /D "_DEBUG_TO_FILE" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "NDEBUG" /D "_WINNT4" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "NDEBUG"
@@ -291,12 +291,12 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib Ws2_32.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib Ws2_32.lib /nologo /subsystem:windows /dll /machine:I386
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib Ws2_32.lib /nologo /subsystem:windows /dll /machine:I386 /libpath:"../../../../Airpcap_Devpack/lib/"
 # Begin Special Build Tool
 OutDir=.\NT4_Release_LOG_TO_FILE
 SOURCE="$(InputPath)"
 PostBuild_Desc=Copy packet.lib into Common
-PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\ 
+PostBuild_Cmds=copy              $(OutDir)\packet.lib              ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug No AirPcap"
@@ -314,7 +314,7 @@ PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../z1211u/airpcap/" /D "WIN32" /D "_WINDOWS" /D "HAVE_AIRPCAP_API" /YX /FD /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../z1211u/airpcap/" /D "WIN32" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /D "WIN32" /D "_WINDOWS" /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "_DEBUG"
@@ -325,12 +325,12 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 wsock32.lib ..\wanpacket\debug\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
 # SUBTRACT BASE LINK32 /pdb:none /incremental:no
-# ADD LINK32 wsock32.lib ..\wanpacket\debug\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept
+# ADD LINK32 wsock32.lib ..\wanpacket\debug\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept /libpath:"../../../../Airpcap_Devpack/lib/"
 # SUBTRACT LINK32 /pdb:none /incremental:no
 # Begin Special Build Tool
 OutDir=.\PacketNT___Win32_Debug_No_AirPcap
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\ 
+PostBuild_Cmds=copy              $(OutDir)\packet.lib              ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release No AirPcap"
@@ -348,7 +348,7 @@ PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../z1211u/airpcap/" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "HAVE_AIRPCAP_API" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../z1211u/airpcap/" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "NDEBUG"
@@ -358,11 +358,11 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 Ws2_32.lib ..\wanpacket\release\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /machine:I386
-# ADD LINK32 Ws2_32.lib ..\wanpacket\release\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /machine:I386
+# ADD LINK32 Ws2_32.lib ..\wanpacket\release\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /machine:I386 /libpath:"../../../../Airpcap_Devpack/lib/"
 # Begin Special Build Tool
 OutDir=.\PacketNT___Win32_Release_No_AirPcap
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy            $(OutDir)\packet.lib            ..\..\..\Common\ 
+PostBuild_Cmds=copy              $(OutDir)\packet.lib              ..\..\..\Common\ 
 # End Special Build Tool
 
 !ENDIF 
