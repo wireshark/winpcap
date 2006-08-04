@@ -257,7 +257,9 @@ VOID PacketLoadLibrariesDynamically()
 	//
 	// Only the first thread should do the initialization
 	//
-	if(InterlockedIncrement(&g_DynamicLibrariesLoaded) != 1)
+	g_DynamicLibrariesLoaded++;
+
+	if(g_DynamicLibrariesLoaded != 1)
 	{
 		ReleaseMutex(g_DynamicLibrariesMutex);
 		return;
