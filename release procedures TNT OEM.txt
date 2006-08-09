@@ -1,3 +1,7 @@
+$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.5 2006/08/03 16:43:07 lorisd Exp $
+
+***IMPORTANT NODE: these instructions need to be updated to reflect the dependencies over Airpcap***
+
 OEM WINPCAP TOOLKIT RELEASE PROCEDURE
 =====================================
 
