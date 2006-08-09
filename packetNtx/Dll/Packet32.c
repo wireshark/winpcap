@@ -2179,7 +2179,6 @@ BOOLEAN PacketSetMinToCopy(LPADAPTER AdapterObject,int nbytes)
 	
 #ifdef HAVE_AIRPCAP_API
 	else
-	{
 		if(AdapterObject->Flags & INFO_FLAG_AIRPCAP_CARD)
 		{
 			Result = g_PAirpcapSetMinToCopy(AdapterObject->AirpcapAd, nbytes);
@@ -2187,7 +2186,6 @@ BOOLEAN PacketSetMinToCopy(LPADAPTER AdapterObject,int nbytes)
 		
 			return Result;
 		}
-	}
 #endif // HAVE_AIRPCAP_API
 	
 #ifdef HAVE_DAG_API
@@ -2584,12 +2582,10 @@ BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim)
 
 #ifdef HAVE_AIRPCAP_API
 	else
-	{
 		if(AdapterObject->Flags & INFO_FLAG_AIRPCAP_CARD)
 		{
 			return g_PAirpcapSetKernelBuffer(AdapterObject->AirpcapAd, dim);
 		}
-	}
 #endif // HAVE_AIRPCAP_API
 
 #ifdef HAVE_DAG_API
