@@ -372,5 +372,5 @@ PAirpcapHandle pcap_get_airpcap_handle(pcap_t *p)
 		return NULL;
 	}
 
-	return p->adapter->AirpcapAd;
+	return PacketGetAirPcapHandle(p->adapter);
 }
