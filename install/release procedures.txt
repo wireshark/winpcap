@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.4 2006/07/25 23:18:37 gianlucav Exp $
+$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.5 2006/08/03 16:43:07 lorisd Exp $
 
 WINPCAP RELEASE PROCEDURE
 =========================
@@ -19,8 +19,9 @@ Needed tools/libraries (32bit and 64bit AMD)
 - The cygnus environment on your path (needed to execute step 11 and 12).
   In particular you will need to have flex, bison, patch, touch.
 - Doxygen 1.3.7 installed and on the path
-- If packet.dll is compiled with airpcap support (default), the airpcap
-  CVS tree in the same directory of the WinPcap one
+- If packet.dll is compiled with airpcap support (default), the airpcap developer's
+  pack should be available in the folder
+	%BUILD_TREE%\Airpcap_Devpack
 
 How to compile WinPcap
 ------------------------------------------------
@@ -104,6 +105,7 @@ How to compile WinPcap
 20. Zip the contents of the two folders 
 	  %BUILD_TREE%\winpcap
 	  %BUILD_TREE%\libpcap_<libpcap_version>
+	  %BUILD_TREE%\Airpcap_Devpack
 		  |
 		  V
 	  %BUILD_TREE%\sources.zip
@@ -197,17 +199,20 @@ How to create the public sources zip file
 2.  Delete the following folder:
 	  %BUILD_TREE\Sources\winpcap\install
 
-3.  Delete the following file:
+3.  Delete the following folder:
+	  %BUILD_TREE\Airpcap_Devpack
+	  
+4.  Delete the following file:
 	  %BUILD_TREE\Sources\winpcap\wpcap\libpcap\remote_overwritten_files.zip
 
-4.  Delete the following folder:	
+5.  Delete the following folder:	
 	  %BUILD_TREE\Sources\libpcap_<version>
 
-5.  Perform a search under
+6.  Perform a search under
 	  %BUILD_TREE%\Sources\winpcap\
 	and delete *all* the folders named "CVS".
 
-6.  Done.
+7.  Done.
 	
 SCM procedures
 --------------
