@@ -51,6 +51,8 @@
 
 #ifdef HAVE_AIRPCAP_API
 #include <airpcap.h>
+#else
+typedef struct _AirpcapHandle *PAirpcapHandle;
 #endif /* HAVE_AIRPCAP_API */
 
 #ifdef HAVE_DAG_API
@@ -388,6 +390,7 @@ BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync);
 BOOL PacketStopDriver();
 VOID PacketCloseAdapter(LPADAPTER lpAdapter);
 BOOLEAN PacketStartOem(PCHAR errorString, UINT errorStringLength);
+PAirpcapHandle PacketGetAirPcapHandle(LPADAPTER AdapterObject);
 #ifdef __cplusplus
 }
 #endif 

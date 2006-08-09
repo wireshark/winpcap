@@ -3219,4 +3219,25 @@ BOOLEAN PacketGetNetType(LPADAPTER AdapterObject, NetType *type)
 	return ret;
 }
 
+/*!
+  \brief Returns the AirPcap handler associated with an adapter. This handler can be used to change
+           the wireless-related settings of the CACE Technologies AirPcap wireless capture adapters.
+  \param AdapterObject the open adapter whose AirPcap handler is needed.
+  \return a pointer to an open AirPcap handle, used internally by the adapter pointed by AdapterObject.
+          NULL if the libpcap adapter doesn't have wireless support through AirPcap.
+
+  PacketGetAirPcapHandle() allows to obtain the airpcap handle of an open adapter. This handle can be used with
+  the AirPcap API functions to perform wireless-releated operations, e.g. changing the channel or enabling 
+  WEP decryption. For more details about the AirPcap wireless capture adapters, see 
+  http://www.cacetech.com/products/airpcap.htm.
+*/
+PAirpcapHandle PacketGetAirPcapHandle(LPADAPTER AdapterObject)
+{
+#ifdef HAVE_AIRPCAP_API
+		return AdapterObject->AirpcapAd;
+#else
+	return NULL;
+#endif // HAVE_AIRPCAP_API
+}
+
 /* @} */

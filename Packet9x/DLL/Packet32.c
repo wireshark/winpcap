@@ -1221,6 +1221,12 @@ BOOLEAN PacketSetLoopbackBehavior(LPADAPTER  AdapterObject, UINT LoopbackBehavio
 	return FALSE;
 }
 
+// not supported in Win9x
+PAirpcapHandle PacketGetAirPcapHandle(LPADAPTER AdapterObject)
+{
+	return NULL;
+}
+
 //---------------------------------------------------------------------------
 
 #ifdef __cplusplus

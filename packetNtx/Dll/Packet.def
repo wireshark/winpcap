@@ -32,3 +32,4 @@ EXPORTS
 		PacketSetDumpLimits
 		PacketIsDumpEnded
 		PacketSetLoopbackBehavior
+		PacketGetAirPcapHandle
