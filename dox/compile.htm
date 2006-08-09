@@ -147,20 +147,30 @@ and the Windows 9x one. They are located in PacketNTx\dll\ and in Packet9x\dll\.
 	<b>not</b> 
 	needed to compile packet.dll.<li>Microsoft Visual C++ 6.0 with Service Pack 
 	5 or 6 (both the service packs are available online on the Microsoft web 
-	site).</ul>
+	site).<li>If you want to build WinPcap with the support for the CACE 
+	Technologies AirPcap wireless capture library, you will need to download the 
+	AirPcap developer's pack from
+	<a href="http://www.cacetech.com/products/airpcap.htm">
+	http://www.cacetech.com/products/airpcap.htm</a>. The AirPcap developer's 
+	pack needs to be unzipped in the same folder where the WinPcap developer's 
+	pack has been unzipped.</ul>
 <p>To compile the PACKET.DLL, load the project contained in the directory PacketNTx\dll\project
 (or Packet9x\dll\project) in the Visual C++ IDE. There are four project 
 configurations:</p>
 <ul>
   <li><i>PacketNT - Win32</i> <i>Release</i>: standard release configuration</li>
   <li><i>PacketNT - Win32 Debug</i>: standard debug configuration</li>
+  <li><i>PacketNT - Win32</i> <i>Release No AirPcap</i>: standard release configuration, 
+	without AirPcap support</li>
+  <li><i>PacketNT - Win32 Debug No AirPcap</i>: standard debug configuration, 
+	without AirPcap support</li>
   <li><i>PacketNT - Win32 NT4 Release</i>: release configuration able to run on 
   NT4 does not include Wan and IP helper API support.</li>
-  <li><i>PacketNT - Win32 NT4 Debug</i>: debug configuration able to run on NT4 
+	<li><i>PacketNT - Win32 NT4 Debug</i>: debug configuration able to run on NT4 
   does not include Wan and IP helper API support.</li>
-  <li><i>WanPacket - Win32 Release</i>: release version of the WanPacket 
+	<li><i>WanPacket - Win32 Release</i>: release version of the WanPacket 
   library, used to interface with NetMon API for Wan capture</li>
-  <li><i>WanPacket - Win32 Debug</i>: debug version of the WanPacket library, 
+	<li><i>WanPacket - Win32 Debug</i>: debug version of the WanPacket library, 
   used to interface with NetMon API for Wan capture</li>
 </ul>
 <p>Choose the desired configuration and build the project to obtain the binary 
@@ -184,14 +194,28 @@ files.</p>
 	<b>Note</b>: if you use Microsoft Visual Studio .Net the platform SDK is <b>not</b> 
 	needed to compile wpcap.dll.</li>
 	<li>Project files are in the <i>directory winpcap\wpcap\prj</i> of the WinPcap source 
-code distribution. Load wpcap.dsw from the Visual C++ IDE and build the program.<br>There are six build project configurations:<b><br>
-	<br>No support for DAG cards and Remore Capture</b></li>
-	<li><i>Wpcap debug</i>: winpcap\wpcap\prj\Debug </li>
-	<li><i>Wpcap release</i>: winpcap\wpcap\prj\Release<br><br><b>Support for Remote capture, no support for DAG cards</b></li>
-	<li><i>Wpcap debug REMOTE</i>: winpcap\wpcap\prj\Debug_REMOTE</li>
-	<li><i>Wpcap release REMOTE</i>: winpcap\wpcap\prj\Release_REMOTE<br><b><br>Support for DAG cards and Remote Capture</b></li>
-	<li><i>Wpcap debug REMOTE DAG</i>: winpcap\wpcap\prj\Debug_REMOTE_DAG</li>
-	<li><i>Wpcap release REMOTE DAG</i>: winpcap\wpcap\prj\Release_REMOTE_DAG</li>
+code distribution. Load wpcap.dsw from the Visual C++ IDE and build the program.</li>
+	<li>If you want to build WinPcap with the support for the CACE Technologies 
+	AirPcap wireless capture library, you will need to download the AirPcap 
+	developer's pack from <a href="http://www.cacetech.com/products/airpcap.htm">
+	http://www.cacetech.com/products/airpcap.htm</a>. The AirPcap developer's 
+	pack needs to be unzipped in the same folder where the WinPcap developer's 
+	pack has been unzipped.<br>
+	<br>
+	There are eight build project configurations:<b><br><br>No support for Remore Capture, 
+	support for AirPcap, no support for DAG</b></li>
+	<li><i>Wpcap debug</i>: output folder winpcap\wpcap\prj\Debug </li>
+	<li><i>Wpcap release</i>: output folder winpcap\wpcap\prj\Release<p>&nbsp;</li>
+	<li><b>Support for Remore Capture, no support for AirPcap, no support for 
+	DAG</b></li>
+	<li><i>Wpcap debug REMOTE NO AIRPCAP</i>: output folder winpcap\wpcap\prj\Debug_REMOTE_NO_AIRPCAP</li>
+	<li><i>Wpcap release REMOTE NO AIRPCAP</i>: output folder winpcap\wpcap\prj\Release_REMOTE_NO_AIRPCAP<p>
+	<b>Support for Remore Capture, support for AirPcap, no support for DAG</b></li>
+	<li><i>Wpcap debug REMOTE</i>: output folder winpcap\wpcap\prj\Debug_REMOTE</li>
+	<li><i>Wpcap release REMOTE</i>: output folder winpcap\wpcap\prj\Release_REMOTE<br><b><br>
+	Support for Remore Capture, support for AirPcap, support for DAG</b></li>
+	<li><i>Wpcap debug REMOTE DAG</i>: output folder winpcap\wpcap\prj\Debug_REMOTE_DAG</li>
+	<li><i>Wpcap release REMOTE DAG</i>: output folder winpcap\wpcap\prj\Release_REMOTE_DAG</li>
 </ul>
 <p><i>Note</i>: wpcap.dll contains the source code of libpcap from
 <a href="http://www.tcpdump.org">www.tcpdump.org</a>, with some modifications 
