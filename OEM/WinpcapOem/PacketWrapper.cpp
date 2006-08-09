@@ -45,6 +45,8 @@ typedef BOOLEAN (*PacketGetNetInfoExHandler)(PCHAR AdapterName, npf_if_addr* buf
 typedef BOOLEAN (*PacketGetNetTypeHandler)(LPADAPTER AdapterObject, NetType *type);
 typedef VOID (*PacketRegWoemLeaveHandlerHandler) (PVOID Handler);
 typedef BOOLEAN (*PacketSetLoopbackBehaviorHandler)(LPADAPTER  AdapterObject, UINT LoopbackBehavior);
+typedef PAirpcapHandle (*PacketGetAirPcapHandleHandler)(LPADAPTER AdapterObject);
+
 
 PacketGetVersionHandler				PacketGetVersionH = NULL;
 PacketGetDriverVersionHandler		PacketGetDriverVersionH = NULL;
@@ -76,6 +78,7 @@ PacketGetAdapterNamesHandler		PacketGetAdapterNamesH = NULL;
 PacketGetNetInfoExHandler			PacketGetNetInfoExH = NULL;
 PacketGetNetTypeHandler				PacketGetNetTypeH = NULL;
 PacketSetLoopbackBehaviorHandler	PacketSetLoopbackBehaviorH = NULL;
+PacketGetAirPcapHandleHandler		PacketGetAirPcapHandleH = NULL;
 
 PacketRegWoemLeaveHandlerHandler PacketRegWoemLeaveHandlerH = NULL;
 
@@ -766,6 +769,31 @@ BOOLEAN PacketGetNetType(LPADAPTER AdapterObject, NetType *type)
 	return returnValue;
 }
 
+PAirpcapHandle PacketGetAirPcapHandle(LPADAPTER AdapterObject)
+{
+	PAirpcapHandle pHandle;
+	
+	TRACE_ENTER("PacketGetAirPcapHandle");
+	
+	//
+	// Check if we are the first instance and Init everything accordingly
+	//
+	if(!WoemInitialize(g_DllHandle))
+	{
+		SetLastError(ERROR_INVALID_FUNCTION);
+		pHandle = NULL;
+	}
+	else
+	{
+		pHandle = PacketGetAirPcapHandleH(AdapterObject);
+	}
+	
+	TRACE_EXIT("PacketGetAirPcapHandle");
+	return pHandle;
+}
+
+
+
 //---------------------------------------------------------------------------
 // ADDITIONAL EXPORTS NOT PRESENT IN STANDARD PACKET.DLL
 //---------------------------------------------------------------------------
@@ -1127,6 +1155,16 @@ BOOL LoadPacketDll(char *PacketDllFileName, char *errorString)
 		TRACE_EXIT("LoadPacketDll");
 		return FALSE;
 	}
+
+	PacketGetAirPcapHandleH = (PacketGetAirPcapHandleHandler) GetProcAddress(g_PacketLib, "PacketGetAirPcapHandle");		
+	if(!PacketGetAirPcapHandleH)
+	{
+		LOAD_PACKET_DLL_TRACE_AND_COPY_ERROR("Unable to load Packet.dll (internal error 30)");
+		
+		TRACE_EXIT("LoadPacketDll");
+		return FALSE;
+	}
+
 
 #ifdef STATIC_LIB
 	PacketRegWoemLeaveHandlerH = (PacketRegWoemLeaveHandlerHandler) GetProcAddress(g_PacketLib, "PacketRegWoemLeaveHandler");		
