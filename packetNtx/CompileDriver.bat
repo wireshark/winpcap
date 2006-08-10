@@ -96,6 +96,8 @@ mkdir .\driver\bin\NT4\i386 2> nul
 mkdir .\driver\bin\NT4\i386\free 2> nul
 mkdir .\driver\bin\NT4\i386\checked 2> nul
 
+copy driver\NPF_NT4.RC ..\..\winpcap\packetntx\driver\NPF.RC
+
 set TARGETPATH=..\..\..\winpcap_oem\PacketNtx\driver\bin\NT4
 
 set NPF_C_DEFINES=-D__NPF_x86__ -DNDIS30 -D__NPF_NT4__  -DWPCAP_OEM
