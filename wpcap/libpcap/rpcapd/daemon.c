@@ -1089,8 +1089,8 @@ int serveropen_dp;							// keeps who is going to open the data connection
 
 	if (!serveropen_dp)
 	{
-		sscanf(portdata, "%d", (int *) &(startcapreply->portdata) );
-		startcapreply->portdata= htons(startcapreply->portdata);
+		unsigned short port = (unsigned short)strtoul(portdata,NULL,10);
+		startcapreply->portdata= htons(port);
 	}
 
 	if ( sock_send(sockctrl, sendbuf, sendbufidx, errbuf, PCAP_ERRBUF_SIZE) == -1)
