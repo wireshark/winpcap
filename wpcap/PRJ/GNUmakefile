@@ -23,7 +23,7 @@ INSTALL_DIR = ${SYSTEMROOT}\system32
 CFLAGS = -I ../libpcap -I ../libpcap/bpf -I ../libpcap/lbl \
 	-I ../libpcap/Win32/Include -I../libpcap/Win32/Include/ipv6kit \
 	-I ../../common -I ../Win32-Extensions \
-	-I ../../../z1211u/airpcap \
+	-I ../../../Airpcap_DevPack/include \
 	-DLIBPCAP_EXPORTS -DYY_NEVER_INTERACTIVE -Dyylval=pcap_lval \
 	-DHAVE_STRERROR -DNEED_ADDRINFO_H -DINET6 -DWIN32 \
 	-DSIZEOF_CHAR=1 -DSIZEOF_SHORT=2 -DSIZEOF_INT=4 -DSIZEOF_LONG_LONG=8 -DWPCAP -D'_U_=' \
