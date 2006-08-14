@@ -367,10 +367,13 @@ struct pcap_pkthdr *pkt_header;
 u_char *pkt_data;
 int n = 0;
 
-	while ( (++n <= cnt) || (cnt < 0) )
+	while ( (n < cnt) || (cnt < 0) )
 	{
 		if (pcap_read_nocb_remote(p, &pkt_header, &pkt_data) == 1)
-			(*callback)(user, pkt_header, pkt_data);
+		{
+ 			(*callback)(user, pkt_header, pkt_data);
+			n++;
+		}
 		else
 			return n;
 	}
