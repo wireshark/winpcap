@@ -164,20 +164,24 @@
 ;Detect the current Windows version
 ; this will set the WINPCAP_TARGET_OS variable
     Call GetWindowsVersion
-    StrCmp $WINPCAP_TARGET_OS "vista" ContinueVistaInstallation
-    goto NoVistaInstallation
 
-ContinueVistaInstallation:
+; GV: in some previous versions of NSIS and Vista, the installer seemed to crash when calling the {Locate} macro.
+; As of NSIS 2.16, this problem seems to have been solved.
+
+;    StrCmp $WINPCAP_TARGET_OS "vista" ContinueVistaInstallation
+;    goto NoVistaInstallation
+
+;ContinueVistaInstallation:
 ;NSIS seems to crash calling {Locate} on VISTA.
 ;    Messagebox MB_YESNO|MB_ICONINFORMATION "This machine is running Microsoft Windows Vista/Longhorn. WinPcap has not been tested on this platform.$\nDo you want to continue with the installation? (Note: if you click 'No', this installer will abort.)" IDYES ForceVistaInstallation
 ;    Abort
 
-ForceVistaInstallation:
-    StrCpy $WINPCAP_OLD_FOUND "false"
-    goto SkipWinPcapVersionCheck
-	
-
-NoVistaInstallation:
+;ForceVistaInstallation:
+;    StrCpy $WINPCAP_OLD_FOUND "false"
+;    goto SkipWinPcapVersionCheck
+;	
+;
+;NoVistaInstallation:
 
 ;Detect all parameters of a previous installation of WinPcap
 ;after this call, all the WINPCAP_OLD_xxx variables are correctly set
