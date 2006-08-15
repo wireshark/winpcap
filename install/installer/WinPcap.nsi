@@ -169,8 +169,8 @@
 
 ContinueVistaInstallation:
 ;NSIS seems to crash calling {Locate} on VISTA.
-    Messagebox MB_YESNO|MB_ICONINFORMATION "This machine is running Microsoft Windows Vista/Longhorn. WinPcap has not been tested on this platform.$\nDo you want to continue with the installation? (Note: if you click 'No', this installer will abort.)" IDYES ForceVistaInstallation
-    Abort
+;    Messagebox MB_YESNO|MB_ICONINFORMATION "This machine is running Microsoft Windows Vista/Longhorn. WinPcap has not been tested on this platform.$\nDo you want to continue with the installation? (Note: if you click 'No', this installer will abort.)" IDYES ForceVistaInstallation
+;    Abort
 
 ForceVistaInstallation:
     StrCpy $WINPCAP_OLD_FOUND "false"
@@ -806,22 +806,22 @@ Function CopyAMD64Driver
 	goto End
 
 	ErrorCannotLoadDll:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installer will now continue anyway."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installer will now continue anyway."
 		SetErrors
 		goto End
 		
 	ErrorCannotDisableFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installer will now continue anyway."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installer will now continue anyway."
 		SetErrors
 		goto End
 
 	ErrorCannotLoadDll2:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installer will now continue anyway."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installer will now continue anyway."
 		SetErrors
 		goto End
 		
 	ErrorCannotRevertFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installer will now continue anyway."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installer will now continue anyway."
 		SetErrors
 		goto End
 		
@@ -852,13 +852,13 @@ Function InstallNpfService
 	StrCmp $INT_RET 0 End ErrorCannotInstallNpfDriver
  
 ErrorCannotLoadDll:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installation will now continue anyway."
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue anyway."
 	SetErrors
 	goto End
 		
 ErrorCannotInstallNpfDriver:
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installation will now continue anyway."
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue anyway."
 	SetErrors
 	goto End
 
@@ -889,13 +889,13 @@ Function un.UninstallNpfService
 	StrCmp $INT_RET 0 End ErrorCannotUninstallNpfDriver
  
 ErrorCannotLoadDll:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe uninstallation will now continue anyway."
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue anyway."
 	SetErrors
 	goto End
 		
 ErrorCannotUninstallNpfDriver:
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe uninstallation will now continue"
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue"
 	SetErrors
 	goto End
 
@@ -925,13 +925,13 @@ Function InstallRpcapdService
 	StrCmp $INT_RET 0 End ErrorCannotInstallRpcapd
  
 ErrorCannotLoadDll:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installation will now continue anyway."
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue anyway."
 	SetErrors
 	goto End
 		
 ErrorCannotInstallRpcapd:
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installation will now continue"
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue"
 	SetErrors
 	goto End
 
@@ -961,13 +961,13 @@ Function un.UninstallRpcapdService
 	StrCmp $INT_RET 0 End ErrorCannotUninstallRpcapd
  
 ErrorCannotLoadDll:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe uninstallation will now continue anyway."
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue anyway."
 	SetErrors
 	goto End
 		
 ErrorCannotUninstallRpcapd:
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe uninstallation will now continue"
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue"
 	SetErrors
 	goto End
 
@@ -998,13 +998,13 @@ Function InstallNetmon
 	StrCmp $INT_RET 0 End ErrorCannotInstallNetmon
  
 ErrorCannotLoadDll:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installation will now continue anyway."
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue anyway."
 	SetErrors
 	goto End
 		
 ErrorCannotInstallNetmon:
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe installation will now continue"
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue"
 	SetErrors
 	goto End
 
@@ -1070,12 +1070,12 @@ Function un.RemoveAMD64Driver
 	goto End
 
 	ErrorCannotLoadDll:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe uninstallation will now continue anyway."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue anyway."
 		SetErrors
 		goto End
 		
 	ErrorCannotDisableFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe uninstallation will now continue anyway."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue anyway."
 		SetErrors
 		goto End
 
@@ -1085,7 +1085,7 @@ Function un.RemoveAMD64Driver
 		goto End
 		
 	ErrorCannotRevertFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe uninstallation will now continue anyway."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue anyway."
 		SetErrors
 		goto End
 		
