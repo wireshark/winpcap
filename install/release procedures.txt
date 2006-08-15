@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.5 2006/08/03 16:43:07 lorisd Exp $
+$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.6 2006/08/09 20:37:50 gianlucav Exp $
 
 WINPCAP RELEASE PROCEDURE
 =========================
@@ -62,7 +62,7 @@ How to compile WinPcap
 	  %BUILD_TREE%\winpcap\version.h
 	  %BUILD_TREE%\winpcap\dox\prj\winpcap_noc.dox
 	  %BUILd_TREE%\winpcap\install\installer\license.txt 
-	  %BUILd_TREE%\winpcap\install\installer\winpcap.nsi with an editor.
+	  %BUILd_TREE%\winpcap\install\installer\winpcap.nsi
 	
 	into the CVS. These should be the *only* modified files in this module.
 
@@ -102,7 +102,7 @@ How to compile WinPcap
 
 19. NOT DONE. At this point we should have rezipped the modified files to overwritten_files.zip.
      
-20. Zip the contents of the two folders 
+20. Zip the contents of the three folders 
 	  %BUILD_TREE%\winpcap
 	  %BUILD_TREE%\libpcap_<libpcap_version>
 	  %BUILD_TREE%\Airpcap_Devpack
