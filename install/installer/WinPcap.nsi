@@ -173,8 +173,22 @@
 
 ;ContinueVistaInstallation:
 ;NSIS seems to crash calling {Locate} on VISTA.
-;    Messagebox MB_YESNO|MB_ICONINFORMATION "This machine is running Microsoft Windows Vista/Longhorn. WinPcap has not been tested on this platform.$\nDo you want to continue with the installation? (Note: if you click 'No', this installer will abort.)" IDYES ForceVistaInstallation
+;    Messagebox MB_YESNO|MB_ICONINFORMATION "This machine is running Microsoft Windows Vista/Longhorn x64. This version of Windows is not supported by ${WINPCAP_PRODUCT_NAME}.$\nThe installation will be aborted."
 ;    Abort
+
+	StrCmp $WINPCAP_TARGET_OS "vista" CheckVista_X64
+	goto ContinueInstallationVistaOk
+
+CheckVista_x64:
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" AbortVista_x64
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "IA64" AbortVista_x64
+;	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" AbortVista_x64
+	goto ContinueInstallationVistaOk
+
+AbortVista_x64:
+    Messagebox MB_OK|MB_ICONEXCLAMATION "This machine is running Microsoft Windows Vista/Longhorn $WINPCAP_TARGET_ARCHITECTURE. This version of Windows is not supported by ${WINPCAP_PRODUCT_NAME}.$\nThe installation will be aborted."
+    Abort
+
 
 ;ForceVistaInstallation:
 ;    StrCpy $WINPCAP_OLD_FOUND "false"
@@ -183,11 +197,12 @@
 ;
 ;NoVistaInstallation:
 
+ContinueInstallationVistaOk:
 ;Detect all parameters of a previous installation of WinPcap
 ;after this call, all the WINPCAP_OLD_xxx variables are correctly set
     Call IsWinPcapInstalled
 
-SkipWinPcapVersionCheck:
+;SkipWinPcapVersionCheck:
 
 ;check that the OS is supported....
     StrCmp $WINPCAP_TARGET_OS "95" SupportedOsOk
