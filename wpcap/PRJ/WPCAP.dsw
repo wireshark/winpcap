@@ -3,7 +3,7 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "libpcap"="..\libpcap\Win32\Prj\libpcap.dsp" - Package Owner=<4>
+Project: "libpcap"=..\libpcap\Win32\Prj\libpcap.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -15,7 +15,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "rpcapd"="..\libpcap\rpcapd\rpcapd.dsp" - Package Owner=<4>
+Project: "rpcapd"=..\libpcap\rpcapd\rpcapd.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -23,14 +23,11 @@ Package=<5>
 
 Package=<4>
 {{{
-    Begin Project Dependency
-    Project_Dep_Name wpcap
-    End Project Dependency
 }}}
 
 ###############################################################################
 
-Project: "wpcap"=".\wpcap.dsp" - Package Owner=<4>
+Project: "wpcap"=.\wpcap.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
