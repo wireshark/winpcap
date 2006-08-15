@@ -195,7 +195,7 @@
     <Cell ss:StyleID="s32"><NamedCell ss:Name="Print_Area"/></Cell>
     <Cell ss:StyleID="s33"/>
     <Cell ss:MergeAcross="1" ss:StyleID="s35" ss:Formula="=NOW()"><Data
-      ss:Type="DateTime">2006-08-14T17:23:44.640</Data></Cell>
+      ss:Type="DateTime">2006-08-15T09:10:47.920</Data></Cell>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="25.5" ss:StyleID="s36">
     <Cell ss:StyleID="s40"><Data ss:Type="String">Bug ID</Data><NamedCell
@@ -812,12 +812,14 @@
    </Row>
    <Row ss:AutoFitHeight="0">
     <Cell><Data ss:Type="Number">44</Data></Cell>
-    <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell ss:StyleID="s44"><Data ss:Type="String">CLOSED</Data></Cell>
     <Cell><Data ss:Type="String">GV</Data></Cell>
-    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell><Data ss:Type="String">Bug</Data></Cell>
     <Cell><Data ss:Type="String">Installer</Data></Cell>
     <Cell><Data ss:Type="String">In the vista installer, we do not check for previous versions of WinPcap (due to some problems calling Locate).</Data></Cell>
     <Cell ss:Index="9"><Data ss:Type="String">HIGH</Data></Cell>
+    <Cell><Data ss:Type="DateTime">2006-08-15T00:00:00.000</Data></Cell>
    </Row>
   </Table>
   <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
@@ -837,7 +839,7 @@
    <FreezePanes/>
    <FilterOn/>
    <SplitHorizontal>4</SplitHorizontal>
-   <TopRowBottomPane>5</TopRowBottomPane>
+   <TopRowBottomPane>4</TopRowBottomPane>
    <ActivePane>2</ActivePane>
    <Panes>
     <Pane>
@@ -847,8 +849,8 @@
     </Pane>
     <Pane>
      <Number>2</Number>
-     <ActiveRow>19</ActiveRow>
-     <ActiveCol>6</ActiveCol>
+     <ActiveRow>47</ActiveRow>
+     <ActiveCol>9</ActiveCol>
     </Pane>
    </Panes>
    <ProtectObjects>False</ProtectObjects>
