@@ -166,7 +166,7 @@
     ss:Hidden="1"/>
    <NamedRange ss:Name="Print_Area" ss:RefersTo="=BugList!R1C1:R5C7"/>
   </Names>
-  <Table ss:ExpandedColumnCount="10" ss:ExpandedRowCount="48" x:FullColumns="1"
+  <Table ss:ExpandedColumnCount="10" ss:ExpandedRowCount="49" x:FullColumns="1"
    x:FullRows="1" ss:StyleID="s21" ss:DefaultRowHeight="13.5">
    <Column ss:StyleID="s22" ss:Width="51"/>
    <Column ss:StyleID="s23" ss:Width="49.5"/>
@@ -195,7 +195,7 @@
     <Cell ss:StyleID="s32"><NamedCell ss:Name="Print_Area"/></Cell>
     <Cell ss:StyleID="s33"/>
     <Cell ss:MergeAcross="1" ss:StyleID="s35" ss:Formula="=NOW()"><Data
-      ss:Type="DateTime">2006-08-15T09:10:47.920</Data></Cell>
+      ss:Type="DateTime">2006-08-15T10:50:19.320</Data></Cell>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="25.5" ss:StyleID="s36">
     <Cell ss:StyleID="s40"><Data ss:Type="String">Bug ID</Data><NamedCell
@@ -818,8 +818,18 @@
     <Cell><Data ss:Type="String">Bug</Data></Cell>
     <Cell><Data ss:Type="String">Installer</Data></Cell>
     <Cell><Data ss:Type="String">In the vista installer, we do not check for previous versions of WinPcap (due to some problems calling Locate).</Data></Cell>
-    <Cell ss:Index="9"><Data ss:Type="String">HIGH</Data></Cell>
+    <Cell><Data ss:Type="String">4.0 beta1</Data></Cell>
+    <Cell><Data ss:Type="String">HIGH</Data></Cell>
     <Cell><Data ss:Type="DateTime">2006-08-15T00:00:00.000</Data></Cell>
+   </Row>
+   <Row ss:Height="51.75">
+    <Cell><Data ss:Type="Number">45</Data></Cell>
+    <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data></Cell>
+    <Cell><Data ss:Type="String">rpcapd compilation</Data></Cell>
+    <Cell><Data ss:Type="String">At the moment the dependency over wpcap.dll has been removed due to a compilation problem: we do not have a compilation configuration for the non-airpcap version of rpcapd, and so rpcapd forces the compilation of wpcap.dll w/ airpcap, which fails with the public sources if you don't have airpcap. The problem is that VC6 doesn't allow to declare dependencies over specific build configurations, only project names.</Data></Cell>
+    <Cell ss:Index="9"><Data ss:Type="String">MEDIUM</Data></Cell>
    </Row>
   </Table>
   <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
@@ -839,7 +849,7 @@
    <FreezePanes/>
    <FilterOn/>
    <SplitHorizontal>4</SplitHorizontal>
-   <TopRowBottomPane>4</TopRowBottomPane>
+   <TopRowBottomPane>5</TopRowBottomPane>
    <ActivePane>2</ActivePane>
    <Panes>
     <Pane>
@@ -849,8 +859,8 @@
     </Pane>
     <Pane>
      <Number>2</Number>
-     <ActiveRow>47</ActiveRow>
-     <ActiveCol>9</ActiveCol>
+     <ActiveRow>0</ActiveRow>
+     <RangeSelection>R1C1:R1C10</RangeSelection>
     </Pane>
    </Panes>
    <ProtectObjects>False</ProtectObjects>
@@ -884,7 +894,7 @@
    </Condition>
   </ConditionalFormatting>
   <ConditionalFormatting xmlns="urn:schemas-microsoft-com:office:excel">
-   <Range>R5C2:R5C3,R6C2:R48C2</Range>
+   <Range>R5C2:R5C3,R6C2:R49C2</Range>
    <Condition>
     <Qualifier>Equal</Qualifier>
     <Value1>&quot;open&quot;</Value1>
