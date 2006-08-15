@@ -960,6 +960,15 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 			TRACE_EXIT("AddAdapter");
 			return TRUE;
 		}
+#else // HAVE_AIRPCAP_API
+		else
+		{
+			ODS("NPF Adapter not available, do not add it to the global list\n");
+			// We are not able to open this adapter. Skip to the next one.
+			ReleaseMutex(g_AdaptersInfoMutex);
+			TRACE_EXIT("AddAdapter");
+			return FALSE;
+		}			
 #endif // HAVE_AIRPCAP_API
 	}
 	
