@@ -250,3 +250,21 @@ diff -urb ..\winpcap\Examples/tcptop/tcptop.c .\Examples/tcptop/tcptop.c
  	/* Open the output adapter */
  	if ( (fp= pcap_open(argv[1], 100, PCAP_OPENFLAG_PROMISCUOUS, 1000, NULL, errbuf) ) == NULL)
  	{
+diff -urb ..\winpcap\Examples/misc/sendpack.c .\Examples/misc/sendpack.c
+--- ..\winpcap\Examples/misc/sendpack.c	2003-07-08 00:21:30.000000000 -0700
++++ .\Examples/misc/sendpack.c	2006-08-17 09:57:07.750000000 -0700
+@@ -11,6 +11,14 @@
+ u_char packet[100];
+ int i;
+ 
++	/* start OEM WinPcap */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		return;
++	}
++	
++
+ 	/* Check the validity of the command line */
+ 	if (argc != 2)
+ 	{
