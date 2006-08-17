@@ -1283,7 +1283,7 @@ BOOL WoemCreateBinaryNames()
 	UINT GsdRes;
 	char WinDir[MAX_PATH + 16];
 	char SysDir[MAX_PATH + 16];
-	
+
 	//
 	// Get the location of the system folder to create the complete paths
 	//
@@ -1293,11 +1293,48 @@ BOOL WoemCreateBinaryNames()
 		return FALSE;
 	}
 	
-	GsdRes = GetWindowsDirectory(WinDir, sizeof(WinDir));
-	if(GsdRes == 0 || GsdRes == sizeof(WinDir))
+//	GsdRes = GetSystemWindowsDirectory(WinDir, sizeof(WinDir));
+//	if(GsdRes == 0 || GsdRes == sizeof(WinDir))
+//	{
+//		return FALSE;
+//	}
+
+	//
+	// NOTE: this is a patch to a problem with GetWindowsDirectory: as explained in the MSDN
+	// docs, this API does NOT always return the windows folder like "c:\windows". On TS systems 
+	// in some particular conditions (e.g. we saw it on a win2003-x64 machine) it returns a private
+	// user folder (c:\documents and settinfs\user...). The right API is GetSystemWindowsDirectoryr, which
+	// is not available on NT4. The MSDN docs suggests for NT4 to use GetSystemDirectory and trim system32 at
+	// the end. We use this trick on every os (even if it's sufggested for NT4 only) beacuse in any case we have
+	// hardcoded the system32 part in our NPF_ strings in wpcap_names.h (and we just write "system32\drivers\drivername.sys" 
+	// for the path of the driver in the registry, not the full path).
+	// GV 20060817
+	//
+
+	CopyMemory(WinDir, SysDir, sizeof(WinDir));
+
+	//
+	// trim the "system32" part
+	//
+	if (strlen(WinDir) < strlen("\\system32"))
 	{
 		return FALSE;
 	}
+	
+	char *SupposedSystem32String;
+
+	SupposedSystem32String = WinDir + strlen(WinDir) - strlen("\\system32");
+
+	if (_stricmp(SupposedSystem32String, "\\system32") != 0)
+	{
+		return FALSE;
+	}
+
+	//
+	// found it, just terminate it there
+	//
+	SupposedSystem32String[0] = '\0';
+
 
 	//
 	// Created the strings that we'll use to build the registry keys values
