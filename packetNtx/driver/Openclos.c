@@ -272,6 +272,11 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	NdisAllocateSpinLock(&Open->WriteLock);
 	Open->WriteInProgress = FALSE;
 
+	for (i = 0; i < NCpu; i++)
+	{
+		NdisAllocateSpinLock(&Open->CpuData[i].BufferLock);
+	}
+
 	NdisInitializeEvent(&Open->NdisOpenCloseCompleteEvent);
 
 	//  list to hold irp's want to reset the adapter
@@ -447,6 +452,7 @@ VOID
 NPF_CloseOpenInstance(POPEN_INSTANCE pOpen)
 {
 		PKEVENT pEvent;
+		UINT i;
 
 		TRACE_ENTER();
 
@@ -493,6 +499,14 @@ NPF_CloseOpenInstance(POPEN_INSTANCE pOpen)
 		//
 		if (pOpen->Size > 0)
 			ExFreePool(pOpen->CpuData[0].Buffer);
+
+		//
+		// free the per CPU spinlocks
+		//
+		for (i = 0; i < NCpu; i++)
+		{
+			NdisFreeSpinLock(&Open->CpuData[i].BufferLock);
+		}
 
 		//
 		// Free the string with the name of the dump file
