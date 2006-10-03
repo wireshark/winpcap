@@ -41,12 +41,24 @@
 #define NUM_THREADS 16
 #define MAX_NUM_READS 500
 
+#define INJECT_FILTERS
+#define FILTER "ether[80:1] < 128 || ether[81:1] > 127 || ether[82:1] < 180 || ether[83:1] > 181" \
+			"|| ether[84:1] < 128 || ether[85:1] > 127 || ether[86:1] < 180 || ether[87:1] > 181" \
+			"|| ether[88:1] < 128 || ether[89:1] > 127 || ether[90:1] < 180 || ether[91:1] > 181" \
+			"|| ether[92:1] < 128 || ether[93:1] > 127 || ether[94:1] < 180 || ether[95:1] > 181" \
+			"|| ether[96:1] < 128 || ether[97:1] > 127 || ether[98:1] < 180 || ether[99:1] > 181" \
+			"|| ether[100:1] < 128 || ether[101:1] > 127 || ether[102:1] < 180 || ether[103:1] > 181" \
+			"|| ether[104:1] < 128 || ether[105:1] > 127 || ether[106:1] < 180 || ether[107:1] > 181" \
+			"|| ether[108:1] < 128 || ether[109:1] > 127 || ether[110:1] < 180 || ether[111:1] > 181" \
+
+
 u_int n_iterations = 0;
 u_int n_packets = 0;
 u_int n_timeouts = 0;
 u_int n_open_errors = 0;
 u_int n_read_errors = 0;
 u_int n_findalldevs_errors = 0;
+u_int n_setfilters = 0;
 
 CRITICAL_SECTION print_cs;
 
@@ -74,6 +86,7 @@ void sigh(int val)
 	printf("Number of read timeouts:\t\t%u\n", n_timeouts);
 	printf("Number of open errors:\t\t%u\n", n_open_errors);
 	printf("Number of read errors:\t\t%u\n", n_read_errors);
+	printf("Number of setfilters:\t\t%u\n", n_setfilters);
 
 	//
 	// Note: we don't release the critical section on purpose, so the user doesn't 
@@ -81,6 +94,8 @@ void sigh(int val)
 	//
 	exit(0);
 }
+
+
 
 /////////////////////////////////////////////////////////////////////
 
@@ -94,13 +109,17 @@ DWORD WINAPI pcap_thread(LPVOID arg)
 	const u_char *pkt_data;
 	u_int i;
 	u_int n_reads;
+#ifdef INJECT_FILTERS
+	struct bpf_program fcode;
+	int compile_result;
+#endif
 
 	//
 	// Open the adapter
 	//
 	if((fp = pcap_open_live(AdName,
 		65535,
-		1,								// promiscuous mode
+		0,								// promiscuous mode
 		1,								// read timeout
 		errbuf)) == NULL)
 	{
@@ -132,12 +151,41 @@ DWORD WINAPI pcap_thread(LPVOID arg)
 			break;
 		}
 
+#ifdef INJECT_FILTERS
+
+		EnterCriticalSection(&print_cs);
+		compile_result = pcap_compile(fp, &fcode, FILTER, 1, 0xFFFFFFFF);
+		LeaveCriticalSection(&print_cs);
+
+
+
+		//compile the filter
+		if( compile_result < 0)
+		{
+			fprintf(stderr,"Error compiling filter: wrong syntax.\n");
+		}
+		else
+		{
+			//set the filterf
+			if(pcap_setfilter(fp, &fcode)<0)
+			{
+				fprintf(stderr,"Error setting the filter\n");
+			}
+			else
+			{
+				InterlockedIncrement(&n_setfilters);
+			}
+			pcap_freecode(&fcode);
+		}
+#endif
+
 		if(res == 0)
 		{
 			// Timeout elapsed
 			n_timeouts++;
 			continue;
 		}
+
 
 		// print pkt timestamp and pkt len
 		n_packets++;
@@ -199,7 +247,7 @@ int main(int argc, char **argv)
 		return -1;
 	}
 	
-	memset(hThreads, n_threads * sizeof(HANDLE), 0);
+	memset(hThreads, 0, n_threads * sizeof(HANDLE));
 
 	signal(SIGINT, sigh);
 	InitializeCriticalSection(&print_cs);
@@ -257,9 +305,7 @@ int main(int argc, char **argv)
 			//
 			// Create the child thread
 			//
-			EnterCriticalSection(&print_cs);
 			printf("Thread %u, %s 0x%x\n", i, d->name, WaitRes);
-			LeaveCriticalSection(&print_cs);
 			
 			//
 			// Close the thread handle 
