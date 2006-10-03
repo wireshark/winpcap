@@ -82,6 +82,8 @@ ULONG NCpu;
 ULONG TimestampMode;
 UINT g_SendPacketFlags = 0;
 
+static VOID NPF_ResetBufferContents(POPEN_INSTANCE Open);
+
 //
 //  Packet Driver's entry routine.
 //
@@ -691,7 +693,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	UINT				i;
 	PUCHAR				tpointer;
 	ULONG				dim,timeout;
-	PUCHAR				prog;
+	struct bpf_insn*	NewBpfProgram;
 	PPACKET_OID_DATA    OidData;
 	int					*StatsBuf;
     PNDIS_PACKET        pPacket;
@@ -822,156 +824,141 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 		TRACE_MESSAGE(PACKET_DEBUG_LOUD, "BIOCSETF");
 
-		Open->SkipProcessing = 1;
+		//
+		// Get the pointer to the new program
+		//
+		NewBpfProgram = (struct bpf_insn*)Irp->AssociatedIrp.SystemBuffer;
+		
+		if(NewBpfProgram == NULL)
+		{
+			SET_FAILURE_BUFFER_SMALL();
+			break;
+		}
+		
+		//
+		// Lock the machine. After this call we are at DISPATCH level
+		//
+		NdisAcquireSpinLock(&Open->MachineLock);
 
 		do
 		{
-			Flag = FALSE;
-			for(i = 0; i < NCpu ; i++)
-				if (Open->CpuData[i].Processing == 1)
-					Flag = TRUE;
-		}
-		while(Flag);  //BUSY FORM WAITING...
 
-
-		// Free the previous buffer if it was present
-		if(Open->bpfprogram != NULL){
-			TmpBPFProgram = Open->bpfprogram;
-			Open->bpfprogram = NULL;
-			ExFreePool(TmpBPFProgram);
-		}
+			// Free the previous buffer if it was present
+			if(Open->bpfprogram != NULL)
+			{
+				TmpBPFProgram = Open->bpfprogram;
+				Open->bpfprogram = NULL;
+				ExFreePool(TmpBPFProgram);
+			}
 		
 //
 // Jitted filters are supported on x86 (32bit) only
 // 
 #ifdef __NPF_x86__
-		if (Open->Filter != NULL)
-		{
-			JIT_BPF_Filter *OldFilter=Open->Filter;
-			Open->Filter=NULL;
-			BPF_Destroy_JIT_Filter(OldFilter);
-		}
+			if (Open->Filter != NULL)
+			{
+				BPF_Destroy_JIT_Filter(Open->Filter);
+				Open->Filter = NULL;
+			}
 #endif // __NPF_x86__
 
-		// Get the pointer to the new program
-		prog=(PUCHAR)Irp->AssociatedIrp.SystemBuffer;
+			insns = (IrpSp->Parameters.DeviceIoControl.InputBufferLength)/sizeof(struct bpf_insn);
 		
-		if(prog==NULL)
-		{
-			Open->SkipProcessing = 0;
-
-			SET_FAILURE_BUFFER_SMALL();
-			break;
-		}
+			//count the number of operative instructions
+			for (cnt = 0 ; (cnt < insns) &&(NewBpfProgram[cnt].code != BPF_SEPARATION); cnt++);
 		
-		insns = (IrpSp->Parameters.DeviceIoControl.InputBufferLength)/sizeof(struct bpf_insn);
-		
-		//count the number of operative instructions
-		for (cnt=0;(cnt<insns) &&(((struct bpf_insn*)prog)[cnt].code!=BPF_SEPARATION); cnt++);
-		
-		IF_LOUD(DbgPrint("Operative instructions=%u\n",cnt);)
+			TRACE_MESSAGE1(PACKET_DEBUG_LOUD, "Operative instructions=%u", cnt);
 
 #ifdef __NPF_x86__
-		if ( cnt != insns && insns != cnt+1 && ((struct bpf_insn*)prog)[cnt].code == BPF_SEPARATION ) 
-		{
-			TRACE_MESSAGE1(PACKET_DEBUG_LOUD,"Initialization instructions = %u",insns-cnt-1);
-	
-			IsExtendedFilter = TRUE;
-
-			initprogram=&((struct bpf_insn*)prog)[cnt+1];
-			
-			if(bpf_filter_init(initprogram,&(Open->mem_ex),&(Open->tme), &G_Start_Time)!=INIT_OK)
+			if ( (cnt != insns) && (insns != cnt+1) && (NewBpfProgram[cnt].code == BPF_SEPARATION)) 
 			{
-			
-				TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Error initializing NPF machine (bpf_filter_init)");
+				TRACE_MESSAGE1(PACKET_DEBUG_LOUD,"Initialization instructions = %u",insns-cnt-1);
+		
+				IsExtendedFilter = TRUE;
+
+				initprogram = &NewBpfProgram[cnt+1];
 				
-				Open->SkipProcessing = 0;
+				if(bpf_filter_init(initprogram,&(Open->mem_ex),&(Open->tme), &G_Start_Time)!=INIT_OK)
+				{
 				
+					TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Error initializing NPF machine (bpf_filter_init)");
+					
+					SET_FAILURE_INVALID_REQUEST();
+					break;
+				}
+			}
+#else  //x86-64 and IA64
+			if ( cnt != insns)
+			{
+				TRACE_MESSAGE("Error installing the BPF filter. The filter contains TME extensions,"
+					" not supported on 64bit platforms.");
+
 				SET_FAILURE_INVALID_REQUEST();
 				break;
 			}
-		}
-#else  //x86-64 and IA64
-		if ( cnt != insns)
-		{
-			IF_LOUD(DbgPrint("Error installing the BPF filter. The filter contains TME extensions,"
-				" not supported on 64bit platforms.\n");)
-
-			Open->SkipProcessing = 0;
-			EXIT_FAILURE(0);
-		}
-
-
 #endif
 
-		//the NPF processor has been initialized, we have to validate the operative instructions
-		insns = cnt;
+			//the NPF processor has been initialized, we have to validate the operative instructions
+			insns = cnt;
 		
-		//NOTE: the validation code checks for TME instructions, and fails if a TME instruction is
-		//encountered on 64 bit machines
-		if(bpf_validate((struct bpf_insn*)prog,cnt,Open->mem_ex.size)==0)
-		{
-			TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Error validating program");
-			//FIXME: the machine has been initialized(?), but the operative code is wrong. 
-			//we have to reset the machine!
-			//something like: reallocate the mem_ex, and reset the tme_core
-			Open->SkipProcessing = 0;
-
-			SET_FAILURE_INVALID_REQUEST();
-			break;
-		}
-		
-		// Allocate the memory to contain the new filter program
-		// We could need the original BPF binary if we are forced to use bpf_filter_with_2_buffers()
-		TmpBPFProgram = (PUCHAR)ExAllocatePoolWithTag(NonPagedPool, cnt*sizeof(struct bpf_insn), '4PWA');
-		if (TmpBPFProgram == NULL)
-		{
-			TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Error - No memory for filter");
-			// no memory
-			Open->SkipProcessing = 0;
-			
-			SET_FAILURE_NOMEM();
-			break;
-		}
-		
-		//copy the program in the new buffer
-		RtlCopyMemory(TmpBPFProgram,prog,cnt*sizeof(struct bpf_insn));
-		Open->bpfprogram=TmpBPFProgram;
-		
-		//
-		// At the moment the JIT compiler works on x86 (32 bit) only
-		//
-#ifdef __NPF_x86__
-		// Create the new JIT filter function
-		if(!IsExtendedFilter)
-			if((Open->Filter=BPF_jitter((struct bpf_insn*)Open->bpfprogram,cnt)) == NULL)
+			//NOTE: the validation code checks for TME instructions, and fails if a TME instruction is
+			//encountered on 64 bit machines
+			if(bpf_validate(NewBpfProgram, cnt, Open->mem_ex.size) == 0)
 			{
-				IF_LOUD(DbgPrint("Error jittering filter");)
-				Open->SkipProcessing = 0;
-				
-				SET_FAILURE_UNSUCCESSFUL();
+				TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Error validating program");
+				//FIXME: the machine has been initialized(?), but the operative code is wrong. 
+				//we have to reset the machine!
+				//something like: reallocate the mem_ex, and reset the tme_core
+				SET_FAILURE_INVALID_REQUEST();
 				break;
+			}
+		
+			// Allocate the memory to contain the new filter program
+			// We could need the original BPF binary if we are forced to use bpf_filter_with_2_buffers()
+			TmpBPFProgram = (PUCHAR)ExAllocatePoolWithTag(NonPagedPool, cnt*sizeof(struct bpf_insn), '4PWA');
+			if (TmpBPFProgram == NULL)
+			{
+				TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Error - No memory for filter");
+				// no memory
+				
+				SET_FAILURE_NOMEM();
+				break;
+			}
+		
+			//
+			// At the moment the JIT compiler works on x86 (32 bit) only
+			//
+#ifdef __NPF_x86__
+			// Create the new JIT filter function
+			if(!IsExtendedFilter)
+			{
+				if((Open->Filter = BPF_jitter(NewBpfProgram, cnt)) == NULL)
+				{
+					TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Error jittering filter");
+					
+					ExFreePool(TmpBPFProgram);
+
+					SET_FAILURE_UNSUCCESSFUL();
+					break;
+				}
 			}
 #endif
 
-		//return
-		for (i = 0 ; i < NCpu ; i++)
-		{
-			Open->CpuData[i].C=0;
-			Open->CpuData[i].P=0;
-			Open->CpuData[i].Free = Open->Size;
-			Open->CpuData[i].Accepted=0;
-			Open->CpuData[i].Dropped=0;
-			Open->CpuData[i].Received = 0;
+			//copy the program in the new buffer
+			RtlCopyMemory(TmpBPFProgram,NewBpfProgram,cnt*sizeof(struct bpf_insn));
+			Open->bpfprogram = TmpBPFProgram;
+
+			SET_RESULT_SUCCESS(0);
 		}
+		while(FALSE);
 
-		Open->ReaderSN=0;
-		Open->WriterSN=0;
+		//
+		// release the machine lock and then reset the buffer
+		//
+		NdisReleaseSpinLock(&Open->MachineLock);
 
-		Open->SkipProcessing = 0;
-		
-		SET_RESULT_SUCCESS(0);
-		
+		NPF_ResetBufferContents(Open);
+
 		break;		
 		
 	case BIOCSMODE:  //set the capture mode
@@ -1166,35 +1153,11 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		{
 			Open->SkipSentPackets = TRUE;
 				
+			//
 			// Reset the capture buffers, since they could contain loopbacked packets
-			Open->SkipProcessing = 1;
-				
-			do
-			{
-				Flag = FALSE;
-				for(i=0;i<NCpu;i++)
-					if (Open->CpuData[i].Processing == 1)
-						Flag = TRUE;
-			}
-			while(Flag);  //BUSY FORM WAITING...
-						
-			for (i = 0 ; i < NCpu ; i++ )
-			{
-				Open->CpuData[i].C = 0;
-				Open->CpuData[i].P = 0;
-				Open->CpuData[i].Free = Open->Size;
-				//
-				//we reset the counters since we are resetting the contents of the buffer!!
-				//
-				Open->CpuData[i].Accepted = 0;
-				Open->CpuData[i].Dropped  = 0;
-				Open->CpuData[i].Received = 0;
-			}
+			//
 
-			Open->ReaderSN = 0;
-			Open->WriterSN = 0;
-				 
-			Open->SkipProcessing = 0;
+			NPF_ResetBufferContents(Open);
 
 			SET_RESULT_SUCCESS(0);
 			break;
@@ -1303,6 +1266,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 		TRACE_MESSAGE(PACKET_DEBUG_LOUD, "BIOCSETBUFFERSIZE");
 
+
 		if(IrpSp->Parameters.DeviceIoControl.InputBufferLength < sizeof(ULONG))
 		{			
 			SET_FAILURE_BUFFER_SMALL();
@@ -1312,33 +1276,37 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		// Get the number of bytes to allocate
 		dim = *((PULONG)Irp->AssociatedIrp.SystemBuffer);
 
-		Open->SkipProcessing = 1;
-
-		do
-		{
-			Flag = FALSE;
-			for(i=0;i<NCpu;i++)
-				if (Open->CpuData[i].Processing == 1)
-					Flag = TRUE;
-		}
-		while(Flag);  //BUSY FORM WAITING...
-
 		if (dim / NCpu < sizeof(struct PacketHeader))
+		{
 			dim = 0;
+		}
 		else
 		{
 			tpointer = ExAllocatePoolWithTag(NonPagedPool, dim, '6PWA');
-			if (tpointer==NULL)
+			if (tpointer == NULL)
 			{
 				// no memory
-				Open->SkipProcessing = 0;
 				SET_FAILURE_NOMEM();
 				break;
 			}
 		}
 
+		//
+		// acquire the locks for all the buffers
+		//
+		for (i = 0; i < NCpu ; i++)
+		{
+#pragma prefast(suppress:8103, "There's no Spinlock leak here, as it's released some lines below.")
+			NdisAcquireSpinLock(&Open->CpuData[i].BufferLock);
+		}
+
+		//
+		// free the old buffer, if any
+		//
 		if (Open->CpuData[0].Buffer != NULL)
+		{
 			ExFreePool(Open->CpuData[0].Buffer);
+		}
 
 		for (i = 0 ; i < NCpu ; i++)
 		{
@@ -1358,8 +1326,19 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		Open->WriterSN=0;
 
 		Open->Size = dim/NCpu;
-    
-		Open->SkipProcessing = 0;
+
+		//
+		// acquire the locks for all the buffers
+		//
+		i = NCpu;
+
+		do
+		{
+			i--;
+
+#pragma prefast(suppress:8107, "There's no Spinlock leak here, as it's acquired some lines above.")
+			NdisReleaseSpinLock(&Open->CpuData[i].BufferLock);
+		}while(i != 0);
 
 		SET_RESULT_SUCCESS(0);
 		break;
@@ -1435,7 +1414,6 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
         }
 		
 		break;
-		
 		
 	case BIOCSETOID:
 	case BIOCQUERYOID:
@@ -1799,6 +1777,50 @@ NPF_QueryRegistryRoutine(
 
     return STATUS_SUCCESS;
 
+}
+
+VOID NPF_ResetBufferContents(POPEN_INSTANCE Open)
+{
+	UINT i;
+
+	//
+	// lock all the buffers
+	//
+	for (i = 0 ; i < NCpu ; i++)
+	{
+//#pragma prefast(suppress:8103, "There's no Spinlock leak here, as it's released some lines below.")
+		NdisAcquireSpinLock(&Open->CpuData[i].BufferLock);
+	}
+
+	Open->ReaderSN = 0;
+	Open->WriterSN = 0;
+
+	//
+	// reset their pointers
+	//
+	for (i = 0 ; i < NCpu ; i++)
+	{
+		Open->CpuData[i].C=0;
+		Open->CpuData[i].P=0;
+		Open->CpuData[i].Free = Open->Size;
+		Open->CpuData[i].Accepted = 0;
+		Open->CpuData[i].Dropped = 0;
+		Open->CpuData[i].Received = 0;
+	}
+
+	// 
+	// release the locks in reverse order
+	//
+	i = NCpu;
+
+	do
+	{
+		i--;
+#pragma prefast(suppress:8107, "There's no Spinlock leak here, as it's allocated some lines above.")
+		NdisReleaseSpinLock(&Open->CpuData[i].BufferLock);
+		
+	}
+	while (i != 0);
 }
 
 #if 0
