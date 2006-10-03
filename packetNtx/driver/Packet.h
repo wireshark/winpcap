@@ -47,6 +47,13 @@
 #include "jitter.h"
 #endif
 
+//
+// Needed to disable a warning due to the #pragma prefast directives,
+// that are ignored by the normal DDK compiler
+//
+#ifndef _PREFAST_
+#pragma warning(disable:4068)
+#endif
 
 #include "win_bpf.h"
 
@@ -328,7 +335,7 @@ typedef struct __CPU_Private_Data
 								///< is dropped if there is no more space to store it in the circular buffer that the 
 								///< driver associates to current instance. 
 								///< This number is related to the particular CPU this structure is referring to.
-	volatile ULONG	Processing;	///< Flag. If set to 1, it indicates that the tap is processing a packet on the CPU this structure is referring to.
+	NDIS_SPIN_LOCK BufferLock;	///< It protects the buffer associated with this CPU.
 	PMDL    TransferMdl1;		///< MDL used to map the portion of the buffer that will contain an incoming packet. 
 	PMDL    TransferMdl2;		///< Second MDL used to map the portion of the buffer that will contain an incoming packet. 
 	ULONG	NewP;				///< Used by NdisTransferData() (when we call NdisTransferData, p index must be updated only in the TransferDataComplete.
@@ -401,7 +408,7 @@ typedef struct _OPEN_INSTANCE
 											///< reached.
 	MEM_TYPE			mem_ex;				///< Memory used by the TME virtual co-processor
 	TME_CORE			tme;				///< Data structure containing the virtualization of the TME co-processor
-	NDIS_SPIN_LOCK		MachineLock;		///< SpinLock that protects the mem_ex buffer
+	NDIS_SPIN_LOCK		MachineLock;		///< SpinLock that protects the BPF filter and the TME engine, if in use.
 	UINT				MaxFrameSize;		///< Maximum frame size that the underlying MAC acceptes. Used to perform a check on the 
 											///< size of the frames sent with NPF_Write() or NPF_BufferedWrite().
 	CpuPrivateData		CpuData[32];		///< Pool of kernel buffer structures, one for each CPU.
@@ -409,10 +416,6 @@ typedef struct _OPEN_INSTANCE
 	ULONG				WriterSN;			///< Sequence number of the next packet to be written in the pool of kernel buffers.
 											///< These two sequence numbers are unique for each capture instance.
 	ULONG				Size;				///< Size of each kernel buffer contained in the CpuData field.
-	ULONG				SkipProcessing;		///< Flag. When set to 1, the tap discards each packet. It is set to 1 by the IOCTLs that modify
-											///< some "sensible" fields of the Open structure (e.g. they reallocate the pool of kernel buffers,
-											///< or change the filter program
-
 	ULONG			   AdapterHandleUsageCounter;
 	NDIS_SPIN_LOCK	   AdapterHandleLock;
 	ULONG			   AdapterBindingStatus;	///< Specifies if NPF is still bound to the adapter used by this instance, it's unbinding or it's not bound.	
@@ -443,6 +446,8 @@ struct PacketHeader
 	ULONG SN;								///< Sequence number of the packet.
 	struct bpf_hdr header;					///< bpf header, created by the tap, and copied unmodified to user level programs.
 };
+
+extern ULONG NCpu;
 
 
 #define TRANSMIT_PACKETS 256	///< Maximum number of packets in the transmit packet pool. This value is an upper bound to the number
