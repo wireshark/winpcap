@@ -392,7 +392,7 @@ __inline void GetTimeKQPC(struct timeval *dst, struct time_conv *data)
 __inline void GetTimeRDTSC(struct timeval *dst, struct time_conv *data)
 {
 
-	ULONGLONG tmp;
+	ULONGLONG tmp = 0;
 	__asm
 	{
 		push eax
