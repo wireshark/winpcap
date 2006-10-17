@@ -7,7 +7,7 @@
 // 3.2.0.29	  -->  WinPcap  3.2 alpha1
 // 4.0.0.374  -->  WinPcap  4.0 alpha1
 // 4.0.0.592  -->  WinPcap  4.0 beta1
-// 4.0.0.654  -->  WinPcap  4.0 beta2
+// 4.0.0.655  -->  WinPcap  4.0 beta2
 
 #define WINPCAP_MAJOR	4
 #define WINPCAP_MINOR	0
