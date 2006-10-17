@@ -890,7 +890,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 #else  //x86-64 and IA64
 			if ( cnt != insns)
 			{
-				TRACE_MESSAGE("Error installing the BPF filter. The filter contains TME extensions,"
+				TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Error installing the BPF filter. The filter contains TME extensions,"
 					" not supported on 64bit platforms.");
 
 				SET_FAILURE_INVALID_REQUEST();
