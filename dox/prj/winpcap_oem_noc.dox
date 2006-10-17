@@ -4,7 +4,7 @@
 # Project related configuration options
 #---------------------------------------------------------------------------
 PROJECT_NAME           = "OEM WinPcap"
-PROJECT_NUMBER         = 4.0.2.592
+PROJECT_NUMBER         = 4.0.2.655
 OUTPUT_DIRECTORY       = ./
 CREATE_SUBDIRS         = NO
 OUTPUT_LANGUAGE        = English
