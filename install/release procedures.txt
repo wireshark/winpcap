@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.6 2006/08/09 20:37:50 gianlucav Exp $
+$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.7 2006/08/15 16:09:41 gianlucav Exp $
 
 WINPCAP RELEASE PROCEDURE
 =========================
@@ -112,8 +112,8 @@ How to compile WinPcap
 
 21. Open a Win 2000 DDK Free build environment. Go into 
 	  %BUILD_TREE%\winpcap\packetntx. 
-	Execute "compileDriver.bat". Prefast 1.5.2402 should issue 8 warnings 
-	(20060724). 
+	Execute "compileDriver.bat". Prefast 1.5.2402 should issue 9 warnings 
+	(20061017). 
 	Close the build environment.
 
 22. Open the Win 2003 DDK free x64 build environment.  Go into 
