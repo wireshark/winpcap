@@ -102,6 +102,7 @@ AirpcapSetMinToCopyHandler g_PAirpcapSetMinToCopy;
 AirpcapGetReadEventHandler g_PAirpcapGetReadEvent;
 AirpcapReadHandler g_PAirpcapRead;
 AirpcapGetStatsHandler g_PAirpcapGetStats;
+AirpcapWriteHandler g_PAirpcapWrite;
 #endif // HAVE_AIRPCAP_API
 
 #ifdef HAVE_DAG_API
@@ -299,6 +300,7 @@ VOID PacketLoadLibrariesDynamically()
 		g_PAirpcapGetReadEvent = (AirpcapGetReadEventHandler) GetProcAddress(AirpcapLib, "AirpcapGetReadEvent");
 		g_PAirpcapRead = (AirpcapReadHandler) GetProcAddress(AirpcapLib, "AirpcapRead");
 		g_PAirpcapGetStats = (AirpcapGetStatsHandler) GetProcAddress(AirpcapLib, "AirpcapGetStats");
+		g_PAirpcapWrite = (AirpcapWriteHandler) GetProcAddress(AirpcapLib, "AirpcapWrite");
 
 		//
 		// Make sure that we found everything
@@ -316,7 +318,7 @@ VOID PacketLoadLibrariesDynamically()
 			g_PAirpcapRead == NULL ||
 			g_PAirpcapGetStats == NULL)
 		{
-			// Some problem. A NULL g_PAirpcapOpen disables airpcap adapters check
+			// No, something missing. A NULL g_PAirpcapOpen will disable airpcap adapters check
 			g_PAirpcapOpen = NULL;
 		}
 	}
@@ -2034,6 +2036,19 @@ BOOLEAN PacketSendPacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sync)
 	BOOLEAN		Result;    
 	TRACE_ENTER("PacketSendPacket");
 
+#ifdef HAVE_AIRPCAP_API
+	if(AdapterObject->Flags & INFO_FLAG_AIRPCAP_CARD)
+	{
+		if(g_PAirpcapWrite)
+		{
+			Result = g_PAirpcapWrite(AdapterObject->AirpcapAd, lpPacket->Buffer, lpPacket->Length);
+			TRACE_EXIT("PacketSetMinToCopy");
+			
+			return Result;
+		}
+	}
+#endif // HAVE_AIRPCAP_API
+
 #ifndef _WINNT4
 	if(AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
 	{
@@ -2043,13 +2058,12 @@ BOOLEAN PacketSendPacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sync)
 		return FALSE;
 	}
 #endif // _WINNT4
-
+		
 	Result = WriteFile(AdapterObject->hFile,lpPacket->Buffer,lpPacket->Length,&BytesTransfered,NULL);
 
 	TRACE_EXIT("PacketSendPacket");
 	return Result;
 }
-
 
 /*! 
   \brief Sends a buffer of packets to the network.

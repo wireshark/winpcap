@@ -1386,7 +1386,14 @@ BOOLEAN PacketAddAdapterAirpcap(PCHAR name, PCHAR description)
 
 	TmpAdInfo->Flags = INFO_FLAG_AIRPCAP_CARD;
 
-	AirpcapAdapter = g_PAirpcapOpen(name, ebuf);
+	if(g_PAirpcapOpen)
+	{
+		AirpcapAdapter = g_PAirpcapOpen(name, ebuf);
+	}
+	else
+	{
+		AirpcapAdapter = NULL;
+	}
 
 	if(!AirpcapAdapter)
 	{
