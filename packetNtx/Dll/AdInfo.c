@@ -140,8 +140,13 @@ BOOLEAN PacketGetLinkLayerFromRegistry(LPADAPTER AdapterObject, NetType *type)
 	//get the link-layer speed
     OidData->Oid = OID_GEN_LINK_SPEED;
     OidData->Length = sizeof (ULONG);
-    Status = PacketRequest(AdapterObject,FALSE,OidData);
-	type->LinkSpeed=*((UINT*)OidData->Data)*100;
+	 Status = PacketRequest(AdapterObject,FALSE,OidData);
+
+	 if (Status == TRUE)
+	 {
+		type->LinkSpeed=*((UINT*)OidData->Data)*100;
+	 }
+
     GlobalFreePtr (OidData);
 
 	ODSEx("Media:%.010d" "\t" "Speed=%.010d\n",
@@ -1021,7 +1026,18 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 		//we do not need to terminate the string TmpAdInfo->Description, since we have left a char at the end, and
 		//the memory for TmpAdInfo was zeroed upon allocation
 		
-		PacketGetLinkLayerFromRegistry(adapter, &(TmpAdInfo->LinkLayer));
+		Status = PacketGetLinkLayerFromRegistry(adapter, &(TmpAdInfo->LinkLayer));
+
+		if (Status == FALSE)
+		{
+			ODS("AddAdapter: PacketGetLinkLayerFromRegistry failed. Returning.\n");
+			PacketCloseAdapter(adapter);
+			GlobalFreePtr(OidData);
+			GlobalFreePtr(TmpAdInfo);
+			ReleaseMutex(g_AdaptersInfoMutex);
+			TRACE_EXIT("AddAdapter");
+			return FALSE;
+		}
 		
 		// Retrieve the adapter MAC address querying the NIC driver
 		OidData->Oid = OID_802_3_CURRENT_ADDRESS;	// XXX At the moment only Ethernet is supported.
