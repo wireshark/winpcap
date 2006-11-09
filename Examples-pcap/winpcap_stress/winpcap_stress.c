@@ -29,6 +29,25 @@
  *
  *===========================================================================*/
 
+/////////////////////////////////////////////////////////////////////
+// Program parameters
+/////////////////////////////////////////////////////////////////////
+#undef STRESS_AIRPCAP_TRANSMISSION
+#define NUM_THREADS 16
+#define MAX_NUM_READS 500
+#define MAX_NUM_WRITES 10000
+
+#define WRITES_FREQUENCY 2	// This constant specifies how often a thread will transmit instead of receiving
+							// packets. 
+							//   - 0 means no Tx threads 
+							//   - 1 means all threads are Tx
+							//   - 2 means that 1 thread every 2 is Tx
+							//   - 3 means that 1 thread every 3 is Tx 
+							//   ...and so on
+
+#undef INJECT_FILTERS
+
+/////////////////////////////////////////////////////////////////////
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -36,12 +55,13 @@
 
 #include <pcap.h>
 
+#ifdef STRESS_AIRPCAP_TRANSMISSION
+#include <airpcap.h>
+#endif
+
 #define LINE_LEN 16
 
-#define NUM_THREADS 16
-#define MAX_NUM_READS 500
 
-#define INJECT_FILTERS
 #define FILTER "ether[80:1] < 128 || ether[81:1] > 127 || ether[82:1] < 180 || ether[83:1] > 181" \
 			"|| ether[84:1] < 128 || ether[85:1] > 127 || ether[86:1] < 180 || ether[87:1] > 181" \
 			"|| ether[88:1] < 128 || ether[89:1] > 127 || ether[90:1] < 180 || ether[91:1] > 181" \
@@ -57,11 +77,59 @@ u_int n_packets = 0;
 u_int n_timeouts = 0;
 u_int n_open_errors = 0;
 u_int n_read_errors = 0;
+u_int n_write_errors = 0;
 u_int n_findalldevs_errors = 0;
 u_int n_setfilters = 0;
+u_int thread_id = 0;
 
 CRITICAL_SECTION print_cs;
 
+#define MAX_TX_PACKET_SIZE 1604
+u_char pkt_to_send[MAX_TX_PACKET_SIZE];
+
+
+/////////////////////////////////////////////////////////////////////
+// Radiotap header. Used for 802.11 transmission
+/////////////////////////////////////////////////////////////////////
+
+#ifndef __MINGW32__
+#pragma pack(push)
+#pragma pack(1)
+#endif // __MINGW32__
+typedef struct _tx_ieee80211_radiotap_header 
+{
+	u_int8_t it_version;
+	u_int8_t it_pad;
+	u_int16_t it_len;
+	u_int32_t it_present;
+	u_int8_t it_rate;
+}
+#ifdef __MINGW32__
+__attribute__((__packed__))
+#endif // __MINGW32__
+tx_ieee80211_radiotap_header;
+#ifndef __MINGW32__
+#pragma pack(pop)
+#endif // __MINGW32__
+
+/////////////////////////////////////////////////////////////////////
+// Table of legal radiotap Tx rates
+/////////////////////////////////////////////////////////////////////
+UCHAR TxRateInfoTable[] =
+{
+	2,	
+	4,	
+	11,
+	12,
+	18,
+	22,
+	24,
+	36,
+	48,
+	72,
+	96,
+	108
+};
 
 /////////////////////////////////////////////////////////////////////
 
@@ -108,10 +176,14 @@ DWORD WINAPI pcap_thread(LPVOID arg)
 	struct pcap_pkthdr *header;
 	const u_char *pkt_data;
 	u_int i;
-	u_int n_reads;
+	u_int n_reads, n_writes;
 #ifdef INJECT_FILTERS
 	struct bpf_program fcode;
 	int compile_result;
+#endif
+#ifdef STRESS_AIRPCAP_TRANSMISSION
+	PAirpcapHandle airpcap_handle;
+	tx_ieee80211_radiotap_header *radio_header;
 #endif
 
 	//
@@ -129,78 +201,152 @@ DWORD WINAPI pcap_thread(LPVOID arg)
 		n_open_errors++;
 		return -1;
 	}
-	
+
 	//
-	// Read the packets
+	// Decide if this is going to be a read or write thread
 	//
-	if(MAX_NUM_READS)
-	{
-		n_reads = rand() % MAX_NUM_READS;
-	}
-	else
-	{
-		n_reads = 0;
-	}
 
-	for(i = 0; i < n_reads; i++)
+	if((WRITES_FREQUENCY != 0) && ((thread_id++) % WRITES_FREQUENCY == 0))
 	{
-		res = pcap_next_ex(fp, &header, &pkt_data);
-		
-		if(res < 0)
+		//
+		// Write thread
+		//
+		if(MAX_NUM_WRITES)
 		{
-			break;
-		}
-
-#ifdef INJECT_FILTERS
-
-		EnterCriticalSection(&print_cs);
-		compile_result = pcap_compile(fp, &fcode, FILTER, 1, 0xFFFFFFFF);
-		LeaveCriticalSection(&print_cs);
-
-
-
-		//compile the filter
-		if( compile_result < 0)
-		{
-			fprintf(stderr,"Error compiling filter: wrong syntax.\n");
+			n_writes = rand() % MAX_NUM_READS;
 		}
 		else
 		{
-			//set the filterf
-			if(pcap_setfilter(fp, &fcode)<0)
+			n_writes = 0;
+		}
+		
+		//
+		// Get the airpcap handle so we can change wireless-specific settings
+		//
+#ifdef STRESS_AIRPCAP_TRANSMISSION
+		airpcap_handle = pcap_get_airpcap_handle(fp);
+		
+		if(airpcap_handle != NULL)
+		{
+			//
+			// Configure the AirPcap adapter
+			//
+			
+			// Tell the adapter that the packets we'll send don't include the FCS
+			if(!AirpcapSetFcsPresence(airpcap_handle, FALSE))
 			{
-				fprintf(stderr,"Error setting the filter\n");
+				printf("Error setting the Fcs presence: %s\n", AirpcapGetLastError(airpcap_handle));
+				pcap_close(fp);
+				return -1;
+			}
+			
+			//
+			// Set the link layer to 802.11 + radiotap
+			//
+			if(!AirpcapSetLinkType(airpcap_handle, AIRPCAP_LT_802_11_PLUS_RADIO))
+			{
+				printf("Error setting the link layer: %s\n", AirpcapGetLastError(airpcap_handle));
+				pcap_close(fp);
+				return -1;
+			}
+			
+			//
+			// Create the radiotap header
+			//
+			radio_header = (tx_ieee80211_radiotap_header*)pkt_to_send;
+			radio_header->it_version = 0;
+			radio_header->it_pad = 0;
+			radio_header->it_len = sizeof(tx_ieee80211_radiotap_header);
+			radio_header->it_present = 1 << 2;	// bit 2 is the rate
+			radio_header->it_rate = TxRateInfoTable[rand() % (sizeof(TxRateInfoTable) / sizeof(TxRateInfoTable[0]))];
+		}
+#endif
+		for(i = 0; i < n_writes; i++)
+		{
+			if(pcap_sendpacket(fp, pkt_to_send, rand() % MAX_TX_PACKET_SIZE) != 0)
+			{
+//				EnterCriticalSection(&print_cs);
+//				printf("Write Error: %s\n", pcap_geterr(fp));
+//				LeaveCriticalSection(&print_cs);
+				n_write_errors++;
+			}
+		}
+	}
+	else
+	{
+		
+		//
+		// Read Thread
+		//
+		if(MAX_NUM_READS)
+		{
+			n_reads = rand() % MAX_NUM_READS;
+		}
+		else
+		{
+			n_reads = 0;
+		}
+		
+		for(i = 0; i < n_reads; i++)
+		{
+			res = pcap_next_ex(fp, &header, &pkt_data);
+			
+			if(res < 0)
+			{
+				break;
+			}
+			
+#ifdef INJECT_FILTERS
+
+			EnterCriticalSection(&print_cs);
+			compile_result = pcap_compile(fp, &fcode, FILTER, 1, 0xFFFFFFFF);
+			LeaveCriticalSection(&print_cs);
+			
+			
+			
+			//compile the filter
+			if( compile_result < 0)
+			{
+				fprintf(stderr,"Error compiling filter: wrong syntax.\n");
 			}
 			else
 			{
-				InterlockedIncrement(&n_setfilters);
+				//set the filterf
+				if(pcap_setfilter(fp, &fcode)<0)
+				{
+					fprintf(stderr,"Error setting the filter\n");
+				}
+				else
+				{
+					InterlockedIncrement(&n_setfilters);
+				}
+				pcap_freecode(&fcode);
 			}
-			pcap_freecode(&fcode);
-		}
 #endif
-
-		if(res == 0)
-		{
-			// Timeout elapsed
-			n_timeouts++;
-			continue;
+			
+			if(res == 0)
+			{
+				// Timeout elapsed
+				n_timeouts++;
+				continue;
+			}
+			
+			
+			// print pkt timestamp and pkt len
+			n_packets++;
 		}
-
-
-		// print pkt timestamp and pkt len
-		n_packets++;
+		
+		if(res == -1)
+		{
+			EnterCriticalSection(&print_cs);
+			printf("Read error: %s\n", pcap_geterr(fp));
+			LeaveCriticalSection(&print_cs);
+			n_read_errors++;
+		}
 	}
-
-	if(res == -1)
-	{
-		EnterCriticalSection(&print_cs);
-		printf("Read error: %s\n", pcap_geterr(fp));
-		LeaveCriticalSection(&print_cs);
-		n_read_errors++;
-	}
-
+	
 	pcap_close(fp);
-
+	
 	return 1;
 }
 
@@ -217,6 +363,9 @@ int main(int argc, char **argv)
 	char* string_to_match;
 	DWORD WaitRes;
 
+	//
+	// Parse input
+	//
 	if(argc == 1)
 	{
 		n_threads = NUM_THREADS;
@@ -240,6 +389,17 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	//
+	// Init the Tx packet
+	//
+	for(i = 0; i < MAX_TX_PACKET_SIZE; i++)
+	{
+		pkt_to_send[i] = i & 0xff; 
+	}
+
+	//
+	// Allocate storage for the threads list
+	//
 	hThreads = (HANDLE*)malloc(n_threads * sizeof(HANDLE));
 	if(!hThreads)
 	{
@@ -322,7 +482,7 @@ int main(int argc, char **argv)
 				printf("error creating thread. Quitting\n");
 				sigh(42);
 			}
-			
+
 			n_iterations++;
 			i++;
 		}
