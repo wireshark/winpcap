@@ -1532,6 +1532,26 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			if (FunctionCode == BIOCQUERYOID) 
 			{
 				OidData->Length = pRequest->Request.DATA.QUERY_INFORMATION.BytesWritten;
+
+				if (Status == NDIS_STATUS_SUCCESS)
+				{
+					//
+					// check for the stupid bug of the Nortel driver ipsecw2k.sys v. 4.10.0.0 that doesn't set the BytesWritten correctly
+					// The driver is the one shipped with Nortel client Contivity VPN Client V04_65.18, and the MD5 for the buggy (unsigned) driver
+					// is 3c2ff8886976214959db7d7ffaefe724 *ipsecw2k.sys (there are multiple copies of this binary with the same exact version info!)
+					// 
+					// The (certified) driver shipped with Nortel client Contivity VPN Client V04_65.320 doesn't seem affected by the bug.
+					//
+					if (pRequest->Request.DATA.QUERY_INFORMATION.BytesWritten > pRequest->Request.DATA.QUERY_INFORMATION.InformationBufferLength)
+					{
+						TRACE_MESSAGE2(PACKET_DEBUG_LOUD, "Bogus return from NdisRequest (query): Bytes Written (%u) > InfoBufferLength (%u)!!",
+							pRequest->Request.DATA.QUERY_INFORMATION.BytesWritten,
+							pRequest->Request.DATA.QUERY_INFORMATION.InformationBufferLength);
+
+						Status = NDIS_STATUS_INVALID_DATA;
+					}
+				}
+
 				TRACE_MESSAGE1(PACKET_DEBUG_LOUD, "BIOCQUERYOID completed, BytesWritten = %u",OidData->Length);
 			}
 		}
