@@ -2531,6 +2531,16 @@ BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
 	
 	AdapterObject->ReadTimeOut = timeout;
 	
+#ifdef HAVE_AIRPCAP_API
+	//
+	// Timeout with AirPcap is handled at user level
+	//
+	if(AdapterObject->Flags & INFO_FLAG_AIRPCAP_CARD)
+	{
+		return TRUE;
+	}
+#endif // HAVE_AIRPCAP_API
+
 #ifdef HAVE_DAG_API
 	// Under DAG, we simply store the timeout value and then 
 	if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
@@ -2559,7 +2569,7 @@ BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
 			return TRUE;
 	}
 #endif // HAVE_DAG_API
-	
+		
     Result = DeviceIoControl(AdapterObject->hFile,pBIOCSRTIMEOUT,&DriverTimeOut,4,NULL,0,&BytesReturned,NULL);
 	
 	TRACE_EXIT("PacketSetReadTimeout");
