@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "WANPACKET_EXPORTS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\..\..\Common" /I "..\..\driver" /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../../z1211u/airpcap/" /D "NDEBUG" /D "_MBCS" /D "_USRDLL" /D "WANPACKET_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "HAVE_DAG_API" /D "__NPF_x86__" /FD /c
+# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\..\Common" /I "..\..\driver" /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../../z1211u/airpcap/" /D "NDEBUG" /D "_MBCS" /D "_USRDLL" /D "WANPACKET_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "HAVE_DAG_API" /D "__NPF_x86__" /FD /c
 # SUBTRACT CPP /YX /Yc /Yu
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -54,7 +54,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 npptools.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386 /libpath:"..\..\WanPacket\Release\\"
+# ADD LINK32 npptools.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /libpath:"..\..\WanPacket\Release\\" /opt:ref
+# SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "WanPacket - Win32 Debug"
 
