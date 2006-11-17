@@ -4,6 +4,7 @@ mkdir installer\distribution\2000	 2>nul >nul
 mkdir installer\distribution\NT		 2>nul >nul
 mkdir installer\distribution\9x		 2>nul >nul
 mkdir installer\distribution\x86-64	 2>nul >nul
+mkdir installer\distribution\Vista_x86	 2>nul >nul
 
 copy ..\packetNtx\driver\bin\2k\i386\npf.sys installer\distribution\2000\
 copy ..\packetNtx\driver\bin\2k\i386\npf.pdb installer\distribution\2000\
@@ -14,6 +15,7 @@ copy ..\packetNtx\driver\bin\xp\amd64\npf.sys installer\distribution\x86-64\
 copy ..\packetNtx\driver\bin\xp\amd64\npf.pdb installer\distribution\x86-64\
 
 copy ..\packetNtx\Dll\Project\Release\Packet.dll installer\distribution\2000\
+copy ..\packetNtx\Dll\Project\Release_Vista\Packet.dll installer\distribution\Vista_x86\
 copy ..\packetNtx\Dll\Project\NT4_Release\Packet.dll installer\distribution\NT\
 copy ..\packetNtx\Dll\WanPacket\Release\WanPacket.dll installer\distribution\2000\
 echo REMEMBER TO COPY npf.vxd

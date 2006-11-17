@@ -44,12 +44,12 @@
   !define WINPCAP_PRJ_MAJOR "4"
   !define WINPCAP_PRJ_MINOR "0"
   !define WINPCAP_PRJ_REV "0"
-  !define WINPCAP_PRJ_BUILD "655"
-  !define WINPCAP_PROJ_VERSION_DOTTED "4.0.0.655"
+  !define WINPCAP_PRJ_BUILD "686"
+  !define WINPCAP_PROJ_VERSION_DOTTED "4.0.0.686"
   !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2006 CACE Technologies"
-  !define WINPCAP_PRODUCT_NAME "WinPcap 4.0 beta 2"
+  !define WINPCAP_PRODUCT_NAME "WinPcap 4.0 build 686"
   !define WINPCAP_COMPANY_NAME "CACE Technologies"
-  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_beta2.exe"
+  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_build686.exe"
 
 ; letter 'r'
   !define REINSTALL_FLAG "114"  
@@ -583,7 +583,7 @@ CopyFiles9x:
     Goto EndCopy
 
 CopyFilesVista:
-    File "Distribution\nt\packet.dll"
+    File "Distribution\Vista_x86\packet.dll"
 
 	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" CopyX86DriverVistaLabel
 	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" CopyAMD64DriverVistaLabel
