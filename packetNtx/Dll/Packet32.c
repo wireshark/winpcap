@@ -45,7 +45,10 @@
 
 #include "Packet32-Int.h"
 
+#ifdef HAVE_WANPACKET_API
 #include "wanpacket/wanpacket.h"
+#endif //HAVE_WANPACKET_API
+
 #include "debug.h"
 
 #ifdef _WINNT4
