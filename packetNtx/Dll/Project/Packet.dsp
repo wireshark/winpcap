@@ -4,7 +4,7 @@
 
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
 
-CFG=PacketNT - Win32 Debug No NpfIm
+CFG=PacketNT - Win32 Debug Vista
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
 !MESSAGE 
@@ -13,7 +13,7 @@ CFG=PacketNT - Win32 Debug No NpfIm
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
-!MESSAGE NMAKE /f "Packet.mak" CFG="PacketNT - Win32 Debug No NpfIm"
+!MESSAGE NMAKE /f "Packet.mak" CFG="PacketNT - Win32 Debug Vista"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
@@ -29,6 +29,9 @@ CFG=PacketNT - Win32 Debug No NpfIm
 !MESSAGE "PacketNT - Win32 Release No AirPcap" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "PacketNT - Win32 Debug No NpfIm" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "PacketNT - Win32 Release No NpfIm" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "PacketNT - Win32 Debug Vista" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "PacketNT - Win32 Release Vista" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "PacketNT - Win32 Release Vista LOG_TO_FILE" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
@@ -53,7 +56,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /I "../../../../NpfIm_DevPack" /D "NDEBUG" /D "HAVE_AIRPCAP_API" /D "WIN32" /D "_WINDOWS" /D "HAVE_WANPACKET_API" /D "HAVE_IPHELPER_API" /D "HAVE_NPFIM_API" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /I "../../../../NpfIm_DevPack" /D "NDEBUG" /D "HAVE_AIRPCAP_API" /D "WIN32" /D "_WINDOWS" /D "HAVE_IPHELPER_API" /D "HAVE_NPFIM_API" /D "HAVE_WANPACKET_API" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "NDEBUG"
@@ -68,7 +71,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy               $(OutDir)\packet.lib               ..\..\..\Common\ 
+PostBuild_Cmds=copy                 $(OutDir)\packet.lib                 ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug"
@@ -85,7 +88,7 @@ PostBuild_Cmds=copy               $(OutDir)\packet.lib               ..\..\..\Co
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /I "../../../../NpfIm_DevPack" /D "HAVE_AIRPCAP_API" /D "WIN32" /D "_WINDOWS" /D "HAVE_WANPACKET_API" /D "HAVE_IPHELPER_API" /D "HAVE_NPFIM_API" /YX /FD /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /I "../../../../NpfIm_DevPack" /D "HAVE_AIRPCAP_API" /D "WIN32" /D "_WINDOWS" /D "HAVE_IPHELPER_API" /D "HAVE_NPFIM_API" /D "HAVE_WANPACKET_API" /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "_DEBUG"
@@ -100,7 +103,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Debug
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy               $(OutDir)\packet.lib               ..\..\..\Common\ 
+PostBuild_Cmds=copy                 $(OutDir)\packet.lib                 ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Debug"
@@ -134,7 +137,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\NT4_Debug
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy               $(OutDir)\packet.lib               ..\..\..\Common\ 
+PostBuild_Cmds=copy                 $(OutDir)\packet.lib                 ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Release"
@@ -167,7 +170,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\NT4_Release
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy               $(OutDir)\packet.lib               ..\..\..\Common\ 
+PostBuild_Cmds=copy                 $(OutDir)\packet.lib                 ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug LOG_TO_FILE"
@@ -201,7 +204,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Debug_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy               $(OutDir)\packet.lib               ..\..\..\Common\ 
+PostBuild_Cmds=copy                 $(OutDir)\packet.lib                 ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release LOG_TO_FILE"
@@ -235,7 +238,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy               $(OutDir)\packet.lib               ..\..\..\Common\ 
+PostBuild_Cmds=copy                 $(OutDir)\packet.lib                 ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Debug LOG_TO_FILE"
@@ -269,7 +272,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\NT4_Debug_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy               $(OutDir)\packet.lib               ..\..\..\Common\ 
+PostBuild_Cmds=copy                 $(OutDir)\packet.lib                 ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Release LOG_TO_FILE"
@@ -303,7 +306,7 @@ LINK32=link.exe
 OutDir=.\NT4_Release_LOG_TO_FILE
 SOURCE="$(InputPath)"
 PostBuild_Desc=Copy packet.lib into Common
-PostBuild_Cmds=copy               $(OutDir)\packet.lib               ..\..\..\Common\ 
+PostBuild_Cmds=copy                 $(OutDir)\packet.lib                 ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug No AirPcap"
@@ -337,7 +340,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Debug_No_AirPcap
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy               $(OutDir)\packet.lib               ..\..\..\Common\ 
+PostBuild_Cmds=copy                 $(OutDir)\packet.lib                 ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release No AirPcap"
@@ -370,7 +373,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release_No_AirPcap
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy               $(OutDir)\packet.lib               ..\..\..\Common\ 
+PostBuild_Cmds=copy                 $(OutDir)\packet.lib                 ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug No NpfIm"
@@ -404,7 +407,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Debug_No_NpfIm
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy               $(OutDir)\packet.lib               ..\..\..\Common\ 
+PostBuild_Cmds=copy                 $(OutDir)\packet.lib                 ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release No NpfIm"
@@ -437,7 +440,111 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release_No_NpfIm
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy               $(OutDir)\packet.lib               ..\..\..\Common\ 
+PostBuild_Cmds=copy                 $(OutDir)\packet.lib                 ..\..\..\Common\ 
+# End Special Build Tool
+
+!ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug Vista"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 1
+# PROP BASE Output_Dir "PacketNT___Win32_Debug_Vista"
+# PROP BASE Intermediate_Dir "PacketNT___Win32_Debug_Vista"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 1
+# PROP Output_Dir "Debug_Vista"
+# PROP Intermediate_Dir "Debug_Vista"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /I "../../../../NpfIm_DevPack" /D "HAVE_AIRPCAP_API" /D "WIN32" /D "_WINDOWS" /D "HAVE_IPHELPER_API" /D "HAVE_NPFIM_API" /YX /FD /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /I "../../../../NpfIm_DevPack" /D "HAVE_AIRPCAP_API" /D "WIN32" /D "_WINDOWS" /D "HAVE_IPHELPER_API" /D "HAVE_NPFIM_API" /YX /FD /c
+# ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
+# ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
+# ADD BASE RSC /l 0x410 /d "_DEBUG"
+# ADD RSC /l 0x409 /d "_DEBUG" /d "_WINVISTA"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 wsock32.lib ..\wanpacket\debug\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept /libpath:"../../../../Airpcap_Devpack/lib/"
+# SUBTRACT BASE LINK32 /pdb:none /incremental:no
+# ADD LINK32 wsock32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept /libpath:"../../../../Airpcap_Devpack/lib/"
+# SUBTRACT LINK32 /pdb:none /incremental:no
+# Begin Special Build Tool
+OutDir=.\Debug_Vista
+SOURCE="$(InputPath)"
+PostBuild_Cmds=copy                 $(OutDir)\packet.lib                 ..\..\..\Common\ 
+# End Special Build Tool
+
+!ELSEIF  "$(CFG)" == "PacketNT - Win32 Release Vista"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "PacketNT___Win32_Release_Vista"
+# PROP BASE Intermediate_Dir "PacketNT___Win32_Release_Vista"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "Release_Vista"
+# PROP Intermediate_Dir "Release_Vista"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MT /W3 /GX /Zi /O2 /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /I "../../../../NpfIm_DevPack" /D "NDEBUG" /D "HAVE_AIRPCAP_API" /D "WIN32" /D "_WINDOWS" /D "HAVE_IPHELPER_API" /D "HAVE_NPFIM_API" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /I "../../../../NpfIm_DevPack" /D "NDEBUG" /D "HAVE_AIRPCAP_API" /D "WIN32" /D "_WINDOWS" /D "HAVE_IPHELPER_API" /D "HAVE_NPFIM_API" /YX /FD /c
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
+# ADD BASE RSC /l 0x410 /d "NDEBUG"
+# ADD RSC /l 0x410 /d "NDEBUG" /d "_WINVISTA"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 Ws2_32.lib ..\wanpacket\release\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /libpath:"../../../../Airpcap_Devpack/lib/" /opt:ref
+# SUBTRACT BASE LINK32 /pdb:none
+# ADD LINK32 Ws2_32.lib  kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /libpath:"../../../../Airpcap_Devpack/lib/" /opt:ref
+# SUBTRACT LINK32 /pdb:none
+# Begin Special Build Tool
+OutDir=.\Release_Vista
+SOURCE="$(InputPath)"
+PostBuild_Cmds=copy                 $(OutDir)\packet.lib                 ..\..\..\Common\ 
+# End Special Build Tool
+
+!ELSEIF  "$(CFG)" == "PacketNT - Win32 Release Vista LOG_TO_FILE"
+
+# PROP BASE Use_MFC 0
+# PROP BASE Use_Debug_Libraries 0
+# PROP BASE Output_Dir "PacketNT___Win32_Release_Vista_LOG_TO_FILE"
+# PROP BASE Intermediate_Dir "PacketNT___Win32_Release_Vista_LOG_TO_FILE"
+# PROP BASE Ignore_Export_Lib 0
+# PROP BASE Target_Dir ""
+# PROP Use_MFC 0
+# PROP Use_Debug_Libraries 0
+# PROP Output_Dir "Release_Vista_LOG_TO_FILE"
+# PROP Intermediate_Dir "Release_Vista_LOG_TO_FILE"
+# PROP Ignore_Export_Lib 0
+# PROP Target_Dir ""
+# ADD BASE CPP /nologo /MT /W4 /GX /Zi /O2 /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /I "../../../../NpfIm_DevPack" /D "NDEBUG" /D "HAVE_AIRPCAP_API" /D "_DEBUG_TO_FILE" /D "WIN32" /D "_WINDOWS" /D "HAVE_WANPACKET_API" /D "HAVE_IPHELPER_API" /D "HAVE_NPFIM_API" /FR /YX /FD /c
+# SUBTRACT BASE CPP /u
+# ADD CPP /nologo /MT /W4 /GX /Zi /O2 /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /I "../../../../NpfIm_DevPack" /D "NDEBUG" /D "HAVE_AIRPCAP_API" /D "_DEBUG_TO_FILE" /D "WIN32" /D "_WINDOWS" /D "HAVE_IPHELPER_API" /D "HAVE_NPFIM_API" /FR /YX /FD /c
+# SUBTRACT CPP /u
+# ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
+# ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
+# ADD BASE RSC /l 0x410 /d "NDEBUG"
+# ADD RSC /l 0x410 /d "NDEBUG" /d "_WINVISTA"
+BSC32=bscmake.exe
+# ADD BASE BSC32 /nologo
+# ADD BSC32 /nologo
+LINK32=link.exe
+# ADD BASE LINK32 Ws2_32.lib ..\wanpacket\release\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /libpath:"../../../../Airpcap_Devpack/lib/" /opt:ref
+# SUBTRACT BASE LINK32 /pdb:none
+# ADD LINK32 Ws2_32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /libpath:"../../../../Airpcap_Devpack/lib/" /opt:ref
+# SUBTRACT LINK32 /pdb:none
+# Begin Special Build Tool
+OutDir=.\Release_Vista_LOG_TO_FILE
+SOURCE="$(InputPath)"
+PostBuild_Cmds=copy                 $(OutDir)\packet.lib                 ..\..\..\Common\ 
 # End Special Build Tool
 
 !ENDIF 
@@ -456,6 +563,9 @@ PostBuild_Cmds=copy               $(OutDir)\packet.lib               ..\..\..\Co
 # Name "PacketNT - Win32 Release No AirPcap"
 # Name "PacketNT - Win32 Debug No NpfIm"
 # Name "PacketNT - Win32 Release No NpfIm"
+# Name "PacketNT - Win32 Debug Vista"
+# Name "PacketNT - Win32 Release Vista"
+# Name "PacketNT - Win32 Release Vista LOG_TO_FILE"
 # Begin Source File
 
 SOURCE=..\AdInfo.c
