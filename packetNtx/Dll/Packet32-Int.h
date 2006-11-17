@@ -38,17 +38,20 @@
 // opening of firewire adapters 
 #define FIREWIRE_SUBSTR L"1394"
 
+#ifdef HAVE_NPFIM_API
+#include "NpfImExt.h"
+#endif //HAVE_NPFIM_API
+
 //
 // Internal functions
 //
 VOID PacketLoadLibrariesDynamically();
 void PacketPopulateAdaptersInfoList();
-PWCHAR SChar2WChar(PCHAR string);
-PCHAR WChar2SChar(PWCHAR string);
 BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLen);
 PADAPTER_INFO PacketFindAdInfo(PCHAR AdapterName);
 BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName);
 BOOLEAN IsFireWire(TCHAR *AdapterDesc);
+LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName);
 
 // 
 // Definitions and functions specific to the CACETech airpcap API
@@ -69,10 +72,6 @@ typedef BOOL (*AirpcapReadHandler)(PAirpcapHandle Handle, PUCHAR BufferToFill, U
 typedef BOOL (*AirpcapGetStatsHandler)(PAirpcapHandle Handle, AirpcapStats *Stats);					///< prototype used to dynamically load the dag dll
 typedef BOOL (*AirpcapWriteHandler)(PAirpcapHandle Handle, PCHAR TxPacket, ULONG PacketLen);		///< prototype used to dynamically load the dag dll
 
-#endif // HAVE_AIRPCAP_API
-
-#ifdef HAVE_AIRPCAP_API
-LPADAPTER PacketOpenAdapterAirpcap(PCHAR AdapterName);
 #endif // HAVE_AIRPCAP_API
 
 
