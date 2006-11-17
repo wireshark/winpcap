@@ -33,36 +33,28 @@
 #ifndef __PACKET_DEBUG_393073863432093179878957
 #define __PACKET_DEBUG_393073863432093179878957
 
-#include <windows.h>
+#ifdef _DEBUG_TO_FILE
+
 #include <stdio.h>
+#include <windows.h>
 
 extern CHAR g_LogFileName[1024];
 
-#if _DBG
-#define ODS(_x) OutputDebugString(TEXT(_x))
-#define ODSEx(_x, _y)
-#else
-#ifdef _DEBUG_TO_FILE
+#pragma warning(push)
+#pragma warning(disable : 4127)
 
-/*! 
-  \brief Macro to print a debug string. The behavior differs depending on the debug level
-*/
-
-/*! 
-  \brief Macro to print debug data with the printf convention. The behavior differs depending on 
-  the debug level
-*/
-static __inline void OutputDebugToFile(char *_x, ...) 
-{ 
+static VOID OutputDebugStringVA(LPCSTR Format, ...)
+{
 	FILE *f;											
 	SYSTEMTIME LocalTime;								
 	va_list Marker;
 	DWORD dwThreadId;
 	int loops = 0;
+	DWORD dwLastError = GetLastError();
 
 	dwThreadId = GetCurrentThreadId();
 
-	va_start( Marker, _x );     /* Initialize variable arguments. */
+	va_start( Marker, Format );     /* Initialize variable arguments. */
 														
 	GetLocalTime(&LocalTime);							
 														
@@ -78,10 +70,12 @@ static __inline void OutputDebugToFile(char *_x, ...)
 		loops++;
 
 		if (loops > 10)
+		{
+			SetLastError(dwLastError);
 			return;
+		}
 	}
 	while(1);
-	
 
 	fprintf(f, "[%.08X] %.04u-%.02u-%.02u %.02u:%02u:%02u ",
 			dwThreadId,
@@ -91,37 +85,84 @@ static __inline void OutputDebugToFile(char *_x, ...)
 			LocalTime.wHour,							
 			LocalTime.wMinute,							
 			LocalTime.wSecond);										
-	vfprintf(f, _x, Marker);
+	vfprintf(f, Format, Marker);
 	
 	fclose(f);											
+
+
+	SetLastError(dwLastError);
 }
 
-static __inline void TRACE_PRINT_OS_INFO()
+#pragma warning(pop)
+
+#elif defined (_DBG)
+
+#include <strsafe.h>
+
+static VOID OutputDebugStringVA(LPCSTR Format, ...)
+{
+	va_list Marker;
+	CHAR string[1024];
+	DWORD dwLastError = GetLastError();
+
+	va_start( Marker, Format );     /* Initialize variable arguments. */
+
+	StringCchVPrintfA(string, sizeof(string), Format, Marker);
+
+	OutputDebugStringA(string);
+
+	va_end(Marker);
+
+	SetLastError(dwLastError);
+}
+#endif
+
+
+#if defined(_DBG) || defined(_DEBUG_TO_FILE)
+
+#ifdef _DBG
+#define TRACE_PRINT_DLLMAIN(_x)			OutputDebugStringVA ("    " _x "\n")
+#else
+#define TRACE_PRINT_DLLMAIN(_x)			//we cannot use the _DEBUG_TO_FILE stuff from DllMain!!
+#endif
+
+#define TRACE_ENTER(_x)					OutputDebugStringVA ("--> " _x "\n")
+#define TRACE_EXIT(_x)					OutputDebugStringVA ("<-- " _x "\n")
+#define TRACE_PRINT(_x)					OutputDebugStringVA ("    " _x "\n")
+#define TRACE_PRINT1(_x, _y)			OutputDebugStringVA("    " _x "\n", _y)   		
+#define TRACE_PRINT2(_x, _p1, _p2)		OutputDebugStringVA("    " _x "\n", _p1, _p2)   		
+#define TRACE_PRINT4(_x, _p1, _p2, _p3, _p4) OutputDebugStringVA("    " _x "\n", _p1, _p2, _p3, _p4) 
+#define TRACE_PRINT6(_x, _p1, _p2, _p3, _p4, _p5, _p6) OutputDebugStringVA("    " _x "\n", _p1, _p2, _p3, _p4, _p5, _p6 )
+
+static __forceinline void TRACE_PRINT_OS_INFO()
 {
 	HKEY	hKey;
 	CHAR buffer[1024];
 	DWORD size = sizeof(buffer);
 	DWORD type;
+	DWORD dwLastError;
 
-	OutputDebugToFile("********************* OS info.********************* \n");
+	dwLastError = GetLastError();
+
+	TRACE_PRINT("********************* OS info.*********************");
 	buffer[size-1] = 0;
 	size = sizeof(buffer);
 	if(	RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
 	{
-		if (RegQueryValueExA(hKey, "PROCESSOR_ARCHITECTURE", 0, &type, buffer, &size) == ERROR_SUCCESS && type == REG_SZ)
+		if (RegQueryValueExA(hKey, "PROCESSOR_ARCHITECTURE", 0, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS && type == REG_SZ)
 		{
-			OutputDebugToFile("Architecture = %s\n", buffer);
+			OutputDebugStringVA("Architecture = %s\n", buffer);
 		}
 		else
 		{
-			OutputDebugToFile("Architecture = <UNKNOWN>\n");
+			OutputDebugStringVA("Architecture = <UNKNOWN>\n");
 		}
 		
 		RegCloseKey(hKey);
 	}
 	else
 	{
-		OutputDebugToFile("Architecture = <UNKNOWN>\n");
+		OutputDebugStringVA("Architecture = <UNKNOWN>\n");
 	}
 
 	buffer[size-1] = 0;
@@ -129,67 +170,60 @@ static __inline void TRACE_PRINT_OS_INFO()
 
 	if(	RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
 	{
-		if (RegQueryValueExA(hKey, "CurrentVersion", 0, &type, buffer, &size) == ERROR_SUCCESS && type == REG_SZ)
+		if (RegQueryValueExA(hKey, "CurrentVersion", 0, &type,  (LPBYTE)buffer, &size) == ERROR_SUCCESS && type == REG_SZ)
 		{
-			OutputDebugToFile("Windows version = %s\n", buffer);
+			OutputDebugStringVA("Windows version = %s\n", buffer);
 		}
 		else
 		{
-			OutputDebugToFile("Windows version = <UNKNOWN>\n");
+			OutputDebugStringVA("Windows version = <UNKNOWN>\n");
 		}
 		
 		RegCloseKey(hKey);
 	}
 	else
 	{
-		OutputDebugToFile("Windows version = <UNKNOWN>\n");
+		OutputDebugStringVA("Windows version = <UNKNOWN>\n");
 	}
 
 	buffer[size-1] = 0;
 	size = sizeof(buffer);
 	if(	RegOpenKeyExA(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", 0, KEY_READ, &hKey) == ERROR_SUCCESS)
 	{
-		if (RegQueryValueExA(hKey, "CurrentType", 0, &type, buffer, &size) == ERROR_SUCCESS && type == REG_SZ)
+		if (RegQueryValueExA(hKey, "CurrentType", 0, &type,  (LPBYTE)buffer, &size) == ERROR_SUCCESS && type == REG_SZ)
 		{
-			OutputDebugToFile("Windows CurrentType = %s\n", buffer);
+			OutputDebugStringVA("Windows CurrentType = %s\n", buffer);
 		}
 		else
 		{
-			OutputDebugToFile("Windows CurrentType = <UNKNOWN>\n");
+			OutputDebugStringVA("Windows CurrentType = <UNKNOWN>\n");
 		}
 		
 		RegCloseKey(hKey);
 	}
 	else
 	{
-		OutputDebugToFile("Windows CurrentType = <UNKNOWN>\n");
+		OutputDebugStringVA("Windows CurrentType = <UNKNOWN>\n");
 	}
 
-	OutputDebugToFile("*************************************************** \n");
+	OutputDebugStringVA("*************************************************** \n");
 
-
+	SetLastError(dwLastError);
 }
-
-#define ODSEx OutputDebugToFile
-
-__inline static  void ODS(char* _x) 
-{										
-	OutputDebugToFile(_x);
-}
-
-LONG PacketDumpRegistryKey(PCHAR KeyName, PCHAR FileName);
 #else
 
-static __inline void ODSEx(char *_x, ...){} 
-static __inline void ODS(char *_x){} 
-#define TRACE_PRINT_OS_INFO() 
-//#define ODS(_x)		
-//#define ODSEx(_x, _y)
-#endif
+#define TRACE_ENTER(_x)
+#define TRACE_PRINT_DLLMAIN(_x)
+#define TRACE_EXIT(_x) 
+#define TRACE_PRINT(_x)
+#define TRACE_PRINT1(_x, _y)
+#define TRACE_PRINT2(_x, _p1, _p2)
+#define TRACE_PRINT4(_x, _p1, _p2, _p3, _p4) 
+#define TRACE_PRINT6(_x, _p1, _p2, _p3, _p4, _p5, _p6) 
+#define TRACE_PRINT_OS_INFO()
+
 #endif
 
-#define TRACE_ENTER(_x) ODS("-->" _x "\n")
-#define TRACE_EXIT(_x) ODS("<--" _x "\n")
 
 
 #endif //__PACKET_DEBUG_393073863432093179878957
