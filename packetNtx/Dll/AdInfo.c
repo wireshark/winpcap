@@ -42,7 +42,12 @@
 
 #define UNICODE 1
 
-#include <stdio.h>
+#pragma warning (disable : 4127)  //conditional expression is constant. Used for do{}while(FALSE) loops.
+
+#if (MSC_VER < 1300)
+#pragma warning (disable : 4710) // inline function not expanded. used for strsafe functions
+#endif
+
 #include <packet32.h>
 #include "Packet32-Int.h"
 #include "debug.h"
@@ -51,15 +56,16 @@
 #include <windows.h>
 #include <windowsx.h>
 #include <Iphlpapi.h>
-#include <IPIfCons.h>
-#include <stdio.h>
+
+
+
+#include <strsafe.h>
 
 #include <ntddndis.h>
 
 #include <WpcapNames.h>
 
-LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName);
-BOOLEAN PacketAddFakeNdisWanAdapter();
+static BOOLEAN PacketAddFakeNdisWanAdapter();
 
 PADAPTER_INFO g_AdaptersInfoList = NULL;	///< Head of the adapter information list. This list is populated when packet.dll is linked by the application.
 HANDLE g_AdaptersInfoMutex = NULL;		///< Mutex that protects the adapter information list. NOTE: every API that takes an ADAPTER_INFO as parameter assumes that it has been called with the mutex acquired.
@@ -117,44 +123,44 @@ extern WCHAR *WinPcapKeyBuffer;
   - NdisMediumAtm: ATM 
   - NdisMediumArcnet878_2: ARCNET (878.2) 
 */
-BOOLEAN PacketGetLinkLayerFromRegistry(LPADAPTER AdapterObject, NetType *type)
+static BOOLEAN PacketGetLinkLayerFromRegistry(LPADAPTER AdapterObject, NetType *type)
 {
-    BOOLEAN    Status;
-    ULONG      IoCtlBufferLength=(sizeof(PACKET_OID_DATA)+sizeof(ULONG)-1);
-    PPACKET_OID_DATA  OidData;
+	BOOLEAN    Status;
+	ULONG      IoCtlBufferLength=(sizeof(PACKET_OID_DATA)+sizeof(ULONG)-1);
+	PPACKET_OID_DATA  OidData;
 
 	TRACE_ENTER("PacketGetLinkLayerFromRegistry");
 
-    OidData=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,IoCtlBufferLength);
-    if (OidData == NULL) {
-        ODS("PacketGetLinkLayerFromRegistry failed\n");
+	OidData=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,IoCtlBufferLength);
+	if (OidData == NULL) {
+		TRACE_PRINT("PacketGetLinkLayerFromRegistry failed");
 		TRACE_EXIT("PacketGetLinkLayerFromRegistry");
-        return FALSE;
-    }
+		return FALSE;
+	}
 	//get the link-layer type
-    OidData->Oid = OID_GEN_MEDIA_IN_USE;
-    OidData->Length = sizeof (ULONG);
-    Status = PacketRequest(AdapterObject,FALSE,OidData);
-    type->LinkType=*((UINT*)OidData->Data);
+	OidData->Oid = OID_GEN_MEDIA_IN_USE;
+	OidData->Length = sizeof (ULONG);
+	Status = PacketRequest(AdapterObject,FALSE,OidData);
+	type->LinkType=*((UINT*)OidData->Data);
 
 	//get the link-layer speed
-    OidData->Oid = OID_GEN_LINK_SPEED;
-    OidData->Length = sizeof (ULONG);
-	 Status = PacketRequest(AdapterObject,FALSE,OidData);
+	OidData->Oid = OID_GEN_LINK_SPEED;
+	OidData->Length = sizeof (ULONG);
+	Status = PacketRequest(AdapterObject,FALSE,OidData);
 
-	 if (Status == TRUE)
-	 {
+	if (Status == TRUE)
+	{
 		type->LinkSpeed=*((UINT*)OidData->Data)*100;
-	 }
+	}
 
-    GlobalFreePtr (OidData);
+	GlobalFreePtr (OidData);
 
-	ODSEx("Media:%.010d" "\t" "Speed=%.010d\n",
+	TRACE_PRINT2("Media:%.010d" "\t" "Speed=%0.10I64u",
 		type->LinkType,
 		type->LinkSpeed);
 
 	TRACE_EXIT("PacketGetLinkLayerFromRegistry");
-    return Status;
+	return Status;
 }
 
 
@@ -171,11 +177,10 @@ BOOLEAN PacketGetLinkLayerFromRegistry(LPADAPTER AdapterObject, NetType *type)
   is full, the reaming addresses are dropeed, therefore set its dimension to sizeof(npf_if_addr)
   if you want only the first address.
 */
-BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, PLONG NEntries)
+static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* buffer, PLONG NEntries)
 {
-	char	*AdapterNameA;
-	WCHAR	*AdapterNameU;
-	WCHAR	*ifname;
+	WCHAR	*IfNameW;
+	WCHAR	AdapterNameW[ADAPTER_NAME_LENGTH];
 	HKEY	SystemKey;
 	HKEY	InterfaceKey;
 	HKEY	ParametersKey;
@@ -196,19 +201,15 @@ BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, 
 //	WCHAR	npfDeviceNamesPrefix[MAX_WINPCAP_KEY_CHARS];
 	WCHAR	npfDeviceNamesPrefix[MAX_WINPCAP_KEY_CHARS] = NPF_DEVICE_NAMES_PREFIX_WIDECHAR;
 	
+	TRACE_ENTER("PacketGetAddressesFromRegistry");
 	
-	AdapterNameA = (char*)AdapterName;
-	if(AdapterNameA[1] != 0) {	//ASCII
-		AdapterNameU = SChar2WChar(AdapterNameA);
-		AdapterName = AdapterNameU;
-	} else {				//Unicode
-		AdapterNameU = NULL;
-	}
-	ifname = wcsrchr(AdapterName, '\\');
-	if (ifname == NULL)
-		ifname = AdapterName;
+	StringCchPrintfW(AdapterNameW, ADAPTER_NAME_LENGTH, L"%S", AdapterNameA);
+
+	IfNameW = wcsrchr(AdapterNameW, L'\\');
+	if (IfNameW == NULL)
+		IfNameW = AdapterNameW;
 	else
-		ifname++;
+		IfNameW++;
 
 //  
 //	Old registry based WinPcap names
@@ -221,12 +222,12 @@ BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, 
 //	if (wcsncmp(ifname, npfDeviceNamesPrefix, RegQueryLen) == 0)
 //		ifname += RegQueryLen;
 
-	if (wcsncmp(ifname, npfDeviceNamesPrefix, wcslen(npfDeviceNamesPrefix)) == 0)
-				ifname += wcslen(npfDeviceNamesPrefix);
+	if (wcsncmp(IfNameW, npfDeviceNamesPrefix, wcslen(npfDeviceNamesPrefix)) == 0)
+				IfNameW += wcslen(npfDeviceNamesPrefix);
 
 	if(	RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT("SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces"), 0, KEY_READ, &UnderTcpKey) == ERROR_SUCCESS)
 	{
-		status = RegOpenKeyEx(UnderTcpKey,ifname,0,KEY_READ,&TcpIpKey);
+		status = RegOpenKeyEx(UnderTcpKey,IfNameW,0,KEY_READ,&TcpIpKey);
 		if (status != ERROR_SUCCESS) {
 			RegCloseKey(UnderTcpKey);
 			goto fail;
@@ -238,7 +239,7 @@ BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, 
 		status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,TEXT("SYSTEM\\CurrentControlSet\\Services"),0,KEY_READ,&SystemKey);
 		if (status != ERROR_SUCCESS)
 			goto fail;
-		status = RegOpenKeyEx(SystemKey,ifname,0,KEY_READ,&InterfaceKey);
+		status = RegOpenKeyEx(SystemKey,IfNameW,0,KEY_READ,&InterfaceKey);
 		if (status != ERROR_SUCCESS) {
 			RegCloseKey(SystemKey);
 			RegCloseKey(UnderTcpKey);
@@ -424,23 +425,18 @@ BOOLEAN PacketGetAddressesFromRegistry(LPTSTR AdapterName, npf_if_addr* buffer, 
 		goto fail;
 	}
 	
-	
-	if (AdapterNameU != NULL)
-		GlobalFreePtr(AdapterNameU);
-
-	ODS("Successfully retrieved the addresses from the registry.\n");
+	TRACE_PRINT("Successfully retrieved the addresses from the registry.");
 	TRACE_EXIT("PacketGetAddressesFromRegistry");
 	return TRUE;
 	
 fail:
-	if (AdapterNameU != NULL)
-		GlobalFreePtr(AdapterNameU);
 
-	ODS("Failed retrieving the addresses from the registry.\n");
+	TRACE_PRINT("Failed retrieving the addresses from the registry.");
 	TRACE_EXIT("PacketGetAddressesFromRegistry");
     return FALSE;
 }
 
+#ifdef HAVE_IPHELPER_API
 /*!
   \brief Adds the IPv6 addresses of an adapter to the ADAPTER_INFO structure that describes it.
   \param AdInfo Pointer to the ADAPTER_INFO structure that keeps the information about the adapter.
@@ -452,8 +448,7 @@ fail:
   provides it (WinXP and successive).
   \note we suppose that we are called after having acquired the g_AdaptersInfoMutex mutex
 */
-#ifndef _WINNT4
-BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
+static BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 {
 	ULONG BufLen;
 	PIP_ADAPTER_ADDRESSES AdBuffer, TmpAddr;
@@ -472,7 +467,7 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 
 	if(g_GetAdaptersAddressesPointer == NULL)	
 	{
-		ODS("GetAdaptersAddressesPointer not available on the system, simply returning success...\n");
+		TRACE_PRINT("GetAdaptersAddressesPointer not available on the system, simply returning success...");
 
 		TRACE_EXIT("PacketAddIP6Addresses");
 		return TRUE;	// GetAdaptersAddresses() not present on this system,
@@ -480,30 +475,31 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 
  	if(g_GetAdaptersAddressesPointer(AF_UNSPEC, GAA_FLAG_SKIP_ANYCAST| GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_FRIENDLY_NAME, NULL, NULL, &BufLen) != ERROR_BUFFER_OVERFLOW)
 	{
-		ODS("PacketAddIP6Addresses: GetAdaptersAddresses Failed while retrieving the needed buffer size\n");
+		TRACE_PRINT("PacketAddIP6Addresses: GetAdaptersAddresses Failed while retrieving the needed buffer size");
 
 		TRACE_EXIT("PacketAddIP6Addresses");
 		return FALSE;
 	}
 
-	ODS("PacketAddIP6Addresses, retrieved needed storage for the call\n");
+	TRACE_PRINT("PacketAddIP6Addresses, retrieved needed storage for the call");
 
 	AdBuffer = GlobalAllocPtr(GMEM_MOVEABLE, BufLen);
-	if (AdBuffer == NULL) {
-		ODS("PacketAddIP6Addresses: GlobalAlloc Failed\n");
+	if (AdBuffer == NULL) 
+	{
+		TRACE_PRINT("PacketAddIP6Addresses: GlobalAlloc Failed");
 		TRACE_EXIT("PacketAddIP6Addresses");
 		return FALSE;
 	}
 
  	if(g_GetAdaptersAddressesPointer(AF_UNSPEC,  GAA_FLAG_SKIP_ANYCAST| GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_FRIENDLY_NAME, NULL, AdBuffer, &BufLen) != ERROR_SUCCESS)
 	{
-		ODS("PacketGetIP6Addresses: GetAdaptersAddresses Failed while retrieving the addresses\n");
+		TRACE_PRINT("PacketGetIP6Addresses: GetAdaptersAddresses Failed while retrieving the addresses");
 		GlobalFreePtr(AdBuffer);
 		TRACE_EXIT("PacketAddIP6Addresses");
 		return FALSE;
 	}
 
-	ODS("PacketAddIP6Addresses, retrieved addresses, scanning the list\n");
+	TRACE_PRINT("PacketAddIP6Addresses, retrieved addresses, scanning the list");
 
 	//
 	// Scan the list of adddresses obtained from the IP helper API
@@ -522,13 +518,13 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 
 		OrName = AdInfo->Name + strlen(npfDeviceNamesPrefix);
 
-		ODS("PacketAddIP6Addresses, external loop\n");
+		TRACE_PRINT("PacketAddIP6Addresses, external loop");
 		if(strcmp(TmpAddr->AdapterName, OrName) == 0)
 		{
 			// Found a corresponding adapter, scan its address list
 			for(UnicastAddr = TmpAddr->FirstUnicastAddress; UnicastAddr != NULL; UnicastAddr = UnicastAddr->Next)
 			{
-					ODS("PacketAddIP6Addresses, internal loop\n");
+					TRACE_PRINT("PacketAddIP6Addresses, internal loop");
 
 					AddrLen = UnicastAddr->Address.iSockaddrLength;
 					Addr = (struct sockaddr_storage *)UnicastAddr->Address.lpSockaddr;
@@ -538,7 +534,7 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 						if(AdInfo->NNetworkAddresses >= MAX_NETWORK_ADDRESSES)
 						{
 							GlobalFreePtr(AdBuffer);
-							ODS("The space in AdInfo->NNetworkAddresses is not large enough, failing\n");
+							TRACE_PRINT("The space in AdInfo->NNetworkAddresses is not large enough, failing");
 							TRACE_EXIT("PacketAddIP6Addresses");
 							return FALSE;
 						}
@@ -552,14 +548,14 @@ BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 		}
 	}
 
-	ODS("PacketAddIP6Addresses, finished parsing the addresses\n");
+	TRACE_PRINT("PacketAddIP6Addresses, finished parsing the addresses");
 
 	GlobalFreePtr(AdBuffer);
 
 	TRACE_EXIT("PacketAddIP6Addresses");
 	return TRUE;
 }
-#endif // _WINNT4
+#endif // HAVE_IPHELPER_API
 
 /*!
   \brief Check if a string contains the "1394" substring
@@ -583,24 +579,22 @@ BOOLEAN IsFireWire(TCHAR *AdapterDesc)
 	return FALSE;
 }
 
+#ifdef HAVE_IPHELPER_API
+
 /*!
   \brief Adds an entry to the adapter description list, gathering its values from the IP Helper API.
   \param IphAd PIP_ADAPTER_INFO IP Helper API structure containing the parameters of the adapter that must be added to the list.
   \return If the function succeeds, the return value is TRUE.
   \note we suppose that we are called after having acquired the g_AdaptersInfoMutex mutex
 */
-#ifndef _WINNT4
-BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
+static BOOLEAN PacketAddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 {
-	PIP_ADAPTER_INFO AdList = NULL;
-	ULONG OutBufLen=0;
 	PADAPTER_INFO TmpAdInfo, SAdInfo;
 	PIP_ADDR_STRING TmpAddrStr;
 	UINT i;
 	struct sockaddr_in *TmpAddr;
 	CHAR TName[256];
 	LPADAPTER adapter;
-	PWCHAR UAdName;
 //  
 //	Old registry based WinPcap names
 //
@@ -608,7 +602,9 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 //	CHAR	npfCompleteDriverPrefix[MAX_WINPCAP_KEY_CHARS];
 	CHAR	npfCompleteDriverPrefix[MAX_WINPCAP_KEY_CHARS] = NPF_DRIVER_COMPLETE_DEVICE_PREFIX;
 
-	// Create the NPF device name from the original device name
+	TRACE_ENTER("PacketAddAdapterIPH");
+
+// Create the NPF device name from the original device name
 
 //  
 //	Old registry based WinPcap names
@@ -626,22 +622,18 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 //		IphAd->AdapterName);
 
 	// Create the NPF device name from the original device name
-	_snprintf(TName,
-		sizeof(TName) - 1 - strlen(npfCompleteDriverPrefix), 
+	StringCchPrintfA(TName,
+		sizeof(TName) - strlen(npfCompleteDriverPrefix), 
 		"%s%s",
 		npfCompleteDriverPrefix, 
 		IphAd->AdapterName);
 
-	TName[sizeof(TName) - 1] = '\0';
-
-	TRACE_ENTER("AddAdapterIPH");
-	
 	// Scan the adapters list to see if this one is already present
 	for(SAdInfo = g_AdaptersInfoList; SAdInfo != NULL; SAdInfo = SAdInfo->Next)
 	{
 		if(strcmp(TName, SAdInfo->Name) == 0)
 		{
-			ODSEx("GetAdaptersIPH: Adapter %s already present in the list\n", TName);
+			TRACE_PRINT1("PacketAddAdapterIPH: Adapter %s already present in the list", TName);
 			goto SkipAd;
 		}
 	}
@@ -653,27 +645,19 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	}
 	else
 	{
-		//convert the string to unicode, as OpenAdapterNPF accepts unicode strings, only. 
-		UAdName = SChar2WChar(TName);
-		if (UAdName == NULL)
-		{
-			ODS("AddAdapterIPH: unable to convert an ASCII string to UNICODE\n");
-			goto SkipAd;
-		}
 
-		ODSEx("Trying to open adapter %s to see if it's available...\n", TName);
-		adapter = PacketOpenAdapterNPF((PCHAR)UAdName);
-		GlobalFreePtr(UAdName);
+		TRACE_PRINT1("Trying to open adapter %s to see if it's available...", TName);
+		adapter = PacketOpenAdapterNPF(TName);
 
 		if(adapter == NULL)
 		{
 			// We are not able to open this adapter. Skip to the next one.
-			ODSEx("AddAdapterIPH: unable to open the adapter %s\n", TName);
+			TRACE_PRINT1("PacketAddAdapterIPH: unable to open the adapter %s", TName);
 			goto SkipAd;
 		}
 		else
 		{
-			ODSEx("AddAdapterIPH: adapter %s is available\n", TName);
+			TRACE_PRINT1("PacketAddAdapterIPH: adapter %s is available", TName);
 			PacketCloseAdapter(adapter);
 		}
 	}	
@@ -681,21 +665,21 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	// 
 	// Adapter valid and not yet present in the list. Allocate the ADAPTER_INFO structure
 	//
-	ODSEx("Adapter %s is available and should be added to the global list...\n", TName);
+	TRACE_PRINT1("Adapter %s is available and should be added to the global list...", TName);
 
 	TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));
 	if (TmpAdInfo == NULL) 
 	{
-		ODS("AddAdapterIPH: GlobalAlloc Failed allocating memory for the AdInfo\n");
-		TRACE_EXIT("AddAdapterIPH");
+		TRACE_PRINT("PacketAddAdapterIPH: GlobalAlloc Failed allocating memory for the AdInfo");
+		TRACE_EXIT("PacketAddAdapterIPH");
 		return FALSE;
 	}
 	
 	// Copy the device name
-	strcpy(TmpAdInfo->Name, TName);
+	StringCchCopyA(TmpAdInfo->Name,ADAPTER_NAME_LENGTH, TName);
 	
 	// Copy the description
-	_snprintf(TmpAdInfo->Description, ADAPTER_DESC_LENGTH, "%s", IphAd->Description);
+	StringCchCopyA(TmpAdInfo->Description, ADAPTER_DESC_LENGTH, IphAd->Description);
 	
 	// Copy the MAC address
 	TmpAdInfo->MacAddressLen = IphAd->AddressLength;
@@ -712,13 +696,13 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 
 	TmpAdInfo->NetworkAddresses = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, MAX_NETWORK_ADDRESSES * sizeof(npf_if_addr));
 	if (TmpAdInfo->NetworkAddresses == NULL) {
-		ODS("AddAdapterIPH: GlobalAlloc Failed allocating the memory for the IP addresses in AdInfo.\n");
+		TRACE_PRINT("PacketAddAdapterIPH: GlobalAlloc Failed allocating the memory for the IP addresses in AdInfo.");
 		GlobalFreePtr(TmpAdInfo);
-		TRACE_EXIT("AddAdapterIPH");
+		TRACE_EXIT("PacketAddAdapterIPH");
 		return FALSE;
 	}
 	
-	ODSEx("Adding the IPv4 addresses to the adapter %s...\n", TName);
+	TRACE_PRINT1("Adding the IPv4 addresses to the adapter %s...", TName);
 	// Scan the addresses, convert them to addrinfo structures and put each of them in the list
 	for(TmpAddrStr = &IphAd->IpAddressList, i = 0; TmpAddrStr != NULL; TmpAddrStr = TmpAddrStr->Next)
 	{
@@ -739,13 +723,13 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	TmpAdInfo->NNetworkAddresses = i;
 	
 	
-	ODSEx("Adding the IPv6 addresses to the adapter %s...\n", TName);
+	TRACE_PRINT1("Adding the IPv6 addresses to the adapter %s...", TName);
 	// Now Add IPv6 Addresses
 	PacketAddIP6Addresses(TmpAdInfo);
 	
 	if(IphAd->Type == IF_TYPE_PPP || IphAd->Type == IF_TYPE_SLIP)
 	{
-		ODS("Flagging the adapter as NDISWAN.\n");
+		TRACE_PRINT("Flagging the adapter as NDISWAN.");
 		// NdisWan adapter
 		TmpAdInfo->Flags = INFO_FLAG_NDISWAN_ADAPTER;
 	}
@@ -756,11 +740,9 @@ BOOLEAN AddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	
 SkipAd:
 
-	TRACE_EXIT("AddAdapterIPH");
+	TRACE_EXIT("PacketAddAdapterIPH");
 	return TRUE;
 }
-#endif // _WINNT4
-
 
 /*!
   \brief Updates the list of the adapters querying the IP Helper API.
@@ -771,8 +753,7 @@ SkipAd:
   adapter information, so PacketGetAdaptersIPH() add only information about the adapters that were not 
   found by PacketGetAdapters().
 */
-#ifndef _WINNT4
-BOOLEAN PacketGetAdaptersIPH()
+static BOOLEAN PacketGetAdaptersIPH()
 {
 	PIP_ADAPTER_INFO AdList = NULL;
 	PIP_ADAPTER_INFO TmpAd;
@@ -783,18 +764,18 @@ BOOLEAN PacketGetAdaptersIPH()
 	// Find the size of the buffer filled by GetAdaptersInfo
 	if(GetAdaptersInfo(AdList, &OutBufLen) == ERROR_NOT_SUPPORTED)
 	{
-		ODS("IP Helper API not supported on this system!\n");
+		TRACE_PRINT("IP Helper API not supported on this system!");
 		TRACE_EXIT("PacketGetAdaptersIPH");
 		return FALSE;
 	}
 
-	ODS("PacketGetAdaptersIPH: retrieved needed bytes for IPH\n");
+	TRACE_PRINT("PacketGetAdaptersIPH: retrieved needed bytes for IPH");
 
 	// Allocate the buffer
 	AdList = GlobalAllocPtr(GMEM_MOVEABLE, OutBufLen);
 	if (AdList == NULL) 
 	{
-		ODS("PacketGetAdaptersIPH: GlobalAlloc Failed allocating the buffer for GetAdaptersInfo\n");
+		TRACE_PRINT("PacketGetAdaptersIPH: GlobalAlloc Failed allocating the buffer for GetAdaptersInfo");
 		TRACE_EXIT("PacketGetAdaptersIPH");
 		return FALSE;
 	}
@@ -802,13 +783,13 @@ BOOLEAN PacketGetAdaptersIPH()
 	// Retrieve the adapters information using the IP helper API
 	GetAdaptersInfo(AdList, &OutBufLen);
 	
-	ODS("PacketGetAdaptersIPH: retrieved list from IPH. Adding adapters to the global list.\n");
+	TRACE_PRINT("PacketGetAdaptersIPH: retrieved list from IPH. Adding adapters to the global list.");
 
 	// Scan the list of adapters obtained from the IP helper API, create a new ADAPTER_INFO
 	// structure for every new adapter and put it in our global list
 	for(TmpAd = AdList; TmpAd != NULL; TmpAd = TmpAd->Next)
 	{
-		AddAdapterIPH(TmpAd);
+		PacketAddAdapterIPH(TmpAd);
 	}
 	
 	GlobalFreePtr(AdList);
@@ -816,7 +797,8 @@ BOOLEAN PacketGetAdaptersIPH()
 	TRACE_EXIT("PacketGetAdaptersIPH");
 	return TRUE;
 }
-#endif // _WINNT4
+
+#endif // HAVE_IPHELPER_API
 
 
 /*!
@@ -826,20 +808,17 @@ BOOLEAN PacketGetAdaptersIPH()
 
   Used by PacketGetAdapters(). Queries the registry to fill the PADAPTER_INFO describing the new adapter.
 */
-BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
+static BOOLEAN PacketAddAdapterNPF(PCHAR AdName, UINT flags)
 {
 	//this function should acquire the g_AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
-	DWORD		RegKeySize=0;
 	LONG		Status;
-	LPADAPTER	adapter;
-	PPACKET_OID_DATA  OidData;
-	int			i=0;
+	LPADAPTER	adapter = NULL;
+	PPACKET_OID_DATA  OidData = NULL;
 	PADAPTER_INFO	TmpAdInfo;
 	PADAPTER_INFO TAdInfo;	
-	PWCHAR		UAdName;
 	
-	TRACE_ENTER("AddAdapter");
- 	ODSEx("Trying to add adapter %s\n", AdName);
+	TRACE_ENTER("PacketAddAdapterNPF");
+ 	TRACE_PRINT1("Trying to add adapter %s", AdName);
 	
 	//
 	// let's check that the adapter name will fit in the space available within ADAPTER_INFO::Name
@@ -847,7 +826,7 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 	//
 	if (strlen(AdName) + 1 > sizeof(TmpAdInfo->Name))
 	{
-		ODS("AddAdapter: adapter name is too long to be stored into ADAPTER_INFO::Name, simply skip it");
+		TRACE_PRINT("PacketAddAdapterNPF: adapter name is too long to be stored into ADAPTER_INFO::Name, simply skip it");
 		return FALSE;
 	}
 
@@ -857,9 +836,9 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 	{
 		if(strcmp(AdName, TAdInfo->Name) == 0)
 		{
-			ODS("AddAdapter: Adapter already present in the list\n");
+			TRACE_PRINT("PacketAddAdapterNPF: Adapter already present in the list");
 			ReleaseMutex(g_AdaptersInfoMutex);
-			TRACE_EXIT("AddAdapter");
+			TRACE_EXIT("PacketAddAdapterNPF");
 			return TRUE;
 		}
 	}
@@ -869,113 +848,35 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 	
 	if(flags != INFO_FLAG_DONT_EXPORT)
 	{	
-		UAdName = SChar2WChar(AdName);
-
- 		ODS("Trying to open the NPF adapter and see if it's available...\n");
+ 		TRACE_PRINT("Trying to open the NPF adapter and see if it's available...");
 
 		// Try to Open the adapter
-		adapter = PacketOpenAdapterNPF((PCHAR)UAdName);
+		adapter = PacketOpenAdapterNPF(AdName);
 		
 		if(adapter != NULL)
 		{
-			GlobalFreePtr(UAdName);
 			
 			// Allocate a buffer to get the vendor description from the driver
 			OidData = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,512);
 			if (OidData == NULL) 
 			{
-				ODS("AddAdapter: GlobalAlloc Failed allocating the buffer for the OID request to obtain the NIC description. Returning.\n"); 				
+				TRACE_PRINT("PacketAddAdapterNPF: GlobalAlloc Failed allocating the buffer for the OID request to obtain the NIC description. Returning."); 				
 				PacketCloseAdapter(adapter);
 				ReleaseMutex(g_AdaptersInfoMutex);
-				TRACE_EXIT("AddAdapter");
+				TRACE_EXIT("PacketAddAdapterNPF");
 				return FALSE;
 			}
 		}
-#ifdef HAVE_AIRPCAP_API
 		else
 		{
-			BOOL GllRes;
-			AirpcapLinkType AirpcapLinkLayer;
-
-			// Before giving up, try to Open the adapter with aircap
-			adapter = PacketOpenAdapterAirpcap((PCHAR)AdName);
-						
-			GlobalFreePtr(UAdName);
-			
-			if(adapter == NULL)
-			{
-				ODS("NPF Adapter not available, do not add it to the global list\n");
-				// We are not able to open this adapter. Skip to the next one.
-				ReleaseMutex(g_AdaptersInfoMutex);
-				TRACE_EXIT("AddAdapter");
-				return FALSE;
-			}
-
-			TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));	
-			if (TmpAdInfo == NULL) 
-			{
-				// No luck. Report an error
-				PacketCloseAdapter(adapter);
-				ReleaseMutex(g_AdaptersInfoMutex);
-				TRACE_EXIT("AddAdapter");
-				return FALSE;
-			}
-
-			GllRes = g_PAirpcapGetLinkType(adapter->AirpcapAd, &AirpcapLinkLayer);
-			if(!GllRes)
-			{
-				PacketCloseAdapter(adapter);
-				ReleaseMutex(g_AdaptersInfoMutex);
-				TRACE_EXIT("AddAdapter");
-				return FALSE;
-			}
-
-			switch(AirpcapLinkLayer) 
-			{
-			case AIRPCAP_LT_802_11:
-				TmpAdInfo->LinkLayer.LinkType = NdisMediumBare80211;
-				break;
-			case AIRPCAP_LT_802_11_PLUS_RADIO:
-				TmpAdInfo->LinkLayer.LinkType = NdisMediumRadio80211;
-				break;
-			default:
-				TmpAdInfo->LinkLayer.LinkType = NdisMediumNull; // Note: custom linktype, NDIS doesn't provide an equivalent
-				break;
-			}			
-
-			//
-			// For the moment, we always set the speed to 54Mbps, since the speed is not channel-specific,
-			// but per packet
-			//
-			TmpAdInfo->LinkLayer.LinkSpeed = 54000000; 
-						
-			TmpAdInfo->NetworkAddresses = NULL;
-			TmpAdInfo->Flags = INFO_FLAG_AIRPCAP_CARD;
-			
-			// Copy the device name
-			strncpy(TmpAdInfo->Name, AdName, sizeof(TmpAdInfo->Name) / sizeof(TmpAdInfo->Name[0]) - 1);
-
-			// Update the AdaptersInfo list
-			TmpAdInfo->Next = g_AdaptersInfoList;
-			g_AdaptersInfoList = TmpAdInfo;
-			
-			// Done ok
-			PacketCloseAdapter(adapter);
-			ReleaseMutex(g_AdaptersInfoMutex);
-			TRACE_EXIT("AddAdapter");
-			return TRUE;
-		}
-#else // HAVE_AIRPCAP_API
-		else
-		{
-			ODS("NPF Adapter not available, do not add it to the global list\n");
+			TRACE_PRINT("NPF Adapter not available, do not add it to the global list");
 			// We are not able to open this adapter. Skip to the next one.
 			ReleaseMutex(g_AdaptersInfoMutex);
 			TRACE_EXIT("AddAdapter");
 			return FALSE;
 		}			
-#endif // HAVE_AIRPCAP_API
 	}
+
 	
 	//
 	// PacketOpenAdapter was succesful. Consider this a valid adapter and allocate an entry for it
@@ -985,12 +886,12 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 	TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));
 	if (TmpAdInfo == NULL) 
 	{
-		ODS("AddAdapter: GlobalAlloc Failed\n");
+		TRACE_PRINT("AddAdapter: GlobalAlloc Failed");
 	
 		if(flags != INFO_FLAG_DONT_EXPORT)
 		{ 
-	 		ODS("AddAdapter: GlobalAlloc Failed allocating the buffer for the AdInfo to be added to the global list. Returning.\n");
-			GlobalFreePtr(OidData);
+	 		TRACE_PRINT("AddAdapter: GlobalAlloc Failed allocating the buffer for the AdInfo to be added to the global list. Returning.");
+			if (OidData != NULL) GlobalFreePtr(OidData);
 			PacketCloseAdapter(adapter);
 		}		
 		
@@ -1016,13 +917,13 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 		
 		if(Status==0 || ((char*)OidData->Data)[0]==0)
 		{
-			ODS("AddAdapter: unable to get a valid adapter description from the NIC driver\n");
+			TRACE_PRINT("AddAdapter: unable to get a valid adapter description from the NIC driver");
 		}
 		
-		ODSEx("Adapter Description = %s \n",OidData->Data);
+		TRACE_PRINT1("Adapter Description = %s",OidData->Data);
 		
 		// Copy the description
-		strncpy(TmpAdInfo->Description, OidData->Data, sizeof(TmpAdInfo->Description)/ sizeof(TmpAdInfo->Description[0]) - 1);
+		strncpy(TmpAdInfo->Description, (PCHAR)OidData->Data, sizeof(TmpAdInfo->Description)/ sizeof(TmpAdInfo->Description[0]) - 1);
 		//we do not need to terminate the string TmpAdInfo->Description, since we have left a char at the end, and
 		//the memory for TmpAdInfo was zeroed upon allocation
 		
@@ -1030,7 +931,7 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 
 		if (Status == FALSE)
 		{
-			ODS("AddAdapter: PacketGetLinkLayerFromRegistry failed. Returning.\n");
+			TRACE_PRINT("AddAdapter: PacketGetLinkLayerFromRegistry failed. Returning.");
 			PacketCloseAdapter(adapter);
 			GlobalFreePtr(OidData);
 			GlobalFreePtr(TmpAdInfo);
@@ -1045,15 +946,15 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 		OidData->Length = 256;
 		ZeroMemory(OidData->Data, 256);
 		
-		ODS("Trying to obtain the MAC address for the NIC...\n");
+		TRACE_PRINT("Trying to obtain the MAC address for the NIC...");
 		Status = PacketRequest(adapter, FALSE, OidData);
 		if(Status)
 		{
 			memcpy(TmpAdInfo->MacAddress, OidData->Data, 6);
 			TmpAdInfo->MacAddressLen = 6;
 
-			ODSEx("Successfully obtained the MAC address, it's "
-				"%.02x:%.02x:%.02x:%.02x:%.02x:%.02x\n",
+			TRACE_PRINT6("Successfully obtained the MAC address, it's "
+				"%.02x:%.02x:%.02x:%.02x:%.02x:%.02x",
 				TmpAdInfo->MacAddress[0],
 				TmpAdInfo->MacAddress[1],
 				TmpAdInfo->MacAddress[2],
@@ -1065,7 +966,7 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 		}
 		else
 		{
-			ODS("Failed obtaining the MAC address, put a fake 00:00:00:00:00:00\n");
+			TRACE_PRINT("Failed obtaining the MAC address, put a fake 00:00:00:00:00:00");
 			memset(TmpAdInfo->MacAddress, 0, 6);
 			TmpAdInfo->MacAddressLen = 0;
 		}
@@ -1073,7 +974,7 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 		// Retrieve IP addresses
 		TmpAdInfo->NetworkAddresses = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, MAX_NETWORK_ADDRESSES * sizeof(npf_if_addr));
 		if (TmpAdInfo->NetworkAddresses == NULL) {
-			ODS("AddAdapter: GlobalAlloc Failed to allocate the buffer for the IP addresses in the AdInfo structure. Returning.\n");
+			TRACE_PRINT("AddAdapter: GlobalAlloc Failed to allocate the buffer for the IP addresses in the AdInfo structure. Returning.");
 			PacketCloseAdapter(adapter);
 			GlobalFreePtr(OidData);
 			GlobalFreePtr(TmpAdInfo);
@@ -1083,27 +984,27 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 		}
 		
 		TmpAdInfo->NNetworkAddresses = MAX_NETWORK_ADDRESSES;
-		if(!PacketGetAddressesFromRegistry((LPTSTR)TmpAdInfo->Name, TmpAdInfo->NetworkAddresses, (long*)&TmpAdInfo->NNetworkAddresses))
+		if(!PacketGetAddressesFromRegistry(TmpAdInfo->Name, TmpAdInfo->NetworkAddresses, (long*)&TmpAdInfo->NNetworkAddresses))
 		{
-#ifndef _WINNT4
+#ifdef HAVE_IPHELPER_API
 			// Try to see if the interface has some IPv6 addresses
 			TmpAdInfo->NNetworkAddresses = 0; // We have no addresses because PacketGetAddressesFromRegistry() failed
 			
 			if(!PacketAddIP6Addresses(TmpAdInfo))
 			{
-#endif // _WINNT4
+#endif // HAVE_IPHELPER_API
 				GlobalFreePtr(TmpAdInfo->NetworkAddresses);
 				TmpAdInfo->NetworkAddresses = NULL;
 				TmpAdInfo->NNetworkAddresses = 0;
-#ifndef _WINNT4
+#ifdef HAVE_IPHELPER_API
 			}
-#endif // _WINNT4
+#endif // HAVE_IPHELPER_API
 		}
 		
-#ifndef _WINNT4
+#ifdef HAVE_IPHELPER_API
 		// Now Add IPv6 Addresses
 		PacketAddIP6Addresses(TmpAdInfo);
-#endif // _WINNT4
+#endif // HAVE_IPHELPER_API
 		
 		TmpAdInfo->Flags = INFO_FLAG_NDIS_ADAPTER;	// NdisWan adapters are not exported by the NPF driver,
 													// therefore it's impossible to see them here
@@ -1136,7 +1037,7 @@ BOOLEAN AddAdapter(PCHAR AdName, UINT flags)
 
   This function populates the list of adapter descriptions, retrieving the information from the registry. 
 */
-BOOLEAN PacketGetAdapters()
+static BOOLEAN PacketGetAdaptersNPF()
 {
 	HKEY		LinkageKey,AdapKey, OneAdapKey;
 	DWORD		RegKeySize=0;
@@ -1159,7 +1060,7 @@ BOOLEAN PacketGetAdapters()
 	CHAR		npfCompleteDriverPrefix[MAX_WINPCAP_KEY_CHARS] = NPF_DRIVER_COMPLETE_DEVICE_PREFIX;
 	CHAR		DeviceGuidName[256];
 
-	TRACE_ENTER("PacketGetAdapters");
+	TRACE_ENTER("PacketGetAdaptersNPF");
 	
 //  
 //	Old registry based WinPcap names
@@ -1177,14 +1078,14 @@ BOOLEAN PacketGetAdapters()
 		&AdapKey);
 	
 	if ( Status != ERROR_SUCCESS ){
-		ODS("PacketGetAdapters: RegOpenKeyEx ( Class\\{networkclassguid} ) Failed\n");
+		TRACE_PRINT("PacketGetAdaptersNPF: RegOpenKeyEx ( Class\\{networkclassguid} ) Failed");
 		goto tcpip_linkage;
 	}
 
 	i = 0;
 
-	ODS("PacketGetAdapters: RegOpenKeyEx ( Class\\{networkclassguid} ) was successful\n");
-	ODS("PacketGetAdapters: Cycling through the adapters in the registry:\n");
+	TRACE_PRINT("PacketGetAdaptersNPF: RegOpenKeyEx ( Class\\{networkclassguid} ) was successful");
+	TRACE_PRINT("PacketGetAdaptersNPF: Cycling through the adapters in the registry:");
 
 	// 
 	// Cycle through the entries inside the {4D36E972-E325-11CE-BFC1-08002BE10318} key
@@ -1201,7 +1102,7 @@ BOOLEAN PacketGetAdapters()
 		Status=RegOpenKeyEx(AdapKey, AdapName, 0, KEY_READ, &OneAdapKey);
 		if ( Status != ERROR_SUCCESS )
 		{
-			ODSEx("%d) RegOpenKey( OneAdapKey ) Failed, skipping the adapter.\n",i);
+			TRACE_PRINT1("%d) RegOpenKey( OneAdapKey ) Failed, skipping the adapter.",i);
 			continue;			
 		}
 
@@ -1231,7 +1132,7 @@ BOOLEAN PacketGetAdapters()
 		if (Status != ERROR_SUCCESS)
 		{
 			RegCloseKey(OneAdapKey);
-			ODSEx("%d) RegOpenKeyEx ( LinkageKey ) Failed, skipping the adapter\n",i);
+			TRACE_PRINT1("%d) RegOpenKeyEx ( LinkageKey ) Failed, skipping the adapter",i);
 			continue;
 		}
 		
@@ -1247,14 +1148,14 @@ BOOLEAN PacketGetAdapters()
 		{
 			RegCloseKey(OneAdapKey);
 			RegCloseKey(LinkageKey);
-			ODSEx("%d) Name = SKIPPED (error reading the key)\n", i);
+			TRACE_PRINT1("%d) Name = SKIPPED (error reading the key)", i);
 			continue;
 		}
 
 		if (strlen(DeviceGuidName) >= strlen("\\Device\\"))
 		{
 			// Put the \Device\NPF_ string at the beginning of the name
-			_snprintf(TAName, sizeof(TAName) - 1, "%s%s",
+			StringCchPrintfA(TAName, sizeof(TAName), "%s%s",
 			npfCompleteDriverPrefix,
 			DeviceGuidName + strlen("\\Device\\"));
 		}
@@ -1264,9 +1165,9 @@ BOOLEAN PacketGetAdapters()
 		//terminate the string, just in case
 		TAName[sizeof(TAName) - 1] = '\0';
 
-		ODSEx("%d) Successfully retrieved info for adapter %s, trying to add it to the global list...\n", i, TAName);
+		TRACE_PRINT2("%d) Successfully retrieved info for adapter %s, trying to add it to the global list...", i, TAName);
 		// If the adapter is valid, add it to the list.
-		AddAdapter(TAName, FireWireFlag);
+		PacketAddAdapterNPF(TAName, FireWireFlag);
 
 		RegCloseKey(OneAdapKey);
 		RegCloseKey(LinkageKey);
@@ -1281,7 +1182,7 @@ tcpip_linkage:
 	// that we are under Windows NT 4, so we try to look under the tcpip bindings.
 	//
 	
-	ODS("Adapters not found under SYSTEM\\CurrentControlSet\\Control\\Class. Using the TCP/IP bindings.\n");
+	TRACE_PRINT("Adapters not found under SYSTEM\\CurrentControlSet\\Control\\Class. Using the TCP/IP bindings.");
 		
 	Status = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
 		TEXT("SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Linkage"),
@@ -1307,8 +1208,8 @@ tcpip_linkage:
 
 		if (TcpBindingsMultiString == NULL)
 		{
-			ODS("GlobalAlloc failed allocating memory for the registry key, returning.\n");
-			TRACE_EXIT("PacketGetAdapters");
+			TRACE_PRINT("GlobalAlloc failed allocating memory for the registry key, returning.");
+			TRACE_EXIT("PacketGetAdaptersNPF");
 			return FALSE;
 		}
 		
@@ -1328,20 +1229,21 @@ tcpip_linkage:
 			if (TcpBindingsMultiString[i] == '\0')
 				break;
 			
-			_snprintf(TAName, sizeof(TAName) - 1, "%s%s", 
+			StringCchPrintfA(TAName, sizeof(TAName), "%s%s", 
 				npfCompleteDriverPrefix,
 				TcpBindingsMultiString + i + strlen("\\Device\\"));
 
-			//terminate the string, just in case
-			TAName[sizeof(TAName) - 1] = '\0';
-		
-			i += strlen(&TcpBindingsMultiString[i]) + 1;
+			//
+			// TODO GV: this cast to avoid a compilation warning is
+			//			actually stupid. We shouls check not to go over the buffer boundary!
+			// 
+			i += (INT)strlen(&TcpBindingsMultiString[i]) + 1;
 
-			ODSEx("Successfully retrieved info for adapter %s, trying to add it to the global list...\n", TAName);
+			TRACE_PRINT1("Successfully retrieved info for adapter %s, trying to add it to the global list...", TAName);
 
 			
 			// If the adapter is valid, add it to the list.
-			AddAdapter(TAName, 0);
+			PacketAddAdapterNPF(TAName, 0);
 		}
 	
  		GlobalFreePtr(TcpBindingsMultiString);
@@ -1350,13 +1252,13 @@ tcpip_linkage:
 	else{
 #ifdef _WINNT4
 		MessageBox(NULL,TEXT("Can not find TCP/IP bindings.\nIn order to run the packet capture driver you must install TCP/IP."),szWindowTitle,MB_OK);
-		ODS("Cannot find the TCP/IP bindings on NT4, no adapters.\n");
-		TRACE_EXIT("PacketGetAdapters");
+		TRACE_PRINT("Cannot find the TCP/IP bindings on NT4, no adapters.");
+		TRACE_EXIT("PacketGetAdaptersNPF");
 		return FALSE;
 #endif		
 	}
 	
-	TRACE_EXIT("PacketGetAdapters");
+	TRACE_EXIT("PacketGetAdaptersNPF");
 	return TRUE;
 }
 
@@ -1367,7 +1269,7 @@ tcpip_linkage:
   \param description description of the adapter.
   \return If the function succeeds, the return value is nonzero.
 */
-BOOLEAN PacketAddAdapterAirpcap(PCHAR name, PCHAR description)
+static BOOLEAN PacketAddAdapterAirpcap(PCHAR name, PCHAR description)
 {
 	//this function should acquire the g_AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
 	CHAR ebuf[AIRPCAP_ERRBUF_SIZE];
@@ -1376,6 +1278,7 @@ BOOLEAN PacketAddAdapterAirpcap(PCHAR name, PCHAR description)
 	BOOL GllRes;
 	AirpcapLinkType AirpcapLinkLayer;
 
+	TRACE_ENTER("PacketAddAdapterAirpcap");
 	//XXX what about checking if the adapter already exists???
 	
 	//
@@ -1385,19 +1288,18 @@ BOOLEAN PacketAddAdapterAirpcap(PCHAR name, PCHAR description)
     TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));
 	if (TmpAdInfo == NULL) 
 	{
-		ODS("PacketAddAdapterDag: GlobalAlloc Failed\n");
+		TRACE_PRINT("PacketAddAdapterDag: GlobalAlloc Failed");
+		TRACE_EXIT("PacketAddAdapterAirpcap");
 		return FALSE;
 	}
 
 	// Copy the device name and description
-	_snprintf(TmpAdInfo->Name, 
+	StringCchCopyA(TmpAdInfo->Name, 
 		sizeof(TmpAdInfo->Name), 
-		"%s", 
 		name);
 
-	_snprintf(TmpAdInfo->Description, 
+	StringCchCopyA(TmpAdInfo->Description, 
 		sizeof(TmpAdInfo->Description), 
-		"%s", 
 		description);
 
 	TmpAdInfo->Flags = INFO_FLAG_AIRPCAP_CARD;
@@ -1414,6 +1316,7 @@ BOOLEAN PacketAddAdapterAirpcap(PCHAR name, PCHAR description)
 	if(!AirpcapAdapter)
 	{
 		GlobalFreePtr(TmpAdInfo);
+		TRACE_EXIT("PacketAddAdapterAirpcap");
 		return FALSE;
 	}
 
@@ -1422,19 +1325,20 @@ BOOLEAN PacketAddAdapterAirpcap(PCHAR name, PCHAR description)
 	{
 		g_PAirpcapClose(AirpcapAdapter);
 		GlobalFreePtr(TmpAdInfo);
+		TRACE_EXIT("PacketAddAdapterAirpcap");
 		return FALSE;
 	}
 
 	switch(AirpcapLinkLayer) 
-	{
+	{ 
 	case AIRPCAP_LT_802_11:
-		TmpAdInfo->LinkLayer.LinkType = NdisMediumBare80211;
+		TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMediumBare80211;
 		break;
 	case AIRPCAP_LT_802_11_PLUS_RADIO:
-		TmpAdInfo->LinkLayer.LinkType = NdisMediumRadio80211;
+		TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMediumRadio80211;
 		break;
 	default:
-		TmpAdInfo->LinkLayer.LinkType = NdisMediumNull; // Note: custom linktype, NDIS doesn't provide an equivalent
+		TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMediumNull; // Note: custom linktype, NDIS doesn't provide an equivalent
 		break;
 	}			
 	
@@ -1454,6 +1358,7 @@ BOOLEAN PacketAddAdapterAirpcap(PCHAR name, PCHAR description)
 
 	ReleaseMutex(g_AdaptersInfoMutex);
 
+	TRACE_EXIT("PacketAddAdapterAirpcap");
 	return TRUE;
 }
 
@@ -1463,15 +1368,19 @@ BOOLEAN PacketAddAdapterAirpcap(PCHAR name, PCHAR description)
 
   This function populates the list of adapter descriptions, looking for DAG cards on the system. 
 */
-BOOLEAN PacketGetAdaptersAirpcap()
+static BOOLEAN PacketGetAdaptersAirpcap()
 {
 	CHAR Ebuf[AIRPCAP_ERRBUF_SIZE];
 	AirpcapDeviceDescription *Devs = NULL, *TmpDevs;
 	UINT i;
 	
+	TRACE_ENTER("PacketGetAdaptersAirpcap");
+
 	if(!g_PAirpcapGetDeviceList(&Devs, Ebuf))
 	{
 		// No airpcap cards found on this system
+		TRACE_PRINT("No AirPcap adapters found");
+		TRACE_EXIT("PacketGetAdaptersAirpcap");
 		return FALSE;
 	}
 	else
@@ -1484,9 +1393,141 @@ BOOLEAN PacketGetAdaptersAirpcap()
 	
 	g_PAirpcapFreeDeviceList(Devs);
 	
+	TRACE_EXIT("PacketGetAdaptersAirpcap");
 	return TRUE;
 }
 #endif // HAVE_AIRPCAP_API
+
+#ifdef HAVE_NPFIM_API
+
+static BOOLEAN PacketAddAdapterNpfIm(PNPF_IM_DEVICE pDevice)
+{
+	//this function should acquire the g_AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
+	PADAPTER_INFO TmpAdInfo;
+	NPF_IM_DEV_HANDLE handle = NULL;
+	BYTE mac[6];
+	DWORD macSize = 0;
+	NDIS_MEDIUM medium = NdisMediumNull;
+	ULONGLONG linkSpeed = 0;
+	BOOL bResult = TRUE;
+
+	TRACE_ENTER("PacketAddAdapterNpfIm");
+
+	do
+	{
+		// 
+		// We suppose that the DLL has been loaded successfully
+		// 
+		bResult = g_NpfImHandlers.NpfImOpenDevice(pDevice->Name, &handle);
+		if (bResult == FALSE) break;
+
+		bResult = g_NpfImHandlers.NpfImGetMedium(handle, &medium);
+		if (bResult == FALSE) break;
+
+		if (medium == NdisMedium802_3 || medium == NdisMediumWan)
+		{
+			DWORD bufferSize = sizeof(mac);
+		
+			if (g_NpfImHandlers.NpfImIssueQueryOid(handle, OID_802_3_CURRENT_ADDRESS, mac, &bufferSize) == FALSE)
+			{
+				macSize = 0;
+			}
+		}	
+
+		bResult = g_NpfImHandlers.NpfImGetLinkSpeed(handle, &linkSpeed);
+	}
+	while (FALSE);
+
+	if (handle != NULL)
+		g_NpfImHandlers.NpfImCloseDevice(handle);
+
+	if (bResult == FALSE)
+	{
+		TRACE_EXIT("PacketAddAdapterNpfIm");
+		return FALSE;
+	}
+
+	//
+	// Allocate a descriptor for this adapter
+	//			
+	//here we do not acquire the mutex, since we are not touching the list, yet.
+    TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));
+	if (TmpAdInfo == NULL) 
+	{
+		TRACE_PRINT("PacketAddAdapterNpfIm: GlobalAlloc Failed");
+		TRACE_EXIT("PacketAddAdapterNpfIm");
+		return FALSE;
+	}
+
+	// Copy the device name and description
+	StringCchCopyA(TmpAdInfo->Name, 
+		sizeof(TmpAdInfo->Name), 
+		pDevice->Name);
+
+	StringCchCopyA(TmpAdInfo->Description, 
+		sizeof(TmpAdInfo->Description), 
+		pDevice->Description);
+
+	CopyMemory(TmpAdInfo->MacAddress, mac, macSize);
+	TmpAdInfo->LinkLayer.LinkType = medium;
+	
+	TmpAdInfo->Flags = INFO_FLAG_NPFIM_DEVICE;
+	
+	TmpAdInfo->LinkLayer.LinkSpeed = linkSpeed;
+
+	WaitForSingleObject(g_AdaptersInfoMutex, INFINITE);
+
+	// Update the AdaptersInfo list
+	TmpAdInfo->Next = g_AdaptersInfoList;
+	g_AdaptersInfoList = TmpAdInfo;
+
+	ReleaseMutex(g_AdaptersInfoMutex);
+
+	TRACE_EXIT("PacketAddAdapterNpfIm");
+	return TRUE;
+}
+
+
+/*!
+  \brief Updates the list of the adapters using the NpfIm dll.
+  \return If the function succeeds, the return value is nonzero.
+
+  This function populates the list of adapter descriptions, looking for NpfIm adapters on the system. 
+*/
+static BOOLEAN PacketGetAdaptersNpfIm()
+{
+	PNPF_IM_DEVICE pDevices = NULL, pDevCursor;
+	
+	TRACE_ENTER("PacketGetAdaptersNpfIm");
+	// 
+	// We suppose that the DLL has been loaded successfully
+	// 
+	if (g_NpfImHandlers.NpfImGetDeviceList(&pDevices) == FALSE)
+	{
+		TRACE_EXIT("PacketGetAdaptersNpfIm");
+		return FALSE;
+	}
+
+	for (pDevCursor = pDevices; pDevCursor != NULL; pDevCursor = pDevCursor->pNext)
+	{
+		PacketAddAdapterNpfIm(pDevCursor);
+	}
+
+    g_NpfImHandlers.NpfImFreeDeviceList(pDevices);
+	
+	TRACE_EXIT("PacketGetAdaptersNpfIm");
+	return TRUE;
+}
+
+/*!
+  \brief Add an npfim adapter to the adapters info list, gathering information from the npfim dll
+  \param 
+  \param description description of the adapter.
+  \return If the function succeeds, the return value is nonzero.
+*/
+#endif // HAVE_NPFIM_API
+
+
 
 #ifdef HAVE_DAG_API
 /*!
@@ -1513,20 +1554,18 @@ BOOLEAN PacketAddAdapterDag(PCHAR name, PCHAR description, BOOLEAN IsAFile)
     TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));
 	if (TmpAdInfo == NULL) 
 	{
-		ODS("PacketAddAdapterDag: GlobalAlloc Failed allocating memory for the AdInfo structure.\n");
+		TRACE_PRINT("PacketAddAdapterDag: GlobalAlloc Failed allocating memory for the AdInfo structure.");
 		TRACE_EXIT("PacketAddAdapterDag");
 		return FALSE;
 	}
 
 	// Copy the device name and description
-	_snprintf(TmpAdInfo->Name, 
+	StringCchCopyA(TmpAdInfo->Name, 
 		sizeof(TmpAdInfo->Name), 
-		"%s", 
 		name);
 
-	_snprintf(TmpAdInfo->Description, 
+	StringCchCopyA(TmpAdInfo->Description, 
 		sizeof(TmpAdInfo->Description), 
-		"%s", 
 		description);
 
 	if(IsAFile)
@@ -1551,19 +1590,19 @@ BOOLEAN PacketAddAdapterDag(PCHAR name, PCHAR description, BOOLEAN IsAFile)
 	switch(g_p_dagc_getlinktype(dagfd)) 
 	{
 	case TYPE_HDLC_POS:
-		TmpAdInfo->LinkLayer.LinkType = NdisMediumCHDLC; // Note: custom linktype, NDIS doesn't provide an equivalent
+		TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMediumCHDLC; // Note: custom linktype, NDIS doesn't provide an equivalent
 		break;
 	case -TYPE_HDLC_POS:
-		TmpAdInfo->LinkLayer.LinkType = NdisMediumPPPSerial; // Note: custom linktype, NDIS doesn't provide an equivalent
+		TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMediumPPPSerial; // Note: custom linktype, NDIS doesn't provide an equivalent
 		break;
 	case TYPE_ETH:
-		TmpAdInfo->LinkLayer.LinkType = NdisMedium802_3;
+		TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMedium802_3;
 		break;
 	case TYPE_ATM: 
-		TmpAdInfo->LinkLayer.LinkType = NdisMediumAtm;
+		TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMediumAtm;
 		break;
 	default:
-		TmpAdInfo->LinkLayer.LinkType = NdisMediumNull; // Note: custom linktype, NDIS doesn't provide an equivalent
+		TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMediumNull; // Note: custom linktype, NDIS doesn't provide an equivalent
 		break;
 	}			
 
@@ -1628,7 +1667,7 @@ PADAPTER_INFO PacketFindAdInfo(PCHAR AdapterName)
 	
 	if (g_AdaptersInfoList == NULL)
 	{
-		ODS("Repopulating the adapters info list...\n");
+		TRACE_PRINT("Repopulating the adapters info list...");
 		PacketPopulateAdaptersInfoList();
 	}
 
@@ -1638,7 +1677,7 @@ PADAPTER_INFO PacketFindAdInfo(PCHAR AdapterName)
 	{
 		if(strcmp(TAdInfo->Name, AdapterName) == 0) 
 		{
-			ODSEx("Found AdInfo for adapter %s\n", AdapterName);
+			TRACE_PRINT1("Found AdInfo for adapter %s", AdapterName);
 			break;
 		}
 
@@ -1647,7 +1686,7 @@ PADAPTER_INFO PacketFindAdInfo(PCHAR AdapterName)
 
 	if (TAdInfo == NULL)
 	{
-		ODSEx("NOT found AdInfo for adapter %s\n", AdapterName);
+		TRACE_PRINT1("NOT found AdInfo for adapter %s", AdapterName);
 	}
 
 	TRACE_EXIT("PacketFindAdInfo");
@@ -1666,7 +1705,10 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 {
 	//this function should acquire the g_AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
 	PADAPTER_INFO TAdInfo, PrevAdInfo;
+
+#ifdef HAVE_WANPACKET_API
 	CHAR	FakeNdisWanAdapterName[MAX_WINPCAP_KEY_CHARS] = FAKE_NDISWAN_ADAPTER_NAME;
+#endif
 
 //  
 //	Old registry based WinPcap names
@@ -1681,7 +1723,7 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 	
 	TRACE_ENTER("PacketUpdateAdInfo");
 
-	ODSEx("Updating adapter info for adapter %s\n", AdapterName);
+	TRACE_PRINT1("Updating adapter info for adapter %s", AdapterName);
 	
 	WaitForSingleObject(g_AdaptersInfoMutex, INFINITE);
 	
@@ -1694,13 +1736,14 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 	{
 		if(strcmp(TAdInfo->Name, AdapterName) == 0)
 		{
+#ifdef HAVE_WANPACKET_API
 			if (strcmp(AdapterName, FakeNdisWanAdapterName) == 0)
 			{
 				ReleaseMutex(g_AdaptersInfoMutex);
 				TRACE_EXIT("PacketUpdateAdInfo");
 				return TRUE;
 			}
-
+#endif
 			if(TAdInfo == g_AdaptersInfoList)
 			{
 				g_AdaptersInfoList = TAdInfo->Next;
@@ -1727,31 +1770,42 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 	//
 	// Now obtain the information about this adapter
 	//
-	if(AddAdapter(AdapterName, 0) == TRUE)
+	if(PacketAddAdapterNPF(AdapterName, 0) == TRUE)
 	{
 		TRACE_EXIT("PacketUpdateAdInfo");
 		return TRUE;
 	}
-#ifndef _WINNT4
-	// 
-	// Not a tradiditonal adapter, but possibly a Wan or DAG interface 
-	// Gather all the available adapters from IPH API and dagc API
-	//
+
+#ifdef HAVE_IPHELPER_API
 	PacketGetAdaptersIPH();
-	PacketAddFakeNdisWanAdapter();
-#ifdef HAVE_DAG_API
-	if(g_p_dagc_open == NULL)	
+#endif //HAVE_IPHELPER_API
+
+#ifdef HAVE_NPFIM_API
+	if (g_hNpfImDll != NULL)
 	{
-		TRACE_EXIT("PacketUpdateAdInfo");
-		return TRUE;	// dagc.dll not present on this system.
+		PacketGetAdaptersNpfIm();
 	}
 	else
+	{
+		TRACE_PRINT("NpfIm extension not available");
+	}
+#endif //HAVE_NPFIM_API	
+
+#ifdef HAVE_WANPACKET_API
+	PacketAddFakeNdisWanAdapter();
+#endif //HAVE_WANPACKET_API
+
+#ifdef HAVE_DAG_API
+	if(g_p_dagc_open != NULL)	
+	{
 		PacketGetAdaptersDag();
+	}
+	else
+	{
+		TRACE_PRINT("Dag extension not available");
+	}
 #endif // HAVE_DAG_API
 
-#endif // _WINNT4
-
-	// Adapter not found
 	TRACE_EXIT("PacketUpdateAdInfo");
 	return TRUE;
 }
@@ -1794,56 +1848,65 @@ void PacketPopulateAdaptersInfoList()
 	//
 	// Fill the new list
 	//
-	if(!PacketGetAdapters())
+	if(!PacketGetAdaptersNPF())
 	{
-		// No info about adapters in the registry. 
-		ODS("PacketPopulateAdaptersInfoList: registry scan for adapters failed!\n");
+		// No info about adapters in the registry. (NDIS adapters, i.e. exported by NPF)
+		TRACE_PRINT("PacketPopulateAdaptersInfoList: registry scan for adapters failed!");
 	}
-#ifndef _WINNT4
+
+#ifdef HAVE_IPHELPER_API
 	if(!PacketGetAdaptersIPH())
 	{
 		// IP Helper API not present. We are under WinNT 4 or TCP/IP is not installed
-		ODS("PacketPopulateAdaptersInfoList: failed to get adapters from the IP Helper API!\n");
+		TRACE_PRINT("PacketPopulateAdaptersInfoList: failed to get adapters from the IP Helper API!");
 	}
+#endif //HAVE_IPHELPER_API
 
+#ifdef HAVE_WANPACKET_API
 	if (!PacketAddFakeNdisWanAdapter())
 	{
-		ODS("PacketPopulateAdaptersInfoList: adding fake NdisWan adapter failed.\n");
+		TRACE_PRINT("PacketPopulateAdaptersInfoList: adding fake NdisWan adapter failed.");
 	}
+#endif // HAVE_WANPACKET_API
 
 #ifdef HAVE_AIRPCAP_API
 	if(g_PAirpcapGetDeviceList)	// Ensure that the airpcap dll is present
 	{
 		if(!PacketGetAdaptersAirpcap())
 		{
-			// No info about adapters in the registry. 
-			ODS("PacketPopulateAdaptersInfoList: lookup of airpcap adapters failed!\n");
+			TRACE_PRINT("PacketPopulateAdaptersInfoList: lookup of airpcap adapters failed!");
 		}
 	}
-#endif // HAVE_DAG_API
+#endif // HAVE_AIRPCAP_API
+
+#ifdef HAVE_NPFIM_API
+	if (g_hNpfImDll != NULL)
+	{
+		if (!PacketGetAdaptersNpfIm()) // Ensure that the npfim dll is present
+		{
+			TRACE_PRINT("PacketPopulateAdaptersInfoList: lookup of NpfIm adapters failed!");
+		}
+	}
+#endif //HAVE_NPFIM_API
 
 #ifdef HAVE_DAG_API
-	if(g_p_dagc_open == NULL)	
-	{}	// dagc.dll not present on this system.
-	else
+	if(g_p_dagc_open != NULL)	
 	{
 		if(!PacketGetAdaptersDag())
 		{
 			// No info about adapters in the registry. 
-			ODS("PacketPopulateAdaptersInfoList: lookup of dag cards failed!\n");
+			TRACE_PRINT("PacketPopulateAdaptersInfoList: lookup of dag cards failed!");
 		}
 	}
 #endif // HAVE_DAG_API
-
-#endif // _WINNT4
 
 	ReleaseMutex(g_AdaptersInfoMutex);
 	TRACE_EXIT("PacketPopulateAdaptersInfoList");
 }
 
-#ifndef _WINNT4
+#ifdef HAVE_WANPACKET_API
 
-BOOLEAN PacketAddFakeNdisWanAdapter()
+static BOOLEAN PacketAddFakeNdisWanAdapter()
 {
 	//this function should acquire the g_AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
 	PADAPTER_INFO TmpAdInfo, SAdInfo;
@@ -1875,7 +1938,7 @@ BOOLEAN PacketAddFakeNdisWanAdapter()
 	// Scan the adapters list to see if this one is already present
 	if (!WanPacketTestAdapter())
 	{
- 		ODS("Cannot add the wan adapter, since it cannot be opened.\n");
+ 		TRACE_PRINT("Cannot add the wan adapter, since it cannot be opened.");
   		//the adapter cannot be opened, we do not list it, but we return t
  		TRACE_EXIT("PacketAddFakeNdisWanAdapter");
   		return FALSE;
@@ -1887,7 +1950,7 @@ BOOLEAN PacketAddFakeNdisWanAdapter()
 	{
 		if(strcmp(DialupName, SAdInfo->Name) == 0)
 		{
-			ODS("PacketAddFakeNdisWanAdapter: Adapter already present in the list\n");
+			TRACE_PRINT("PacketAddFakeNdisWanAdapter: Adapter already present in the list");
 			ReleaseMutex(g_AdaptersInfoMutex);
 			TRACE_EXIT("PacketAddFakeNdisWanAdapter");
 			return TRUE;
@@ -1897,7 +1960,7 @@ BOOLEAN PacketAddFakeNdisWanAdapter()
 	TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));
 	if (TmpAdInfo == NULL) 
 	{
-		ODS("PacketAddFakeNdisWanAdapter: GlobalAlloc Failed allocating memory for the AdInfo structure\n");
+		TRACE_PRINT("PacketAddFakeNdisWanAdapter: GlobalAlloc Failed allocating memory for the AdInfo structure");
 		ReleaseMutex(g_AdaptersInfoMutex);
 		TRACE_EXIT("PacketAddFakeNdisWanAdapter");
 		return FALSE;
@@ -1921,4 +1984,4 @@ BOOLEAN PacketAddFakeNdisWanAdapter()
 	return TRUE;
 }
 
-#endif
+#endif //HAVE_WANPACKET_API

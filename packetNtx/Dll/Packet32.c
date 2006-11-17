@@ -33,13 +33,60 @@
 
 #define UNICODE 1
 
-#include <stdio.h>
+#pragma warning (disable : 4127)  //conditional expression is constant. Used for do{}while(FALSE) loops.
+
+#if (MSC_VER < 1300)
+#pragma warning (disable : 4710) // inline function not expanded. used for strsafe functions
+#endif
+
+
 #include <packet32.h>
+#include <StrSafe.h>
+
 #include "Packet32-Int.h"
+
 #include "wanpacket/wanpacket.h"
 #include "debug.h"
 
+#ifdef _WINNT4
+#if (defined(HAVE_NPFIM_API) || defined(HAVE_WANPACKET_API) || defined (HAVE_AIRPCAP_API) || defined(HAVE_IPHELPER_API))
+#error Do not enable _WINNT4 with any other API
+#endif
+#endif //_WINNT4
+
+#ifdef _WINNT4
+#pragma message ("Compiling Packet.dll for WINNT4 only")
+#endif
+
+#ifdef HAVE_AIRPCAP_API
+#pragma message ("Compiling Packet.dll with support for AirPcap")
+#endif
+
+#ifdef HAVE_NPFIM_API
+#pragma message ("Compiling Packet.dll with support for NpfIm driver")
+#endif
+
+#ifdef HAVE_DAG_API
+#pragma message ("Compiling Packet.dll with support for DAG cards")
+#endif
+
+#ifdef HAVE_WANPACKET_API
+#pragma message ("Compiling Packet.dll with support for WanPacket (aka Dialup thru NetMon)")
+#endif
+
+#ifdef HAVE_IPHELPER_API
+#pragma message ("Compiling Packet.dll with support from IP helper API for API addresses")
+#endif
+
+#ifndef UNUSED
+#define UNUSED(_x) (_x)
+#endif
+
+
+#ifdef _DEBUG_TO_FILE
+LONG PacketDumpRegistryKey(PCHAR KeyName, PCHAR FileName);
 CHAR g_LogFileName[1024] = "winpcap_debug.txt";
+#endif //_DEBUG_TO_FILE
 
 #include <windows.h>
 #include <windowsx.h>
@@ -71,7 +118,8 @@ char PacketDriverVersion[64];
 //
 extern PADAPTER_INFO g_AdaptersInfoList;
 extern HANDLE g_AdaptersInfoMutex;
-#ifndef _WINNT4
+
+#ifdef HAVE_IPHELPER_API
 typedef VOID (*GAAHandler)(
   ULONG,
   DWORD,
@@ -79,7 +127,7 @@ typedef VOID (*GAAHandler)(
   PIP_ADAPTER_ADDRESSES,
   PULONG);
 GAAHandler g_GetAdaptersAddressesPointer = NULL;
-#endif // _WINNT4
+#endif // HAVE_IPHELPER_API
 
 //
 // Dynamic dependencies variables and declarations
@@ -145,20 +193,21 @@ BOOL APIENTRY DllMain(HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 {
     BOOLEAN Status=TRUE;
 	PADAPTER_INFO NewAdInfo;
-
 	TCHAR DllFileName[MAX_PATH];
+
+	UNUSED(lpReserved);
 
     switch(Reason)
     {
 	case DLL_PROCESS_ATTACH:
 
-		ODS("************Packet32: DllMain************\n");
+		TRACE_PRINT_DLLMAIN("************Packet32: DllMain************");
 
 #if 0
 #ifdef WPCAP_OEM
-#ifndef _WINNT4
+#ifdef HAVE_WANPACKET_API
 		LoadNdisNpp(Reason);
-#endif // _WINNT4
+#endif // HAVE_WANPACKET_API
 #endif // WPCAP_OEM 
 #endif
 
@@ -242,13 +291,19 @@ BOOL APIENTRY DllMain(HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 */
 VOID PacketLoadLibrariesDynamically()
 {
+#ifdef HAVE_IPHELPER_API
 	HMODULE IPHMod;
+#endif // HAVE_IPHELPER_API
+
 #ifdef HAVE_AIRPCAP_API
 	HMODULE AirpcapLib;
 #endif // HAVE_DAG_API	
+
 #ifdef HAVE_DAG_API
 	HMODULE DagcLib;
 #endif // HAVE_DAG_API
+
+	TRACE_ENTER("PacketLoadLibrariesDynamically");
 
 	//
 	// Acquire the global mutex, so we wait until other threads are done
@@ -263,24 +318,28 @@ VOID PacketLoadLibrariesDynamically()
 	if(g_DynamicLibrariesLoaded != 1)
 	{
 		ReleaseMutex(g_DynamicLibrariesMutex);
+		TRACE_EXIT("PacketLoadLibrariesDynamically");
 		return;
 	}
 
 	//
 	// Locate GetAdaptersAddresses dinamically since it is not present in Win2k
 	//
+
+#ifdef HAVE_IPHELPER_API
 	IPHMod = GetModuleHandle(TEXT("Iphlpapi"));
-	
-#ifndef _WINNT4
-	g_GetAdaptersAddressesPointer = (GAAHandler) GetProcAddress(IPHMod ,"GetAdaptersAddresses");
-#endif // _WINNT4
+	if (IPHMod != NULL)
+	{
+		g_GetAdaptersAddressesPointer = (GAAHandler) GetProcAddress(IPHMod ,"GetAdaptersAddresses");
+	}
+#endif // HAVE_IPHELPER_API
 	
 #ifdef HAVE_AIRPCAP_API
 	/* We dinamically load the airpcap library in order link it only when it's present on the system */
 	if((AirpcapLib =  LoadLibrary(TEXT("airpcap.dll"))) == NULL)
 	{
 		// Report the error but go on
-		ODS("airpcap library not found on this system\n");
+		TRACE_PRINT("AirPcap library not found on this system");
 	}
 	else
 	{
@@ -329,7 +388,7 @@ VOID PacketLoadLibrariesDynamically()
 	if((DagcLib =  LoadLibrary(TEXT("dagc.dll"))) == NULL)
 	{
 		// Report the error but go on
-		ODS("dag capture library not found on this system\n");
+		TRACE_PRINT("dag capture library not found on this system");
 	}
 	else
 	{
@@ -347,10 +406,20 @@ VOID PacketLoadLibrariesDynamically()
 	}
 #endif /* HAVE_DAG_API */
 
+#ifdef HAVE_NPFIM_API
+	if (LoadNpfImDll() == FALSE)
+	{
+		TRACE_PRINT("Failed loading NpfIm extension");
+	}
+#endif //HAVE_NPFIM_API
+
+
 	//
 	// Done. Release the mutex and return
 	//
 	ReleaseMutex(g_DynamicLibrariesMutex);
+
+	TRACE_EXIT("PacketLoadLibrariesDynamically");
 	return;
 }
 
@@ -421,7 +490,7 @@ BOOLEAN QueryWinPcapRegistryStringA(CHAR *SubKeyName,
 		//
 		//print the error
 		//
-		ODSEx("QueryWinpcapRegistryKey, RegQueryValueEx failed, code %d\n",QveRes);
+		ODSEx("QueryWinpcapRegistryKey, RegQueryValueEx failed, code %d",QveRes);
 		//
 		//JUST CONTINUE WITH THE DEFAULT VALUE
 		//
@@ -563,18 +632,18 @@ ULONG inet_addrU(const WCHAR *cp)
 		part = 0;
 		while ((c = *cp++) != '\0' && c != '.') {
 			if (c < '0' || c > '9')
-				return -1;
+				return (ULONG)-1;
 			part = part*10 + (c - '0');
 		}
 		if (part > 255)
-			return -1;	
+			return (ULONG)-1;	
 		val = val | (part << i*8);
 		if (i == 3) {
 			if (c != '\0')
-				return -1;	// extra gunk at end of string 
+				return (ULONG)-1;	// extra gunk at end of string 
 		} else {
 			if (c == '\0')
-				return -1;	// string ends early 
+				return (ULONG)-1;	// string ends early 
 		}
 	}
 	return val;
@@ -585,13 +654,12 @@ ULONG inet_addrU(const WCHAR *cp)
   \param string The string to convert.
   \return The converted string.
 */
-
-PWCHAR SChar2WChar(PCHAR string)
+static PWCHAR SChar2WChar(PCHAR string)
 {
 	PWCHAR TmpStr;
-	TmpStr = (WCHAR*) GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, (strlen(string)+2)*sizeof(WCHAR));
+	TmpStr = (WCHAR*) GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, (DWORD)(strlen(string)+2)*sizeof(WCHAR));
 
-	MultiByteToWideChar(CP_ACP, 0, string, -1, TmpStr, (strlen(string)+2));
+	MultiByteToWideChar(CP_ACP, 0, string, -1, TmpStr, (DWORD)(strlen(string)+2));
 
 	return TmpStr;
 }
@@ -601,11 +669,10 @@ PWCHAR SChar2WChar(PCHAR string)
   \param string The string to convert.
   \return The converted string.
 */
-
-PCHAR WChar2SChar(PWCHAR string)
+static PCHAR WChar2SChar(PWCHAR string)
 {
 	PCHAR TmpStr;
-	TmpStr = (CHAR*) GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, (wcslen(string)+2));
+	TmpStr = (CHAR*) GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, (DWORD)(wcslen(string)+2));
 
 	// Conver to ASCII
 	WideCharToMultiByte(
@@ -614,7 +681,7 @@ PCHAR WChar2SChar(PWCHAR string)
 		string,
 		-1,
 		TmpStr,
-		(wcslen(string)+2),          // size of buffer
+		(DWORD)(wcslen(string)+2),          // size of buffer
 		NULL,
 		NULL);
 
@@ -628,6 +695,8 @@ PCHAR WChar2SChar(PWCHAR string)
 
   The lookahead buffer is the portion of packet that Packet_tap() can access from the NIC driver's memory
   without performing a copy. This function tries to increase the size of that buffer.
+
+  NOTE: this function is used for NPF adapters, only.
 */
 
 BOOLEAN PacketSetMaxLookaheadsize (LPADAPTER AdapterObject)
@@ -640,7 +709,7 @@ BOOLEAN PacketSetMaxLookaheadsize (LPADAPTER AdapterObject)
 
     OidData = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,IoCtlBufferLength);
     if (OidData == NULL) {
-        ODS("PacketSetMaxLookaheadsize failed\n");
+        TRACE_PRINT("PacketSetMaxLookaheadsize failed");
         Status = FALSE;
     }
 	else
@@ -666,6 +735,8 @@ BOOLEAN PacketSetMaxLookaheadsize (LPADAPTER AdapterObject)
 
   This function is used by PacketOpenAdapter() to allocate the read event and pass it to the driver by means of an ioctl
   call and set it in the _ADAPTER structure pointed by AdapterObject.
+
+  NOTE: this function is used for NPF adapters, only.
 */
 BOOLEAN PacketSetReadEvt(LPADAPTER AdapterObject)
 {
@@ -698,8 +769,13 @@ BOOLEAN PacketSetReadEvt(LPADAPTER AdapterObject)
 			&BytesReturned,
 			NULL)==FALSE) 
 	{
-		//SetLastError done by DeviceIoControl
- 		TRACE_EXIT("PacketSetReadEvt");
+		DWORD dwLastError = GetLastError();
+
+		CloseHandle(hEvent);
+
+		SetLastError(dwLastError);
+
+		TRACE_EXIT("PacketSetReadEvt");
 		return FALSE;
 	}
 
@@ -719,7 +795,7 @@ BOOLEAN PacketSetReadEvt(LPADAPTER AdapterObject)
 
 BOOLEAN PacketInstallDriver()
 {
-	BOOL result = FALSE;
+	BOOLEAN result = FALSE;
 	ULONG err = 0;
 	SC_HANDLE svcHandle;
 	SC_HANDLE scmHandle;
@@ -771,7 +847,7 @@ BOOLEAN PacketInstallDriver()
 		err = GetLastError();
 		if (err == ERROR_SERVICE_EXISTS) 
 		{
-			ODS("Service npf.sys already exists\n");
+			TRACE_PRINT("Service npf.sys already exists");
 			//npf.sys already existed
 			err = 0;
 			result = TRUE;
@@ -779,7 +855,7 @@ BOOLEAN PacketInstallDriver()
 	}
 	else 
 	{
-		ODS("Created service for npf.sys\n");
+		TRACE_PRINT("Created service for npf.sys");
 		//Created service for npf.sys
 		result = TRUE;
 	}
@@ -789,7 +865,7 @@ BOOLEAN PacketInstallDriver()
 
 	if(result == FALSE)
 	{
-		ODSEx("PacketInstallDriver failed, Error=%d\n",err);
+		TRACE_PRINT1("PacketInstallDriver failed, Error=%u",err);
 	}
 
 	CloseServiceHandle(scmHandle);
@@ -815,12 +891,9 @@ LONG PacketDumpRegistryKey(PCHAR KeyName, PCHAR FileName)
 	CHAR Command[256];
 
 	TRACE_ENTER("PacketDumpRegistryKey");
-	strcpy(Command, "regedit /e ");
-	strcat(Command, FileName);
-	strcat(Command, " ");
-	strcat(Command, KeyName);
+	StringCchPrintfA(Command, sizeof(Command), "regedit /e %s %s", FileName, KeyName);
 
-	/// Let regedit do the dirt work for us
+	/// Let regedit do the dirty work for us
 	system(Command);
 
 	TRACE_EXIT("PacketDumpRegistryKey");
@@ -862,14 +935,14 @@ BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLe
         lpstrVffInfo = GlobalAllocPtr(GMEM_MOVEABLE, dwVerInfoSize);
 		if (lpstrVffInfo == NULL)
 		{
-			ODS("PacketGetFileVersion: failed to allocate memory\n");
+			TRACE_PRINT("PacketGetFileVersion: failed to allocate memory");
 			TRACE_EXIT("PacketGetFileVersion");
 			return FALSE;
 		}
 
 		if(!GetFileVersionInfo(FileName, dwVerHnd, dwVerInfoSize, lpstrVffInfo)) 
 		{
-			ODS("PacketGetFileVersion: failed to call GetFileVersionInfo\n");
+			TRACE_PRINT("PacketGetFileVersion: failed to call GetFileVersionInfo");
             GlobalFreePtr(lpstrVffInfo);
 			TRACE_EXIT("PacketGetFileVersion");
 			return FALSE;
@@ -878,14 +951,15 @@ BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLe
 		// Read the list of languages and code pages.
 		if(!VerQueryValue(lpstrVffInfo,	TEXT("\\VarFileInfo\\Translation"),	(LPVOID*)&lpTranslate, &cbTranslate))
 		{
-			ODS("PacketGetFileVersion: failed to call VerQueryValue\n");
+			TRACE_PRINT("PacketGetFileVersion: failed to call VerQueryValue");
             GlobalFreePtr(lpstrVffInfo);
 			TRACE_EXIT("PacketGetFileVersion");
 			return FALSE;
 		}
 		
 		// Create the file version string for the first (i.e. the only one) language.
-		wsprintf( SubBlock, 
+		StringCchPrintf(SubBlock,
+			sizeof(SubBlock)/sizeof(SubBlock[0]),
 			TEXT("\\StringFileInfo\\%04x%04x\\FileVersion"),
 			(*lpTranslate).wLanguage,
 			(*lpTranslate).wCodePage);
@@ -893,7 +967,7 @@ BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLe
 		// Retrieve the file version string for the language.
 		if(!VerQueryValue(lpstrVffInfo, SubBlock, &lpBuffer, &dwBytes))
 		{
-			ODS("PacketGetFileVersion: failed to call VerQueryValue\n");
+			TRACE_PRINT("PacketGetFileVersion: failed to call VerQueryValue");
             GlobalFreePtr(lpstrVffInfo);
 			TRACE_EXIT("PacketGetFileVersion");
 			return FALSE;
@@ -904,14 +978,14 @@ BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLe
 
 		if(strlen(TmpStr) >= VersionBuffLen)
 		{
-			ODS("PacketGetFileVersion: Input buffer too small\n");
+			TRACE_PRINT("PacketGetFileVersion: Input buffer too small");
             GlobalFreePtr(lpstrVffInfo);
             GlobalFreePtr(TmpStr);
 			TRACE_EXIT("PacketGetFileVersion");
 			return FALSE;
 		}
 
-		strcpy(VersionBuff, TmpStr);
+		StringCchCopyA(VersionBuff, VersionBuffLen, TmpStr);
 
         GlobalFreePtr(lpstrVffInfo);
         GlobalFreePtr(TmpStr);
@@ -919,7 +993,7 @@ BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLe
 	  } 
 	else 
 	{
-		ODSEx("PacketGetFileVersion: failed to call GetFileVersionInfoSize, LastError = %d\n", GetLastError());
+		TRACE_PRINT1("PacketGetFileVersion: failed to call GetFileVersionInfoSize, LastError = %8.8x", GetLastError());
 		TRACE_EXIT("PacketGetFileVersion");
 		return FALSE;
 	
@@ -937,18 +1011,18 @@ BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLe
 
   \note internal function used by PacketOpenAdapter() and AddAdapter()
 */
-LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
+LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterNameA)
 {
     LPADAPTER lpAdapter;
-    BOOLEAN Result;
+    BOOL Result;
 	DWORD error;
 	SC_HANDLE svcHandle = NULL;
 	SC_HANDLE scmHandle = NULL;
 	LONG KeyRes;
 	HKEY PathKey;
 	SERVICE_STATUS SStat;
-	BOOLEAN QuerySStat;
-	WCHAR SymbolicLink[MAX_PATH];
+	BOOL QuerySStat;
+	CHAR SymbolicLinkA[MAX_PATH];
 //  
 //	Old registry based WinPcap names
 //
@@ -961,12 +1035,14 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 	// Create the NPF device name from the original device name
 	TRACE_ENTER("PacketOpenAdapterNPF");
 	
+	TRACE_PRINT1("Trying to open adapter %s", AdapterNameA);
+
 	scmHandle = OpenSCManager(NULL, NULL, GENERIC_READ);
 		
 	if(scmHandle == NULL)
 	{
 		error = GetLastError();
-		ODSEx("OpenSCManager failed! LastError=%d\n", error);
+		TRACE_PRINT1("OpenSCManager failed! LastError=%8.8x", error);
 	}
 	else
 	{
@@ -983,8 +1059,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 		//
 		// Create the name of the registry key containing the service.
 		//
-		_snprintf(NpfServiceLocation, sizeof(NpfServiceLocation) - 1, "SYSTEM\\CurrentControlSet\\Services\\%s", NpfDriverName);
-		NpfServiceLocation[sizeof(NpfServiceLocation) - 1] = '\0';
+		StringCchPrintfA(NpfServiceLocation, sizeof(NpfServiceLocation), "SYSTEM\\CurrentControlSet\\Services\\%s", NpfDriverName);
 
 		// check if the NPF registry key is already present
 		// this means that the driver is already installed and that we don't need to call PacketInstallDriver
@@ -996,59 +1071,59 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 		
 		if(KeyRes != ERROR_SUCCESS)
 		{
- 			ODS("NPF registry key not present, trying to install the driver.\n");
+ 			TRACE_PRINT("NPF registry key not present, trying to install the driver.");
 			Result = PacketInstallDriver();
 		}
 		else
 		{
- 			ODS("NPF registry key present, driver is installed.\n");
+ 			TRACE_PRINT("NPF registry key present, driver is installed.");
 			Result = TRUE;
 			RegCloseKey(PathKey);
 		}
 		
 		if (Result) 
 		{
- 			ODS("Trying to see if the NPF service is running...\n");
+ 			TRACE_PRINT("Trying to see if the NPF service is running...");
 			svcHandle = OpenServiceA(scmHandle, NpfDriverName, SERVICE_START | SERVICE_QUERY_STATUS );
 
 			if (svcHandle != NULL)
 			{
 				QuerySStat = QueryServiceStatus(svcHandle, &SStat);
 				
-#ifdef _DEBUG_TO_FILE				
+#ifdef _DBG				
 				switch (SStat.dwCurrentState)
 				{
 				case SERVICE_CONTINUE_PENDING:
-					ODS("The status of the driver is: SERVICE_CONTINUE_PENDING\n");
+					TRACE_PRINT("The status of the driver is: SERVICE_CONTINUE_PENDING");
 					break;
 				case SERVICE_PAUSE_PENDING:
-					ODS("The status of the driver is: SERVICE_PAUSE_PENDING\n");
+					TRACE_PRINT("The status of the driver is: SERVICE_PAUSE_PENDING");
 					break;
 				case SERVICE_PAUSED:
-					ODS("The status of the driver is: SERVICE_PAUSED\n");
+					TRACE_PRINT("The status of the driver is: SERVICE_PAUSED");
 					break;
 				case SERVICE_RUNNING:
-					ODS("The status of the driver is: SERVICE_RUNNING\n");
+					TRACE_PRINT("The status of the driver is: SERVICE_RUNNING");
 					break;
 				case SERVICE_START_PENDING:
-					ODS("The status of the driver is: SERVICE_START_PENDING\n");
+					TRACE_PRINT("The status of the driver is: SERVICE_START_PENDING");
 					break;
 				case SERVICE_STOP_PENDING:
-					ODS("The status of the driver is: SERVICE_STOP_PENDING\n");
+					TRACE_PRINT("The status of the driver is: SERVICE_STOP_PENDING");
 					break;
 				case SERVICE_STOPPED:
-					ODS("The status of the driver is: SERVICE_STOPPED\n");
+					TRACE_PRINT("The status of the driver is: SERVICE_STOPPED");
 					break;
 
 				default:
-					ODS("The status of the driver is: unknown\n");
+					TRACE_PRINT("The status of the driver is: unknown");
 					break;
 				}
 #endif
 
 				if(!QuerySStat || SStat.dwCurrentState != SERVICE_RUNNING)
 				{
-					ODS("Driver NPF not running. Calling startservice\n");
+					TRACE_PRINT("Driver NPF not running. Calling startservice");
 					if (StartService(svcHandle, 0, NULL)==0)
 					{ 
 						error = GetLastError();
@@ -1058,7 +1133,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 							if (scmHandle != NULL) 
 								CloseServiceHandle(scmHandle);
 							error = GetLastError();
-							ODSEx("PacketOpenAdapterNPF: StartService failed, LastError=%d\n",error);
+							TRACE_PRINT1("PacketOpenAdapterNPF: StartService failed, LastError=%8.8x",error);
 							TRACE_EXIT("PacketOpenAdapterNPF");
 							SetLastError(error);
 							return NULL;
@@ -1073,7 +1148,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 			else
 			{
 				error = GetLastError();
-				ODSEx("OpenService failed! Error=%d\n", error);
+				TRACE_PRINT1("OpenService failed! Error=%8.8x", error);
 				SetLastError(error);
 			}
 		}
@@ -1094,47 +1169,47 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 					
 					QuerySStat = QueryServiceStatus(svcHandle, &SStat);
 
-#ifdef _DEBUG_TO_FILE
+#ifdef _DBG
 					switch (SStat.dwCurrentState)
 					{
 					case SERVICE_CONTINUE_PENDING:
-						ODS("The status of the driver is: SERVICE_CONTINUE_PENDING\n");
+						TRACE_PRINT("The status of the driver is: SERVICE_CONTINUE_PENDING");
 						break;
 					case SERVICE_PAUSE_PENDING:
-						ODS("The status of the driver is: SERVICE_PAUSE_PENDING\n");
+						TRACE_PRINT("The status of the driver is: SERVICE_PAUSE_PENDING");
 						break;
 					case SERVICE_PAUSED:
-						ODS("The status of the driver is: SERVICE_PAUSED\n");
+						TRACE_PRINT("The status of the driver is: SERVICE_PAUSED");
 						break;
 					case SERVICE_RUNNING:
-						ODS("The status of the driver is: SERVICE_RUNNING\n");
+						TRACE_PRINT("The status of the driver is: SERVICE_RUNNING");
 						break;
 					case SERVICE_START_PENDING:
-						ODS("The status of the driver is: SERVICE_START_PENDING\n");
+						TRACE_PRINT("The status of the driver is: SERVICE_START_PENDING");
 						break;
 					case SERVICE_STOP_PENDING:
-						ODS("The status of the driver is: SERVICE_STOP_PENDING\n");
+						TRACE_PRINT("The status of the driver is: SERVICE_STOP_PENDING");
 						break;
 					case SERVICE_STOPPED:
-						ODS("The status of the driver is: SERVICE_STOPPED\n");
+						TRACE_PRINT("The status of the driver is: SERVICE_STOPPED");
 						break;
 
 					default:
-						ODS("The status of the driver is: unknown\n");
+						TRACE_PRINT("The status of the driver is: unknown");
 						break;
 					}
 #endif
 					
 					if(!QuerySStat || SStat.dwCurrentState != SERVICE_RUNNING){
 						
-						ODS("Calling startservice\n");
+						TRACE_PRINT("Calling startservice");
 						
 						if (StartService(svcHandle, 0, NULL)==0){ 
 							error = GetLastError();
 							if(error!=ERROR_SERVICE_ALREADY_RUNNING && error!=ERROR_ALREADY_EXISTS)
 							{
 								if (scmHandle != NULL) CloseServiceHandle(scmHandle);
-								ODSEx("PacketOpenAdapterNPF: StartService failed, LastError=%d\n",error);
+								TRACE_PRINT1("PacketOpenAdapterNPF: StartService failed, LastError=%8.8x",error);
 								TRACE_EXIT("PacketOpenAdapterNPF");
 								SetLastError(error);
 								return NULL;
@@ -1148,7 +1223,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 				}
 				else{
 					error = GetLastError();
-					ODSEx("OpenService failed! LastError=%d", error);
+					TRACE_PRINT1("OpenService failed! LastError=%8.8x", error);
 					SetLastError(error);
 				}
 			}
@@ -1160,7 +1235,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 	lpAdapter=(LPADAPTER)GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER));
 	if (lpAdapter==NULL)
 	{
-		ODS("PacketOpenAdapterNPF: GlobalAlloc Failed to allocate the ADAPTER structure\n");
+		TRACE_PRINT("PacketOpenAdapterNPF: GlobalAlloc Failed to allocate the ADAPTER structure");
 		error=GetLastError();
 		//set the error to the one on which we failed
 		TRACE_EXIT("PacketOpenAdapterNPF");
@@ -1170,20 +1245,39 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 
 	lpAdapter->NumWrites=1;
 
- 	if (LOWORD(GetVersion()) == 4)
- 		_snwprintf(SymbolicLink, sizeof(SymbolicLink)/sizeof(SymbolicLink[0]) - 1, TEXT("\\\\.\\%s"),&AdapterName[16]);
- 	else
- 		_snwprintf(SymbolicLink, sizeof(SymbolicLink)/sizeof(SymbolicLink[0]) - 1, TEXT("\\\\.\\Global\\%s"),&AdapterName[16]);
-	
-	SymbolicLink[sizeof(SymbolicLink)/sizeof(SymbolicLink[0]) - 1] = 0;
+#define DEVICE_PREFIX "\\Device\\"
 
-	// Copy  only the bytes that fit in the adapter structure.
-	// Note that lpAdapter->SymbolicLink is present for backward compatibility but will
-	// never be used by the apps
-	memcpy(lpAdapter->SymbolicLink, (PCHAR)SymbolicLink, MAX_LINK_NAME_LENGTH);
+	if (LOWORD(GetVersion()) == 4)
+	{
+		if (strlen(AdapterNameA) > strlen(DEVICE_PREFIX))
+		{
+			StringCchPrintfA(SymbolicLinkA, MAX_PATH, "\\\\.\\%s", AdapterNameA + strlen(DEVICE_PREFIX));
+		}
+		else
+		{
+			ZeroMemory(SymbolicLinkA, sizeof(SymbolicLinkA));
+		}
+	}
+ 	else
+	{
+		if (strlen(AdapterNameA) > strlen(DEVICE_PREFIX))
+		{
+			StringCchPrintfA(SymbolicLinkA, MAX_PATH, "\\\\.\\Global\\%s", AdapterNameA + strlen(DEVICE_PREFIX));
+		}
+		else
+		{
+			ZeroMemory(SymbolicLinkA, sizeof(SymbolicLinkA));
+		}
+	}
+
+	//
+	// NOTE GV 20061114 This is a sort of breaking change. In the past we were putting what
+	// we could fit inside this variable. Now we simply put NOTHING. It's just useless
+	//
+	ZeroMemory(lpAdapter->SymbolicLink, sizeof(lpAdapter->SymbolicLink));
 
 	//try if it is possible to open the adapter immediately
-	lpAdapter->hFile=CreateFile(SymbolicLink,GENERIC_WRITE | GENERIC_READ,
+	lpAdapter->hFile=CreateFileA(SymbolicLinkA,GENERIC_WRITE | GENERIC_READ,
 		0,NULL,OPEN_EXISTING,0,0);
 	
 	if (lpAdapter->hFile != INVALID_HANDLE_VALUE) 
@@ -1191,12 +1285,14 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 
 		if(PacketSetReadEvt(lpAdapter)==FALSE){
 			error=GetLastError();
-			ODS("PacketOpenAdapterNPF: Unable to open the read event\n");
+			TRACE_PRINT("PacketOpenAdapterNPF: Unable to open the read event");
+			CloseHandle(lpAdapter->hFile);
 			GlobalFreePtr(lpAdapter);
 			//set the error to the one on which we failed
 		    
-			ODSEx("PacketOpenAdapterNPF: PacketSetReadEvt failed, LastError=%d\n",error);
+			TRACE_PRINT1("PacketOpenAdapterNPF: PacketSetReadEvt failed, LastError=%8.8x",error);
 			TRACE_EXIT("PacketOpenAdapterNPF");
+
 
 			SetLastError(error);
 			return NULL;
@@ -1204,22 +1300,90 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
 		
 		PacketSetMaxLookaheadsize(lpAdapter);
 
-		_snprintf(lpAdapter->Name, ADAPTER_NAME_LENGTH, "%S", AdapterName);
+		//
+		// Indicate that this is a device managed by NPF.sys
+		//
+		lpAdapter->Flags = INFO_FLAG_NDIS_ADAPTER;
 
-		ODS("Successfully opened adapter\n");
+
+		StringCchCopyA(lpAdapter->Name, ADAPTER_NAME_LENGTH, AdapterNameA);
+
+		TRACE_PRINT("Successfully opened adapter");
 		TRACE_EXIT("PacketOpenAdapterNPF");
 		return lpAdapter;
 	}
 
-
 	error=GetLastError();
 	GlobalFreePtr(lpAdapter);
 	//set the error to the one on which we failed
-    ODSEx("PacketOpenAdapterNPF: CreateFile failed, LastError= %d\n",error);
+    TRACE_PRINT1("PacketOpenAdapterNPF: CreateFile failed, LastError= %8.8x",error);
 	TRACE_EXIT("PacketOpenAdapterNPF");
 	SetLastError(error);
 	return NULL;
 }
+
+#ifdef HAVE_WANPACKET_API
+static LPADAPTER PacketOpenAdapterWanPacket(PCHAR AdapterName)
+{
+	LPADAPTER lpAdapter = NULL;
+	DWORD dwLastError = ERROR_SUCCESS;
+
+	TRACE_ENTER("PacketOpenAdapterWanPacket");
+
+	TRACE_PRINT("Opening a NDISWAN adapter...");
+
+	do
+	{
+		//
+		// This is a wan adapter. Open it using the netmon API
+		//			
+		lpAdapter = (LPADAPTER) GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,
+			sizeof(ADAPTER));
+
+		if (lpAdapter == NULL)
+		{
+			TRACE_PRINT("GlobalAlloc failed allocating memory for the ADAPTER structure. Failing (BAD_UNIT).");
+			dwLastError = ERROR_NOT_ENOUGH_MEMORY;
+			break;
+		}
+
+		lpAdapter->Flags = INFO_FLAG_NDISWAN_ADAPTER;
+
+		TRACE_PRINT("Trying to open the Wan Adapter through WanPacket.dll...");
+
+		// Open the adapter
+		lpAdapter->pWanAdapter = WanPacketOpenAdapter();
+
+		if (lpAdapter->pWanAdapter == NULL)
+		{
+			TRACE_PRINT("WanPacketOpenAdapter failed. Failing. (BAD_UNIT)");
+			dwLastError = ERROR_BAD_UNIT;
+			break;
+		}
+
+		StringCchCopyA(lpAdapter->Name, ADAPTER_NAME_LENGTH, AdapterName);
+
+		lpAdapter->ReadEvent = WanPacketGetReadEvent(lpAdapter->pWanAdapter);
+
+		TRACE_PRINT("Successfully opened the Wan Adapter.");
+
+	}while(FALSE);
+
+	if (dwLastError == ERROR_SUCCESS)
+	{
+		TRACE_EXIT("PacketOpenAdapterWanPacket");
+		return lpAdapter;
+	}
+	else
+	{
+		if (lpAdapter != NULL) GlobalFree(lpAdapter);
+		
+		TRACE_EXIT("PacketOpenAdapterWanPacket");
+		SetLastError(dwLastError);
+		return NULL;
+	}
+}
+#endif //HAVE_WANPACKET_API
 
 /*! 
   \brief Opens an adapter using the aircap dll.
@@ -1230,7 +1394,7 @@ LPADAPTER PacketOpenAdapterNPF(PCHAR AdapterName)
   \note internal function used by PacketOpenAdapter()
 */
 #ifdef HAVE_AIRPCAP_API
-LPADAPTER PacketOpenAdapterAirpcap(PCHAR AdapterName)
+static LPADAPTER PacketOpenAdapterAirpcap(PCHAR AdapterName)
 {
 	CHAR Ebuf[AIRPCAP_ERRBUF_SIZE];
     LPADAPTER lpAdapter;
@@ -1266,11 +1430,46 @@ LPADAPTER PacketOpenAdapterAirpcap(PCHAR AdapterName)
 		return NULL;					
 	}
 		  				
-	_snprintf(lpAdapter->Name, ADAPTER_NAME_LENGTH, "%s", AdapterName);
+	StringCchCopyA(lpAdapter->Name, ADAPTER_NAME_LENGTH, AdapterName);
 	
 	return lpAdapter;
 }
 #endif // HAVE_AIRPCAP_API
+
+
+#ifdef HAVE_NPFIM_API
+static LPADAPTER PacketOpenAdapterNpfIm(PCHAR AdapterName)
+{
+    LPADAPTER lpAdapter;
+
+	lpAdapter = (LPADAPTER) GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,
+		sizeof(ADAPTER));
+	if (lpAdapter == NULL)
+	{
+		return NULL;
+	}
+
+	//
+	// Indicate that this is a aircap card
+	//
+	lpAdapter->Flags = INFO_FLAG_NPFIM_DEVICE;
+		  
+	//
+	// Open the adapter
+	//
+
+	if (g_NpfImHandlers.NpfImOpenDevice(AdapterName, (NPF_IM_DEV_HANDLE*)&lpAdapter->NpfImHandle) == FALSE)
+	{
+		GlobalFreePtr(lpAdapter);
+		return NULL;					
+	}
+		  				
+	StringCchCopyA(lpAdapter->Name, ADAPTER_NAME_LENGTH, AdapterName);
+	
+	return lpAdapter;
+}
+#endif // HAVE_NpfIm_API
+
 
 /*! 
   \brief Opens an adapter using the DAG capture API.
@@ -1281,7 +1480,7 @@ LPADAPTER PacketOpenAdapterAirpcap(PCHAR AdapterName)
   \note internal function used by PacketOpenAdapter()
 */
 #ifdef HAVE_DAG_API
-LPADAPTER PacketOpenAdapterDAG(PCHAR AdapterName, BOOLEAN IsAFile)
+static LPADAPTER PacketOpenAdapterDAG(PCHAR AdapterName, BOOLEAN IsAFile)
 {
 	CHAR DagEbuf[DAGC_ERRBUF_SIZE];
     LPADAPTER lpAdapter;
@@ -1300,7 +1499,7 @@ LPADAPTER PacketOpenAdapterDAG(PCHAR AdapterName, BOOLEAN IsAFile)
 		sizeof(ADAPTER));
 	if (lpAdapter == NULL)
 	{
-		ODS("GlobalAlloc failed allocating memory for the ADAPTER structure\n");
+		TRACE_PRINT("GlobalAlloc failed allocating memory for the ADAPTER structure");
 		TRACE_EXIT("PacketOpenAdapterDAG");
 		return NULL;
 	}
@@ -1311,7 +1510,7 @@ LPADAPTER PacketOpenAdapterDAG(PCHAR AdapterName, BOOLEAN IsAFile)
 		// be able to work
 		if(!PacketAddAdapterDag(AdapterName, "DAG file", IsAFile))
 		{
-			ODS("Failed adding the Dag file to the list of adapters\n");
+			TRACE_PRINT("Failed adding the Dag file to the list of adapters");
 			TRACE_EXIT("PacketOpenAdapterDAG");
 			GlobalFreePtr(lpAdapter);
 			return NULL;					
@@ -1336,7 +1535,7 @@ LPADAPTER PacketOpenAdapterDAG(PCHAR AdapterName, BOOLEAN IsAFile)
 		SChar2WChar(strstr(strlwr((char*)AdapterName), "dag")):
 		L"";
 
-	_snwprintf(keyname, sizeof(keyname), L"%s\\CardParams\\%ws", 
+	StringCchPrintfW(keyname, sizeof(keyname)/sizeof(keyname[0]), L"%s\\CardParams\\%ws", 
 		L"SYSTEM\\CurrentControlSet\\Services\\DAG",
 		tsn);
 
@@ -1352,7 +1551,7 @@ LPADAPTER PacketOpenAdapterDAG(PCHAR AdapterName, BOOLEAN IsAFile)
 			L"FastCap",
 			NULL,
 			&lptype,
-			(char*)&fpc,
+			(LPBYTE)&fpc,
 			&lpcbdata);
 		
 		if(status == ERROR_SUCCESS)
@@ -1363,7 +1562,7 @@ LPADAPTER PacketOpenAdapterDAG(PCHAR AdapterName, BOOLEAN IsAFile)
 	while(FALSE);
 		  
 
-	ODS("Trying to open the DAG device...\n");
+	TRACE_PRINT("Trying to open the DAG device...");
 	//
 	// Open the card
 	//
@@ -1373,7 +1572,7 @@ LPADAPTER PacketOpenAdapterDAG(PCHAR AdapterName, BOOLEAN IsAFile)
 	
 	if(lpAdapter->pDagCard == NULL)
 	{
-		ODS("Failed opening the DAG device\n");
+		TRACE_PRINT("Failed opening the DAG device");
 		TRACE_EXIT("PacketOpenAdapterDAG");
 		GlobalFreePtr(lpAdapter);
 		return NULL;					
@@ -1381,15 +1580,16 @@ LPADAPTER PacketOpenAdapterDAG(PCHAR AdapterName, BOOLEAN IsAFile)
 		  
 	lpAdapter->DagFcsLen = g_p_dagc_getfcslen(lpAdapter->pDagCard);
 				
-	_snprintf(lpAdapter->Name, ADAPTER_NAME_LENGTH, "%s", AdapterName);
+	StringCchCopyA(lpAdapter->Name, ADAPTER_NAME_LENGTH, AdapterName);
 	
 	// XXX we could create the read event here
-	ODS("Successfully opened the DAG device\n");
+	TRACE_PRINT("Successfully opened the DAG device");
 	TRACE_EXIT("PacketOpenAdapterDAG");
 
 	return lpAdapter;
 }
 #endif // HAVE_DAG_API
+
 
 //---------------------------------------------------------------------------
 // PUBLIC API
@@ -1464,7 +1664,7 @@ BOOL PacketStopDriver()
 	
 	if(scmHandle != NULL){
 		
-		ODS("Opened the SCM\n");
+		TRACE_PRINT("Opened the SCM");
 		
 		schService = OpenServiceA (scmHandle,
 			NpfDriverName,
@@ -1473,7 +1673,7 @@ BOOL PacketStopDriver()
 		
 		if (schService != NULL)
 		{
-			ODS("Opened the NPF service in the SCM\n");
+			TRACE_PRINT("Opened the NPF service in the SCM");
 
 			ret = ControlService (schService,
 				SERVICE_CONTROL_STOP,
@@ -1481,11 +1681,11 @@ BOOL PacketStopDriver()
 				);
 			if (!ret)
 			{
-				ODS("Failed to stop the NPF service\n");
+				TRACE_PRINT("Failed to stop the NPF service");
 			}
 			else
 			{
-				ODS("NPF service stopped\n");
+				TRACE_PRINT("NPF service stopped");
 			}
 			
 			CloseServiceHandle (schService);
@@ -1506,22 +1706,23 @@ BOOL PacketStopDriver()
   \return If the function succeeds, the return value is the pointer to a properly initialized ADAPTER object,
    otherwise the return value is NULL.
 */
-LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
+LPADAPTER PacketOpenAdapter(PCHAR AdapterNameWA)
 {
-    LPADAPTER lpAdapter;
-	WCHAR *AdapterNameU;
-	SC_HANDLE svcHandle = NULL;
+    LPADAPTER lpAdapter = NULL;
 	PCHAR AdapterNameA = NULL;
+	BOOL bFreeAdapterNameA;
 #ifndef _WINNT4
 	PADAPTER_INFO TAdInfo;
-#endif // _WINNT4
+#endif //_WINNT4
+	
+	DWORD dwLastError = ERROR_SUCCESS;
  
  	TRACE_ENTER("PacketOpenAdapter");	
  
 	TRACE_PRINT_OS_INFO();
 	
-	ODSEx("Trying to open the adapter= %s \n",AdapterName);
-	
+	TRACE_PRINT2("Packet DLL version %s, Driver version %s", PacketLibraryVersion, PacketDriverVersion);
+
 	//
 	// Check the presence on some libraries we rely on, and load them if we found them
 	//
@@ -1530,243 +1731,251 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 	//
 	// Ugly heuristic to detect if the adapter is ASCII
 	//
-	if(AdapterName[1]!=0)
+	if(AdapterNameWA[1]!=0)
 	{ 
 		//
 		// ASCII
 		//
-
-		AdapterNameU = SChar2WChar(AdapterName);
-		AdapterNameA = AdapterName;
-		AdapterName = (PCHAR)AdapterNameU;
+		bFreeAdapterNameA = FALSE;
+		AdapterNameA = AdapterNameWA;
 	} 
 	else 
 	{	
 		//
 		// Unicode
 		//
-		AdapterNameU = NULL;
-		AdapterNameA = WChar2SChar((PWCHAR)AdapterName);
+		size_t bufferSize = wcslen((PWCHAR)AdapterNameWA) + 1;
+		
+		AdapterNameA = GlobalAllocPtr(GPTR, bufferSize);
+
+		if (AdapterNameA == NULL)
+		{
+			SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+			return NULL;
+		}
+
+		StringCchPrintfA(AdapterNameA, bufferSize, "%ws", (PWCHAR)AdapterNameWA);
+		bFreeAdapterNameA = TRUE;
 	}
 
 #ifndef _WINNT4
-
 	WaitForSingleObject(g_AdaptersInfoMutex, INFINITE);
- 	
- 	ODS("Looking for the adapter in our list 1st time...\n");
+#endif // not WINNT4
 
-	// Find the PADAPTER_INFO structure associated with this adapter 
-	TAdInfo = PacketFindAdInfo(AdapterNameA);
-	if(TAdInfo == NULL)
+	do
 	{
-		ODS("Adapter not found in our list. Try to refresh the list.\n");
-		
-		PacketUpdateAdInfo(AdapterNameA);
+
+#ifndef _WINNT4
+		//
+		// Windows NT4 does not have support for the various nifty
+		// adapters supported from 2000 on (airpcap, ndiswan, npfim...)
+		// so we just skip all the magic of the global adapter list, 
+		// and try to open the adapter with PacketOpenAdapterNPF at
+		// the end of this big function!
+		//
+
+		//
+		// If we are here it's because we need to update the list
+		// 
+
+
+		TRACE_PRINT("Looking for the adapter in our list 1st time...");
+
+		// Find the PADAPTER_INFO structure associated with this adapter 
 		TAdInfo = PacketFindAdInfo(AdapterNameA);
- 
- 		ODS("Looking for the adapter in our list 2nd time...\n");
- 
 		if(TAdInfo == NULL)
 		{
-			ODS("Adapter not found in our list. Try to open it as a DAG/ERF file...\n");
-			
-			lpAdapter = NULL;
+			TRACE_PRINT("Adapter not found in our list. Try to refresh the list.");
 
+			PacketUpdateAdInfo(AdapterNameA);
+			TAdInfo = PacketFindAdInfo(AdapterNameA);
+
+			TRACE_PRINT("Looking for the adapter in our list 2nd time...");
+		}
+
+		if(TAdInfo == NULL)
+		{
 #ifdef HAVE_DAG_API
+			TRACE_PRINT("Adapter not found in our list. Try to open it as a DAG/ERF file...");
+
 			//can be an ERF file?
-			if(!lpAdapter)
-			{
-				lpAdapter = PacketOpenAdapterDAG(AdapterNameA, TRUE);
-			}
+			lpAdapter = PacketOpenAdapterDAG(AdapterNameA, TRUE);
 #endif // HAVE_DAG_API
 
-			if (AdapterNameU != NULL) 
-				GlobalFreePtr(AdapterNameU);
-			else 
-				GlobalFreePtr(AdapterNameA);
-			
-			ReleaseMutex(g_AdaptersInfoMutex);
 			if (lpAdapter == NULL)
 			{
-				ODS("Failed to open it as a DAG/ERF file, failing with ERROR_BAD_UNIT\n");
-				SetLastError(ERROR_BAD_UNIT); //this is the best we can do....
+				TRACE_PRINT("Failed to open it as a DAG/ERF file, failing with ERROR_BAD_UNIT");
+				dwLastError = ERROR_BAD_UNIT; //this is the best we can do....
 			}
 			else
 			{
-				ODS("Opened the adapter as a DAG/ERF file.\n");
+				TRACE_PRINT("Opened the adapter as a DAG/ERF file.");
 			}
 
-			TRACE_EXIT("PacketOpenAdapter");	
-			return lpAdapter;
+			break;
 		}
-	}
-	
-	ODS("Adapter found in our list. Check adapter type and see if it's actually supported.\n");
 
-	//
-	// Check adapter type
-	//
-	if(TAdInfo->Flags != INFO_FLAG_NDIS_ADAPTER)
-	{
-		ODS("Not a NDIS - NPF - adapter, specific handling.\n");
-		//
-		// Not a standard NDIS adapter, we must have specific handling
-		//
-		
-		if(TAdInfo->Flags & INFO_FLAG_NDISWAN_ADAPTER)
+		TRACE_PRINT("Adapter found in our list. Check adapter type and see if it's actually supported.");
+
+#ifdef HAVE_WANPACKET_API
+		if(TAdInfo->Flags == INFO_FLAG_NDISWAN_ADAPTER)
 		{
-			ODS("Opening a NDISWAN adapter...\n");
-			
-			//
-			// This is a wan adapter. Open it using the netmon API
-			//			
-			lpAdapter = (LPADAPTER) GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,
-				sizeof(ADAPTER));
+			lpAdapter = PacketOpenAdapterWanPacket(AdapterNameA);
+
 			if (lpAdapter == NULL)
 			{
-				ODS("GlobalAlloc failed allocating memory for the ADAPTER structure. Failing (BAD_UNIT).\n");
-				if (AdapterNameU != NULL) 
-					GlobalFreePtr(AdapterNameU);
-				else 
-					GlobalFreePtr(AdapterNameA);
-				ReleaseMutex(g_AdaptersInfoMutex);
-				TRACE_EXIT("PacketOpenAdapter");	
-				SetLastError(ERROR_BAD_UNIT);
-				return NULL;
+				dwLastError = GetLastError();
 			}
-		
-			// Backup flags for future usage
-			lpAdapter->Flags = TAdInfo->Flags;
-			
-			ODS("Trying to open the Wan Adapter through WanPacket.dll...\n");
 
-			// Open the adapter
-			lpAdapter->pWanAdapter = WanPacketOpenAdapter();
-			if (lpAdapter->pWanAdapter == NULL)
-			{
-				ODS("WanPacketOpenAdapter failed. Failing. (BAD_UNIT)\n");
-
-				if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
-				else GlobalFreePtr(AdapterNameA);
-				
-				GlobalFreePtr(lpAdapter);
-				ReleaseMutex(g_AdaptersInfoMutex);
-				TRACE_EXIT("PacketOpenAdapter");	
-				SetLastError(ERROR_BAD_UNIT);
-				return NULL;
-			}
-			
-			_snprintf(lpAdapter->Name, ADAPTER_NAME_LENGTH, "%s", AdapterNameA);
-			
-			lpAdapter->ReadEvent = WanPacketGetReadEvent(lpAdapter->pWanAdapter);
-			
-			if (AdapterNameU != NULL) 
-				GlobalFreePtr(AdapterNameU);
-			else 
-				GlobalFreePtr(AdapterNameA);
-			
-			ReleaseMutex(g_AdaptersInfoMutex);
-			
-			ODS("Successfully opened the Wan Adapter.\n");
-			TRACE_EXIT("PacketOpenAdapter");	
-
-			return lpAdapter;
+			break;
 		}
+#endif //HAVE_WANPACKET_API
+
 #ifdef HAVE_AIRPCAP_API
-		else
-			if(TAdInfo->Flags & INFO_FLAG_AIRPCAP_CARD)
+		if(TAdInfo->Flags == INFO_FLAG_AIRPCAP_CARD)
+		{
+			//
+			// This is an airpcap card. Open it using the airpcap api
+			//								
+			lpAdapter = PacketOpenAdapterAirpcap(AdapterNameA);
+			
+			if(lpAdapter == NULL)
 			{
-				//
-				// This is an airpcap card. Open it using the airpcap api
-				//								
-				lpAdapter = PacketOpenAdapterAirpcap(AdapterNameA);
-	
-				if (AdapterNameU != NULL) 
-					GlobalFreePtr(AdapterNameU);
-				else 
-					GlobalFreePtr(AdapterNameA);
-
-				ReleaseMutex(g_AdaptersInfoMutex);
-				if(lpAdapter == NULL)
-					SetLastError(ERROR_BAD_UNIT);
-
-				//
-				// Airpcap provides a read event
-				//
-				if(lpAdapter)
-				{
-					if(!g_PAirpcapGetReadEvent(lpAdapter->AirpcapAd, &lpAdapter->ReadEvent))
-					{
-						PacketCloseAdapter(lpAdapter);
-						return NULL;
-					}
-				}
-
-				return lpAdapter;
+				dwLastError = ERROR_BAD_UNIT;
+				break;
 			}
+
+			//
+			// Airpcap provides a read event
+			//
+			if(!g_PAirpcapGetReadEvent(lpAdapter->AirpcapAd, &lpAdapter->ReadEvent))
+			{
+				PacketCloseAdapter(lpAdapter);
+				dwLastError = ERROR_BAD_UNIT;
+			}
+			else
+			{
+				dwLastError = ERROR_SUCCESS;
+			}
+			
+			break;
+		}
 #endif // HAVE_AIRPCAP_API
 
+#ifdef HAVE_NPFIM_API
+		if(TAdInfo->Flags == INFO_FLAG_NPFIM_DEVICE)
+		{
+			//
+			// This is an airpcap card. Open it using the airpcap api
+			//								
+			lpAdapter = PacketOpenAdapterNpfIm(AdapterNameA);
+
+			if(lpAdapter == NULL)
+			{
+				dwLastError = ERROR_BAD_UNIT;
+				break;
+			}
+
+			//
+			// NpfIm provides a read event
+			//
+			if(!g_NpfImHandlers.NpfImGetCaptureReadEvent((NPF_IM_DEV_HANDLE)lpAdapter->NpfImHandle, &lpAdapter->ReadEvent))
+			{
+				dwLastError = GetLastError();
+				PacketCloseAdapter(lpAdapter);
+			}
+			else
+			{
+				dwLastError = ERROR_SUCCESS;
+			}
+
+			break;
+		}
+#endif // HAVE_NPFIM_API
+
 #ifdef HAVE_DAG_API
-		else
-			if(TAdInfo->Flags & INFO_FLAG_DAG_CARD)
+		if(TAdInfo->Flags == INFO_FLAG_DAG_CARD)
+		{
+			TRACE_PRINT("Opening a DAG adapter...");
+			//
+			// This is a Dag card. Open it using the dagc API
+			//								
+			lpAdapter = PacketOpenAdapterDAG(AdapterNameA, FALSE);
+			if (lpAdapter == NULL)
 			{
-				ODS("Opening a DAG adapter...\n");
-				//
-				// This is a Dag card. Open it using the dagc API
-				//								
-				lpAdapter = PacketOpenAdapterDAG(AdapterNameA, FALSE);
-
-				if (AdapterNameU != NULL) 
-					GlobalFreePtr(AdapterNameU);
-				else 
-					GlobalFreePtr(AdapterNameA);
-
-				ReleaseMutex(g_AdaptersInfoMutex);
-				if (lpAdapter == NULL)
-				{
-					ODS("Failed opening the DAG adapter with PacketOpenAdapterDAG. Failing. (BAD_UNIT)\n");
-					TRACE_EXIT("PacketOpenAdapter");	
-					SetLastError(ERROR_BAD_UNIT);
-					return NULL;
-				}
-				else
-				{
-					TRACE_EXIT("PacketOpenAdapter");	
-					return lpAdapter;
-				}
+				TRACE_PRINT("Failed opening the DAG adapter with PacketOpenAdapterDAG. Failing. (BAD_UNIT)");
+				dwLastError = ERROR_BAD_UNIT;
 			}
+			else
+			{
+				dwLastError = ERROR_SUCCESS;
+			}
+
+			break;
+		}
 #endif // HAVE_DAG_API
-		else
-			if(TAdInfo->Flags == INFO_FLAG_DONT_EXPORT)
-			{
-				//
-				// The adapter is flagged as not exported, probably because it's broken 
-				// or incompatible with WinPcap. We end here with an error.
-				//
-				ODSEx("Trying to open the adapter %s which is flagged as not exported. Failing (BAD_UNIT)", AdapterNameA);
-				if (AdapterNameU != NULL) GlobalFreePtr(AdapterNameU);
-				else GlobalFreePtr(AdapterNameA);
-				ReleaseMutex(g_AdaptersInfoMutex);
-				TRACE_EXIT("PacketOpenAdapter");	
-				SetLastError(ERROR_BAD_UNIT);
-				return NULL;
-			}
-	}
-	
+
+		if(TAdInfo->Flags == INFO_FLAG_DONT_EXPORT)
+		{
+			//
+			// The adapter is flagged as not exported, probably because it's broken 
+			// or incompatible with WinPcap. We end here with an error.
+			//
+			TRACE_PRINT1("Trying to open the adapter %s which is flagged as not exported. Failing (BAD_UNIT)", AdapterNameA);
+			dwLastError = ERROR_BAD_UNIT;
+			
+			break;
+		}
+
+		if (TAdInfo->Flags != INFO_FLAG_NDIS_ADAPTER)
+		{
+			TRACE_PRINT1("Trying to open the adapter with an unknown flag type %u", TAdInfo->Flags);
+			dwLastError = ERROR_BAD_UNIT;
+			
+			break;
+		}
+
+#endif // not _WINNT4
+
+		//
+		// This is the only code executed on NT4
+		//
+		// Windows NT4 does not have support for the various nifty
+		// adapters supported from 2000 on (airpcap, ndiswan, npfim...)
+		// so we just skip all the magic of the global adapter list, 
+		// and try to open the adapter with PacketOpenAdapterNPF at
+		// the end of this big function!
+		//
+		TRACE_PRINT("Normal NPF adapter, trying to open it...");
+		lpAdapter = PacketOpenAdapterNPF(AdapterNameA);
+		if (lpAdapter == NULL)
+		{
+			dwLastError = GetLastError();
+		}
+
+	}while(FALSE);
+
+#ifndef _WINNT4
 	ReleaseMutex(g_AdaptersInfoMutex);
+#endif
 
-#endif // _WINNT4
-   
-	ODS("Normal NPF adapter, trying to open it...\n");
-	lpAdapter = PacketOpenAdapterNPF(AdapterName);
+	if (bFreeAdapterNameA) GlobalFree(AdapterNameA);
 
-	if (AdapterNameU != NULL) 
-		GlobalFreePtr(AdapterNameU);
-	else 
-		GlobalFreePtr(AdapterNameA);
 
-	TRACE_EXIT("PacketOpenAdapter");
-	return lpAdapter;
+	if (dwLastError != ERROR_SUCCESS)
+	{
+		TRACE_EXIT("PacketOpenAdapter");
+		SetLastError(dwLastError);
+
+		return NULL;
+	}
+	else
+	{
+		TRACE_EXIT("PacketOpenAdapter");
+
+		return lpAdapter;
+	}
+
 }
 
 /*! 
@@ -1780,52 +1989,66 @@ VOID PacketCloseAdapter(LPADAPTER lpAdapter)
 	TRACE_ENTER("PacketCloseAdapter");
 	if(!lpAdapter)
 	{
-        ODS("PacketCloseAdapter: attempt to close a NULL adapter\n");
+        TRACE_PRINT("PacketCloseAdapter: attempt to close a NULL adapter");
 		TRACE_EXIT("PacketCloseAdapter");
 		return;
 	}
 
-#ifndef _WINNT4
-	if(lpAdapter->pWanAdapter != NULL)
+#ifdef HAVE_WANPACKET_API
+	if (lpAdapter->Flags == INFO_FLAG_NDISWAN_ADAPTER)
 	{
-		ODS("Closing a WAN adapter through WanPacket...\n");
+		TRACE_PRINT("Closing a WAN adapter through WanPacket...");
 		WanPacketCloseAdapter(lpAdapter->pWanAdapter);
 		GlobalFreePtr(lpAdapter);
 		return;
 	}
-#ifdef HAVE_AIRPCAP_API
-	else
-		if(lpAdapter->AirpcapAd != NULL)
-		{
-			if(lpAdapter->Flags & INFO_FLAG_AIRPCAP_CARD)
-			{
-				g_PAirpcapClose(lpAdapter->AirpcapAd);
-			}
+#endif
 
+#ifdef HAVE_AIRPCAP_API
+	if(lpAdapter->Flags == INFO_FLAG_AIRPCAP_CARD)
+		{
+			g_PAirpcapClose(lpAdapter->AirpcapAd);
+			GlobalFreePtr(lpAdapter);
 			return;
 		}
 #endif // HAVE_AIRPCAP_API
+
+#ifdef HAVE_NPFIM_API
+	if(lpAdapter->Flags == INFO_FLAG_NPFIM_DEVICE)
+	{
+		g_NpfImHandlers.NpfImCloseDevice(lpAdapter->NpfImHandle);
+		GlobalFreePtr(lpAdapter);
+		return;
+	}
+#endif
+
 #ifdef HAVE_DAG_API
-	else
-		if(lpAdapter->pDagCard != NULL)
+	if(lpAdapter->Flags & INFO_FLAG_DAG_FILE ||  lpAdapter->Flags & INFO_FLAG_DAG_CARD)
+	{
+		TRACE_PRINT("Closing a DAG file...");
+		if(lpAdapter->Flags & INFO_FLAG_DAG_FILE & ~INFO_FLAG_DAG_CARD)
 		{
-			ODS("Closing a DAG file...\n");
-			if(lpAdapter->Flags & INFO_FLAG_DAG_FILE & ~INFO_FLAG_DAG_CARD)
-			{
-				
-				// This is a file. We must remove the entry in the adapter description list
-				PacketUpdateAdInfo(lpAdapter->Name);
-			}
-			g_p_dagc_close(lpAdapter->pDagCard);
+			// This is a file. We must remove the entry in the adapter description list
+		PacketUpdateAdInfo(lpAdapter->Name);
 		}
+		g_p_dagc_close(lpAdapter->pDagCard);
+	    GlobalFreePtr(lpAdapter);
+		return;
+	}
 #endif // HAVE_DAG_API
-#endif // _WINNT4
-	
-	SetEvent(lpAdapter->ReadEvent);
-    CloseHandle(lpAdapter->ReadEvent);
-	CloseHandle(lpAdapter->hFile);
-    GlobalFreePtr(lpAdapter);
-	TRACE_EXIT("PacketCloseAdapter");
+
+	if (lpAdapter->Flags != INFO_FLAG_NDIS_ADAPTER)
+	{
+		TRACE_PRINT1("Trying to close an unknown adapter type (%u)", lpAdapter->Flags);
+	}
+	else
+	{
+		SetEvent(lpAdapter->ReadEvent);
+	    CloseHandle(lpAdapter->ReadEvent);
+		CloseHandle(lpAdapter->hFile);
+		GlobalFreePtr(lpAdapter);
+		TRACE_EXIT("PacketCloseAdapter");
+	}
 
 }
 
@@ -1850,7 +2073,7 @@ LPPACKET PacketAllocatePacket(void)
 	lpPacket=(LPPACKET)GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,sizeof(PACKET));
     if (lpPacket==NULL)
     {
-        ODS("PacketAllocatePacket: GlobalAlloc Failed\n");
+        TRACE_PRINT("PacketAllocatePacket: GlobalAlloc Failed");
     }
 
 	TRACE_EXIT("PacketAllocatePacket");
@@ -1936,66 +2159,90 @@ VOID PacketInitPacket(LPPACKET lpPacket,PVOID Buffer,UINT Length)
 BOOLEAN PacketReceivePacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sync)
 {
 	BOOLEAN res;
-	
+
+	UNUSED(Sync);
+
 	TRACE_ENTER("PacketReceivePacket");
-#ifndef _WINNT4
+#ifdef HAVE_WANPACKET_API
 	
-	if (AdapterObject->pWanAdapter != NULL)
+	if (AdapterObject->Flags == INFO_FLAG_NDISWAN_ADAPTER)
 	{
 		lpPacket->ulBytesReceived = WanPacketReceivePacket(AdapterObject->pWanAdapter, lpPacket->Buffer, lpPacket->Length);
 
 		TRACE_EXIT("PacketReceivePacket");
 		return TRUE;
 	}
+#endif //HAVE_WANPACKET_API
 
 #ifdef HAVE_AIRPCAP_API
-	else
-		if(AdapterObject->AirpcapAd != NULL)
+	if(AdapterObject->Flags == INFO_FLAG_AIRPCAP_CARD)
+	{
+		//
+		// Wait for data, only if the user requested us to do that
+		//
+		if((int)AdapterObject->ReadTimeOut != -1)
 		{
-			//
-			// Wait for data, only if the user requested us to do that
-			//
-			if((int)AdapterObject->ReadTimeOut != -1)
-			{
-				WaitForSingleObject(AdapterObject->ReadEvent, (AdapterObject->ReadTimeOut==0)? INFINITE: AdapterObject->ReadTimeOut);
-			}
+			WaitForSingleObject(AdapterObject->ReadEvent, (AdapterObject->ReadTimeOut==0)? INFINITE: AdapterObject->ReadTimeOut);
+		}
 
-			//
-			// Read the data.
-			// g_PAirpcapRead always returns immediately.
-			//
-			return g_PAirpcapRead(AdapterObject->AirpcapAd, 
+		//
+		// Read the data.
+		// g_PAirpcapRead always returns immediately.
+		//
+		res = (BOOLEAN)g_PAirpcapRead(AdapterObject->AirpcapAd, 
 				lpPacket->Buffer, 
 				lpPacket->Length, 
 				&lpPacket->ulBytesReceived);
-		}
+
+		TRACE_EXIT("PacketReceivePacket");
+
+		return res;
+	}
 #endif // HAVE_AIRPCAP_API
 
+#ifdef HAVE_NPFIM_API
+	if(AdapterObject->Flags == INFO_FLAG_NPFIM_DEVICE)
+	{
+		//
+		// Read the data.
+		// NpfImReceivePacket performs its own wait internally.
+		//
+	
+		res = (BOOLEAN)g_NpfImHandlers.NpfImReceivePackets(AdapterObject->NpfImHandle,
+				lpPacket->Buffer, 
+				lpPacket->Length, 
+				&lpPacket->ulBytesReceived);
+
+		TRACE_EXIT("PacketReceivePacket");
+
+		return res;
+	}
+#endif // HAVE_NPFIM_API
+
 #ifdef HAVE_DAG_API
-	else
-		if(AdapterObject->pDagCard != NULL)
-		{
+	if((AdapterObject->Flags & INFO_FLAG_DAG_CARD) || (AdapterObject->Flags & INFO_FLAG_DAG_FILE))
+	{
+		g_p_dagc_wait(AdapterObject->pDagCard, &AdapterObject->DagReadTimeout);
 
-			g_p_dagc_wait(AdapterObject->pDagCard, &AdapterObject->DagReadTimeout);
-
-			if(g_p_dagc_receive(AdapterObject->pDagCard, &AdapterObject->DagBuffer, &lpPacket->ulBytesReceived) == 0)
-			{
-				TRACE_EXIT("PacketReceivePacket");
-				return TRUE;
-			}
-			else
-			{
-				TRACE_EXIT("PacketReceivePacket");
-				return FALSE;
-			}
-		}
+		res = (BOOLEAN)(g_p_dagc_receive(AdapterObject->pDagCard, (u_char**)&AdapterObject->DagBuffer, (u_int*)&lpPacket->ulBytesReceived) == 0);
+		
+		TRACE_EXIT("PacketReceivePacket");
+		return res;
+	}
 #endif // HAVE_DAG_API
-#endif // _WINNT4
+
+	if (AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
+	{
+		if((int)AdapterObject->ReadTimeOut != -1)
+			WaitForSingleObject(AdapterObject->ReadEvent, (AdapterObject->ReadTimeOut==0)?INFINITE:AdapterObject->ReadTimeOut);
 	
-	if((int)AdapterObject->ReadTimeOut != -1)
-		WaitForSingleObject(AdapterObject->ReadEvent, (AdapterObject->ReadTimeOut==0)?INFINITE:AdapterObject->ReadTimeOut);
-	
-    res = ReadFile(AdapterObject->hFile, lpPacket->Buffer, lpPacket->Length, &lpPacket->ulBytesReceived,NULL);
+		res = (BOOLEAN)ReadFile(AdapterObject->hFile, lpPacket->Buffer, lpPacket->Length, &lpPacket->ulBytesReceived,NULL);
+	}
+	else
+	{
+		TRACE_PRINT1("Request to read on an unknown device type (%u)", AdapterObject->Flags);
+		res = FALSE;
+	}
 	
 	TRACE_EXIT("PacketReceivePacket");
 	return res;
@@ -2036,30 +2283,57 @@ BOOLEAN PacketSendPacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sync)
 	BOOLEAN		Result;    
 	TRACE_ENTER("PacketSendPacket");
 
+	UNUSED(Sync);
+
 #ifdef HAVE_AIRPCAP_API
-	if(AdapterObject->Flags & INFO_FLAG_AIRPCAP_CARD)
+	if(AdapterObject->Flags == INFO_FLAG_AIRPCAP_CARD)
 	{
 		if(g_PAirpcapWrite)
 		{
-			Result = g_PAirpcapWrite(AdapterObject->AirpcapAd, lpPacket->Buffer, lpPacket->Length);
+			Result = (BOOLEAN)g_PAirpcapWrite(AdapterObject->AirpcapAd, lpPacket->Buffer, lpPacket->Length);
 			TRACE_EXIT("PacketSetMinToCopy");
 			
 			return Result;
 		}
+		else
+		{
+			TRACE_EXIT("PacketSetMinToCopy");
+			TRACE_PRINT("Transmission not supported with this version of AirPcap");
+
+			return FALSE;
+		}
 	}
 #endif // HAVE_AIRPCAP_API
 
-#ifndef _WINNT4
-	if(AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
+#ifdef HAVE_WANPACKET_API
+	if(AdapterObject->Flags == INFO_FLAG_NDISWAN_ADAPTER)
 	{
-		ODS("PacketSendPacket: packet sending not allowed on wan adapters\n");
+		TRACE_PRINT("PacketSendPacket: packet sending not allowed on wan adapters");
 
 		TRACE_EXIT("PacketSendPacket");
 		return FALSE;
 	}
-#endif // _WINNT4
+#endif // HAVE_WANPACKET_API
 		
-	Result = WriteFile(AdapterObject->hFile,lpPacket->Buffer,lpPacket->Length,&BytesTransfered,NULL);
+#ifdef HAVE_NPFIM_API
+	if(AdapterObject->Flags == INFO_FLAG_NPFIM_DEVICE)
+	{
+		TRACE_PRINT("PacketSendPacket: packet sending not allowed on NPFIM adapters");
+
+		TRACE_EXIT("PacketSendPacket");
+		return FALSE;
+	}
+#endif //HAVE_NPFIM_API
+
+	if (AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
+	{
+		Result = (BOOLEAN)WriteFile(AdapterObject->hFile,lpPacket->Buffer,lpPacket->Length,&BytesTransfered,NULL);
+	}
+	else
+	{
+		TRACE_PRINT1("Request to write on an unknown device type (%u)", AdapterObject->Flags);
+		Result = FALSE;
+	}
 
 	TRACE_EXIT("PacketSendPacket");
 	return Result;
@@ -2102,56 +2376,82 @@ INT PacketSendPackets(LPADAPTER AdapterObject, PVOID PacketBuff, ULONG Size, BOO
 
 	TRACE_ENTER("PacketSendPackets");
 
-#ifndef _WINNT4
-	if(AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
+#ifdef HAVE_WANPACKET_API
+	if(AdapterObject->Flags == INFO_FLAG_NDISWAN_ADAPTER)
 	{
-		ODS("PacketSendPackets: packet sending not allowed on wan adapters\n");
+		TRACE_PRINT("PacketSendPackets: packet sending not allowed on wan adapters");
 		TRACE_EXIT("PacketSendPackets");
-		return FALSE;
+		return 0;
 	}
-#endif // _WINNT4
+#endif // HAVE_WANPACKET_API
 
-	// Obtain starting timestamp of the buffer
-	BufStartTime.tv_sec = ((struct timeval*)(PacketBuff))->tv_sec;
-	BufStartTime.tv_usec = ((struct timeval*)(PacketBuff))->tv_usec;
-
-	// Retrieve the reference time counters
-	QueryPerformanceCounter(&StartTicks);
-	QueryPerformanceFrequency(&TimeFreq);
-
-	CurTicks.QuadPart = StartTicks.QuadPart;
-
-	do{
-		// Send the data to the driver
-		//TODO Res is NEVER checked, this is REALLY bad.
-		Res = DeviceIoControl(AdapterObject->hFile,
-			(Sync)?pBIOCSENDPACKETSSYNC:pBIOCSENDPACKETSNOSYNC,
-			(PCHAR)PacketBuff + TotBytesTransfered,
-			Size - TotBytesTransfered,
-			NULL,
-			0,
-			&BytesTransfered,
-			NULL);
-
-		TotBytesTransfered += BytesTransfered;
-
-		// Exit from the loop on termination or error
-		if(TotBytesTransfered >= Size || Res != TRUE)
-			break;
-
-		// calculate the time interval to wait before sending the next packet
-		TargetTicks.QuadPart = StartTicks.QuadPart +
-		(LONGLONG)
-		((((struct timeval*)((PCHAR)PacketBuff + TotBytesTransfered))->tv_sec - BufStartTime.tv_sec) * 1000000 +
-		(((struct timeval*)((PCHAR)PacketBuff + TotBytesTransfered))->tv_usec - BufStartTime.tv_usec)) *
-		(TimeFreq.QuadPart) / 1000000;
-		
-		// Wait until the time interval has elapsed
-		while( CurTicks.QuadPart <= TargetTicks.QuadPart )
-			QueryPerformanceCounter(&CurTicks);
-
+#ifdef HAVE_NPFIM_API
+	if(AdapterObject->Flags == INFO_FLAG_NPFIM_DEVICE)
+	{
+		TRACE_PRINT("PacketSendPackets: packet sending not allowed on npfim adapters");
+		TRACE_EXIT("PacketSendPackets");
+		return 0;
 	}
-	while(TRUE);
+#endif // HAVE_NPFIM_API
+
+#ifdef HAVE_AIRPCAP_API
+	if(AdapterObject->Flags == INFO_FLAG_AIRPCAP_CARD)
+	{
+		TRACE_PRINT("PacketSendPackets: packet sending not allowed on airpcap adapters");
+		TRACE_EXIT("PacketSendPackets");
+		return 0;
+	}
+#endif // HAVE_AIRPCAP_API
+
+	if (AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
+	{
+		// Obtain starting timestamp of the buffer
+		BufStartTime.tv_sec = ((struct timeval*)(PacketBuff))->tv_sec;
+		BufStartTime.tv_usec = ((struct timeval*)(PacketBuff))->tv_usec;
+
+		// Retrieve the reference time counters
+		QueryPerformanceCounter(&StartTicks);
+		QueryPerformanceFrequency(&TimeFreq);
+
+		CurTicks.QuadPart = StartTicks.QuadPart;
+
+		do{
+			// Send the data to the driver
+			//TODO Res is NEVER checked, this is REALLY bad.
+			Res = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,
+				(Sync)?pBIOCSENDPACKETSSYNC:pBIOCSENDPACKETSNOSYNC,
+				(PCHAR)PacketBuff + TotBytesTransfered,
+				Size - TotBytesTransfered,
+				NULL,
+				0,
+				&BytesTransfered,
+				NULL);
+
+			TotBytesTransfered += BytesTransfered;
+
+			// Exit from the loop on termination or error
+			if(TotBytesTransfered >= Size || Res != TRUE)
+				break;
+
+			// calculate the time interval to wait before sending the next packet
+			TargetTicks.QuadPart = StartTicks.QuadPart +
+			(LONGLONG)
+			((((struct timeval*)((PCHAR)PacketBuff + TotBytesTransfered))->tv_sec - BufStartTime.tv_sec) * 1000000 +
+			(((struct timeval*)((PCHAR)PacketBuff + TotBytesTransfered))->tv_usec - BufStartTime.tv_usec)) *
+			(TimeFreq.QuadPart) / 1000000;
+			
+			// Wait until the time interval has elapsed
+			while( CurTicks.QuadPart <= TargetTicks.QuadPart )
+				QueryPerformanceCounter(&CurTicks);
+
+		}
+		while(TRUE);
+	}
+	else
+	{
+		TRACE_PRINT1("Request to write on an unknown device type (%u)", AdapterObject->Flags);
+		TotBytesTransfered = 0;
+	}
 
 	TRACE_EXIT("PacketSendPackets");
 
@@ -2182,7 +2482,7 @@ BOOLEAN PacketSetMinToCopy(LPADAPTER AdapterObject,int nbytes)
 	BOOLEAN Result;
 	TRACE_ENTER("PacketSetMinToCopy");
 	
-#ifndef _WINNT4
+#ifdef HAVE_WANPACKET_API
 	if (AdapterObject->Flags == INFO_FLAG_NDISWAN_ADAPTER)
 	{
 		Result = WanPacketSetMinToCopy(AdapterObject->pWanAdapter, nbytes);
@@ -2190,33 +2490,50 @@ BOOLEAN PacketSetMinToCopy(LPADAPTER AdapterObject,int nbytes)
 		
 		return Result;
 	}
+#endif //HAVE_WANPACKET_API
+
+#ifdef HAVE_NPFIM_API
+	if(AdapterObject->Flags == INFO_FLAG_NPFIM_DEVICE)
+	{
+		Result = (BOOLEAN)g_NpfImHandlers.NpfImSetMinToCopy(AdapterObject->NpfImHandle, nbytes);
+		TRACE_EXIT("PacketSetMinToCopy");
+		
+		return Result;
+	}
+#endif // HAVE_NPFIM_API
 	
 #ifdef HAVE_AIRPCAP_API
-	else
-		if(AdapterObject->Flags & INFO_FLAG_AIRPCAP_CARD)
-		{
-			Result = g_PAirpcapSetMinToCopy(AdapterObject->AirpcapAd, nbytes);
-			TRACE_EXIT("PacketSetMinToCopy");
+	if(AdapterObject->Flags == INFO_FLAG_AIRPCAP_CARD)
+	{
+		Result = (BOOLEAN)g_PAirpcapSetMinToCopy(AdapterObject->AirpcapAd, nbytes);
+		TRACE_EXIT("PacketSetMinToCopy");
 		
-			return Result;
-		}
+		return Result;
+	}
 #endif // HAVE_AIRPCAP_API
 	
 #ifdef HAVE_DAG_API
-	else
-		if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
-		{
-			TRACE_EXIT("PacketSetMinToCopy");
-			// No mintocopy with DAGs
-			return TRUE;
-		}
-#endif // HAVE_DAG_API
-#endif // _WINNT4
-		
-		Result = DeviceIoControl(AdapterObject->hFile,pBIOCSMINTOCOPY,&nbytes,4,NULL,0,&BytesReturned,NULL);
+	if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
+	{
 		TRACE_EXIT("PacketSetMinToCopy");
+		// No mintocopy with DAGs
+		return TRUE;
+	}
+#endif // HAVE_DAG_API
 		
-		return Result; 		
+	if (AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
+	{
+		Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,pBIOCSMINTOCOPY,&nbytes,4,NULL,0,&BytesReturned,NULL);
+	}
+	else
+	{
+		TRACE_PRINT1("Request to set mintocopy on an unknown device type (%u)", AdapterObject->Flags);
+		Result = FALSE;
+	}
+	
+	TRACE_EXIT("PacketSetMinToCopy");
+		
+	return Result; 		
 }
 
 /*!
@@ -2262,15 +2579,60 @@ BOOLEAN PacketSetMode(LPADAPTER AdapterObject,int mode)
 
    TRACE_ENTER("PacketSetMode");
 
-#ifndef _WINNT4
-   if (AdapterObject->pWanAdapter != NULL)
+#ifdef HAVE_WANPACKET_API
+   if (AdapterObject->Flags == INFO_FLAG_NDISWAN_ADAPTER)
    {
 	   Result = WanPacketSetMode(AdapterObject->pWanAdapter, mode);
+	   TRACE_EXIT("PacketSetMode");
+
+	   return Result;
+   }
+#endif // HAVE_WANPACKET_API
+   
+#ifdef HAVE_AIRPCAP_API
+   if (AdapterObject->Flags == INFO_FLAG_AIRPCAP_CARD)
+   {
+	   if (mode == PACKET_MODE_CAPT)
+	   {
+		   Result = TRUE;
+	   }
+	   else
+	   {
+		   Result = FALSE;
+	   }
+
+	   TRACE_EXIT("PacketSetMode");
+
+	   return Result;
+   }
+#endif //HAVE_AIRPCAP_API
+
+#ifdef HAVE_NPFIM_API
+   if (AdapterObject->Flags == INFO_FLAG_NPFIM_DEVICE)
+   {
+	   if (mode == PACKET_MODE_CAPT)
+	   {
+		   Result = TRUE;
+	   }
+	   else
+	   {
+		   Result = FALSE;
+	   }
+
+	   TRACE_EXIT("PacketSetMode");
+
+	   return Result;
+   }
+#endif //HAVE_NPFIM_API
+
+   if (AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
+   {
+		Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,pBIOCSMODE,&mode,4,NULL,0,&BytesReturned,NULL);
    }
    else
-#endif // _WINNT4
    {
-		Result = DeviceIoControl(AdapterObject->hFile,pBIOCSMODE,&mode,4,NULL,0,&BytesReturned,NULL);
+	   TRACE_PRINT1("Request to set mode on an unknown device type (%u)", AdapterObject->Flags);
+	   Result = FALSE;
    }
 
    TRACE_EXIT("PacketSetMode");
@@ -2303,14 +2665,13 @@ BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len)
 	WCHAR	*NamePos;
 
 	TRACE_ENTER("PacketSetDumpName");
-#ifndef _WINNT4
+
 	if (AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
 	{
-		ODS("PacketSetDumpName: not allowed on wan adapters\n");
+		TRACE_PRINT("PacketSetDumpName: not allowed on non-NPF adapters");
 		TRACE_EXIT("PacketSetDumpName");
 		return FALSE;
 	}
-#endif // _WINNT4
 
 	if(((PUCHAR)name)[1]!=0 && len>1){ //ASCII
 		FileName=SChar2WChar(name);
@@ -2333,14 +2694,14 @@ BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len)
 		return FALSE;
 	}
 
-    res = DeviceIoControl(AdapterObject->hFile,pBIOCSETDUMPFILENAME,NameWithPath,len,NULL,0,&BytesReturned,NULL);
+    res = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,pBIOCSETDUMPFILENAME,NameWithPath,len,NULL,0,&BytesReturned,NULL);
 	free(FileName);
 
 	TRACE_EXIT("PacketSetDumpName");
 	return res;
 }
 
-/*!
+/*
   \brief Set the dump mode limits.
   \param AdapterObject Pointer to an _ADAPTER structure.
   \param maxfilesize The maximum dimension of the dump file, in bytes. 0 means no limit.
@@ -2363,19 +2724,17 @@ BOOLEAN PacketSetDumpLimits(LPADAPTER AdapterObject, UINT maxfilesize, UINT maxn
 
 	TRACE_ENTER("PacketSetDumpLimits");
 
-#ifndef _WINNT4
 	if (AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
 	{
-		ODS("PacketSetDumpLimits: not allowed on wan adapters\n");
+		TRACE_PRINT("PacketSetDumpLimits: not allowed on non-NPF adapters");
 		TRACE_EXIT("PacketSetDumpLimits");
 		return FALSE;
 	}
-#endif // _WINNT4
 
 	valbuff[0] = maxfilesize;
 	valbuff[1] = maxnpacks;
 
-    Result = DeviceIoControl(AdapterObject->hFile,
+    Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,
 		pBIOCSETDUMPLIMITS,
 		valbuff,
 		sizeof valbuff,
@@ -2411,21 +2770,19 @@ BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync)
 
 	TRACE_ENTER("PacketIsDumpEnded");
 
-#ifndef _WINNT4
 	if(AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
 	{
-		ODS("PacketIsDumpEnded: not allowed on wan adapters\n");
+		TRACE_PRINT("PacketIsDumpEnded: not allowed on non-NPF adapters");
 	
 		TRACE_EXIT("PacketIsDumpEnded");
 		
 		return FALSE;
 	}
-#endif // _WINNT4
 
 	if(sync)
 		WaitForSingleObject(AdapterObject->ReadEvent, INFINITE);
 
-    res = DeviceIoControl(AdapterObject->hFile,
+    res = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,
 		pBIOCISDUMPENDED,
 		NULL,
 		0,
@@ -2482,16 +2839,14 @@ BOOLEAN PacketSetNumWrites(LPADAPTER AdapterObject,int nwrites)
 
 	TRACE_ENTER("PacketSetNumWrites");
 
-#ifndef _WINNT4
 	if(AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
 	{
-		ODS("PacketSetNumWrites: not allowed on wan adapters\n");
+		TRACE_PRINT("PacketSetNumWrites: not allowed on non-NPF adapters");
 		TRACE_EXIT("PacketSetNumWrites");
 		return FALSE;
 	}
-#endif // _WINNT4
 
-    Result = DeviceIoControl(AdapterObject->hFile,pBIOCSWRITEREP,&nwrites,4,NULL,0,&BytesReturned,NULL);
+    Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,pBIOCSWRITEREP,&nwrites,4,NULL,0,&BytesReturned,NULL);
 
 	TRACE_EXIT("PacketSetNumWrites");
 
@@ -2512,14 +2867,14 @@ BOOLEAN PacketSetNumWrites(LPADAPTER AdapterObject,int nwrites)
 */
 BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
 {
-	DWORD BytesReturned;
-	int DriverTimeOut=-1;
 	BOOLEAN Result;
 	
 	TRACE_ENTER("PacketSetReadTimeout");
-	
-#ifndef _WINNT4
-	if (AdapterObject->pWanAdapter != NULL)
+
+	AdapterObject->ReadTimeOut = timeout;
+
+#ifdef HAVE_WANPACKET_API
+	if (AdapterObject->Flags == INFO_FLAG_NDISWAN_ADAPTER)
 	{
 		Result = WanPacketSetReadTimeout(AdapterObject->pWanAdapter,timeout);
 		
@@ -2527,16 +2882,30 @@ BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
 		
 		return Result;
 	}
-#endif // _WINNT4
-	
-	AdapterObject->ReadTimeOut = timeout;
-	
+#endif // HAVE_WANPACKET_API
+
+#ifdef HAVE_NPFIM_API
+	if (AdapterObject->Flags == INFO_FLAG_NPFIM_DEVICE)
+	{
+		//
+		// convert the timestamps to Windows like format (0 = immediate, -1(INFINITE) = infinite)
+		//
+		if (timeout == -1) timeout = 0;
+		else if (timeout == 0) timeout = INFINITE;
+        
+		Result = (BOOLEAN)g_NpfImHandlers.NpfImSetReadTimeout(AdapterObject->NpfImHandle, timeout);
+		TRACE_EXIT("PacketSetReadTimeout");
+		return Result;
+	}
+#endif // HAVE_NPFIM_API
+
 #ifdef HAVE_AIRPCAP_API
 	//
 	// Timeout with AirPcap is handled at user level
 	//
-	if(AdapterObject->Flags & INFO_FLAG_AIRPCAP_CARD)
+	if(AdapterObject->Flags == INFO_FLAG_AIRPCAP_CARD)
 	{
+		TRACE_EXIT("PacketSetReadTimeout");
 		return TRUE;
 	}
 #endif // HAVE_AIRPCAP_API
@@ -2545,14 +2914,15 @@ BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
 	// Under DAG, we simply store the timeout value and then 
 	if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
 	{
-		if(timeout == 1)
+		if(timeout == -1)
 		{
 			// tell DAG card to return immediately
 			AdapterObject->DagReadTimeout.tv_sec = 0;
 			AdapterObject->DagReadTimeout.tv_usec = 0;
 		}
 		else
-			if(timeout == 1)
+		{
+			if(timeout == 0)
 			{
 				// tell the DAG card to wait forvever
 				AdapterObject->DagReadTimeout.tv_sec = -1;
@@ -2564,16 +2934,27 @@ BOOLEAN PacketSetReadTimeout(LPADAPTER AdapterObject,int timeout)
 				AdapterObject->DagReadTimeout.tv_sec = timeout / 1000;
 				AdapterObject->DagReadTimeout.tv_usec = (timeout * 1000) % 1000000;
 			}
-			
-			TRACE_EXIT("PacketSetReadTimeout");
-			return TRUE;
+		}			
+		
+		TRACE_EXIT("PacketSetReadTimeout");
+		return TRUE;
 	}
 #endif // HAVE_DAG_API
-		
-    Result = DeviceIoControl(AdapterObject->hFile,pBIOCSRTIMEOUT,&DriverTimeOut,4,NULL,0,&BytesReturned,NULL);
-	
+
+	if(AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
+	{
+		Result = TRUE;
+	}
+	else
+	{
+		//
+		// if we are here, it's an unsupported ADAPTER type!
+		//
+		TRACE_PRINT1("Request to set read timeout on an unknown device type (%u)", AdapterObject->Flags);
+		Result = FALSE;
+	}
+
 	TRACE_EXIT("PacketSetReadTimeout");
-	
 	return Result;
 	
 }
@@ -2600,31 +2981,56 @@ BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim)
 	BOOLEAN Result;
 
 	TRACE_ENTER("PacketSetBuff");
-#ifndef _WINNT4
-	if (AdapterObject->pWanAdapter != NULL)
-		return WanPacketSetBufferSize(AdapterObject->pWanAdapter, dim);
+
+#ifdef HAVE_WANPACKET_API
+	if (AdapterObject->Flags == INFO_FLAG_NDISWAN_ADAPTER)
+	{
+        Result = WanPacketSetBufferSize(AdapterObject->pWanAdapter, dim);
+		
+		TRACE_EXIT("PacketSetBuff");
+		return Result;
+	}
+#endif
 
 #ifdef HAVE_AIRPCAP_API
-	else
-		if(AdapterObject->Flags & INFO_FLAG_AIRPCAP_CARD)
-		{
-			return g_PAirpcapSetKernelBuffer(AdapterObject->AirpcapAd, dim);
-		}
+	if(AdapterObject->Flags == INFO_FLAG_AIRPCAP_CARD)
+	{
+		Result = (BOOLEAN)g_PAirpcapSetKernelBuffer(AdapterObject->AirpcapAd, dim);
+		
+		TRACE_EXIT("PacketSetBuff");
+		return Result;
+	}
 #endif // HAVE_AIRPCAP_API
 
+#ifdef HAVE_NPFIM_API
+	if(AdapterObject->Flags == INFO_FLAG_NPFIM_DEVICE)
+	{
+		Result = (BOOLEAN)g_NpfImHandlers.NpfImSetCaptureBufferSize(AdapterObject->NpfImHandle, dim);
+
+		TRACE_EXIT("PacketSetBuff");
+		return Result;
+	}
+#endif // HAVE_NPFIM_API
+
 #ifdef HAVE_DAG_API
-	else
-		if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
-		{
-			// We can't change DAG buffers
-			TRACE_EXIT("PacketSetBuff");
-			return TRUE;
-		}
+	if(AdapterObject->Flags == INFO_FLAG_DAG_CARD)
+	{
+		// We can't change DAG buffers
+		TRACE_EXIT("PacketSetBuff");
+		return TRUE;
+	}
 #endif // HAVE_DAG_API
 
-#endif // _WINNT4
-    Result = DeviceIoControl(AdapterObject->hFile,pBIOCSETBUFFERSIZE,&dim,4,NULL,0,&BytesReturned,NULL);
-
+	if (AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
+	{
+		Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,pBIOCSETBUFFERSIZE,&dim,sizeof(dim),NULL,0,&BytesReturned,NULL);
+	}
+	else
+	{
+		TRACE_PRINT1("Request to set buf size on an unknown device type (%u)", AdapterObject->Flags);
+		Result = FALSE;
+	}
+	
 	TRACE_EXIT("PacketSetBuff");
 
 	return Result;
@@ -2657,19 +3063,19 @@ BOOLEAN PacketSetBpf(LPADAPTER AdapterObject, struct bpf_program *fp)
 	
 	TRACE_ENTER("PacketSetBpf");
 	
-#ifndef _WINNT4
-	if (AdapterObject->pWanAdapter != NULL)
+#ifdef HAVE_WANPACKET_API
+	if (AdapterObject->Flags == INFO_FLAG_NDISWAN_ADAPTER)
 	{
 		Result = WanPacketSetBpfFilter(AdapterObject->pWanAdapter, (PUCHAR)fp->bf_insns, fp->bf_len * sizeof(struct bpf_insn));
 		TRACE_EXIT("PacketSetBpf");
 		return Result;
 	}
+#endif
+
 #ifdef HAVE_AIRPCAP_API
-	else
-	if(AdapterObject->Flags & INFO_FLAG_AIRPCAP_CARD)
+	if(AdapterObject->Flags == INFO_FLAG_AIRPCAP_CARD)
 	{
-		// Airpcap is always in promiscuous mode for the moment
-		Result = g_PAirpcapSetFilter(AdapterObject->AirpcapAd, 
+		Result = (BOOLEAN)g_PAirpcapSetFilter(AdapterObject->AirpcapAd, 
 			(char*)fp->bf_insns,
 			fp->bf_len * sizeof(struct bpf_insn));
 
@@ -2677,18 +3083,38 @@ BOOLEAN PacketSetBpf(LPADAPTER AdapterObject, struct bpf_program *fp)
 		return Result;
 	}
 #endif // HAVE_AIRPCAP_API
+
+#ifdef HAVE_NPFIM_API
+	if(AdapterObject->Flags == INFO_FLAG_NPFIM_DEVICE)
+	{
+		Result = (BOOLEAN)g_NpfImHandlers.NpfImSetBpfFilter(AdapterObject->NpfImHandle,
+			fp->bf_insns,
+			fp->bf_len * sizeof(struct bpf_insn));
+
+		TRACE_EXIT("PacketSetBpf");
+		return TRUE;
+	}
+#endif // HAVE_NPFIM_API
+
 #ifdef HAVE_DAG_API
-	else
-		if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
-		{
-			// Delegate the filtering to higher layers since it's too expensive here
-			TRACE_EXIT("PacketSetBpf");
-			return TRUE;
-		}
+	if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
+	{
+		// Delegate the filtering to higher layers since it's too expensive here
+		TRACE_EXIT("PacketSetBpf");
+		return TRUE;
+	}
 #endif // HAVE_DAG_API
-#endif // _WINNT4
-		
-	Result = DeviceIoControl(AdapterObject->hFile,pBIOCSETF,(char*)fp->bf_insns,fp->bf_len*sizeof(struct bpf_insn),NULL,0,&BytesReturned,NULL);
+
+	if (AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
+	{
+		Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,pBIOCSETF,(char*)fp->bf_insns,fp->bf_len*sizeof(struct bpf_insn),NULL,0,&BytesReturned,NULL);
+	}
+	else
+	{
+		TRACE_PRINT1("Request to set BPF filter on an unknown device type (%u)", AdapterObject->Flags);
+		Result = FALSE;
+	}
+	
 	TRACE_EXIT("PacketSetBpf");
 		
 	return Result;
@@ -2707,8 +3133,21 @@ BOOLEAN PacketSetBpf(LPADAPTER AdapterObject, struct bpf_program *fp)
 BOOLEAN PacketSetLoopbackBehavior(LPADAPTER  AdapterObject, UINT LoopbackBehavior)
 {
 	DWORD BytesReturned;
+	BOOLEAN result;
+
+	TRACE_ENTER("PacketSetLoopbackBehavior");
+
+	if (AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
+	{
+		TRACE_PRINT("PacketSetLoopbackBehavior: not allowed on non-NPF adapters");
 	
-	return DeviceIoControl(AdapterObject->hFile,
+		TRACE_EXIT("PacketSetLoopbackBehavior");
+		
+		return FALSE;
+	}
+
+
+	result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,
 		pBIOCISETLOBBEH,
 		&LoopbackBehavior,
 		sizeof(UINT),
@@ -2716,6 +3155,10 @@ BOOLEAN PacketSetLoopbackBehavior(LPADAPTER  AdapterObject, UINT LoopbackBehavio
 		0,
 		&BytesReturned,
 		NULL);
+
+	TRACE_EXIT("PacketSetLoopbackBehavior");
+		
+	return result;
 }
 
 /*!
@@ -2737,6 +3180,9 @@ INT PacketSetSnapLen(LPADAPTER AdapterObject, int snaplen)
 	INT Result;
 
 	TRACE_ENTER("PacketSetSnapLen");
+
+	UNUSED(snaplen);
+	UNUSED(AdapterObject);
 
 #ifdef HAVE_DAG_API
 	if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
@@ -2772,25 +3218,59 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
 	
 	TRACE_ENTER("PacketGetStats");
 
-#ifndef _WINNT4
-
 #ifdef HAVE_AIRPCAP_API
-	if(AdapterObject->Flags & INFO_FLAG_AIRPCAP_CARD)
+	if(AdapterObject->Flags == INFO_FLAG_AIRPCAP_CARD)
 	{
 		AirpcapStats tas;
 
-		if(!g_PAirpcapGetStats(AdapterObject->AirpcapAd, &tas))
+		Res = (BOOLEAN)g_PAirpcapGetStats(AdapterObject->AirpcapAd, &tas);
+		
+		if (Res)
 		{
-			return FALSE;
+			//
+			// Do NOT write this value. This function is probably called with a small structure, old style, containing only the first three fields recv, drop, ifdrop
+			//
+//			s->bs_capt = tas.Capt;
+			s->bs_drop = tas.Drops;
+			s->bs_recv = tas.Recvs;
+			s->ps_ifdrop = tas.IfDrops;
 		}
 
-		s->bs_capt = tas.Capt;
-		s->bs_drop = tas.Drops;
-		s->bs_recv = tas.Recvs;
-		s->ps_ifdrop = tas.IfDrops;
+		TRACE_EXIT("PacketGetStats");
+		return Res;
+	}
+#endif // HAVE_AIRPCAP_API
 
-		// Airpcap is always in promiscuous mode for the moment
-		return TRUE;
+#ifdef HAVE_NPFIM_API
+	if(AdapterObject->Flags == INFO_FLAG_NPFIM_DEVICE)
+	{
+		ULONGLONG stats[7];
+		DWORD neededBytes;
+
+		Res = (BOOLEAN)g_NpfImHandlers.NpfImGetCaptureStatistics(AdapterObject->NpfImHandle, stats, sizeof(stats), &neededBytes);
+
+		if (Res)
+		{
+			if (stats[NPFIM_CAPTURE_STATS_RECEIVED] < 0xFFFFFFFF)
+				s->bs_capt = (UINT)stats[NPFIM_CAPTURE_STATS_RECEIVED];
+			else
+				s->bs_capt = 0xFFFFFFFF;
+
+			if (stats[NPFIM_CAPTURE_STATS_DROPPED_FILTER] < 0xFFFFFFFF)
+				s->bs_drop = (UINT)stats[NPFIM_CAPTURE_STATS_DROPPED_FILTER];
+			else
+				s->bs_drop = 0xFFFFFFFF;
+
+			if (stats[NPFIM_CAPTURE_STATS_ACCEPTED] < 0xFFFFFFFF)
+				s->bs_recv = (UINT)stats[NPFIM_CAPTURE_STATS_ACCEPTED];
+			else
+				s->bs_recv = 0xFFFFFFFF;
+			
+			s->ps_ifdrop = 0;
+		}
+
+		TRACE_EXIT("PacketGetStats");
+		return Res;
 	}
 #endif // HAVE_AIRPCAP_API
 
@@ -2818,14 +3298,24 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
 			return FALSE;
 		}
 	}
-	else
+
 #endif // HAVE_DAG_API
-		if ( AdapterObject->pWanAdapter != NULL)
+
+#ifdef HAVE_WANPACKET_API	
+	if ( AdapterObject->Flags == INFO_FLAG_NDISWAN_ADAPTER)
+	{
 			Res = WanPacketGetStats(AdapterObject->pWanAdapter, (PVOID)&tmpstat);
-		else
-#endif // _WINNT4
-			
-			Res = DeviceIoControl(AdapterObject->hFile,
+
+			TRACE_EXIT("PacketGetStats");
+	
+			return Res;	
+	}
+
+#endif // HAVE_WANPACKET_API
+
+	if (AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
+	{
+			Res = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,
 			pBIOCGSTATS,
 			NULL,
 			0,
@@ -2835,12 +3325,22 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
 			NULL);
 		
 
-	// Copy only the first two values retrieved from the driver
-	s->bs_recv = tmpstat.bs_recv;
-	s->bs_drop = tmpstat.bs_drop;
+		if (Res)
+		{
+			// Copy only the first two values retrieved from the driver
+			s->bs_recv = tmpstat.bs_recv;
+			s->bs_drop = tmpstat.bs_drop;
+		}
 
+	}
+	else
+	{	
+		TRACE_PRINT1("Request to obtain statistics on an unknown device type (%u)", AdapterObject->Flags);
+		Res = FALSE;
+	}
 	TRACE_EXIT("PacketGetStats");
 	return Res;
+
 }
 
 /*!
@@ -2863,42 +3363,82 @@ BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s)
 
 	TRACE_ENTER("PacketGetStatsEx");
 
-#ifndef _WINNT4
 #ifdef HAVE_DAG_API
-		if(AdapterObject->Flags & INFO_FLAG_DAG_CARD)
-		{
-			dagc_stats_t DagStats;
+	if(AdapterObject->Flags == INFO_FLAG_DAG_CARD)
+	{
+		dagc_stats_t DagStats;
 
-			// Note: DAG cards are currently very limited from the statistics reporting point of view,
-			// so most of the values returned by dagc_stats() are zero at the moment
-			g_p_dagc_stats(AdapterObject->pDagCard, &DagStats);
-			s->bs_recv = (ULONG)DagStats.received;
-			s->bs_drop = (ULONG)DagStats.dropped;
-			s->ps_ifdrop = 0;
-			s->bs_capt = (ULONG)DagStats.captured;
-		}
+		// Note: DAG cards are currently very limited from the statistics reporting point of view,
+		// so most of the values returned by dagc_stats() are zero at the moment
+		g_p_dagc_stats(AdapterObject->pDagCard, &DagStats);
+		s->bs_recv = (ULONG)DagStats.received;
+		s->bs_drop = (ULONG)DagStats.dropped;
+		s->ps_ifdrop = 0;
+		s->bs_capt = (ULONG)DagStats.captured;
+
+		TRACE_EXIT("PacketGetStatsEx");
+		return TRUE;
+
+	}
 #endif // HAVE_DAG_API
-   if(AdapterObject->pWanAdapter != NULL)
+
+#ifdef HAVE_WANPACKET_API
+	if(AdapterObject->Flags == INFO_FLAG_NDISWAN_ADAPTER)
+	{
 		Res = WanPacketGetStats(AdapterObject->pWanAdapter, (PVOID)&tmpstat);
+		TRACE_EXIT("PacketGetStatsEx");
+		return Res;
+	}
+#endif // HAVE_WANPACKET_API
+
+#ifdef HAVE_AIRPCAP_API
+	if(AdapterObject->Flags == INFO_FLAG_AIRPCAP_CARD)
+	{
+		AirpcapStats tas;
+
+		Res = (BOOLEAN)g_PAirpcapGetStats(AdapterObject->AirpcapAd, &tas);
+		
+		if (Res)
+		{
+			s->bs_capt = tas.Capt;
+			s->bs_drop = tas.Drops;
+			s->bs_recv = tas.Recvs;
+			s->ps_ifdrop = tas.IfDrops;
+		}
+
+		TRACE_EXIT("PacketGetStatsEx");
+		return Res;
+	}
+#endif // HAVE_AIRPCAP_API
+
+	if (AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
+	{
+			Res = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,
+			pBIOCGSTATS,
+			NULL,
+			0,
+			&tmpstat,
+			sizeof(struct bpf_stat),
+			&BytesReturned,
+			NULL);
+		
+
+		if (Res)
+		{
+			s->bs_recv = tmpstat.bs_recv;
+			s->bs_drop = tmpstat.bs_drop;
+			s->ps_ifdrop = tmpstat.ps_ifdrop;
+			s->bs_capt = tmpstat.bs_capt;
+		}
+	}
 	else
-#endif // _WINNT4
-
-	Res = DeviceIoControl(AdapterObject->hFile,
-		pBIOCGSTATS,
-		NULL,
-		0,
-		&tmpstat,
-		sizeof(struct bpf_stat),
-		&BytesReturned,
-		NULL);
-
-	s->bs_recv = tmpstat.bs_recv;
-	s->bs_drop = tmpstat.bs_drop;
-	s->ps_ifdrop = tmpstat.ps_ifdrop;
-	s->bs_capt = tmpstat.bs_capt;
-
+	{	
+		TRACE_PRINT1("Request to obtain statistics on an unknown device type (%u)", AdapterObject->Flags);
+		Res = FALSE;
+	}
 	TRACE_EXIT("PacketGetStatsEx");
 	return Res;
+
 }
 
 /*!
@@ -2919,21 +3459,40 @@ BOOLEAN PacketRequest(LPADAPTER  AdapterObject,BOOLEAN Set,PPACKET_OID_DATA  Oid
     BOOLEAN		Result;
 
 	TRACE_ENTER("PacketRequest");
-#ifndef _WINNT4
+
+#ifdef HAVE_NPFIM_API
+	if(AdapterObject->Flags == INFO_FLAG_NPFIM_DEVICE)
+	{
+		if (Set)
+		{
+			TRACE_PRINT("PacketRequest SET not supported on NPFIM devices");
+			TRACE_EXIT("PacketRequest");
+			return FALSE;
+		}
+
+		Result = (BOOLEAN)g_NpfImHandlers.NpfImIssueQueryOid(AdapterObject->NpfImHandle,
+			OidData->Oid,
+			OidData->Data,
+			&OidData->Length);
+
+		TRACE_EXIT("PacketRequest");
+		return Result;
+	}
+#endif
+
 	if(AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
 	{
-		ODS("PacketRequest not supported on non-NDIS adapters.\n");
+		TRACE_PRINT("PacketRequest not supported on non-NPF/NPFIM adapters.");
 		TRACE_EXIT("PacketRequest");
 		return FALSE;
 	}
-#endif // _WINNT4
-    
-	Result=DeviceIoControl(AdapterObject->hFile,(DWORD) Set ? (DWORD)pBIOCSETOID : (DWORD)pBIOCQUERYOID,
+
+	Result=(BOOLEAN)DeviceIoControl(AdapterObject->hFile,(DWORD) Set ? (DWORD)pBIOCSETOID : (DWORD)pBIOCQUERYOID,
                            OidData,sizeof(PACKET_OID_DATA)-1+OidData->Length,OidData,
                            sizeof(PACKET_OID_DATA)-1+OidData->Length,&BytesReturned,NULL);
     
 	// output some debug info
-	ODSEx("PacketRequest, OID=%.08x Length=%.05d Set=%.04d Res=%.04d\n",
+	TRACE_PRINT4("PacketRequest, OID=%.08x Length=%.05d Set=%.04d Res=%.04d",
 		OidData->Oid,
 		OidData->Length,
 		Set,
@@ -2968,32 +3527,47 @@ BOOLEAN PacketSetHwFilter(LPADAPTER  AdapterObject,ULONG Filter)
 	TRACE_ENTER("PacketSetHwFilter");
 
 #ifdef HAVE_AIRPCAP_API
-	if(AdapterObject->Flags & INFO_FLAG_AIRPCAP_CARD)
+	if(AdapterObject->Flags == INFO_FLAG_AIRPCAP_CARD)
 	{
 		// Airpcap for the moment is always in promiscuous mode, and ignores any other filters
 		return TRUE;
 	}
 #endif // HAVE_AIRPCAP_API
 
-#ifndef _WINNT4
-	if(AdapterObject->Flags != INFO_FLAG_NDIS_ADAPTER)
+#ifdef HAVE_NPFIM_API
+	if(AdapterObject->Flags == INFO_FLAG_NPFIM_DEVICE)
+	{
+		return TRUE;
+	}
+#endif // HAVE_NPFIM_API
+
+#ifdef HAVE_WANPACKET_API
+	if(AdapterObject->Flags == INFO_FLAG_NDISWAN_ADAPTER)
 	{
 		TRACE_EXIT("PacketSetHwFilter");
 		return TRUE;
 	}
-#endif // _WINNT4
+#endif // HAVE_WANPACKET_API
     
-	OidData=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,IoCtlBufferLength);
-    if (OidData == NULL) {
-        ODS("PacketSetHwFilter: GlobalAlloc Failed\n");
-		TRACE_EXIT("PacketSetHwFilter");
-        return FALSE;
-    }
-    OidData->Oid=OID_GEN_CURRENT_PACKET_FILTER;
-    OidData->Length=sizeof(ULONG);
-    *((PULONG)OidData->Data)=Filter;
-    Status=PacketRequest(AdapterObject,TRUE,OidData);
-    GlobalFreePtr(OidData);
+	if (AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
+	{
+		OidData=GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT,IoCtlBufferLength);
+		if (OidData == NULL) {
+	        TRACE_PRINT("PacketSetHwFilter: GlobalAlloc Failed");
+			TRACE_EXIT("PacketSetHwFilter");
+	        return FALSE;
+		}
+		OidData->Oid=OID_GEN_CURRENT_PACKET_FILTER;
+		OidData->Length=sizeof(ULONG);
+	    *((PULONG)OidData->Data)=Filter;
+		Status=PacketRequest(AdapterObject,TRUE,OidData);
+		GlobalFreePtr(OidData);
+	}
+	else
+	{
+		TRACE_PRINT1("Setting HW filter not supported on this adapter type (%u)", AdapterObject->Flags);
+		Status = FALSE;
+	}
 	
 	TRACE_EXIT("PacketSetHwFilter");
     return Status;
@@ -3032,17 +3606,20 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 
 	TRACE_PRINT_OS_INFO();
 
-	ODSEx("PacketGetAdapterNames: BufferSize=%d\n", *BufferSize);
+	TRACE_PRINT2("Packet DLL version %s, Driver version %s", PacketLibraryVersion, PacketDriverVersion);
+
+	TRACE_PRINT1("PacketGetAdapterNames: BufferSize=%u", *BufferSize);
+
 
 	//
 	// Check the presence on some libraries we rely on, and load them if we found them
-	//
+	//f
 	PacketLoadLibrariesDynamically();
 
-	//
+	//d
 	// Create the adapter information list
 	//
-	ODS("Populating the adapter list...\n");
+	TRACE_PRINT("Populating the adapter list...");
 
 	PacketPopulateAdaptersInfoList();
 
@@ -3053,7 +3630,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 		ReleaseMutex(g_AdaptersInfoMutex);
 		*BufferSize = 0;
 
-		ODS("No adapters found in the system. Failing.\n");
+		TRACE_PRINT("No adapters found in the system. Failing.");
 		
 		SetLastError(ERROR_INSUFFICIENT_BUFFER);
  	
@@ -3069,8 +3646,8 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 		if(TAdInfo->Flags != INFO_FLAG_DONT_EXPORT)
 		{
 			// Update the size variables
-			SizeNeeded += strlen(TAdInfo->Name) + strlen(TAdInfo->Description) + 2;
-			SizeNames += strlen(TAdInfo->Name) + 1;
+			SizeNeeded += (ULONG)strlen(TAdInfo->Name) + (ULONG)strlen(TAdInfo->Description) + 2;
+			SizeNames += (ULONG)strlen(TAdInfo->Name) + 1;
 		}
 	}
 
@@ -3080,7 +3657,7 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 	{
 		ReleaseMutex(g_AdaptersInfoMutex);
 
- 		ODSEx("PacketGetAdapterNames: input buffer too small, we need %u bytes\n", *BufferSize);
+ 		TRACE_PRINT1("PacketGetAdapterNames: input buffer too small, we need %u bytes", *BufferSize);
  
 		*BufferSize = SizeNeeded + 2;  // Report the required size
 
@@ -3099,12 +3676,18 @@ BOOLEAN PacketGetAdapterNames(PTSTR pStr,PULONG  BufferSize)
 		if(TAdInfo->Flags != INFO_FLAG_DONT_EXPORT)
 		{
 			// Copy the data
-			strcpy(((PCHAR)pStr) + SizeNames, TAdInfo->Name);
-			strcpy(((PCHAR)pStr) + OffDescriptions + SizeDesc, TAdInfo->Description);
-			
+			StringCchCopyA(
+				((PCHAR)pStr) + SizeNames, 
+				*BufferSize - SizeNames, 
+				TAdInfo->Name);
+			StringCchCopyA(
+				((PCHAR)pStr) + OffDescriptions + SizeDesc, 
+				*BufferSize - OffDescriptions - SizeDesc,
+				TAdInfo->Description);
+
 			// Update the size variables
-			SizeNames += strlen(TAdInfo->Name) + 1;
-			SizeDesc += strlen(TAdInfo->Description) + 1;
+			SizeNames += (ULONG)strlen(TAdInfo->Name) + 1;
+			SizeDesc += (ULONG)strlen(TAdInfo->Description) + 1;
 		}
 	}
 
@@ -3158,7 +3741,7 @@ BOOLEAN PacketGetNetInfoEx(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntrie
 	//
 	if(!PacketUpdateAdInfo(Tname))
 	{
-		ODS("PacketGetNetInfoEx. Failed updating the adapter list. Failing.\n");
+		TRACE_PRINT("PacketGetNetInfoEx. Failed updating the adapter list. Failing.");
 		if(FreeBuff)
 			GlobalFreePtr(Tname);
 
@@ -3173,7 +3756,7 @@ BOOLEAN PacketGetNetInfoEx(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntrie
 
 	if(TAdInfo != NULL)
 	{
-		ODS("Adapter found.\n");
+		TRACE_PRINT("Adapter found.");
 		*NEntries = (TAdInfo->NNetworkAddresses < *NEntries)? TAdInfo->NNetworkAddresses: *NEntries;
 		//TODO what if nentries = 0?
 		if (*NEntries > 0)
@@ -3182,7 +3765,7 @@ BOOLEAN PacketGetNetInfoEx(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntrie
 	}
 	else
 	{
-		ODS("PacketGetNetInfoEx: Adapter not found\n");
+		TRACE_PRINT("PacketGetNetInfoEx: Adapter not found");
 		Res = FALSE;
 	}
 	
@@ -3222,14 +3805,14 @@ BOOLEAN PacketGetNetType(LPADAPTER AdapterObject, NetType *type)
 
 	if(TAdInfo != NULL)
 	{
-		ODS("Adapter found\n");
+		TRACE_PRINT("Adapter found");
 		// Copy the data
 		memcpy(type, &(TAdInfo->LinkLayer), sizeof(struct NetType));
 		ret = TRUE;
 	}
 	else
 	{
-		ODS("PacketGetNetType: Adapter not found\n");
+		TRACE_PRINT("PacketGetNetType: Adapter not found");
 		ret =  FALSE;
 	}
 
@@ -3253,11 +3836,18 @@ BOOLEAN PacketGetNetType(LPADAPTER AdapterObject, NetType *type)
 */
 PAirpcapHandle PacketGetAirPcapHandle(LPADAPTER AdapterObject)
 {
+	PAirpcapHandle handle = NULL;
+	TRACE_ENTER("PacketGetAirPcapHandle");
+
 #ifdef HAVE_AIRPCAP_API
-		return AdapterObject->AirpcapAd;
-#else
-	return NULL;
+	if (AdapterObject->Flags == INFO_FLAG_AIRPCAP_CARD)
+	{
+		handle = AdapterObject->AirpcapAd;
+	}
 #endif // HAVE_AIRPCAP_API
+
+	TRACE_EXIT("PacketGetAirPcapHandle");
+	return handle;
 }
 
 /* @} */
