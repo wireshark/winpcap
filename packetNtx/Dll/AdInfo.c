@@ -51,7 +51,10 @@
 #include <packet32.h>
 #include "Packet32-Int.h"
 #include "debug.h"
-#include "WanPacket/WanPacket.h"
+
+#ifdef HAVE_WANPACKET_API
+#include "wanpacket/wanpacket.h"
+#endif //HAVE_WANPACKET_API
 
 #include <windows.h>
 #include <windowsx.h>
@@ -640,8 +643,13 @@ static BOOLEAN PacketAddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 	
 	if(IphAd->Type == IF_TYPE_PPP || IphAd->Type == IF_TYPE_SLIP)
 	{
+#ifdef HAVE_WANPACKET_API
 		if (!WanPacketTestAdapter())
 			goto SkipAd;
+#else
+		goto SkipAd;
+#endif
+	
 	}
 	else
 	{
@@ -1277,89 +1285,116 @@ static BOOLEAN PacketAddAdapterAirpcap(PCHAR name, PCHAR description)
 	PAirpcapHandle AirpcapAdapter;
 	BOOL GllRes;
 	AirpcapLinkType AirpcapLinkLayer;
+	BOOLEAN Result = TRUE;
 
 	TRACE_ENTER("PacketAddAdapterAirpcap");
 	//XXX what about checking if the adapter already exists???
 	
-	//
-	// Allocate a descriptor for this adapter
-	//			
-	//here we do not acquire the mutex, since we are not touching the list, yet.
-    TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));
-	if (TmpAdInfo == NULL) 
-	{
-		TRACE_PRINT("PacketAddAdapterDag: GlobalAlloc Failed");
-		TRACE_EXIT("PacketAddAdapterAirpcap");
-		return FALSE;
-	}
-
-	// Copy the device name and description
-	StringCchCopyA(TmpAdInfo->Name, 
-		sizeof(TmpAdInfo->Name), 
-		name);
-
-	StringCchCopyA(TmpAdInfo->Description, 
-		sizeof(TmpAdInfo->Description), 
-		description);
-
-	TmpAdInfo->Flags = INFO_FLAG_AIRPCAP_CARD;
-
-	if(g_PAirpcapOpen)
-	{
-		AirpcapAdapter = g_PAirpcapOpen(name, ebuf);
-	}
-	else
-	{
-		AirpcapAdapter = NULL;
-	}
-
-	if(!AirpcapAdapter)
-	{
-		GlobalFreePtr(TmpAdInfo);
-		TRACE_EXIT("PacketAddAdapterAirpcap");
-		return FALSE;
-	}
-
-	GllRes = g_PAirpcapGetLinkType(AirpcapAdapter, &AirpcapLinkLayer);
-	if(!GllRes)
-	{
-		g_PAirpcapClose(AirpcapAdapter);
-		GlobalFreePtr(TmpAdInfo);
-		TRACE_EXIT("PacketAddAdapterAirpcap");
-		return FALSE;
-	}
-
-	switch(AirpcapLinkLayer) 
-	{ 
-	case AIRPCAP_LT_802_11:
-		TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMediumBare80211;
-		break;
-	case AIRPCAP_LT_802_11_PLUS_RADIO:
-		TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMediumRadio80211;
-		break;
-	default:
-		TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMediumNull; // Note: custom linktype, NDIS doesn't provide an equivalent
-		break;
-	}			
-	
-	//
-	// For the moment, we always set the speed to 54Mbps, since the speed is not channel-specific,
-	// but per packet
-	//
-	TmpAdInfo->LinkLayer.LinkSpeed = 54000000; 
-	
-	g_PAirpcapClose(AirpcapAdapter);
-
 	WaitForSingleObject(g_AdaptersInfoMutex, INFINITE);
 
-	// Update the AdaptersInfo list
-	TmpAdInfo->Next = g_AdaptersInfoList;
-	g_AdaptersInfoList = TmpAdInfo;
+	do
+	{
+		
+		//
+		// check if the adapter is already there, and remove it
+		//
+		for (TmpAdInfo = g_AdaptersInfoList; TmpAdInfo != NULL; TmpAdInfo = TmpAdInfo->Next)
+		{
+			if (TmpAdInfo->Flags == INFO_FLAG_AIRPCAP_CARD)
+			{
+				if (strcmp(TmpAdInfo->Name, name) == 0)
+					break;
+			}
+		}
+
+		if (TmpAdInfo != NULL)
+		{
+			//
+			// we already have it in the list. Just return
+			//
+			Result = TRUE;
+			break;
+		}
+		
+		//
+		// Allocate a descriptor for this adapter
+		//			
+		//here we do not acquire the mutex, since we are not touching the list, yet.
+		TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));
+		if (TmpAdInfo == NULL) 
+		{
+			TRACE_PRINT("PacketAddAdapterDag: GlobalAlloc Failed");
+			Result = FALSE;
+			break;
+		}
+		
+		// Copy the device name and description
+		StringCchCopyA(TmpAdInfo->Name, 
+			sizeof(TmpAdInfo->Name), 
+			name);
+		
+		StringCchCopyA(TmpAdInfo->Description, 
+			sizeof(TmpAdInfo->Description), 
+			description);
+		
+		TmpAdInfo->Flags = INFO_FLAG_AIRPCAP_CARD;
+		
+		if(g_PAirpcapOpen)
+		{
+			AirpcapAdapter = g_PAirpcapOpen(name, ebuf);
+		}
+		else
+		{
+			AirpcapAdapter = NULL;
+		}
+		
+		if(!AirpcapAdapter)
+		{
+			GlobalFreePtr(TmpAdInfo);
+			Result = FALSE;
+			break;
+		}
+		
+		GllRes = g_PAirpcapGetLinkType(AirpcapAdapter, &AirpcapLinkLayer);
+		if(!GllRes)
+		{
+			g_PAirpcapClose(AirpcapAdapter);
+			GlobalFreePtr(TmpAdInfo);
+			Result = FALSE;
+			break;
+		}
+		
+		switch(AirpcapLinkLayer) 
+		{ 
+		case AIRPCAP_LT_802_11:
+			TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMediumBare80211;
+			break;
+		case AIRPCAP_LT_802_11_PLUS_RADIO:
+			TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMediumRadio80211;
+			break;
+		default:
+			TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMediumNull; // Note: custom linktype, NDIS doesn't provide an equivalent
+			break;
+		}			
+		
+		//
+		// For the moment, we always set the speed to 54Mbps, since the speed is not channel-specific,
+		// but per packet
+		//
+		TmpAdInfo->LinkLayer.LinkSpeed = 54000000; 
+		
+		g_PAirpcapClose(AirpcapAdapter);
+		
+		// Update the AdaptersInfo list
+		TmpAdInfo->Next = g_AdaptersInfoList;
+		g_AdaptersInfoList = TmpAdInfo;
+	}
+	while(FALSE);
 
 	ReleaseMutex(g_AdaptersInfoMutex);
 
 	TRACE_EXIT("PacketAddAdapterAirpcap");
-	return TRUE;
+	return Result;
 }
 
 /*!
@@ -1410,81 +1445,205 @@ static BOOLEAN PacketAddAdapterNpfIm(PNPF_IM_DEVICE pDevice)
 	NDIS_MEDIUM medium = NdisMediumNull;
 	ULONGLONG linkSpeed = 0;
 	BOOL bResult = TRUE;
+	PNPF_IM_ADDRESS pAddresses = NULL;
+	DWORD addressesSize = 0;
+	DWORD returnedBytes = 0;
+	npf_if_addr *pnpf_if_addresses = NULL;
+	DWORD numAddresses;
+	DWORD i;
 
 	TRACE_ENTER("PacketAddAdapterNpfIm");
 
-	do
-	{
-		// 
-		// We suppose that the DLL has been loaded successfully
-		// 
-		bResult = g_NpfImHandlers.NpfImOpenDevice(pDevice->Name, &handle);
-		if (bResult == FALSE) break;
-
-		bResult = g_NpfImHandlers.NpfImGetMedium(handle, &medium);
-		if (bResult == FALSE) break;
-
-		if (medium == NdisMedium802_3 || medium == NdisMediumWan)
-		{
-			DWORD bufferSize = sizeof(mac);
-		
-			if (g_NpfImHandlers.NpfImIssueQueryOid(handle, OID_802_3_CURRENT_ADDRESS, mac, &bufferSize) == FALSE)
-			{
-				macSize = 0;
-			}
-		}	
-
-		bResult = g_NpfImHandlers.NpfImGetLinkSpeed(handle, &linkSpeed);
-	}
-	while (FALSE);
-
-	if (handle != NULL)
-		g_NpfImHandlers.NpfImCloseDevice(handle);
-
-	if (bResult == FALSE)
-	{
-		TRACE_EXIT("PacketAddAdapterNpfIm");
-		return FALSE;
-	}
-
-	//
-	// Allocate a descriptor for this adapter
-	//			
-	//here we do not acquire the mutex, since we are not touching the list, yet.
-    TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));
-	if (TmpAdInfo == NULL) 
-	{
-		TRACE_PRINT("PacketAddAdapterNpfIm: GlobalAlloc Failed");
-		TRACE_EXIT("PacketAddAdapterNpfIm");
-		return FALSE;
-	}
-
-	// Copy the device name and description
-	StringCchCopyA(TmpAdInfo->Name, 
-		sizeof(TmpAdInfo->Name), 
-		pDevice->Name);
-
-	StringCchCopyA(TmpAdInfo->Description, 
-		sizeof(TmpAdInfo->Description), 
-		pDevice->Description);
-
-	CopyMemory(TmpAdInfo->MacAddress, mac, macSize);
-	TmpAdInfo->LinkLayer.LinkType = medium;
-	
-	TmpAdInfo->Flags = INFO_FLAG_NPFIM_DEVICE;
-	
-	TmpAdInfo->LinkLayer.LinkSpeed = linkSpeed;
-
 	WaitForSingleObject(g_AdaptersInfoMutex, INFINITE);
 
-	// Update the AdaptersInfo list
-	TmpAdInfo->Next = g_AdaptersInfoList;
-	g_AdaptersInfoList = TmpAdInfo;
+	do
+	{
+		//
+		// check if the adapter is already there, and remove it
+		//
+		for (TmpAdInfo = g_AdaptersInfoList; TmpAdInfo != NULL; TmpAdInfo = TmpAdInfo->Next)
+		{
+			if (TmpAdInfo->Flags == INFO_FLAG_NPFIM_DEVICE)
+			{
+				if (strcmp(TmpAdInfo->Name, pDevice->Name) == 0)
+					break;
+			}
+		}
+
+		if (TmpAdInfo != NULL)
+		{
+			//
+			// we already have it in the list. Just return
+			//
+
+			//
+			// NOTE in this case we do not refresh the IP list
+			//
+			bResult = TRUE;
+			break;
+		}
+
+		do
+		{
+			// 
+			// We suppose that the DLL has been loaded successfully
+			// 
+			bResult = g_NpfImHandlers.NpfImOpenDevice(pDevice->Name, &handle);
+			if (bResult == FALSE) break;
+
+			bResult = g_NpfImHandlers.NpfImGetMedium(handle, &medium);
+			if (bResult == FALSE) break;
+
+			if (medium == NdisMedium802_3 || medium == NdisMediumWan)
+			{
+				DWORD bufferSize = sizeof(mac);
+			
+				if (g_NpfImHandlers.NpfImIssueQueryOid(handle, OID_802_3_CURRENT_ADDRESS, mac, &bufferSize) == FALSE)
+				{
+					macSize = 0;
+				}
+			}	
+
+			bResult = g_NpfImHandlers.NpfImGetLinkSpeed(handle, &linkSpeed);
+
+			if (bResult == FALSE)
+			{
+				break;
+			}
+
+			bResult = g_NpfImHandlers.NpfImGetIpAddresses(handle, NULL, 0, &returnedBytes);
+
+			if (bResult == TRUE)
+			{
+				//
+				// no ip addresses, return
+				//
+				break;
+			}
+
+			if (GetLastError() == ERROR_MORE_DATA)
+			{
+				pAddresses = (PNPF_IM_ADDRESS)LocalAlloc(LPTR, returnedBytes);
+				if (pAddresses == NULL)
+				{
+					bResult = FALSE;
+					break;
+				}
+
+				addressesSize = returnedBytes;
+				
+				bResult = g_NpfImHandlers.NpfImGetIpAddresses(handle, pAddresses, addressesSize, &returnedBytes);
+			}
+			else
+			{
+				// 
+				//unknown error listing the IP addresses
+				//
+				break;
+			}
+
+		}
+		while (FALSE);
+
+		if (handle != NULL)
+			g_NpfImHandlers.NpfImCloseDevice(handle);
+
+		if (bResult == FALSE)
+		{
+			break;
+		}
+
+		numAddresses = returnedBytes / sizeof(NPF_IM_ADDRESS);
+
+		//
+		// Allocate a descriptor for this adapter
+		//			
+		//here we do not acquire the mutex, since we are not touching the list, yet.
+		TmpAdInfo = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(ADAPTER_INFO));
+		if (TmpAdInfo == NULL) 
+		{
+			TRACE_PRINT("PacketAddAdapterNpfIm: GlobalAlloc Failed");
+			bResult = FALSE;
+			break;
+		}
+
+		if (numAddresses > 0)
+		{
+			pnpf_if_addresses = (npf_if_addr*)GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(npf_if_addr) * numAddresses);
+
+			if (pnpf_if_addresses == NULL)
+			{
+				GlobalFreePtr(TmpAdInfo);
+				TRACE_PRINT("PacketAddAdapteNpfIm: GlobalAlloc failed");
+				bResult = FALSE;
+				break;
+			}
+		
+			for (i = 0; i < numAddresses; i++)
+			{
+				DWORD ipAddr, netMask, broadCast;
+
+				CopyMemory(&(pnpf_if_addresses[i].IPAddress), &(pAddresses[i].IPAddress), sizeof(struct sockaddr_storage));
+
+				//
+				// generate the broadcast addr
+				switch(pAddresses[i].IPAddress.ss_family)
+				{
+				case AF_INET:
+					CopyMemory(&(pnpf_if_addresses[i].SubnetMask), &(pAddresses[i].SubnetMask), sizeof(struct sockaddr_storage));
+					CopyMemory(&(pnpf_if_addresses[i].Broadcast), &(pAddresses[i].SubnetMask), sizeof(struct sockaddr_storage));
+					ipAddr = ((struct sockaddr_in*)(&pnpf_if_addresses[i].IPAddress))->sin_addr.S_un.S_addr;
+					netMask = ((struct sockaddr_in*)(&pnpf_if_addresses[i].SubnetMask))->sin_addr.S_un.S_addr;
+					broadCast = ipAddr | (~netMask);
+					((struct sockaddr_in*)(&pnpf_if_addresses[i].Broadcast))->sin_addr.S_un.S_addr = broadCast;
+					break;
+
+				case AF_INET6:
+				default:
+					ZeroMemory(&(pnpf_if_addresses[i].SubnetMask), sizeof(struct sockaddr_storage));
+					ZeroMemory(&(pnpf_if_addresses[i].Broadcast),  sizeof(struct sockaddr_storage));
+					break;
+				}
+			}
+
+			//
+			// put the ip addresses
+			//
+			TmpAdInfo->NetworkAddresses = pnpf_if_addresses;
+			TmpAdInfo->NNetworkAddresses = numAddresses;
+
+		}
+
+
+
+		// Copy the device name and description
+		StringCchCopyA(TmpAdInfo->Name, 
+			sizeof(TmpAdInfo->Name), 
+			pDevice->Name);
+
+		StringCchCopyA(TmpAdInfo->Description, 
+			sizeof(TmpAdInfo->Description), 
+			pDevice->Description);
+
+		CopyMemory(TmpAdInfo->MacAddress, mac, macSize);
+		TmpAdInfo->LinkLayer.LinkType = medium;
+		
+		TmpAdInfo->Flags = INFO_FLAG_NPFIM_DEVICE;
+		
+		TmpAdInfo->LinkLayer.LinkSpeed = linkSpeed;
+
+		// Update the AdaptersInfo list
+		TmpAdInfo->Next = g_AdaptersInfoList;
+		g_AdaptersInfoList = TmpAdInfo;
+	}
+	while(FALSE);
+
+	if (pAddresses != NULL) LocalFree(pAddresses);
 
 	ReleaseMutex(g_AdaptersInfoMutex);
 
 	TRACE_EXIT("PacketAddAdapterNpfIm");
-	return TRUE;
+	return (BOOLEAN)bResult;
 }
 
 
@@ -1790,6 +1949,10 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 		TRACE_PRINT("NpfIm extension not available");
 	}
 #endif //HAVE_NPFIM_API	
+
+#ifdef HAVE_AIRPCAP_API
+	PacketGetAdaptersAirpcap();
+#endif
 
 #ifdef HAVE_WANPACKET_API
 	PacketAddFakeNdisWanAdapter();
