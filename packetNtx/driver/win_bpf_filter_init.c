@@ -33,6 +33,10 @@
 #include "tme.h"
 #include "win_bpf.h"
 
+#pragma warning(disable : 4131) //old style function declaration
+#pragma warning(disable : 4127) // conditional expr is constant (used for while(1) loops)
+#pragma warning(disable : 4213) //cast on l-value
+
 /*
  * Initialize the filter machine
  */

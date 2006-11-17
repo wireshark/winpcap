@@ -90,6 +90,8 @@
 
 #define FORCE_NO_DELETION(timestamp)  (struct timeval*)(timestamp)->tv_sec=0x7fffffff;
 
+struct __TME_DATA;
+
 /* TME callback prototypes */
 typedef uint32 (*lut_fcn)(uint8 *key, struct __TME_DATA *data,MEM_TYPE *mem_ex, struct time_conv *time_ref );
 typedef uint32 (*exec_fcn)(uint8 *block, uint32 pkt_size, struct __TME_DATA *data, MEM_TYPE *mem_ex, uint8 *mem_data);

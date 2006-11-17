@@ -47,6 +47,9 @@
 
 #endif
 
+#ifndef UNUSED
+#define UNUSED(_x) (_x)
+#endif
 
 
 /* the key is represented by the initial and final value */
@@ -60,6 +63,9 @@ uint32 bucket_lookup(uint8 *key, TME_DATA *data, MEM_TYPE *mem_ex, struct time_c
 	uint32 blocks;
 	uint32 block_size;
 	uint8 *temp;
+
+	UNUSED(mem_ex);
+
 	if ((data->key_len!=1)&&  /*16 bit value*/
 		(data->key_len!=2))   /*32 bit value*/
 		return TME_ERROR;

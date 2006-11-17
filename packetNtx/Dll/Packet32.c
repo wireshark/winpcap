@@ -3844,6 +3844,8 @@ PAirpcapHandle PacketGetAirPcapHandle(LPADAPTER AdapterObject)
 	{
 		handle = AdapterObject->AirpcapAd;
 	}
+#else
+	UNUSED(AdapterObject);
 #endif // HAVE_AIRPCAP_API
 
 	TRACE_EXIT("PacketGetAirPcapHandle");

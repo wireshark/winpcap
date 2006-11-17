@@ -37,6 +37,14 @@
 #include <ndis.h>
 #endif
 
+#pragma warning(disable : 4131) //old style function declaration
+#pragma warning(disable : 4127) // conditional expr is constant (used for while(1) loops)
+#pragma warning(disable : 4213) //cast on l-value
+
+#ifndef UNUSED
+#define UNUSED(_x) (_x)
+#endif
+
 #include "win_bpf.h"
 
 #include "debug.h"
@@ -66,10 +74,19 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 {
 	register u_int32 A, X;
 	register int k;
+
+#ifdef __NPF_x86__
 	u_int32 j,tmp;
 	u_short tmp2;
-	
+#endif
+
 	int32 mem[BPF_MEMWORDS];
+
+#ifndef __NPF_x86__
+	UNUSED(time_ref);
+	UNUSED(tme);
+	UNUSED(mem_ex);
+#endif
 
 	if (pc == 0)
 		/*
@@ -467,8 +484,16 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 	register u_int32 A, X;
 	register int k;
 	int32 mem[BPF_MEMWORDS];
+#ifdef __NPF_x86__
 	u_int32 j,tmp;
 	u_short tmp2;
+#endif
+
+#ifndef __NPF_x86__
+	UNUSED(tme);
+	UNUSED(time_ref);
+	UNUSED(mem_ex);
+#endif 
 
 	if (pc == 0)
 		/*
@@ -948,7 +973,11 @@ bpf_validate(f, len,mem_ex_size)
 	register int32 j;
 	register struct bpf_insn *p;
 	int32 flag;
-		
+
+#ifndef __NPF_x86__
+	UNUSED(mem_ex_size);
+#endif
+
 	if (len < 1)
 		return 0;
 

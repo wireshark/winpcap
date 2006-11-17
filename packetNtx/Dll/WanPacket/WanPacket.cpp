@@ -300,7 +300,8 @@ BOOLEAN IsWindows2000()
 	ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
 	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 
-	if( !(bOsVersionInfoEx = GetVersionEx ((OSVERSIONINFO *) &osvi)) )
+	bOsVersionInfoEx = GetVersionEx ((OSVERSIONINFO *) &osvi);
+	if( !bOsVersionInfoEx )
 	{
 		osvi.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
 		if (! GetVersionEx ( (OSVERSIONINFO *) &osvi) ) 
@@ -449,7 +450,7 @@ PWAN_ADAPTER WanPacketOpenAdapter()
 	}
 
 	//awfully never reached
-	return NULL;
+//	return NULL;
 
 error:
 
@@ -673,7 +674,7 @@ BOOLEAN WanPacketSetBufferSize(PWAN_ADAPTER pWanAdapter, DWORD BufferSize)
   */
 DWORD WanPacketReceivePacket(PWAN_ADAPTER pWanAdapter, PUCHAR Buffer, DWORD BufferSize)
 {
-	DWORD ReadBytes;
+	DWORD ReadBytes = 0;
 	//first of all, we wait for either the ReadTimeout to expire, or enough data
 	//in the buffer (i.e. hReadEvent gets set).
 	WaitForSingleObject(pWanAdapter->hReadEvent, pWanAdapter->ReadTimeout);

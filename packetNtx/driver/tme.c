@@ -32,6 +32,10 @@
 
 #include "tme.h"
 
+#ifndef UNUSED
+#define UNUSED(_x) (_x)
+#endif
+
 /* resizes extended memory */ 
 uint32 init_extended_memory(uint32 size, MEM_TYPE *mem_ex)
 {
@@ -297,6 +301,9 @@ uint32 get_tme_block_register(TME_DATA *data,MEM_TYPE *mem_ex,uint32 rgstr,uint3
 uint32 set_tme_block_register(TME_DATA *data,MEM_TYPE *mem_ex,uint32 rgstr,uint32 value, int32 init)
 {	/* very very very dangerous!!!!!!!!!!! */
 	lut_fcn tmp;
+
+	UNUSED(mem_ex);
+
 	switch(rgstr)
 	{
 	case TME_MAX_FILL_STATE:
