@@ -673,7 +673,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			//
 			// Extract packet.dll to disk
 			//
-			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLLNT, g_DllFullPath, FALSE))
+			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLLVISTA, g_DllFullPath, FALSE))
 			{
 				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the OEM WinPcap files. Administrative privileges are required for this operation.");
 

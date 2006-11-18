@@ -3,6 +3,7 @@
 echo Copying compiled DLLs
 copy ..\..\packetNtx\Dll\Project\Packet_Release_NT4\packet.dll .\Binaries\packetnt.dll
 copy ..\..\packetNtx\Dll\Project\Packet_Release_2k\packet.dll .\Binaries\packet2k.dll
+copy ..\..\PacketNtx\Dll\Project\Packet_Release_Vista\packet.dll .\Binaries\packetVista.dll
 
 echo Copying drivers
 copy ..\..\packetNtx\Driver\bin\2k\i386\npf.sys .\Binaries\npf2k.sys
