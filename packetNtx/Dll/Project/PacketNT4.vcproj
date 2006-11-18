@@ -32,8 +32,9 @@
 				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile="$(IntDir)/"
 				ProgramDataBaseFileName="$(IntDir)/"
-				WarningLevel="3"
+				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -44,8 +45,10 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="../../../../winpcap\packetntx\dll\packet.def"
+				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/Packet.pdb"
 				SubSystem="2"
+				OptimizeReferences="2"
 				ImportLibrary="$(OutDir)/Packet.lib"
 				TargetMachine="1"/>
 			<Tool
@@ -95,7 +98,7 @@
 				AssemblerListingLocation="$(IntDir)/"
 				ObjectFile="$(IntDir)/"
 				ProgramDataBaseFileName="$(IntDir)/"
-				WarningLevel="3"
+				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
 				CompileAs="0"/>
@@ -111,6 +114,7 @@
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/Packet.pdb"
 				SubSystem="2"
+				OptimizeReferences="0"
 				ImportLibrary="$(OutDir)/Packet.lib"
 				TargetMachine="1"/>
 			<Tool
