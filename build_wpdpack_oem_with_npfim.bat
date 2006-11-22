@@ -27,4 +27,8 @@ xcopy /v /Y ..\NpfIm\Samples\IfListNpfIm\*.h* %__DEST_FOLDER%\Examples-Remote\If
 xcopy /v /Y ..\NpfIm\Samples\IfListNpfIm\*.vcproj %__DEST_FOLDER%\Examples-Remote\IfListNpfIm\ > nul
 xcopy /v /Y ..\NpfIm\Samples\IfListNpfIm\*.sln %__DEST_FOLDER%\Examples-Remote\IfListNpfIm\ > nul
 
+rem copy the documentation for npfimLoader
+mkdir %__DEST_FOLDER%\docs\NpfImLoader 2>nul >nul
+xcopy /s/e/v/Y ..\NpfIm_DevPack\docs\NpfImLoader %__DEST_FOLDER%\docs\NpfImLoader\ > nul
+
 set __DEST_FOLDER=
