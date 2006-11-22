@@ -17,10 +17,10 @@ pushd dox\prj\
 @echo #### Deleting existing WinPcap documentation
 del /q docs\*.*
 @echo #### Creating new documentation
-doxygen winpcap_oem_noc.dox
+doxygen winpcap_oem_noc.dox > nul
 @echo #### Copying all gif files
-xcopy ..\pics\*.gif docs\.	/v /y /q
-xcopy ..\pics\*.jpg docs\. /v /y /q
+xcopy ..\pics\*.gif docs\.	/v /y /q > nul
+xcopy ..\pics\*.jpg docs\. /v /y /q > nul
 
 popd
 
