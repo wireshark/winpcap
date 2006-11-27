@@ -2,7 +2,10 @@
 mkdir installer\distribution		 2>nul >nul
 mkdir installer\distribution\2000	 2>nul >nul
 mkdir installer\distribution\NT		 2>nul >nul
-mkdir installer\distribution\9x		 2>nul >nul
+
+rem We do no longer support Win9x
+rem mkdir installer\distribution\9x		 2>nul >nul
+
 mkdir installer\distribution\x86-64	 2>nul >nul
 mkdir installer\distribution\Vista_x86	 2>nul >nul
 
@@ -18,10 +21,12 @@ copy ..\packetNtx\Dll\Project\Release\Packet.dll installer\distribution\2000\
 copy ..\packetNtx\Dll\Project\Release_Vista\Packet.dll installer\distribution\Vista_x86\
 copy ..\packetNtx\Dll\Project\NT4_Release\Packet.dll installer\distribution\NT\
 copy ..\packetNtx\Dll\WanPacket\Release\WanPacket.dll installer\distribution\2000\
-echo REMEMBER TO COPY npf.vxd
-pause
 
-copy ..\packet9x\DLL\Project\Release\Packet.dll installer\distribution\9x\
+rem We do no longer support Win9x
+rem echo REMEMBER TO COPY npf.vxd
+rem pause
+rem copy ..\packet9x\DLL\Project\Release\Packet.dll installer\distribution\9x\
+
 copy ..\wpcap\PRJ\Release_REMOTE\wpcap.dll installer\distribution\
 copy ..\wpcap\PRJ\Release_REMOTE\rpcapd.exe installer\distribution\2000\
 

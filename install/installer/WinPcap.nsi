@@ -205,9 +205,9 @@ ContinueInstallationVistaOk:
 ;SkipWinPcapVersionCheck:
 
 ;check that the OS is supported....
-    StrCmp $WINPCAP_TARGET_OS "95" SupportedOsOk
-    StrCmp $WINPCAP_TARGET_OS "98" SupportedOsOk
-    StrCmp $WINPCAP_TARGET_OS "ME" SupportedOsOk
+    StrCmp $WINPCAP_TARGET_OS "95" Windows9xNotSupported
+    StrCmp $WINPCAP_TARGET_OS "98" Windows9xNotSupported
+    StrCmp $WINPCAP_TARGET_OS "ME" Windows9xNotSupported
     StrCmp $WINPCAP_TARGET_OS "NT" SupportedOsOk
     StrCmp $WINPCAP_TARGET_OS "2000" SupportedOsOk
     StrCmp $WINPCAP_TARGET_OS "XP" SupportedOsOk
@@ -216,6 +216,10 @@ ContinueInstallationVistaOk:
 
 ; if we reach this point, the OS is not supported. Simply exit.
     MessageBox MB_ICONEXCLAMATION|MB_OK "This version of Windows is not supported by ${WINPCAP_PRODUCT_NAME}.$\nThe installation will be aborted."
+    Quit
+
+Windows9xNotSupported:
+    MessageBox MB_ICONEXCLAMATION|MB_OK "The Windows 9x family of Microsoft operating systems is no longer supported by ${WINPCAP_PRODUCT_NAME}.$\n$\nThe latest releases supporting Windows 9x are $\n- WinPcap 4.0beta2 (unstable) $\n- WinPcap 3.1 (stable)$\navailable at http://www.winpcap.org/install or http://www.winpcap.org/archive$\n$\nThe installation will now abort."
     Quit
    
 
@@ -525,9 +529,9 @@ MainInstallationProcedure:
     File "Distribution\pthreadVC.dll"
 
 ;Now jump to the copy functions related to this OS
-    StrCmp $WINPCAP_TARGET_OS "95" CopyFiles9x
-    StrCmp $WINPCAP_TARGET_OS "98" CopyFiles9x
-    StrCmp $WINPCAP_TARGET_OS "ME" CopyFiles9x
+;    StrCmp $WINPCAP_TARGET_OS "95" CopyFiles9x
+;    StrCmp $WINPCAP_TARGET_OS "98" CopyFiles9x
+;    StrCmp $WINPCAP_TARGET_OS "ME" CopyFiles9x
     StrCmp $WINPCAP_TARGET_OS "NT" CopyFilesNT4
     StrCmp $WINPCAP_TARGET_OS "2000" CopyFilesNT5
     StrCmp $WINPCAP_TARGET_OS "XP" CopyFilesNT5
@@ -577,10 +581,10 @@ CopyFilesNT4:
 
     Goto EndCopy
 
-CopyFiles9x:
-    File "Distribution\9x\packet.dll"
-    File "Distribution\9x\npf.vxd"
-    Goto EndCopy
+;CopyFiles9x:
+;    File "Distribution\9x\packet.dll"
+;    File "Distribution\9x\npf.vxd"
+;    Goto EndCopy
 
 CopyFilesVista:
     File "Distribution\Vista_x86\packet.dll"
@@ -706,9 +710,9 @@ Section "Uninstall" MainUnistall
 ;Delete files
 ;
 ;Now jump to the remove functions related to this OS
-    StrCmp $WINPCAP_TARGET_OS "95" RmFiles9x
-    StrCmp $WINPCAP_TARGET_OS "98" RmFiles9x
-    StrCmp $WINPCAP_TARGET_OS "ME" RmFiles9x
+;    StrCmp $WINPCAP_TARGET_OS "95" RmFiles9x
+;    StrCmp $WINPCAP_TARGET_OS "98" RmFiles9x
+;    StrCmp $WINPCAP_TARGET_OS "ME" RmFiles9x
     StrCmp $WINPCAP_TARGET_OS "NT" RmFilesNT4
     StrCmp $WINPCAP_TARGET_OS "2000" RmFilesNT5
     StrCmp $WINPCAP_TARGET_OS "XP" RmFilesNT5
@@ -740,9 +744,9 @@ RemoveAMD64DriverLabel:
 	Call un.RemoveAMD64Driver
 	Goto EndRm
 
-RmFiles9x:
-    Delete /REBOOTOK "$SYSDIR\npf.vxd"
-    Goto EndRm
+;RmFiles9x:
+;    Delete /REBOOTOK "$SYSDIR\npf.vxd"
+;    Goto EndRm
 
 EndRm:
 
