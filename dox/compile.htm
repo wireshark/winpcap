@@ -51,12 +51,14 @@ vice versa.</p>
 <p><b>Warning</b>: sometimes, during the compilation of the driver, a lot of
 'last line incomplete' errors are generated. Ignore these errors and let the
 compilation process continue, they are due to bugs in some DDK versions.</p>
-<h3>Co<a name="#NT41">mpili</a>ng the driver on Windows 2000/XP/2003 (32bit and 
+<h3>Co<a name="#NT41">mpili</a>ng the driver on Windows 2000/XP/2003/Vista (32bit and 
 64bit AMD64)</h3>
 <p>Software requirements:</p>
 <ul>
 	<li>Microsoft Driver Developer Kit (DDK) for Windows Windows
-    XP or Windows Server 2003.</li>
+    XP or Windows Server 2003. As of WinPcap 4.0 beta3, the preferred DDK 
+	environment is &quot;DDK for Windows Server 2003SP1&quot;, also known as DDK 
+	3790.1830.</li>
 </ul>
 <p>NOTE: it is possible to use older DDKs for Windows 2000, but you will need to 
 manually modify the compilation scripts in order to disable PREfast (PREfast is 
@@ -83,6 +85,9 @@ a static code analysis tool shipped with recent versions of the DDK).</p>
 	</ul>
   </ol>
 <h3><a name="#95-98">Compili</a>ng the driver on Windows 9x</h3>
+<p><font color="#FF0000">NOTE: this Windows platform is no longer supported by 
+WinPcap. However, the sources for this operating systems are still available in 
+the sources package</font></p>
 <p>To compile the driver for Windows 9x you will need:</p>
 <ul>
   <li>Driver Developer Kit (DDK) for Windows 95/98/ME
@@ -131,8 +136,10 @@ a static code analysis tool shipped with recent versions of the DDK).</p>
 launch ADRC2VXD, this means that the driver binary is generated correctly, but
 without the copyright information. We don't know the cause of this problem.</p>
 <h2>Compiling packet.dll</h2>
-<p>Like the NPF driver, two source trees are available for compilation: the Windows NTx one
-and the Windows 9x one. They are located in PacketNTx\dll\ and in Packet9x\dll\.</p>
+<p>The source tree for this DLL is located in PacketNTx\dll\.</p>
+<p><font color="#FF0000">NOTE: this Windows 9x platform is no longer supported 
+by WinPcap. However, the sources for this operating systems are still available 
+in the sources package.</font></p>
 <p>Software requirements:</p>
 <ul>
 	<li>A recent version of the Microsoft Platform Software Development Kit 
@@ -155,7 +162,7 @@ and the Windows 9x one. They are located in PacketNTx\dll\ and in Packet9x\dll\.
 	pack needs to be unzipped in the same folder where the WinPcap developer's 
 	pack has been unzipped.</ul>
 <p>To compile the PACKET.DLL, load the project contained in the directory PacketNTx\dll\project
-(or Packet9x\dll\project) in the Visual C++ IDE. There are four project 
+in the Visual C++ IDE. There are several project 
 configurations:</p>
 <ul>
   <li><i>PacketNT - Win32</i> <i>Release</i>: standard release configuration</li>
@@ -168,6 +175,12 @@ configurations:</p>
   NT4 does not include Wan and IP helper API support.</li>
 	<li><i>PacketNT - Win32 NT4 Debug</i>: debug configuration able to run on NT4 
   does not include Wan and IP helper API support.</li>
+  <li><i>PacketNT - Win32 Release Vista</i>: release configuration able to run on 
+  Vista. It 
+  does not include Wan support (with the NetMon API).</li>
+	<li><i>PacketNT - Win32 Debug Vista</i>: debug configuration able to run on 
+	Vista. It 
+  does not include Wan support (with the NetMon API).</li>
 	<li><i>WanPacket - Win32 Release</i>: release version of the WanPacket 
   library, used to interface with NetMon API for Wan capture</li>
 	<li><i>WanPacket - Win32 Debug</i>: debug version of the WanPacket library, 
@@ -205,8 +218,9 @@ code distribution. Load wpcap.dsw from the Visual C++ IDE and build the program.
 	There are eight build project configurations:<b><br><br>No support for Remore Capture, 
 	support for AirPcap, no support for DAG</b></li>
 	<li><i>Wpcap debug</i>: output folder winpcap\wpcap\prj\Debug </li>
-	<li><i>Wpcap release</i>: output folder winpcap\wpcap\prj\Release<p>&nbsp;</li>
-	<li><b>Support for Remore Capture, no support for AirPcap, no support for 
+	<li><i>Wpcap release</i>: output folder winpcap\wpcap\prj\Release<b><br>
+	<br>
+	Support for Remore Capture, no support for AirPcap, no support for 
 	DAG</b></li>
 	<li><i>Wpcap debug REMOTE NO AIRPCAP</i>: output folder winpcap\wpcap\prj\Debug_REMOTE_NO_AIRPCAP</li>
 	<li><i>Wpcap release REMOTE NO AIRPCAP</i>: output folder winpcap\wpcap\prj\Release_REMOTE_NO_AIRPCAP<p>
