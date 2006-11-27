@@ -71,7 +71,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..\..\Common\ 
+PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug"
@@ -103,7 +103,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Debug
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..\..\Common\ 
+PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Debug"
@@ -137,7 +137,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\NT4_Debug
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..\..\Common\ 
+PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Release"
@@ -170,7 +170,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\NT4_Release
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..\..\Common\ 
+PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug LOG_TO_FILE"
@@ -204,7 +204,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Debug_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..\..\Common\ 
+PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release LOG_TO_FILE"
@@ -238,7 +238,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..\..\Common\ 
+PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Debug LOG_TO_FILE"
@@ -272,7 +272,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\NT4_Debug_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..\..\Common\ 
+PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Release LOG_TO_FILE"
@@ -306,7 +306,7 @@ LINK32=link.exe
 OutDir=.\NT4_Release_LOG_TO_FILE
 SOURCE="$(InputPath)"
 PostBuild_Desc=Copy packet.lib into Common
-PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..\..\Common\ 
+PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug No AirPcap"
@@ -340,7 +340,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Debug_No_AirPcap
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..\..\Common\ 
+PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release No AirPcap"
@@ -373,7 +373,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release_No_AirPcap
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..\..\Common\ 
+PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug NpfIm"
@@ -391,7 +391,7 @@ PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /D "HAVE_AIRPCAP_API" /D "WIN32" /D "_WINDOWS" /D "HAVE_WANPACKET_API" /D "HAVE_IPHELPER_API" /D "HAVE_NPFIM_API" /D "_DBG" /YX /FD /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /D "HAVE_AIRPCAP_API" /D "WIN32" /D "_WINDOWS" /D "HAVE_WANPACKET_API" /D "HAVE_IPHELPER_API" /D "HAVE_NPFIM_API" /YX /FD /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /I "../../../../NpfIm_DevPack" /D "HAVE_AIRPCAP_API" /D "WIN32" /D "_WINDOWS" /D "HAVE_WANPACKET_API" /D "HAVE_IPHELPER_API" /D "HAVE_NPFIM_API" /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "_DEBUG"
@@ -402,12 +402,12 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 wsock32.lib ..\wanpacket\debug\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept /libpath:"../../../../Airpcap_Devpack/lib/"
 # SUBTRACT BASE LINK32 /pdb:none /incremental:no
-# ADD LINK32 wsock32.lib ..\wanpacket\debug\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept /libpath:"../../../../Airpcap_Devpack/lib/"
+# ADD LINK32 wsock32.lib ..\wanpacket\debug\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib NpfIm.lib /nologo /subsystem:windows /dll /debug /machine:I386 /pdbtype:sept /libpath:"../../../../Airpcap_Devpack/lib/ ../../../../NpfIm_DevPack"
 # SUBTRACT LINK32 /pdb:none /incremental:no
 # Begin Special Build Tool
 OutDir=.\Debug_No_NpfIm
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..\..\Common\ 
+PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release NpfIm"
@@ -425,7 +425,7 @@ PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /D "NDEBUG" /D "HAVE_AIRPCAP_API" /D "WIN32" /D "_WINDOWS" /D "HAVE_WANPACKET_API" /D "HAVE_IPHELPER_API" /D "HAVE_NPFIM_API" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /D "NDEBUG" /D "HAVE_AIRPCAP_API" /D "WIN32" /D "_WINDOWS" /D "HAVE_WANPACKET_API" /D "HAVE_IPHELPER_API" /D "HAVE_NPFIM_API" /YX /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../../dag/include" /I "../../../dag/drv/windows" /I "../../../common" /I "../../../../Airpcap_Devpack/include/" /I "../../../../NpfIm_DevPack" /D "NDEBUG" /D "HAVE_AIRPCAP_API" /D "WIN32" /D "_WINDOWS" /D "HAVE_WANPACKET_API" /D "HAVE_IPHELPER_API" /D "HAVE_NPFIM_API" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x410 /d "NDEBUG"
@@ -435,12 +435,12 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 Ws2_32.lib ..\wanpacket\release\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /machine:I386 /libpath:"../../../../Airpcap_Devpack/lib/"
-# ADD LINK32 Ws2_32.lib ..\wanpacket\release\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib /nologo /subsystem:windows /dll /debug /machine:I386 /libpath:"../../../../Airpcap_Devpack/lib/" /opt:ref
+# ADD LINK32 Ws2_32.lib ..\wanpacket\release\wanpacket.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Iphlpapi.lib version.lib NpfIm.lib /nologo /subsystem:windows /dll /debug /machine:I386 /libpath:"../../../../Airpcap_Devpack/lib/ ../../../../NpfIm_DevPack" /opt:ref
 # SUBTRACT LINK32 /pdb:none
 # Begin Special Build Tool
 OutDir=.\Release_No_NpfIm
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..\..\Common\ 
+PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug Vista"
@@ -474,7 +474,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Debug_Vista
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..\..\Common\ 
+PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release Vista"
@@ -508,7 +508,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release_Vista
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..\..\Common\ 
+PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release Vista LOG_TO_FILE"
@@ -544,7 +544,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release_Vista_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                  $(OutDir)\packet.lib                  ..\..\..\Common\ 
+PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
 # End Special Build Tool
 
 !ENDIF 
