@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040WOEM.txt,v 1.7 2006/08/09 20:27:15 gianlucav Exp $
+$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040WOEM.txt,v 1.8 2006/08/17 17:21:29 gianlucav Exp $
 
 OEM WINPCAP RELEASE PROCEDURE
 =============================
@@ -15,6 +15,10 @@ Dependencies
 ------------
 - you need to have the Airpcap developer's pack in 
 	  %BUILD_TREE%\Airpcap_Devpack
+- you need to have the NpfIm  developer's pack in 
+	  %BUILD_TREE%\NpfIm_Devpack
+- you need to have the NpfImLoader developer's pack in 
+	  %BUILD_TREE%\NpfImLoader_Devpack
 
 How to compile OEM WinPcap (NOT for the Toolkit)
 ------------------------------------------------
@@ -70,19 +74,21 @@ How to compile OEM WinPcap (NOT for the Toolkit)
         "static const char wpcap_version_string[] = "3.1";"
     is correct. 
     
-14. Zip the contents of the three folders 
+14. Zip the contents of the six folders 
 	  %BUILD_TREE%\winpcap_oem
 	  %BUILD_TREE%\winpcap
 	  %BUILD_TREE%\libpcap_<libpcap_version>
 	  %BUILD_TREE%\Airpcap_Devpack
+	  %BUILD_TREE%\NpfIm_Devpack
+	  %BUILD_TREE%\NpfImLoader_DevPack
 		  |
 		  V
 	  %BUILD_TREE%\sources.zip
 
 15. Open a Win 2000 DDK Free build environment. Go into 
 	  %BUILD_TREE%\winpcap_oem\packetntx. 
-	Execute "compileDriver.bat". Prefast 1.5.2402 should issue 8 warnings 
-	(20060710). 
+	Execute "compileDriver.bat". Prefast 1.5.2402 should issue 9 warnings 
+	(20061127). 
 	Close the build environment.
     NOTE: DO NOT EXECUTE 15. and 16. and 17. at the same time, they overwrite files in 
     the build process that are incompatible between the two builds.
@@ -123,6 +129,7 @@ How to compile OEM WinPcap (NOT for the Toolkit)
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\npfx64.sys
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packet2k.dll
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packetnt.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packetVista.dll
 
 How to create the developer's pack for OEM WinPcap (NOT for the Toolkit)
 ------------------------------------------------------------------------
@@ -138,6 +145,23 @@ How to create the developer's pack for OEM WinPcap (NOT for the Toolkit)
 	c. Creation of the bin folder (no errors/warnings)
 	d. Creation of the Examples and Examples-pcap folders (no errors/warnings)
 	e. creation of the documentation. One error copying some *.gif files is reported.
+
+
+How to create the developer's pack for OEM WinPcap (NOT for the Toolkit) with NpfIm loading support (IBM)
+---------------------------------------------------------------------------------------------------------
+
+1. After the build is completed, in a command prompt go to 
+		
+		%BUILD_TREE%\winpcap_oem
+
+2. Run "build_wpdpack_oem_with_npfim.bat". The script will pause after each step of the
+   build:
+	a. Creation of the include folder (no errors/warnings)
+	b. Creation of the lib folder (no errors/warnings)
+	c. Creation of the bin folder (no errors/warnings)
+	d. Creation of the Examples and Examples-pcap folders (no errors/warnings)
+	e. creation of the documentation. One error copying some *.gif files is reported.
+   f. copy og the NpfIm files.
 	   
 
 SCM procedures
@@ -157,6 +181,8 @@ SCM procedures
 	%BUILD_TREE%\winpcap
 	%BUILD_TREE%\libpcap_<libpcap_version>
 	%BUILD_TREE%\Airpcap_Devpack
+	%BUILD_TREE%\NpfIm_Devpack
+	%BUILD_TREE%\NpfImLoader_Devpack
 		|
 		V
 	OEM_WinPcap_<OEM version>_WOEM_Build_Tree.zip
