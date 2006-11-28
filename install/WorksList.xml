@@ -10,7 +10,7 @@
   <LastAuthor>Gianluca Varenni</LastAuthor>
   <LastPrinted>2006-04-20T14:54:12Z</LastPrinted>
   <Created>2005-11-21T21:34:13Z</Created>
-  <LastSaved>2006-08-16T21:46:09Z</LastSaved>
+  <LastSaved>2006-11-28T21:40:42Z</LastSaved>
   <Company>Microsoft Corporation</Company>
   <Version>11.6568</Version>
  </DocumentProperties>
@@ -172,8 +172,9 @@
    <Column ss:StyleID="s23" ss:Width="49.5"/>
    <Column ss:StyleID="s24" ss:Width="50.25"/>
    <Column ss:StyleID="s24" ss:Width="60"/>
-   <Column ss:StyleID="s24" ss:Width="59.25" ss:Span="1"/>
-   <Column ss:Index="7" ss:StyleID="s25" ss:AutoFitWidth="0" ss:Width="404.25"/>
+   <Column ss:StyleID="s24" ss:Width="59.25"/>
+   <Column ss:StyleID="s24" ss:AutoFitWidth="0" ss:Width="117.75"/>
+   <Column ss:StyleID="s25" ss:AutoFitWidth="0" ss:Width="404.25"/>
    <Column ss:StyleID="s21" ss:Width="63"/>
    <Column ss:StyleID="s21" ss:AutoFitWidth="0" ss:Width="74.25"/>
    <Column ss:StyleID="s26" ss:AutoFitWidth="0" ss:Width="50.25"/>
@@ -195,7 +196,7 @@
     <Cell ss:StyleID="s32"><NamedCell ss:Name="Print_Area"/></Cell>
     <Cell ss:StyleID="s33"/>
     <Cell ss:MergeAcross="1" ss:StyleID="s35" ss:Formula="=NOW()"><Data
-      ss:Type="DateTime">2006-11-27T14:19:33.460</Data></Cell>
+      ss:Type="DateTime">2006-11-28T13:49:20.230</Data></Cell>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="25.5" ss:StyleID="s36">
     <Cell ss:StyleID="s40"><Data ss:Type="String">Bug ID</Data><NamedCell
@@ -509,7 +510,7 @@
     <Cell ss:Index="9"><Data ss:Type="String">LOW</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
    </Row>
-   <Row ss:Height="26.25" ss:Hidden="1">
+   <Row ss:AutoFitHeight="0" ss:Height="26.25" ss:Hidden="1">
     <Cell><Data ss:Type="Number">21</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
     <Cell ss:StyleID="s44"><Data ss:Type="String">CLOSED</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
@@ -872,46 +873,55 @@
     <Cell ss:Index="9"><Data ss:Type="String">MEDIUM</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
    </Row>
-   <Row ss:AutoFitHeight="0">
+   <Row ss:AutoFitHeight="0" ss:Hidden="1">
     <Cell><Data ss:Type="Number">46</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
-    <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data><NamedCell
+    <Cell ss:StyleID="s44"><Data ss:Type="String">CLOSED</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
     <Cell><Data ss:Type="String">GV</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
-    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data><NamedCell
-      ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">GV</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">Bug</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
     <Cell><Data ss:Type="String">iflist sample under 9x</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
-    <Cell><Data ss:Type="String">the adapter description is printed with a garbage char at the beginning</Data><NamedCell
+    <Cell><Data ss:Type="String">the adapter description is printed with a garbage char at the beginning. UPDATE: we do no longer support windows 9x.</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
-    <Cell ss:Index="9"><Data ss:Type="String">LOW</Data><NamedCell
+    <Cell><Data ss:Type="String">4.0 beta3</Data><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">LOW</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="DateTime">2006-11-28T00:00:00.000</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
    </Row>
-   <Row ss:AutoFitHeight="0">
+   <Row ss:AutoFitHeight="0" ss:Hidden="1">
     <Cell><Data ss:Type="Number">47</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
-    <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data><NamedCell
+    <Cell ss:StyleID="s44"><Data ss:Type="String">CLOSED</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
     <Cell><Data ss:Type="String">GV</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
-    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data><NamedCell
-      ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">GV</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">Bug</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
     <Cell><Data ss:Type="String">userbridge sample</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
     <Cell><Data ss:Type="String">under 9x/nt4, sometimes if crashes, sometimes if just reports garbage as error message.</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
-    <Cell ss:Index="9"><Data ss:Type="String">HIGH</Data><NamedCell
+    <Cell><Data ss:Type="String">4.0 beta3</Data><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">HIGH</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="DateTime">2006-11-28T00:00:00.000</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
    </Row>
-   <Row ss:AutoFitHeight="0">
+   <Row ss:AutoFitHeight="0" ss:Hidden="1">
     <Cell><Data ss:Type="Number">48</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
-    <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data><NamedCell
+    <Cell ss:StyleID="s44"><Data ss:Type="String">CLOSED</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
     <Cell><Data ss:Type="String">GV</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
-    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data><NamedCell
-      ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">GV</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">Bug</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
     <Cell><Data ss:Type="String">PacketGetAdapterNames under 9x??</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
-    <Cell><Data ss:Type="String">The samples under PacketDriver in 9x show a list of adapters that contains more adapters than pcap_findalldevs. Trying to tx on some of them causes a blus screen.</Data><NamedCell
+    <Cell><Data ss:Type="String">The samples under PacketDriver in 9x show a list of adapters that contains more adapters than pcap_findalldevs. Trying to tx on some of them causes a blus screen. UPDATE: win 9x is no longer supported</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
-    <Cell ss:Index="9"><Data ss:Type="String">LOW</Data><NamedCell
+    <Cell><Data ss:Type="String">4.0 beta3</Data><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">LOW</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="DateTime">2006-11-28T00:00:00.000</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Hidden="1">
@@ -931,18 +941,21 @@
     <Cell><Data ss:Type="DateTime">2006-11-27T00:00:00.000</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
    </Row>
-   <Row ss:AutoFitHeight="0">
+   <Row ss:AutoFitHeight="0" ss:Hidden="1">
     <Cell><Data ss:Type="Number">50</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
-    <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data><NamedCell
+    <Cell ss:StyleID="s44"><Data ss:Type="String">CLOSED</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
     <Cell><Data ss:Type="String">GV</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
-    <Cell ss:Index="5"><Data ss:Type="String">Bug</Data><NamedCell
-      ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">GV</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">Bug</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
     <Cell><Data ss:Type="String">tcptop sample</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
     <Cell><Data ss:Type="String">The sample doesn't seem to work on airpcap adapters.</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
-    <Cell ss:Index="9"><Data ss:Type="String">MEDIUM</Data><NamedCell
+    <Cell><Data ss:Type="String">4.0 beta3</Data><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">MEDIUM</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="DateTime">2006-11-28T00:00:00.000</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
    </Row>
   </Table>
@@ -963,7 +976,7 @@
    <FreezePanes/>
    <FilterOn/>
    <SplitHorizontal>4</SplitHorizontal>
-   <TopRowBottomPane>4</TopRowBottomPane>
+   <TopRowBottomPane>22</TopRowBottomPane>
    <ActivePane>2</ActivePane>
    <Panes>
     <Pane>
@@ -973,8 +986,8 @@
     </Pane>
     <Pane>
      <Number>2</Number>
-     <ActiveRow>50</ActiveRow>
-     <ActiveCol>4</ActiveCol>
+     <ActiveRow>46</ActiveRow>
+     <ActiveCol>6</ActiveCol>
     </Pane>
    </Panes>
    <ProtectObjects>False</ProtectObjects>
