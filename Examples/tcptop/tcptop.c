@@ -78,18 +78,27 @@ struct bpf_program fcode;
     if (pcap_setfilter(fp, &fcode)<0)
 	{
         fprintf(stderr,"\nError setting the filter.\n");
+		pcap_close(fp);
         /* Free the device list */
         return;
     }
 
 	/* Put the interface in statstics mode */
-	pcap_setmode(fp, MODE_STAT);
+	if (pcap_setmode(fp, MODE_STAT)<0)
+	{
+        fprintf(stderr,"\nError setting the mode.\n");
+		pcap_close(fp);
+        /* Free the device list */
+        return;
+    }
+
 
 	printf("TCP traffic summary:\n");
 
 	/* Start the main loop */
 	pcap_loop(fp, 0, dispatcher_handler, (PUCHAR)&st_ts);
 
+	pcap_close(fp);
 	return;
 }
 
