@@ -44,12 +44,12 @@
   !define WINPCAP_PRJ_MAJOR "4"
   !define WINPCAP_PRJ_MINOR "0"
   !define WINPCAP_PRJ_REV "0"
-  !define WINPCAP_PRJ_BUILD "686"
-  !define WINPCAP_PROJ_VERSION_DOTTED "4.0.0.686"
+  !define WINPCAP_PRJ_BUILD "697"
+  !define WINPCAP_PROJ_VERSION_DOTTED "4.0.0.697"
   !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2006 CACE Technologies"
-  !define WINPCAP_PRODUCT_NAME "WinPcap 4.0 build 686"
+  !define WINPCAP_PRODUCT_NAME "WinPcap 4.0 beta 3"
   !define WINPCAP_COMPANY_NAME "CACE Technologies"
-  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_build686.exe"
+  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_beta3.exe"
 
 ; letter 'r'
   !define REINSTALL_FLAG "114"  
