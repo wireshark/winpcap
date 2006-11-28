@@ -142,6 +142,14 @@ int main()
 		return -1;
 	}
 
+	if(inum1 == inum2 )
+	{
+		printf("\nCannot bridge packets on the same interface.\n");
+		/* Free the device list */
+		pcap_freealldevs(alldevs);
+		return -1;
+	}
+
 
 	/*
 	 * Open the specified couple of adapters
@@ -172,7 +180,7 @@ int main()
 							 errbuf							// error buffer
 							 )) == NULL)
 	{
-		fprintf(stderr,"\nUnable to open the adapter. %s is not supported by WinPcap\n");
+		fprintf(stderr,"\nUnable to open the adapter. %s is not supported by WinPcap\n", d->description);
 		/* Free the device list */
 		pcap_freealldevs(alldevs);
 		return -1;
@@ -204,7 +212,7 @@ int main()
 							 errbuf							// error buffer
 							 )) == NULL)
 	{
-		fprintf(stderr,"\nUnable to open the adapter. %s is not supported by WinPcap\n");
+		fprintf(stderr,"\nUnable to open the adapter. %s is not supported by WinPcap\n", d->description);
 		/* Free the device list */
 		pcap_freealldevs(alldevs);
 		return -1;
