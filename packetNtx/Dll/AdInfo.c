@@ -1951,7 +1951,14 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 #endif //HAVE_NPFIM_API	
 
 #ifdef HAVE_AIRPCAP_API
-	PacketGetAdaptersAirpcap();
+	if (g_PAirpcapGetDeviceList != NULL)
+	{
+		PacketGetAdaptersAirpcap();
+	}
+	else
+	{
+		TRACE_PRINT("AirPcap extension not available");
+	}
 #endif
 
 #ifdef HAVE_WANPACKET_API
