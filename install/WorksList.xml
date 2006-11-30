@@ -10,7 +10,7 @@
   <LastAuthor>Gianluca Varenni</LastAuthor>
   <LastPrinted>2006-04-20T14:54:12Z</LastPrinted>
   <Created>2005-11-21T21:34:13Z</Created>
-  <LastSaved>2006-11-28T21:40:42Z</LastSaved>
+  <LastSaved>2006-11-30T23:51:02Z</LastSaved>
   <Company>Microsoft Corporation</Company>
   <Version>11.6568</Version>
  </DocumentProperties>
@@ -162,11 +162,11 @@
  </Styles>
  <Worksheet ss:Name="BugList">
   <Names>
-   <NamedRange ss:Name="_FilterDatabase" ss:RefersTo="=BugList!R4C1:R54C10"
+   <NamedRange ss:Name="_FilterDatabase" ss:RefersTo="=BugList!R4C1:R55C10"
     ss:Hidden="1"/>
    <NamedRange ss:Name="Print_Area" ss:RefersTo="=BugList!R1C1:R5C7"/>
   </Names>
-  <Table ss:ExpandedColumnCount="10" ss:ExpandedRowCount="54" x:FullColumns="1"
+  <Table ss:ExpandedColumnCount="10" ss:ExpandedRowCount="56" x:FullColumns="1"
    x:FullRows="1" ss:StyleID="s21" ss:DefaultRowHeight="13.5">
    <Column ss:StyleID="s22" ss:Width="51"/>
    <Column ss:StyleID="s23" ss:Width="49.5"/>
@@ -196,7 +196,7 @@
     <Cell ss:StyleID="s32"><NamedCell ss:Name="Print_Area"/></Cell>
     <Cell ss:StyleID="s33"/>
     <Cell ss:MergeAcross="1" ss:StyleID="s35" ss:Formula="=NOW()"><Data
-      ss:Type="DateTime">2006-11-28T13:49:20.230</Data></Cell>
+      ss:Type="DateTime">2006-11-30T15:52:27.510</Data></Cell>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="25.5" ss:StyleID="s36">
     <Cell ss:StyleID="s40"><Data ss:Type="String">Bug ID</Data><NamedCell
@@ -958,6 +958,29 @@
     <Cell><Data ss:Type="DateTime">2006-11-28T00:00:00.000</Data><NamedCell
       ss:Name="_FilterDatabase"/></Cell>
    </Row>
+   <Row ss:Height="51.75">
+    <Cell><Data ss:Type="Number">51</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">GV</Data><NamedCell ss:Name="_FilterDatabase"/></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Bug?</Data><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">wanpacket support</Data><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+    <Cell><Data ss:Type="String">Under some circumstances, windump does not capture anything niether from the generic ndiswan nor from the specific one. If you use netcat, the packets are captured. The combination of OS/WinPcap version in which everything works or fails is still not clear. It seems to work on a clean XPSP2 VM over the CACE VPN, it fails on a clean XPSP2 machine. </Data><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+    <Cell ss:Index="9"><Data ss:Type="String">MEDIUM</Data><NamedCell
+      ss:Name="_FilterDatabase"/></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0">
+    <Cell><Data ss:Type="Number">52</Data></Cell>
+    <Cell ss:StyleID="s44"><Data ss:Type="String">OPEN</Data></Cell>
+    <Cell><Data ss:Type="String">GV</Data></Cell>
+    <Cell ss:Index="5"><Data ss:Type="String">Bug </Data></Cell>
+    <Cell><Data ss:Type="String">TestPacketSend sample</Data></Cell>
+    <Cell><Data ss:Type="String">The help message still gives Loris's old mail address at the Politecnico/Italy.</Data></Cell>
+    <Cell ss:Index="9"><Data ss:Type="String">LOW</Data></Cell>
+   </Row>
   </Table>
   <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
    <PageSetup>
@@ -976,7 +999,7 @@
    <FreezePanes/>
    <FilterOn/>
    <SplitHorizontal>4</SplitHorizontal>
-   <TopRowBottomPane>22</TopRowBottomPane>
+   <TopRowBottomPane>28</TopRowBottomPane>
    <ActivePane>2</ActivePane>
    <Panes>
     <Pane>
@@ -986,14 +1009,14 @@
     </Pane>
     <Pane>
      <Number>2</Number>
-     <ActiveRow>46</ActiveRow>
-     <ActiveCol>6</ActiveCol>
+     <ActiveRow>55</ActiveRow>
+     <ActiveCol>5</ActiveCol>
     </Pane>
    </Panes>
    <ProtectObjects>False</ProtectObjects>
    <ProtectScenarios>False</ProtectScenarios>
   </WorksheetOptions>
-  <AutoFilter x:Range="R4C1:R54C10"
+  <AutoFilter x:Range="R4C1:R55C10"
    xmlns="urn:schemas-microsoft-com:office:excel">
    <AutoFilterColumn x:Index="2" x:Type="Custom">
     <AutoFilterCondition x:Operator="Equals" x:Value="OPEN"/>
@@ -1021,7 +1044,7 @@
    </Condition>
   </ConditionalFormatting>
   <ConditionalFormatting xmlns="urn:schemas-microsoft-com:office:excel">
-   <Range>R5C2:R5C3,R6C2:R54C2</Range>
+   <Range>R5C2:R5C3,R6C2:R56C2</Range>
    <Condition>
     <Qualifier>Equal</Qualifier>
     <Value1>&quot;open&quot;</Value1>
