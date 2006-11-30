@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.9 2006/11/27 21:25:09 gianlucav Exp $
+$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.10 2006/11/30 00:23:39 gianlucav Exp $
 
 WINPCAP RELEASE PROCEDURE
 =========================
@@ -215,12 +215,12 @@ WEB FOLDER
 
 1. Create the following folders
 		%BUILD_TREE%\web
-		%BUILD_TREE%\web\misc
-		%BUILD_TREE%\web\misc\bin
-		%BUILD_TREE%\web\misc\bin\debug
-		%BUILD_TREE%\web\misc\bin\debug\nt4_<version_short> (e.g. nt4_40b3) 
-		%BUILD_TREE%\web\misc\bin\debug\nt5x_<version_short>
-		%BUILD_TREE%\web\misc\bin\debug\vista_<version_short>
+		%BUILD_TREE%\web\install
+		%BUILD_TREE%\web\install\bin
+		%BUILD_TREE%\web\install\bin\debug
+		%BUILD_TREE%\web\install\bin\debug\nt4_<version_short> (e.g. nt4_40b3) 
+		%BUILD_TREE%\web\install\bin\debug\nt5x_<version_short>
+		%BUILD_TREE%\web\install\bin\debug\vista_<version_short>
 		%BUILD_TREE%\web\docs
 		%BUILD_TREE%\web\docs\docs_<version_short> (e.g. "docs_40b3")
 
@@ -254,37 +254,37 @@ WEB FOLDER
 		%BUILD_TREE%\winpcap\Packetntx\dll\project\release_LOG_TO_FILE\packet.dll
 				|
 				V
-		%BUILD_TREE%\web\misc\bin\debug\nt5x_<version_short>\
+		%BUILD_TREE%\web\install\bin\debug\nt5x_<version_short>\
 
 5. Copy the following file
 		%BUILD_TREE%\winpcap\Packetntx\dll\project\NT4_release_LOG_TO_FILE\packet.dll
 				|
 				V
-		%BUILD_TREE%\web\misc\bin\debug\nt4_<version_short>\
+		%BUILD_TREE%\web\install\bin\debug\nt4_<version_short>\
 
 6. Copy the following file
 		%BUILD_TREE%\winpcap\Packetntx\dll\project\release_Vista_LOG_TO_FILE\packet.dll
 				|
 				V
-		%BUILD_TREE%\web\misc\bin\debug\vista_<version_short>\
+		%BUILD_TREE%\web\install\bin\debug\vista_<version_short>\
 	
 7. Copy the following file
 		%BUILD_TREE%\WinPcap_<version>_Installer.exe
 				|
 				V
-		%BUILD_TREE%\web\misc\bin\WinPcap_<version_short>.exe (e.g. WinPcap_4_0_beta3.exe)
+		%BUILD_TREE%\web\install\bin\WinPcap_<version_short>.exe (e.g. WinPcap_4_0_beta3.exe)
 		
 8. Copy the following file
 		%BUILD_TREE%\WinPcap_<version>_WpdPack.zip
 				|
 				V
-		%BUILD_TREE%\web\misc\bin\WpdPack_<version_short>.zip (e.g. WpdPack_4_0_beta3.zip)
+		%BUILD_TREE%\web\install\bin\WpdPack_<version_short>.zip (e.g. WpdPack_4_0_beta3.zip)
 		
 9. Copy the following file
 		%BUILD_TREE%\WinPcap_<version>_PublicSources.zip
 				|
 				V
-		%BUILD_TREE%\web\misc\bin\WpcapSrc_<version_short>.zip (e.g. WpcapSrc_4_0_beta3.zip)
+		%BUILD_TREE%\web\install\bin\WpcapSrc_<version_short>.zip (e.g. WpcapSrc_4_0_beta3.zip)
 
 
 SCM procedures
