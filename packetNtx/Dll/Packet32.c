@@ -3254,10 +3254,10 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
 
 		if (Res)
 		{
-			if (stats[NPFIM_CAPTURE_STATS_RECEIVED] < 0xFFFFFFFF)
-				s->bs_capt = (UINT)stats[NPFIM_CAPTURE_STATS_RECEIVED];
-			else
-				s->bs_capt = 0xFFFFFFFF;
+//			if (stats[NPFIM_CAPTURE_STATS_RECEIVED] < 0xFFFFFFFF)
+//				s->bs_capt = (UINT)stats[NPFIM_CAPTURE_STATS_RECEIVED];
+//			else
+//				s->bs_capt = 0xFFFFFFFF;
 
 			if (stats[NPFIM_CAPTURE_STATS_DROPPED_FILTER] < 0xFFFFFFFF)
 				s->bs_drop = (UINT)stats[NPFIM_CAPTURE_STATS_DROPPED_FILTER];
@@ -3309,6 +3309,10 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
 	{
 			Res = WanPacketGetStats(AdapterObject->pWanAdapter, (PVOID)&tmpstat);
 
+			// Copy only the first two values retrieved from the driver
+			s->bs_recv = tmpstat.bs_recv;
+			s->bs_drop = tmpstat.bs_drop;
+		
 			TRACE_EXIT("PacketGetStats");
 	
 			return Res;	
