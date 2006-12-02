@@ -651,7 +651,7 @@ void pcap_dump_close(pcap_dumper_t *p);
 /*!	\brief Returns the AirPcap handler associated with an adapter. This handler can be used to change
            the wireless-related settings of the CACE Technologies AirPcap wireless capture adapters.
 
-\note: THIS FUNCTION SHOULD BE CONSIDERED PROVISIONAL, AND MAY BE REPLACED IN THE FUTURE BY A MORE COMPLETE SET
+\note THIS FUNCTION SHOULD BE CONSIDERED PROVISIONAL, AND MAY BE REPLACED IN THE FUTURE BY A MORE COMPLETE SET
 OF FUNCTIONS FOR WIRELESS SUPPORT.
 
 pcap_get_airpcap_handle() allows to obtain the airpcap handle of an open adapter. This handle can be used with
