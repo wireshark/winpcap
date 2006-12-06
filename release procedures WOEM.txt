@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040WOEM.txt,v 1.9 2006/11/27 21:41:22 gianlucav Exp $
+$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040WOEM.txt,v 1.10 2006/12/06 02:33:54 gianlucav Exp $
 
 OEM WINPCAP RELEASE PROCEDURE
 =============================
@@ -137,8 +137,8 @@ How to create the developer's pack for OEM WinPcap (NOT for the Toolkit)
 		
 		%BUILD_TREE%\winpcap_oem
 
-2. Run "build_wpdpack_oem.bat". The script will pause after each step of the
-   build:
+2. Run "build_wpdpack_oem.bat". The script will perform these
+	steps without pauses:
 	a. Creation of the include folder (no errors/warnings)
 	b. Creation of the lib folder (no errors/warnings)
 	c. Creation of the bin folder (no errors/warnings)
@@ -153,23 +153,31 @@ How to create the developer's pack for OEM WinPcap (NOT for the Toolkit) with Np
 		
 		%BUILD_TREE%\winpcap_oem
 
-2. Run "build_wpdpack_oem_with_npfim.bat". The script will pause after each step of the
-   build:
+2. Run "build_wpdpack_oem_with_npfim.bat". The script will perform these
+	steps without pauses:
 	a. Creation of the include folder (no errors/warnings)
 	b. Creation of the lib folder (no errors/warnings)
 	c. Creation of the bin folder (no errors/warnings)
 	d. Creation of the Examples and Examples-pcap folders (no errors/warnings)
 	e. creation of the documentation. One error copying some *.gif files is reported.
-   f. copy og the NpfIm files.
+   f. copy of the NpfIm files.
 	   
 
 SCM procedures
 --------------
 
-1.  %BUILD_TREE%\winpcap_oem\wpdpack\
+NpfIm BUILD:
+1a.  %BUILD_TREE%\winpcap_oem\wpdpack_NpfIm\
+		|
+		v
+	OEM_WinPcap_<OEM version>_WOEM_WpdPackNpfIm.zip
+
+Vanilla BUILD:
+1a.  %BUILD_TREE%\winpcap_oem\wpdpack\
 		|
 		v
 	OEM_WinPcap_<OEM version>_WOEM_WpdPack.zip
+
 
 2. 	%BUILD_TREE%\Sources.zip
 		|
