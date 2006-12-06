@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040WOEM.txt,v 1.8 2006/08/17 17:21:29 gianlucav Exp $
+$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040WOEM.txt,v 1.9 2006/11/27 21:41:22 gianlucav Exp $
 
 OEM WINPCAP RELEASE PROCEDURE
 =============================
@@ -15,10 +15,10 @@ Dependencies
 ------------
 - you need to have the Airpcap developer's pack in 
 	  %BUILD_TREE%\Airpcap_Devpack
-- you need to have the NpfIm  developer's pack in 
-	  %BUILD_TREE%\NpfIm_Devpack
-- you need to have the NpfImLoader developer's pack in 
-	  %BUILD_TREE%\NpfImLoader_Devpack
+- you need to have the NpfIm compiled sources in
+	  %BUILD_TREE%\NpfIm
+	  You should also have run the "NpfIm\build_dev_pack.bat" script
+	  to have the devpacks ready
 
 How to compile OEM WinPcap (NOT for the Toolkit)
 ------------------------------------------------
@@ -79,8 +79,7 @@ How to compile OEM WinPcap (NOT for the Toolkit)
 	  %BUILD_TREE%\winpcap
 	  %BUILD_TREE%\libpcap_<libpcap_version>
 	  %BUILD_TREE%\Airpcap_Devpack
-	  %BUILD_TREE%\NpfIm_Devpack
-	  %BUILD_TREE%\NpfImLoader_DevPack
+	  %BUILD_TREE%\NpfIm
 		  |
 		  V
 	  %BUILD_TREE%\sources.zip
@@ -181,8 +180,7 @@ SCM procedures
 	%BUILD_TREE%\winpcap
 	%BUILD_TREE%\libpcap_<libpcap_version>
 	%BUILD_TREE%\Airpcap_Devpack
-	%BUILD_TREE%\NpfIm_Devpack
-	%BUILD_TREE%\NpfImLoader_Devpack
+	%BUILD_TREE%\NpfIm
 		|
 		V
 	OEM_WinPcap_<OEM version>_WOEM_Build_Tree.zip
