@@ -21,7 +21,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../../NpfIm_DevPack,../../../../winpcap/dag/include,../../../../winpcap/dag/drv/windows,../../../../winpcap/common,../../../../winpcap/PacketNtx/driver, ,../../../../Airpcap_Devpack/include/"
+				AdditionalIncludeDirectories="../../../../NpfIm/NpfIm_DevPack,../../../../winpcap/dag/include,../../../../winpcap/dag/drv/windows,../../../../winpcap/common,../../../../winpcap/PacketNtx/driver, ,../../../../Airpcap_Devpack/include/"
 				PreprocessorDefinitions="HAVE_WANPACKET_API;HAVE_NPFIM_API;HAVE_IPHELPER_API;HAVE_AIRPCAP_API,HAVE_DAG_API;WIN32;_WINDOWS;WPCAP_OEM"
 				RuntimeLibrary="1"
 				BufferSecurityCheck="TRUE"
@@ -89,7 +89,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../../../../NpfIm_DevPack,../../../../winpcap/dag/include,../../../../winpcap/dag/drv/windows,../../../../winpcap/common,../../../../winpcap/PacketNtx/driver,../../../../Airpcap_Devpack/include"
+				AdditionalIncludeDirectories="../../../../NpfIm/NpfIm_DevPack,../../../../winpcap/dag/include,../../../../winpcap/dag/drv/windows,../../../../winpcap/common,../../../../winpcap/PacketNtx/driver,../../../../Airpcap_Devpack/include"
 				PreprocessorDefinitions="HAVE_WANPACKET_API;HAVE_NPFIM_API;HAVE_IPHELPER_API;HAVE_AIRPCAP_API,NDEBUG;HAVE_DAG_API;WIN32;_WINDOWS;WPCAP_OEM"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"

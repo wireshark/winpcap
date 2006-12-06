@@ -22,7 +22,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="../../../../winpcap/Common;../../../../AirPcap_DevPack/include;../../../../NpfIm_DevPack"
+				AdditionalIncludeDirectories="../../../../winpcap/Common;../../../../AirPcap_DevPack/include;../../../../NpfIm/NpfIm_DevPack"
 				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;HAVE_NPFIM_API;HAVE_AIRPCAP_API;HAVE_IPHELPER_API;WPCAP_OEM"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
@@ -90,7 +90,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../../winpcap/Common;../../../../AirPcap_DevPack/include;../../../../NpfIm_DevPack"
+				AdditionalIncludeDirectories="../../../../winpcap/Common;../../../../AirPcap_DevPack/include;../../../../NpfIm/NpfIm_DevPack"
 				PreprocessorDefinitions="WIN32;_WINDOWS;HAVE_NPFIM_API;HAVE_AIRPCAP_API;HAVE_IPHELPER_API;WPCAP_OEM"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
