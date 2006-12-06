@@ -1,6 +1,6 @@
 @echo off
 
-if "%1"=="" (set __DEST_FOLDER=.\WpdPack\ )  ELSE (set __DEST_FOLDER=%1)
+if "%1"=="" (set __DEST_FOLDER=.\WpdPack\)  ELSE (set __DEST_FOLDER=%1)
 
 echo ************************************************
 echo  The developer's pack will be created in folder
@@ -18,6 +18,5 @@ call create_examples_oem.bat %__DEST_FOLDER%
 PAUSE
 call create_docs_oem.bat %__DEST_FOLDER%
 echo Copying the license agreement file
-xcopy /v "OEM WinPcap License Agreement.pdf" %__DEST_FOLDER% 
-
+xcopy /v /Y "OEM WinPcap License Agreement.pdf" %__DEST_FOLDER%. >nul
 set __DEST_FOLDER=

@@ -15,7 +15,7 @@ mkdir %WPDPACKDESTDIR%\docs\html >nul 2>nul
 pushd dox\prj\
 
 @echo #### Deleting existing WinPcap documentation
-del /q docs\*.*
+del /q docs\*.*  >nul
 @echo #### Creating new documentation
 doxygen winpcap_oem_noc.dox > nul
 @echo #### Copying all gif files
@@ -24,12 +24,12 @@ xcopy ..\pics\*.jpg docs\. /v /y /q > nul
 
 popd
 
-xcopy /v /Y .\dox\OEM_WinPcap_docs.html		%WPDPACKDESTDIR%\docs\
-xcopy /v /Y .\dox\prj\docs\*.*			%WPDPACKDESTDIR%\docs\html\
-xcopy /v /Y ..\winpcap\dox\*.gif		%WPDPACKDESTDIR%\docs\html\
-xcopy /v /Y ..\winpcap\dox\pics\*.gif		%WPDPACKDESTDIR%\docs\html\
-xcopy /v /Y .\dox\pics\*.gif			%WPDPACKDESTDIR%\docs\html\
-xcopy /v /Y .\dox\pics\*.jpg			%WPDPACKDESTDIR%\docs\html\
+xcopy /v /Y .\dox\OEM_WinPcap_docs.html		%WPDPACKDESTDIR%\docs\	 >nul
+xcopy /v /Y .\dox\prj\docs\*.*			%WPDPACKDESTDIR%\docs\html\ >nul
+xcopy /v /Y ..\winpcap\dox\*.gif		%WPDPACKDESTDIR%\docs\html\ >nul
+xcopy /v /Y ..\winpcap\dox\pics\*.gif		%WPDPACKDESTDIR%\docs\html\ >nul
+xcopy /v /Y .\dox\pics\*.gif			%WPDPACKDESTDIR%\docs\html\ >nul
+xcopy /v /Y .\dox\pics\*.jpg			%WPDPACKDESTDIR%\docs\html\ >nul
 echo Folder \docs created successfully
 set WPDPACKDESTDIR=
 set WINPCAPSOURCEDIR=
