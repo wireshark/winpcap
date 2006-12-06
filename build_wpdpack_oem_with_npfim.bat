@@ -1,6 +1,6 @@
 @echo off
 
-set OEM_WPD_NPFIM_DEST_FOLDER=.\WpdPack\
+set OEM_WPD_NPFIM_DEST_FOLDER=.\WpdPack_NpfIm\
 
 if "%1"=="-CERTIFIED"	(
 		echo Using NpfImLoader CERTIFIED DEVPACK
@@ -12,7 +12,19 @@ if "%1"=="-CERTIFIED"	(
 
 set NPFIM_DEVPACK=..\NpfIm\NpfIm_DevPack
 
-call build_wpdpack_oem.bat %OEM_WPD_NPFIM_DEST_FOLDER%
+echo ************************************************
+echo  The developer's pack will be created in folder
+echo     %OEM_WPD_NPFIM_DEST_FOLDER%
+echo ************************************************
+
+call create_include_oem.bat ..\winpcap\ %OEM_WPD_NPFIM_DEST_FOLDER%
+call create_lib_oem.bat %OEM_WPD_NPFIM_DEST_FOLDER%
+call create_bin_oem.bat %OEM_WPD_NPFIM_DEST_FOLDER%
+call create_examples_oem.bat %OEM_WPD_NPFIM_DEST_FOLDER%
+call create_docs_oem.bat %OEM_WPD_NPFIM_DEST_FOLDER%
+
+echo Copying the license agreement file
+xcopy /v /Y "OEM WinPcap License Agreement.pdf" %OEM_WPD_NPFIM_DEST_FOLDER% >nul
 
 rem now we copy the certified files from the NpfIm engine
 
