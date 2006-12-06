@@ -29,6 +29,10 @@ xcopy /v /Y ..\NpfIm\Samples\IfListNpfIm\*.sln %__DEST_FOLDER%\Examples-Remote\I
 
 rem copy the documentation for npfimLoader
 mkdir %__DEST_FOLDER%\docs\NpfImLoader 2>nul >nul
-xcopy /s/e/v/Y ..\NpfImLoader_DevPack\docs\*.* %__DEST_FOLDER%\docs\NpfImLoader\ > nul
+xcopy /s/e/v/Y ..\NpfIm\LowLevelDll\docs\NpfImLoader\*.* %__DEST_FOLDER%\docs\NpfImLoader\ > nul
+del /f/s/q %__DEST_FOLDER%\docs\WinPcap >nul
+rd %__DEST_FOLDER%\docs\WinPcap >nul 2>nul
+ren %__DEST_FOLDER%\docs\html WinPcap
+copy /v ..\NpfIm\LowLevelDll\docs\OEM_WinPcap_docs.html %__DEST_FOLDER%\docs\. > nul
 
 set __DEST_FOLDER=
