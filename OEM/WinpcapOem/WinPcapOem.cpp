@@ -143,6 +143,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	DWORD Result;
 #endif 
 	BOOL is64BitOs = FALSE;
+	BOOL bLoadDriverResult;
 
 	TRACE_ENTER("WoemEnterDllInternal");
 
@@ -575,8 +576,6 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		}
 		else if(osVer.dwMajorVersion == 5)
 		{
-			BOOL bLoadDriverResult;
-
 			//
 			// Windows 2000, XP, 2003
 			//
@@ -597,8 +596,6 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 				// printf("netmon already here!!!\n");
 			}
 			
-
-
 			//
 			// Extract packet.dll to disk
 			//
@@ -698,7 +695,18 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			//
 			// Extract the driver to disk
 			//
-			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DRI2K, g_DriverFullPath, is64BitOs))
+			//
+			// Extract the driver to disk
+			//
+			if (is64BitOs)
+			{
+				bLoadDriverResult = WoemSaveResourceToDisk(g_DllHandle, IDP_DRIx64, g_DriverFullPath, TRUE);
+			}
+			else
+			{
+				bLoadDriverResult = WoemSaveResourceToDisk(g_DllHandle, IDP_DRI2K, g_DriverFullPath, FALSE);
+			}
+			if(!bLoadDriverResult)
 			{
 				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the OEM WinPcap files. Administrative privileges are required for this operation.");
 
