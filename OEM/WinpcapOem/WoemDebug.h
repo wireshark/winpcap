@@ -11,7 +11,6 @@
 #include <windows.h>
 #include <stdio.h>
 
-
 /*! 
   \brief Macro to print a debug string. The behavior differs depending on the debug level
 */
@@ -227,7 +226,7 @@ static __inline void TRACE_PRINT_OS_INFO()
 
 }
 
-#ifdef _DEBUG
+#if defined (_DEBUG) || defined (ENABLE_TRACE)
 
 #define TRACE_ENTER(_x) OutputDebugMessageNewLine("-->" _x)
 #define TRACE_EXIT(_x) OutputDebugMessageNewLine("<--" _x)
