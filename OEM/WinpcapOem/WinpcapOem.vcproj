@@ -287,6 +287,99 @@
 			<Tool
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
+		<Configuration
+			Name="Release CERTIFIED|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories=".\,..\..\..\winpcap\common,..\..\..\common"
+				PreprocessorDefinitions="NDEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS"
+				StringPooling="TRUE"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="TRUE"
+				PrecompiledHeaderFile=".\Release/WinpcapOem.pch"
+				AssemblerListingLocation=".\Release/"
+				ObjectFile=".\Release/"
+				ProgramDataBaseFileName=".\Release/"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="npptools.lib odbc32.lib odbccp32.lib"
+				OutputFile="Release/Packet.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="..\..\WinpcapOem\Release\"
+				ModuleDefinitionFile=".\WinpcapOem.def"
+				ProgramDatabaseFile=".\Release/Packet.pdb"
+				ImportLibrary=".\Release/Packet.lib"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Release/WinpcapOem.tlb"
+				HeaderFileName=""/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="@echo off
+echo ****************************************************************
+echo *                                                              *
+echo *    Remember to sign the following files after having         *
+echo *    created the DEVPACK                                       *
+echo *                                                              *
+echo *    winpcap_oem\WpdPack\bin\packet.dll                        *
+echo *    winpcap_oem\WpdPack\bin\wpcap.dll                         *
+echo *                                                              *
+echo ****************************************************************
+postbuild_release.bat
+
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="@echo off
+echo ****************************************************************
+echo *                                                              *
+echo *    You should have signed the following binaries             *
+echo *                                                              *
+echo *    winpcap_oem\OEM\WinpcapOem\binaries\npfnt.sys             *
+echo *    winpcap_oem\OEM\WinpcapOem\binaries\npf2k.sys             *
+echo *    winpcap_oem\OEM\WinpcapOem\binaries\npfx64.sys            *
+echo *    winpcap_oem\OEM\WinpcapOem\binaries\packetnt.dll          *
+echo *    winpcap_oem\OEM\WinpcapOem\binaries\packet2k.dll          *
+echo *    winpcap_oem\OEM\WinpcapOem\binaries\packetvista.dll       *
+echo *                                                              *
+echo ****************************************************************
+"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="0"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -333,6 +426,14 @@
 						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BrowseInformation="1"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release CERTIFIED|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="PacketWrapper.cpp">
@@ -372,6 +473,14 @@
 						AdditionalIncludeDirectories=""
 						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BrowseInformation="1"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release CERTIFIED|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -413,6 +522,14 @@
 						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BrowseInformation="1"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release CERTIFIED|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="Security.cpp">
@@ -452,6 +569,14 @@
 						AdditionalIncludeDirectories=""
 						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BrowseInformation="1"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release CERTIFIED|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -493,6 +618,14 @@
 						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BrowseInformation="1"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release CERTIFIED|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="WinPcapOem.cpp">
@@ -532,6 +665,14 @@
 						AdditionalIncludeDirectories=""
 						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BrowseInformation="1"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release CERTIFIED|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
 				</FileConfiguration>
 			</File>
 		</Filter>
@@ -592,13 +733,22 @@
 			RelativePath="binaries\npfnt.sys">
 		</File>
 		<File
-			RelativePath="Packet2k.dll">
-		</File>
-		<File
 			RelativePath="binaries\Packet2k.dll">
 		</File>
 		<File
+			RelativePath="Packet2k.dll">
+		</File>
+		<File
 			RelativePath="binaries\Packetnt.dll">
+		</File>
+		<File
+			RelativePath=".\postbuild_release.bat">
+			<FileConfiguration
+				Name="Release CERTIFIED|Win32"
+				ExcludedFromBuild="TRUE">
+				<Tool
+					Name="VCCustomBuildTool"/>
+			</FileConfiguration>
 		</File>
 		<File
 			RelativePath=".\prebuild_debug.bat">
