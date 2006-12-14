@@ -11,6 +11,11 @@
 #include <windows.h>
 #include <stdio.h>
 
+//#define ENABLE_TRACE
+
+#pragma warning ( push )
+#pragma warning( disable : 4995 ) // deprecated string functions. BE CAREFUL, it disabled all deprecated warnings
+
 /*! 
   \brief Macro to print a debug string. The behavior differs depending on the debug level
 */
@@ -225,6 +230,9 @@ static __inline void TRACE_PRINT_OS_INFO()
 	SetLastError(dwLastError);
 
 }
+
+#pragma warning ( pop )
+
 
 #if defined (_DEBUG) || defined (ENABLE_TRACE)
 
