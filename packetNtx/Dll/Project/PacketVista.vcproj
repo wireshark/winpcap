@@ -146,6 +146,84 @@
 			<Tool
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
+		<Configuration
+			Name="Release SIGNED|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="../../../../winpcap/Common;../../../../AirPcap_DevPack/include;../../../../NpfIm/NpfIm_DevPack"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;HAVE_NPFIM_API;HAVE_AIRPCAP_API;HAVE_IPHELPER_API;WPCAP_OEM"
+				StringPooling="TRUE"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile="$(IntDir)/Packet.pch"
+				AssemblerListingLocation="$(IntDir)/"
+				ObjectFile="$(IntDir)/"
+				ProgramDataBaseFileName="$(IntDir)/"
+				WarningLevel="4"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="odbc32.lib odbccp32.lib Iphlpapi.lib version.lib Ws2_32.lib"
+				OutputFile="$(OutDir)/Packet.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				ModuleDefinitionFile="../../../../winpcap\packetntx\dll\packet.def"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/Packet.pdb"
+				SubSystem="2"
+				OptimizeReferences="2"
+				ImportLibrary="$(OutDir)/Packet.lib"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Packet_Release_Vista/PacketVista.tlb"
+				HeaderFileName=""/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="@echo off
+echo Copying the compiled DLL
+mkdir ..\..\..\OEM\WinPcapOem\Binaries_SIGNED &gt;NUL 2&gt;NUL
+copy .\Packet_Release_Vista\packet.dll ..\..\..\OEM\WinPcapOem\Binaries_SIGNED\PacketVista.dll &gt;NUL
+
+Echo Copying the drivers
+copy ..\..\Driver\bin\2k\i386\npf.sys ..\..\..\OEM\WinPcapOem\Binaries_SIGNED\npf2k.sys 
+copy ..\..\Driver\bin\NT4\i386\free\npf.sys ..\..\..\OEM\WinPcapOem\Binaries_SIGNED\npfnt.sys 
+copy ..\..\Driver\bin\xp\AMD64\npf.sys ..\..\..\OEM\WinPcapOem\Binaries_SIGNED\npfx64.sys "/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="0"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>

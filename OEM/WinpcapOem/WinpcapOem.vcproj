@@ -62,7 +62,7 @@
 				CommandLine="postbuild_release.bat"/>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="&quot;$(ProjectDir)\prebuild_release.bat&quot;"/>
+				CommandLine="$(ProjectDir)\prebuild_Release.bat"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
 			<Tool
@@ -288,9 +288,9 @@
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="Release CERTIFIED|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			Name="Release SIGNED|Win32"
+			OutputDirectory=".\Release_SIGNED"
+			IntermediateDirectory=".\Release_SIGNED"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -304,10 +304,10 @@
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
-				PrecompiledHeaderFile=".\Release/WinpcapOem.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				PrecompiledHeaderFile=".\Release_SIGNED/WinpcapOem.pch"
+				AssemblerListingLocation=".\Release_SIGNED/"
+				ObjectFile=".\Release_SIGNED/"
+				ProgramDataBaseFileName=".\Release_SIGNED/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -316,13 +316,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="npptools.lib odbc32.lib odbccp32.lib"
-				OutputFile="Release/Packet.dll"
+				OutputFile="Release_SIGNED/Packet.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\..\WinpcapOem\Release\"
 				ModuleDefinitionFile=".\WinpcapOem.def"
-				ProgramDatabaseFile=".\Release/Packet.pdb"
-				ImportLibrary=".\Release/Packet.lib"
+				ProgramDatabaseFile=".\Release_SIGNED/Packet.pdb"
+				ImportLibrary=".\Release_SIGNED/Packet.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -337,16 +337,17 @@
 				CommandLine="@echo off
 echo ****************************************************************
 echo *                                                              *
-echo *    Remember to sign the following files after having         *
-echo *    created the DEVPACK                                       *
+echo *    Remember to sign the following files                      *
 echo *                                                              *
-echo *    winpcap_oem\WpdPack\bin\packet.dll                        *
-echo *    winpcap_oem\WpdPack\bin\wpcap.dll                         *
+echo *          binaries_SIGNED\wpcap.dll                           *
+echo *          binaries_SIGNED\packet.dll                          *
 echo *                                                              *
 echo ****************************************************************
-postbuild_release.bat
 
-"/>
+copy .\Release_SIGNED\packet.dll .\binaries_signed\packet.dll
+copy ..\..\wpcap\PRJ\Release_REMOTE\wpcap.dll .\binaries_signed\wpcap.dll
+
+postbuild_release.bat"/>
 			<Tool
 				Name="VCPreBuildEventTool"
 				CommandLine="@echo off
@@ -354,12 +355,7 @@ echo ****************************************************************
 echo *                                                              *
 echo *    You should have signed the following binaries             *
 echo *                                                              *
-echo *    winpcap_oem\OEM\WinpcapOem\binaries\npfnt.sys             *
-echo *    winpcap_oem\OEM\WinpcapOem\binaries\npf2k.sys             *
-echo *    winpcap_oem\OEM\WinpcapOem\binaries\npfx64.sys            *
-echo *    winpcap_oem\OEM\WinpcapOem\binaries\packetnt.dll          *
-echo *    winpcap_oem\OEM\WinpcapOem\binaries\packet2k.dll          *
-echo *    winpcap_oem\OEM\WinpcapOem\binaries\packetvista.dll       *
+echo *                    .\binaries_SIGNED\*.*                     *
 echo *                                                              *
 echo ****************************************************************
 "/>
@@ -367,7 +363,7 @@ echo ****************************************************************
 				Name="VCPreLinkEventTool"/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
+				PreprocessorDefinitions="NDEBUG; SIGNED_BINARIES"
 				Culture="0"/>
 			<Tool
 				Name="VCWebServiceProxyGeneratorTool"/>
@@ -423,7 +419,7 @@ echo ****************************************************************
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release CERTIFIED|Win32">
+					Name="Release SIGNED|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
@@ -466,7 +462,7 @@ echo ****************************************************************
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release CERTIFIED|Win32">
+					Name="Release SIGNED|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
@@ -509,7 +505,7 @@ echo ****************************************************************
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release CERTIFIED|Win32">
+					Name="Release SIGNED|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
@@ -552,7 +548,7 @@ echo ****************************************************************
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release CERTIFIED|Win32">
+					Name="Release SIGNED|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
@@ -595,7 +591,7 @@ echo ****************************************************************
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release CERTIFIED|Win32">
+					Name="Release SIGNED|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
@@ -638,7 +634,7 @@ echo ****************************************************************
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release CERTIFIED|Win32">
+					Name="Release SIGNED|Win32">
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
@@ -703,10 +699,10 @@ echo ****************************************************************
 			RelativePath="binaries\npfnt.sys">
 		</File>
 		<File
-			RelativePath="binaries\Packet2k.dll">
+			RelativePath="Packet2k.dll">
 		</File>
 		<File
-			RelativePath="Packet2k.dll">
+			RelativePath="binaries\Packet2k.dll">
 		</File>
 		<File
 			RelativePath="binaries\Packetnt.dll">
@@ -714,7 +710,7 @@ echo ****************************************************************
 		<File
 			RelativePath=".\postbuild_release.bat">
 			<FileConfiguration
-				Name="Release CERTIFIED|Win32"
+				Name="Release SIGNED|Win32"
 				ExcludedFromBuild="TRUE">
 				<Tool
 					Name="VCCustomBuildTool"/>
