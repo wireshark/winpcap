@@ -8,7 +8,7 @@
 </head>
 
 <body>
-<h2>Creating an application that uses OEM WinPcap</h2>
+<h2>Creating an application that uses WinPcap Professional</h2>
 <p>To create an application that uses wpcap.dll with Microsoft Visual C++, 
 follow these
 steps:</p>
@@ -20,12 +20,12 @@ steps:</p>
   <li>If your program uses the remote extensions (<code>pcap_findalldevs_ex()</code> is among the remote extensions), 
 	remember to add <code>HAVE_REMOTE</code> among your preprocessor definitions.<li>Set the options of the linker to include the <i>wpcap.lib</i> library
     file. <i>wpcap.lib</i> can
-    be found in the \lib folder of the OEM WinPcap developer's pack.
+    be found in the \lib folder of the WinPcap Professional developer's pack.
   <li>Set the options of the linker to include the winsock library file (for
     example <i>wsock32.lib</i>). This file is distributed with the C compiler
     and contains the socket functions for Windows. It is needed by some <code>libpcap</code>
     functions.</li>
-	<li>Initialize OEM WinPcap before calling *any* pcap function by calling 
+	<li>Initialize WinPcap Professional before calling *any* pcap function by calling 
 	<a href=group__wpcapfunc.html#ga64><code>pcap_start_oem</code></a>. Here is 
 	some sample code you may use:</li>
 	<br>
@@ -33,13 +33,13 @@ steps:</p>
 		...<br>
 		if (pcap_start_oem(errbuf, 0) == -1)<br>
 		{<br>
-&nbsp;&nbsp;&nbsp; printf(&quot;Error initializing OEM WinPcap: %s\n&quot;, errbuf);<br>
+&nbsp;&nbsp;&nbsp; printf(&quot;Error initializing WinPcap Professional: %s\n&quot;, errbuf);<br>
 &nbsp;&nbsp;&nbsp; exit(1);<br>
 		}</div>
-	&nbsp;<li>Place the OEM WinPcap DLLs available in the \bin folder of the 
+	&nbsp;<li>Place the WinPcap Professional DLLs available in the \bin folder of the 
 	developer's pack into the working directory of your application.<br>
 	<b>IMPORTANT NOTE:</b> in order to avoid conflicts with any existing 
-	installation of WinPcap, you should avoid putting the OEM WinPcap DLLs in 
+	installation of WinPcap, you should avoid putting the WinPcap Professional DLLs in 
 	the system folder (usually c:\windows\system32) or generally in a folder on 
 	your PATH.</li>
 </ul>
@@ -62,20 +62,20 @@ steps:</p>
     from the tab control, <em>Include files</em> from the <em>Show directories
     for</em>  combobox, and the add the path in the <em>Directories</em> box.</li>
 </ul>
-<h2>Deploying OEM WinPcap in your application installation</h2>
-<p>Installing OEM WinPcap with your application is extremely easy: you should 
+<h2>Deploying WinPcap Professional in your application installation</h2>
+<p>Installing WinPcap Professional with your application is extremely easy: you should 
 just copy the DLLs available in the \bin folder of the developer's pack (i.e. 
 packet.dll and wpcap.dll) into the working directory of your application. </p>
 <p><b>IMPORTANT NOTE: </b>in order to avoid conflicts with any existing installation of 
-WinPcap, you should avoid putting the OEM WinPcap DLLs in the system folder 
+WinPcap, you should avoid putting the WinPcap Professional DLLs in the system folder 
 (usually c:\windows\system32) or generally in a folder on your PATH.</p>
 <h2>Sample programs</h2>
 <p>A couple of sample programs are provided to show the usage of the WinPcap API. The
 source of the examples, along with all the files needed to compile and run them, can be found in the Developer's
-Pack of OEM WinPcap. For didactic purpose we provide here a browsable version of 
+Pack of WinPcap Professional. For didactic purpose we provide here a browsable version of 
 the code: it is possible to click on the variables and functions to jump the 
 documentation of each of them. For a more complete set of samples, please refer 
-to the <a href="group__wpcap__tut.html">OEM WinPcap
+to the <a href="group__wpcap__tut.html">WinPcap Professional
 Tutorial Section</a>.</p>
 
 </body>

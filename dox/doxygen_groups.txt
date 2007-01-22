@@ -1,5 +1,5 @@
 /*!
-	\defgroup internals OEM WinPcap internals
+	\defgroup internals WinPcap Professional internals
 	\htmlinclude internals.htm
 */
 
@@ -10,7 +10,7 @@
 */ 
 
 /*!
-	\defgroup wpcap OEM WinPcap user's manual
+	\defgroup wpcap WinPcap Professional user's manual
 	\htmlinclude wpcap.htm
 */
 
@@ -23,7 +23,7 @@
 
 /*!
 	\ingroup wpcap
-	\defgroup wpcapsamps Using OEM WinPcap in your programs
+	\defgroup wpcapsamps Using WinPcap Professional in your programs
 	\htmlinclude wpcap_samp.htm
 
 	\htmlinclude wpcap_samp1.htm
