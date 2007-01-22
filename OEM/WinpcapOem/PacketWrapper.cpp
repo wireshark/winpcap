@@ -843,7 +843,7 @@ __inline BOOL WoemInitialize(HINSTANCE hDllHandle)
 
 	if (g_OemActive == FALSE)
 	{
-		TRACE_MESSAGE("OEM WinPcap not active");
+		TRACE_MESSAGE("WinPcap Professional not active");
 
 		TRACE_EXIT("WoemInitialize");
 		return FALSE;

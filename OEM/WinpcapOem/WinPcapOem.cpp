@@ -33,7 +33,7 @@ BOOL APIENTRY DllMain(HINSTANCE Dllh, DWORD Reason, LPVOID lpReserved)
 	case DLL_PROCESS_ATTACH:
 		
 		g_DllHandle = Dllh;
-		::InitializeCriticalSection(&::g_CritSectionProtectingWoemEnterDll);
+		InitializeCriticalSection(&::g_CritSectionProtectingWoemEnterDll);
 		
 #ifdef TNT_BUILD
 		//
@@ -96,7 +96,7 @@ BOOL WoemEnterDll(HINSTANCE DllHandle, char *WoemErrorString)
 
 	TRACE_ENTER("WoemEnterDll");
 	
-	::EnterCriticalSection(&::g_CritSectionProtectingWoemEnterDll);
+	EnterCriticalSection(&::g_CritSectionProtectingWoemEnterDll);
 
 	if (g_StillToInit)
 	{
@@ -107,7 +107,7 @@ BOOL WoemEnterDll(HINSTANCE DllHandle, char *WoemErrorString)
 		}
 	}
 
-	::LeaveCriticalSection(&::g_CritSectionProtectingWoemEnterDll);
+	LeaveCriticalSection(&g_CritSectionProtectingWoemEnterDll);
 
 	TRACE_EXIT("WoemEnterDll");
 
@@ -175,9 +175,9 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			{
 				g_IsProcAuthorized = FALSE;
 				
-				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("This version of OEM WinPcap can be only run in conjunction with CACE Technologies Network Toolkit. This program is not recognized as part of The Network Toolkit, and therefore OEM WinPcap will not work.");
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("This version of WinPcap Professional can be only run in conjunction with CACE Technologies Network Toolkit. This program is not recognized as part of The Network Toolkit, and therefore WinPcap Professional will not work.");
 
-				MessageBox(NULL, "This version of OEM WinPcap can be only run in conjunction with CACE Technologies Network Toolkit.\nThis program is not recognized as part of The Network Toolkit, and therefore OEM WinPcap will not work.", "Error", MB_ICONERROR);
+				MessageBox(NULL, "This version of WinPcap Professional can be only run in conjunction with CACE Technologies Network Toolkit.\nThis program is not recognized as part of The Network Toolkit, and therefore WinPcap Professional will not work.", "Error", MB_ICONERROR);
 				TRACE_EXIT("WoemEnterDllInternal");
 				return FALSE;
 			}
@@ -527,7 +527,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			//
 			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLLNT, g_DllFullPath, FALSE))
 			{
-				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the OEM WinPcap files. Administrative privileges are required for this operation.");
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the WinPcap Professional files. Administrative privileges are required for this operation.");
 
 				ReleaseMutex(g_hGlobalMutex);
 
@@ -552,7 +552,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			//
 			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DRINT, g_DriverFullPath, FALSE))
 			{
-				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the OEM WinPcap files. Administrative privileges are required for this operation.");
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the WinPcap Professional files. Administrative privileges are required for this operation.");
 
 				_unlink(g_DllFullPath);
 				
@@ -601,7 +601,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			//
 			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLL2K, g_DllFullPath, FALSE))
 			{
-				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the OEM WinPcap files. Administrative privileges are required for this operation.");
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the WinPcap Professional files. Administrative privileges are required for this operation.");
 
 				ReleaseMutex(g_hGlobalMutex);
 				
@@ -635,7 +635,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 
 			if(!bLoadDriverResult)
 			{
-				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the OEM WinPcap files. Administrative privileges are required for this operation.");
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the WinPcap Professional files. Administrative privileges are required for this operation.");
 
 				_unlink(g_DllFullPath);
 				
@@ -672,7 +672,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			//
 			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLLVISTA, g_DllFullPath, FALSE))
 			{
-				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the OEM WinPcap files. Administrative privileges are required for this operation.");
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the WinPcap Professional files. Administrative privileges are required for this operation.");
 
 				ReleaseMutex(g_hGlobalMutex);
 
@@ -708,7 +708,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			}
 			if(!bLoadDriverResult)
 			{
-				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the OEM WinPcap files. Administrative privileges are required for this operation.");
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the WinPcap Professional files. Administrative privileges are required for this operation.");
 
 				_unlink(g_DllFullPath);
 

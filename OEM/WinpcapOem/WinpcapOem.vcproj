@@ -196,7 +196,7 @@
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Copying the OEM packet.lib in the winpcap folder"
+				Description="Copying the Pro packet.lib in the winpcap folder"
 				CommandLine="postbuild.bat"/>
 			<Tool
 				Name="VCPreBuildEventTool"
