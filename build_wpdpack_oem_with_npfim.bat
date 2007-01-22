@@ -24,7 +24,7 @@ call create_examples_oem.bat %OEM_WPD_NPFIM_DEST_FOLDER%
 call create_docs_oem.bat %OEM_WPD_NPFIM_DEST_FOLDER%
 
 echo Copying the license agreement file
-xcopy /v /Y "OEM WinPcap License Agreement.pdf" %OEM_WPD_NPFIM_DEST_FOLDER% >nul
+xcopy /v /Y "LicenseAgreement.pdf" %OEM_WPD_NPFIM_DEST_FOLDER% >nul
 
 rem now we copy the certified files from the NpfIm engine
 
@@ -53,6 +53,6 @@ xcopy /s/e/v/Y ..\NpfIm\LowLevelDll\docs\NpfImLoader\*.* %OEM_WPD_NPFIM_DEST_FOL
 del /f/s/q %OEM_WPD_NPFIM_DEST_FOLDER%\docs\WinPcap >nul 2>nul
 rd %OEM_WPD_NPFIM_DEST_FOLDER%\docs\WinPcap >nul 2>nul
 ren %OEM_WPD_NPFIM_DEST_FOLDER%\docs\html WinPcap
-copy /v ..\NpfIm\LowLevelDll\docs\OEM_WinPcap_docs.html %OEM_WPD_NPFIM_DEST_FOLDER%\docs\. > nul
+copy /v ..\NpfIm\LowLevelDll\docs\WinPcapPro_docs.html %OEM_WPD_NPFIM_DEST_FOLDER%\docs\. > nul
 
 set OEM_WPD_NPFIM_DEST_FOLDER=

@@ -18,5 +18,5 @@ call create_examples_oem.bat %WOEM_WPD_VANILLA_FOLDER%
 rem PAUSE
 call create_docs_oem.bat %WOEM_WPD_VANILLA_FOLDER%
 echo Copying the license agreement file
-xcopy /v /Y "OEM WinPcap License Agreement.pdf" %WOEM_WPD_VANILLA_FOLDER%. >nul
+xcopy /v /Y "LicenseAgreement.pdf" %WOEM_WPD_VANILLA_FOLDER%. >nul
 set WOEM_WPD_VANILLA_FOLDER=
