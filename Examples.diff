@@ -8,11 +8,11 @@ diff -urb ..\winpcap\Examples/PacketDriver/GetMacAddress/GetMacAddress.c .\Examp
 +	CHAR		ErrBuffer[1024];
 +
 +	//
-+	// start OEM WinPcap
++	// start WinPcap Professional
 +	//
 +	if(PacketStartOem(ErrBuffer, sizeof(ErrBuffer)) == FALSE)
 +	{
-+		printf("Cannot start OEM WinPcap: %s\n", ErrBuffer);
++		printf("Cannot start WinPcap Professional: %s\n", ErrBuffer);
 +		return -1;
 +	}
  	
@@ -28,11 +28,11 @@ diff -urb ..\winpcap\Examples/PacketDriver/TestPacketCapture/TestPacketCapture.c
 +	CHAR		ErrBuffer[1024];
 +
 +	//
-+	// start OEM WinPcap
++	// start WinPcap Professional
 +	//
 +	if(PacketStartOem(ErrBuffer, sizeof(ErrBuffer)) == FALSE)
 +	{
-+		printf("Cannot start OEM WinPcap: %s\n", ErrBuffer);
++		printf("Cannot start WinPcap Professional: %s\n", ErrBuffer);
 +		return -1;
 +	}
 +
@@ -55,11 +55,11 @@ diff -urb ..\winpcap\Examples/PacketDriver/TestPacketSend/TestPacketSend.c .\Exa
  	}
  	
 +	//
-+	// start OEM WinPcap
++	// start WinPcap Professional
 +	//
 +	if(PacketStartOem(ErrBuffer, sizeof(ErrBuffer)) == FALSE)
 +	{
-+		printf("Cannot start OEM WinPcap: %s\n", ErrBuffer);
++		printf("Cannot start WinPcap Professional: %s\n", ErrBuffer);
 +		return -1;
 +	}
  	
@@ -72,10 +72,10 @@ diff -urb ..\winpcap\Examples/UDPdump/udpdump.c .\Examples/UDPdump/udpdump.c
  char packet_filter[] = "ip and udp";
  struct bpf_program fcode;
  
-+	/* start OEM WinPcap */
++	/* start WinPcap Professional */
 +	if (pcap_start_oem(errbuf, 0) == -1)
 +	{
-+		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
 +		exit(1);
 +	}
 +
@@ -89,10 +89,10 @@ diff -urb ..\winpcap\Examples/UserLevelBridge/UserBridge.c .\Examples/UserLevelB
  	struct bpf_program fcode;
  	in_out_adapters couple0, couple1;
  
-+	/* start OEM WinPcap */
++	/* start WinPcap Professional */
 +	if (pcap_start_oem(errbuf, 0) == -1)
 +	{
-+		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
 +		exit(1);
 +	}
 +
@@ -106,10 +106,10 @@ diff -urb ..\winpcap\Examples/iflist/iflist.c .\Examples/iflist/iflist.c
    char errbuf[PCAP_ERRBUF_SIZE+1];
    char source[PCAP_ERRBUF_SIZE+1];
  
-+  /* start OEM WinPcap */
++  /* start WinPcap Professional */
 +  if (pcap_start_oem(errbuf, 0) == -1)
 +  {
-+    fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++    fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
 +    exit(1);
 +  }
 +
@@ -123,10 +123,10 @@ diff -urb ..\winpcap\Examples/misc/basic_dump.c .\Examples/misc/basic_dump.c
  pcap_t *adhandle;
  char errbuf[PCAP_ERRBUF_SIZE];
  	
-+	/* start OEM WinPcap */
++	/* start WinPcap Professional */
 +	if (pcap_start_oem(errbuf, 0) == -1)
 +	{
-+		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
 +		exit(1);
 +	}
 +
@@ -140,10 +140,10 @@ diff -urb ..\winpcap\Examples/misc/basic_dump_ex.c .\Examples/misc/basic_dump_ex
  struct pcap_pkthdr *header;
  u_char *pkt_data;
  	
-+	/* start OEM WinPcap */
++	/* start WinPcap Professional */
 +	if (pcap_start_oem(errbuf, 0) == -1)
 +	{
-+		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
 +		exit(1);
 +	}
      
@@ -156,10 +156,10 @@ diff -urb ..\winpcap\Examples/pcap_filter/pcap_filter.c .\Examples/pcap_filter/p
  		}
  	}
  
-+	/* start OEM WinPcap */
++	/* start WinPcap Professional */
 +	if (pcap_start_oem(errbuf, 0) == -1)
 +	{
-+		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
 +		exit(1);
 +	}
 +
@@ -173,10 +173,10 @@ diff -urb ..\winpcap\Examples/pktdump_ex/pktdump_ex.c .\Examples/pktdump_ex/pktd
  		   "      pktdump_ex -s file://c:/temp/file.acp\n"
  		   "      pktdump_ex -s rpcap://\\Device\\NPF_{C8736017-F3C3-4373-94AC-9A34B7DAD998}\n\n");
  
-+	/* start OEM WinPcap */
++	/* start WinPcap Professional */
 +	if (pcap_start_oem(errbuf, 0) == -1)
 +	{
-+		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
 +		exit(1);
 +	}
 +
@@ -190,10 +190,10 @@ diff -urb ..\winpcap\Examples/smp_1/smp_1.c .\Examples/smp_1/smp_1.c
  	printf("and that the caplen is equal to the packet length.\n");
  	printf("If there is an error, it will print out a message saying \"Inconsistent XXX\"\n");
  
-+	/* start OEM WinPcap */
++	/* start WinPcap Professional */
 +	if (pcap_start_oem(errbuf, 0) == -1)
 +	{
-+		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
 +		exit(1);
 +	}
 +
@@ -207,10 +207,10 @@ diff -urb ..\winpcap\Examples/misc/savedump.c .\Examples/misc/savedump.c
  pcap_dumper_t *dumpfile;
  
  
-+	/* start OEM WinPcap */
++	/* start WinPcap Professional */
 +	if (pcap_start_oem(errbuf, 0) == -1)
 +	{
-+		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
 +		return -1;
 +	}
  	
@@ -223,10 +223,10 @@ diff -urb ..\winpcap\Examples/sendcap/sendcap.c .\Examples/sendcap/sendcap.c
  	float cpu_time;
  	u_int npacks = 0;
  	
-+	/* start OEM WinPcap */
++	/* start WinPcap Professional */
 +	if (pcap_start_oem(errbuf, 0) == -1)
 +	{
-+		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
 +		exit(1);
 +	}
 +
@@ -240,10 +240,10 @@ diff -urb ..\winpcap\Examples/tcptop/tcptop.c .\Examples/tcptop/tcptop.c
  		return;
  	}
  		
-+	/* start OEM WinPcap */
++	/* start WinPcap Professional */
 +	if (pcap_start_oem(errbuf, 0) == -1)
 +	{
-+		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
 +		exit(1);
 +	}
 +
@@ -257,10 +257,10 @@ diff -urb ..\winpcap\Examples/misc/sendpack.c .\Examples/misc/sendpack.c
  u_char packet[100];
  int i;
  
-+	/* start OEM WinPcap */
++	/* start WinPcap Professional */
 +	if (pcap_start_oem(errbuf, 0) == -1)
 +	{
-+		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
 +		return;
 +	}
 +	

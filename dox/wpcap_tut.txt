@@ -2,7 +2,7 @@
  */
 
 
-/** @defgroup wpcap_tut OEM WinPcap tutorial: a step by step guide to using WinPcap
+/** @defgroup wpcap_tut WinPcap Professional tutorial: a step by step guide to using WinPcap
  *  @{
 
 

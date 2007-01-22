@@ -19,10 +19,10 @@ main()
 	int i=0;
 	char errbuf[PCAP_ERRBUF_SIZE];
 	
-	/* start OEM WinPcap */
+	/* start WinPcap Professional */
 	if (pcap_start_oem(errbuf, 0) == -1)
  	{
-		fprintf(stderr, "Error starting OEM WinPcap: %s\n", errbuf);
+		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
 		exit(1);
  	}
 	
@@ -64,7 +64,7 @@ Note finally that we free the list with pcap_freealldevs() once when we have fin
 
 Let's try to compile and run the code of this first sample. In order to compile it on Windows, you will need to create a project, 
 following the instructions in the section \ref wpcapsamps of this manual. 
-However, we suggest that you use the OEM WinPcap developer's pack, since it provides many examples already configured as projects 
+However, we suggest that you use the WinPcap Professional developer's pack, since it provides many examples already configured as projects 
 including all the code presented in this tutorial and the \e includes and \e libraries needed to compile and run the examples. 
 
 \note if you create your own project, remember to add the preprocessor directives WPCAP and HAVE_REMOTE in order to compile and link this example.

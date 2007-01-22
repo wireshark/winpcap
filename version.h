@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Developer Studio generated include file.
-// Used by NetMonInstaller.rc
+// Used by the RC/RC2 files in the project.
 //
 
 // 0 Feb = 31 + 0 = 31
@@ -17,13 +17,13 @@
 #define WINPCAPOEM_REV		2
 #define WINPCAPOEM_BUILD	730
 
-#define WINPCAPOEM_VER_STRING	"4.0.2.730.oem"
+#define WINPCAPOEM_VER_STRING	"4.0.2.730.Pro"
 
 #define WINPCAPOEM_COMPANY_NAME 			"CACE Technologies"
 
 #define WINPCAPOEM_PACKET_WRAPPER_NAME 		"Packet.dll Wrapper"
-#define WINPCAPOEM_VERSION_STRING 			"4.0.2.730.oem"
-#define WINPCAPOEM_PRODUCT_NAME 			"OEM WinPcap"
+#define WINPCAPOEM_VERSION_STRING 			"4.0.2.730.Pro"
+#define WINPCAPOEM_PRODUCT_NAME 			"WinPcap Professional"
 #define WINPCAPOEM_COPYRIGHT_STRING 		"Copyright © 2005-2007 CACE Technologies"
 #define WINPCAPOEM_PACKET_WRAPPER_FILENAME 	"Packet.dll (wrapper)"
 #define WINPCAPOEM_BUILD_DESCRIPTION 		""

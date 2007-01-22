@@ -3,7 +3,7 @@
 #---------------------------------------------------------------------------
 # Project related configuration options
 #---------------------------------------------------------------------------
-PROJECT_NAME           = "OEM WinPcap"
+PROJECT_NAME           = "WinPcap Professional"
 PROJECT_NUMBER         = 4.0.2.730
 OUTPUT_DIRECTORY       = ./
 CREATE_SUBDIRS         = NO
