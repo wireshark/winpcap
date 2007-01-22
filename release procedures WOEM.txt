@@ -1,6 +1,6 @@
-$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040WOEM.txt,v 1.10 2006/12/06 02:33:54 gianlucav Exp $
+$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040WOEM.txt,v 1.11 2006/12/06 02:40:19 gianlucav Exp $
 
-OEM WINPCAP RELEASE PROCEDURE
+WINPCAP PRO RELEASE PROCEDURE
 =============================
 
 Needed tools
@@ -9,7 +9,7 @@ Needed tools
 - Visual Studio .NET 2003
 - The cygnus environment on your path (needed to execute step 11 and 12).
    In particular you will need to have flex, bison, patch.
-- Doxygen 1.3.7 installed and on the path
+- Doxygen 1.5.1 installed and on the path
 
 Dependencies
 ------------
@@ -20,7 +20,7 @@ Dependencies
 	  You should also have run the "NpfIm\build_dev_pack.bat" script
 	  to have the devpacks ready
 
-How to compile OEM WinPcap (NOT for the Toolkit)
+How to compile WinPcap PRO (NOT for the Toolkit)
 ------------------------------------------------
 
 1.  Download winpcap (HEAD) and winpcap_oem from the CVS into %BUILD_TREE%
@@ -48,10 +48,10 @@ How to compile OEM WinPcap (NOT for the Toolkit)
 	into the CVS. These should be the *only* modified filew in this module.
 
 8.  Tag the %BUILD_TREE%\winpcap_oem module with the tag 
-	  OEM_WINPCAP_<OEM version>_WOEM
+	  WINPCAP_PRO_<WinPcap PRO version>_PUBLIC
 
 9.  Tag the %BUILD_TREE%\winpcap module with the tag 
-	  OEM_WINPCAP_<OEM version>_WOEM
+	  WINPCAP_PRO_<WinPcap PRO version>_PUBLIC
 
 10. Take the contents of %BUILD_TREE%\libpcap_<version> and copy it into
 	  %BUILD_TREE%\winpcap\wpcap\libpcap 
@@ -130,7 +130,7 @@ How to compile OEM WinPcap (NOT for the Toolkit)
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packetnt.dll
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packetVista.dll
 
-How to create the developer's pack for OEM WinPcap (NOT for the Toolkit)
+How to create the developer's pack for WinPcap PRO (NOT for the Toolkit)
 ------------------------------------------------------------------------
 
 1. After the build is completed, in a command prompt go to 
@@ -146,7 +146,7 @@ How to create the developer's pack for OEM WinPcap (NOT for the Toolkit)
 	e. creation of the documentation. One error copying some *.gif files is reported.
 
 
-How to create the developer's pack for OEM WinPcap (NOT for the Toolkit) with NpfIm loading support (IBM)
+How to create the developer's pack for WinPcap PRO (NOT for the Toolkit) with NpfIm loading support (IBM)
 ---------------------------------------------------------------------------------------------------------
 
 1. After the build is completed, in a command prompt go to 
@@ -170,19 +170,19 @@ NpfIm BUILD:
 1a.  %BUILD_TREE%\winpcap_oem\wpdpack_NpfIm\
 		|
 		v
-	OEM_WinPcap_<OEM version>_WOEM_WpdPackNpfIm.zip
+	WinPcapPro_<WinPcap Pro version>_WpdPackNpfIm.zip
 
 Vanilla BUILD:
 1a.  %BUILD_TREE%\winpcap_oem\wpdpack\
 		|
 		v
-	OEM_WinPcap_<OEM version>_WOEM_WpdPack.zip
+	WinPcapPro_<WinPcap Pro version>_WpdPack.zip
 
 
 2. 	%BUILD_TREE%\Sources.zip
 		|
 		V
-	OEM_WinPcap_<OEM version>_WOEM_Sources.zip
+	WinPcapPro_<WinPcap Pro version>_Sources.zip
 
 3.	%BUILD_TREE%\winpcap_oem
 	%BUILD_TREE%\winpcap
@@ -191,7 +191,7 @@ Vanilla BUILD:
 	%BUILD_TREE%\NpfIm
 		|
 		V
-	OEM_WinPcap_<OEM version>_WOEM_Build_Tree.zip
+	WinPcapPro_<WinPcap Pro version>_BuildTree.zip
 		
 		
 MD5sum
@@ -199,5 +199,5 @@ MD5sum
 
 1.  Open a command prompt and go into %BUILD_TREE%
 
-2.  Type md5sum.exe OEM_* > md5sum.txt
+2.  Type md5sum.exe WinPcapPro_* > md5sum.txt
 
