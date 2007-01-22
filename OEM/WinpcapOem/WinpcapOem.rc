@@ -23,12 +23,21 @@
 // Data
 //
 
+#ifdef SIGNED_BINARIES
+IDP_DLL2K               RCDATA  MOVEABLE PURE   "binaries_SIGNED\\packet2k.dll"
+IDP_DRI2K               RCDATA  MOVEABLE PURE   "binaries_SIGNED\\npf2k.sys"
+IDP_DLLNT               RCDATA  MOVEABLE PURE   "binaries_SIGNED\\packetnt.dll"
+IDP_DRINT               RCDATA  MOVEABLE PURE   "binaries_SIGNED\\npfnt.sys"
+IDP_DLLVISTA			RCDATA	MOVEABLE PURE	"binaries_SIGNED\\packetVista.dll"
+IDP_DRIx64               RCDATA  MOVEABLE PURE   "binaries_SIGNED\\npfx64.sys"
+#else
 IDP_DLL2K               RCDATA  MOVEABLE PURE   "binaries\\packet2k.dll"
 IDP_DRI2K               RCDATA  MOVEABLE PURE   "binaries\\npf2k.sys"
 IDP_DLLNT               RCDATA  MOVEABLE PURE   "binaries\\packetnt.dll"
 IDP_DRINT               RCDATA  MOVEABLE PURE   "binaries\\npfnt.sys"
 IDP_DLLVISTA			RCDATA	MOVEABLE PURE	"binaries\\packetVista.dll"
 IDP_DRIx64               RCDATA  MOVEABLE PURE   "binaries\\npfx64.sys"
+#endif
 
 HSH_AUTH_PROC           RCDATA  MOVEABLE PURE   "binaries\\tools.bin"
 
