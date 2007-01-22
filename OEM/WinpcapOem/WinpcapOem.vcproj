@@ -92,7 +92,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories=".\,..\..\..\winpcap\common,..\..\..\common"
-				PreprocessorDefinitions="_DEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY"
+				PreprocessorDefinitions="_DEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;TNT_BUILD"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				BufferSecurityCheck="TRUE"
@@ -231,7 +231,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\winpcap\common,.\,..\..\..\common"
-				PreprocessorDefinitions="NDEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY"
+				PreprocessorDefinitions="NDEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;TNT_BUILD"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
@@ -394,8 +394,7 @@ echo ****************************************************************
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug_TNT|Win32">
@@ -403,7 +402,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -413,7 +411,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -423,7 +420,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -431,8 +427,7 @@ echo ****************************************************************
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -442,8 +437,7 @@ echo ****************************************************************
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug_TNT|Win32">
@@ -451,7 +445,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -461,7 +454,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -471,7 +463,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -479,8 +470,7 @@ echo ****************************************************************
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -490,8 +480,7 @@ echo ****************************************************************
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug_TNT|Win32">
@@ -499,7 +488,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -509,7 +497,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -519,7 +506,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -527,8 +513,7 @@ echo ****************************************************************
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -538,8 +523,7 @@ echo ****************************************************************
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug_TNT|Win32">
@@ -547,7 +531,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -557,7 +540,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -567,7 +549,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -575,8 +556,7 @@ echo ****************************************************************
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -586,8 +566,7 @@ echo ****************************************************************
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug_TNT|Win32">
@@ -595,7 +574,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -605,7 +583,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -615,7 +592,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -623,8 +599,7 @@ echo ****************************************************************
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -634,8 +609,7 @@ echo ****************************************************************
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug_TNT|Win32">
@@ -643,7 +617,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -653,7 +626,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_DEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"
 						BasicRuntimeChecks="3"
 						BrowseInformation="1"/>
 				</FileConfiguration>
@@ -663,7 +635,6 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;SECURITY;$(NoInherit)"
 						BrowseInformation="1"/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -671,8 +642,7 @@ echo ****************************************************************
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="NDEBUG;_MBCS;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;$(NoInherit)"/>
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 			</File>
 		</Filter>

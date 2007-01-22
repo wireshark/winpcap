@@ -6,7 +6,7 @@
 #include "resource.h"
 #include "WoemDebug.h"
 
-#ifdef SECURITY
+#ifdef TNT_BUILD
 #include "Security.h"
 #endif
 
@@ -35,7 +35,7 @@ BOOL APIENTRY DllMain(HINSTANCE Dllh, DWORD Reason, LPVOID lpReserved)
 		g_DllHandle = Dllh;
 		::InitializeCriticalSection(&::g_CritSectionProtectingWoemEnterDll);
 		
-#ifdef SECURITY
+#ifdef TNT_BUILD
 		//
 		// the version with security enabled doesn't need to be activated with PacketStartOem()
 		//
@@ -139,7 +139,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	DWORD keyType;
 	DWORD bufSize;
     HRESULT hr;
-#ifdef SECURITY
+#ifdef TNT_BUILD
 	DWORD Result;
 #endif 
 	BOOL is64BitOs = FALSE;
@@ -150,7 +150,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	WoemErrorString[PACKET_ERRSTR_SIZE - 1] = '\0';
 
 
-#ifdef SECURITY
+#ifdef TNT_BUILD
 
 	TRACE_MESSAGE("Process bound Woem, checking if the process is authorized...");
 	if (!g_IsProcAuthorized)

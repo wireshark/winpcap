@@ -108,9 +108,9 @@ PostBuild_Cmds=postbuild.bat
 # PROP Intermediate_Dir "Debug_Security"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I ".\\" /D "_DEBUG" /D "_MBCS" /D "_USRDLL" /D "WinpcapOem_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "SECURITY" /FR /FD /GZ /c
+# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I ".\\" /D "_DEBUG" /D "_MBCS" /D "_USRDLL" /D "WinpcapOem_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "TNT_BUILD" /FR /FD /GZ /c
 # SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I ".\\" /I "..\..\..\winpcap\common" /I "..\..\..\common" /D "_DEBUG" /D "_MBCS" /D "_USRDLL" /D "WinpcapOem_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "SECURITY" /FR /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I ".\\" /I "..\..\..\winpcap\common" /I "..\..\..\common" /D "_DEBUG" /D "_MBCS" /D "_USRDLL" /D "WinpcapOem_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "TNT_BUILD" /FR /FD /GZ /c
 # SUBTRACT CPP /YX /Yc /Yu
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
@@ -141,9 +141,9 @@ PostBuild_Cmds=postbuild.bat
 # PROP Intermediate_Dir "Release_Security"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
-# ADD BASE CPP /nologo /MT /W3 /GX /O2 /I ".\\" /D "NDEBUG" /D "_MBCS" /D "_USRDLL" /D "WinpcapOem_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "SECURITY" /FD /c
+# ADD BASE CPP /nologo /MT /W3 /GX /O2 /I ".\\" /D "NDEBUG" /D "_MBCS" /D "_USRDLL" /D "WinpcapOem_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "TNT_BUILD" /FD /c
 # SUBTRACT BASE CPP /YX /Yc /Yu
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\..\..\winpcap\common" /I ".\\" /I "..\..\..\common" /D "NDEBUG" /D "_MBCS" /D "_USRDLL" /D "WinpcapOem_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "SECURITY" /FR /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "..\..\..\winpcap\common" /I ".\\" /I "..\..\..\common" /D "NDEBUG" /D "_MBCS" /D "_USRDLL" /D "WinpcapOem_EXPORTS" /D "WIN32" /D "_WINDOWS" /D "TNT_BUILD" /FR /FD /c
 # SUBTRACT CPP /YX /Yc /Yu
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
