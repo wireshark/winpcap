@@ -1,7 +1,10 @@
-$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040WOEM.txt,v 1.11 2006/12/06 02:40:19 gianlucav Exp $
+$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040WOEM.txt,v 1.12 2007/01/22 19:02:47 gianlucav Exp $
 
 WINPCAP PRO RELEASE PROCEDURE
 =============================
+
+NOTE (GV20070122): the procedure has NOT been tested thoroughly in case
+of non-signed builds.
 
 Needed tools
 ------------
@@ -106,21 +109,54 @@ How to compile WinPcap PRO (NOT for the Toolkit)
     NOTE: DO NOT EXECUTE 15. and 16. and 17. at the same time, they overwrite files in 
     the build process that are incompatible between the two builds.
 
-18. Open %BUILD_TREE%\winpcap_oem\WinPcap OEM.sln with Visual Studio 2003. 
-    Choose the Release configuration, and then use Build->Rebuild Solution.
-    Some warnings should be issued only for the Wpcap.dll project.
-    If you choose the Debug configuration, and then use Build->Rebuild Solution, the 
-    compilation will fail beacuse the debug version of the NT4 driver is missing. Repeat
-    step 16 choosing the NT4 Checked build environment.
-    Close Visual Studio.
 
-19. The build is complete.
-	The DLLs are in the following folders:
+SIGNED BINARIES BUILD
 
-		%BUILD_TREE%\winpcap_oem\wpcap\PRJ\release_REMOTE\wpcap.dll
-		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release\packet.dll
+   18s. Open %BUILD_TREE%\winpcap_oem\WinPcap OEM.sln with Visual Studio 2003. 
+     Choose the "Release SIGNED STEP1" configuration, and then use Build->Rebuild Solution.
+     No warnings should be generated.
 
-20. Check the DLLs/SYSs files for the versions
+   19s. Sign all the binaries in 
+		%BUILD_TREE%\winpcap_oem\OEM\WinPcapOem\Binaries_SIGNED, namely
+			npfnt.sys
+			npf2k.sys
+			npfx64.sys
+			packetnt.dll
+			packet2k.dll
+			packetVista.dll
+		with the company certificate + cross certificate
+		
+		The generic command is
+		   signtool sign /v /ac MSCV-VSClass3.cer /s my /n "CACE TECHNOLOGIES, LLC"
+		   /t http://timestamp.verisign.com/scripts/timestamp.dll <binary_name>
+		   
+   20s. Go back to Vistual studio 2003. Choose the "Release SIGNED STEP2" configuration, and then
+     use Build->Rebuild solution. Some warnings should be generated when compiling wpcap.dll.
+
+	21s. Sign the following binaries in 
+		%BUILD_TREE%\winpcap_oem\OEM\WinPcapOem\Binaries_SIGNED\packet.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinPcapOem\Binaries_SIGNED\wpcap.dll
+		with the company certificate + cross certificate
+
+
+   21s. The build is complete. Check the versions *and* signature of the
+   following files:
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\wpcap.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\packet.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\npf2k.sys
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\npfnt.sys
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\npfx64.sys
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\packet2k.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\packetnt.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\packetVista.dll
+
+UNSIGNED BINARIES BUILD
+
+18u.  Open %BUILD_TREE%\winpcap_oem\WinPcap OEM.sln with Visual Studio 2003. 
+     Choose the "Release" configuration, and then use Build->Rebuild Solution.
+     Some warnings should be generated when compiling wpcap.dll.
+
+19u. The build is complete. Check the versions of the following files
 		%BUILD_TREE%\winpcap_oem\wpcap\PRJ\release_REMOTE\wpcap.dll
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release\packet.dll
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\npf2k.sys
@@ -130,10 +166,11 @@ How to compile WinPcap PRO (NOT for the Toolkit)
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packetnt.dll
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packetVista.dll
 
+
 How to create the developer's pack for WinPcap PRO (NOT for the Toolkit)
 ------------------------------------------------------------------------
 
-1. After the build is completed, in a command prompt go to 
+1. After the build is complete, in a command prompt go to 
 		
 		%BUILD_TREE%\winpcap_oem
 
@@ -145,6 +182,8 @@ How to create the developer's pack for WinPcap PRO (NOT for the Toolkit)
 	d. Creation of the Examples and Examples-pcap folders (no errors/warnings)
 	e. creation of the documentation. One error copying some *.gif files is reported.
 
+NOTE: the script gives precedence to the signed binaries, i.e. the ones in the 
+      Binaries_SIGNED\ folder.
 
 How to create the developer's pack for WinPcap PRO (NOT for the Toolkit) with NpfIm loading support (IBM)
 ---------------------------------------------------------------------------------------------------------
@@ -161,6 +200,9 @@ How to create the developer's pack for WinPcap PRO (NOT for the Toolkit) with Np
 	d. Creation of the Examples and Examples-pcap folders (no errors/warnings)
 	e. creation of the documentation. One error copying some *.gif files is reported.
    f. copy of the NpfIm files.
+
+NOTE: the script gives precedence to the signed binaries, i.e. the ones in the 
+      Binaries_SIGNED\ folder.
 	   
 
 SCM procedures
