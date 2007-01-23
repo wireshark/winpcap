@@ -1,4 +1,4 @@
-; Copyright (c) 2005 - 2006
+; Copyright (c) 2005 - 2007
 ; CACE Technologies
 ; All rights reserved.
 ; 
@@ -85,7 +85,7 @@
   ShowUninstDetails nevershow
   XPStyle on
 
-
+  Var FORMATTED_INT
   Var WINPCAP_OLD_FOUND
   Var WINPCAP_UNINSTALL_EXEC
   Var WINPCAP_OLD_PROJ_VERSION_DOTTED
@@ -133,7 +133,7 @@
 ;Installer Pages
 
   ;Installer
-;  Page custom "ShowHtmlPage" "" ""
+  Page custom "ShowHtmlPage" "" ""
   
   !insertmacro MUI_PAGE_WELCOME
   !insertmacro MUI_PAGE_LICENSE "distribution\license.txt"
@@ -180,7 +180,7 @@
 	goto ContinueInstallationVistaOk
 
 CheckVista_x64:
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" AbortVista_x64
+;	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" AbortVista_x64
 	StrCmp $WINPCAP_TARGET_ARCHITECTURE "IA64" AbortVista_x64
 ;	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" AbortVista_x64
 	goto ContinueInstallationVistaOk
@@ -264,108 +264,27 @@ CheckX86:
     StrCmp $WINPCAP_TARGET_OS "ME" NormalInstallation
 	
     StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" NormalInstallation
-    StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" AmdInstallationWarning
-    
-AmdInstallationWarning: 
-    
-;   I think we can remove this warning about 64 bits..
-;    MessageBox MB_ICONEXCLAMATION|MB_OKCANCEL  "You are about to install ${WINPCAP_PRODUCT_NAME} on Windows x64.$\nThe support for this operating system is still *highly* experimental.$\nPress Ok if you want to continue, or Cancel if you want to abort the installation." IDOK NormalInstallation
-;
-;    Quit
+    StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" NormalInstallation
+    StrCmp $WINPCAP_TARGET_ARCHITECTURE "IA64" IA64InstallAbort 
+
+IA64InstallAbort: 
+  
+    MessageBox MB_ICONEXCLAMATION|MB_OK  "You are trying to install ${WINPCAP_PRODUCT_NAME} on an Itanium platform. This platform is still not supported by WinPcap.$\n$\nThe installation will now abort."
+
+    Quit
 
 NormalInstallation:
 
-; -------------------------------------------------------
-; NOTE: the following code has been disabled. It downloads
-;       the banner page from the internet, and shows it to 
-;       the user in a custom page.
-;       To enable it again, 
-;	1. Remove the "goto"
-;	2. Uncomment the line
-;		Page custom "ShowHtmlPage" "" ""
-;       3. Uncomment the content of function CleanupTempFiles
-;
 
-   goto SkipWebPageStuff
-
-; if the OS is windows 2000/XP/2003 or similar, the installer will download the winpcap banner from the website.
-; on OT windows, downloading that banner is not working properly: when no internet connection is available, the timeout in NSISdl::download is ignored
-; As a consequence, we use our local copy.
-    StrCmp $WINPCAP_TARGET_OS "95" WindowsOTBanner
-    StrCmp $WINPCAP_TARGET_OS "98" WindowsOTBanner
-    StrCmp $WINPCAP_TARGET_OS "ME" WindowsOTBanner
-    StrCmp $WINPCAP_TARGET_OS "NT" WindowsOTBanner  ; on NT4 the timeout of download quiet is ignored, and it usually takes 30 seconds to retrun
-    StrCmp $WINPCAP_TARGET_OS "2000" WindowsNTBanner
-    StrCmp $WINPCAP_TARGET_OS "XP" WindowsNTBanner
-    StrCmp $WINPCAP_TARGET_OS "2003" WindowsNTBanner
-    StrCmp $WINPCAP_TARGET_OS "vista" WindowsNTBanner
-
-WindowsNTBanner:
-; Meantime the installer is downloading the banner, we should a "wait" dialog to the user, so that he doesn't think the
-; installer is not working.
-    nxs::Show /NOUNLOAD  "${WINPCAP_PRODUCT_NAME} Installer" /top "The installer is loading into memory. Please wait..." /end
-    nxs::Update /NOUNLOAD /sub "0% complete" /pos 0 /end
-
-; this approach does not work on win95/98/me, since the timeout is not respected, and the installer seems to be hanged.
-    NSISdl::download_quiet /TIMEOUT=5000 "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/banner.htm" "$TEMP\WpBann.htm"
-    pop $R0
-    nxs::Update /NOUNLOAD /sub "12% complete" /pos 0 /end
-    StrCmp $R0 "success"  WindowsNTBannerDlImageG1 WindowsNTBannerFailed
-
-WindowsNTBannerDlImageG1:
-    NSISdl::download_quiet /TIMEOUT=2000 "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/1.gif" "$TEMP\1.gif"
-    pop $R0
-    nxs::Update /NOUNLOAD /sub "25% complete" /pos 0 /end
-    StrCmp $R0 "success"  WindowsNTBannerDlImageG2 WindowsNTBannerDlImageJ1
-
-WindowsNTBannerDlImageG2:
-    NSISdl::download_quiet /TIMEOUT=2000 "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/2.gif" "$TEMP\2.gif"
-    pop $R0
-    nxs::Update /NOUNLOAD /sub "37% complete" /pos 0 /end
-    StrCmp $R0 "success"  WindowsNTBannerDlImageG3 WindowsNTBannerDlImageJ1
-
-WindowsNTBannerDlImageG3:
-    NSISdl::download_quiet /TIMEOUT=2000 "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/3.gif" "$TEMP\3.gif"
-    pop $R0
-    nxs::Update /NOUNLOAD /sub "50% complete" /pos 0 /end
-    StrCmp $R0 "success"  WindowsNTBannerDlImageJ1
-
-WindowsNTBannerDlImageJ1:
-    NSISdl::download_quiet /TIMEOUT=2000 "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/1.jpg" "$TEMP\1.jpg"
-    pop $R0
-    nxs::Update /NOUNLOAD /sub "62% complete" /pos 0 /end
-    StrCmp $R0 "success"  WindowsNTBannerDlImageJ2 WindowsNTBannerEnded
-
-WindowsNTBannerDlImageJ2:
-    NSISdl::download_quiet /TIMEOUT=2000 "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/2.jpg" "$TEMP\2.jpg"
-    pop $R0
-    nxs::Update /NOUNLOAD /sub "75% complete" /pos 0 /end
-    StrCmp $R0 "success"  WindowsNTBannerDlImageJ3 WindowsNTBannerEnded
-
-WindowsNTBannerDlImageJ3:
-    NSISdl::download_quiet /TIMEOUT=2000 "http://www.winpcap.org/install/banner/${WINPCAP_PROJ_VERSION_DOTTED}/3.jpg" "$TEMP\3.jpg"
-    pop $R0
-    nxs::Update /NOUNLOAD /sub "88% complete" /pos 0 /end
-    StrCmp $R0 "success"  WindowsNTBannerEnded
-
-; We reach this point if the download failed. Use our local copy.
-WindowsNTBannerFailed:
-    File /oname=$TEMP\WpBann.htm WpBann.htm
-
-WindowsNTBannerEnded:
-    nxs::Update /NOUNLOAD /sub "100% complete" /pos 100 /end
-; we sleep a bit to allow the user to see our "wait" dialog at 100% for a little bit.
-    Sleep 500
-    nxs::Destroy
-
-    goto Ended
-
-WindowsOTBanner:
+;WindowsOTBanner:
 ; Windows OT. Simply use our local copy of the banner.
-    File /oname=$TEMP\WpBann.htm WpBann.htm
-Ended:
+    File /oname=$TEMP\CACE_Banner.htm CACE_Banner.htm
+    File /oname=$TEMP\CACE_Logo.gif  CACE_Logo.gif
+    File /oname=$TEMP\NetSol.jpg NetSol.jpg
 
-SkipWebPageStuff:
+;Ended:
+
+;SkipWebPageStuff:
 
   FunctionEnd
 
@@ -407,13 +326,9 @@ NormalUninstallation:
 ;--------------------------------
 ;Remove any temp file used during the installation
   Function CleanupTempFiles
-;   Delete /REBOOTOK $TEMP\WpBann.htm
-;   Delete /REBOOTOK $TEMP\1.gif
-;   Delete /REBOOTOK $TEMP\1.jpg
-;   Delete /REBOOTOK $TEMP\2.gif
-;   Delete /REBOOTOK $TEMP\2.jpg
-;   Delete /REBOOTOK $TEMP\3.gif
-;   Delete /REBOOTOK $TEMP\3.jpg
+   Delete /REBOOTOK $TEMP\CACE_Banner.htm
+   Delete /REBOOTOK $TEMP\CACE_Logo.gif
+   Delete /REBOOTOK $TEMP\NetSol.jpg
   FunctionEnd
 
 ;--------------------------------
@@ -422,7 +337,7 @@ NormalUninstallation:
 
 !insertmacro MUI_HEADER_TEXT "${WINPCAP_PRODUCT_NAME} Installer" "Welcome to the ${WINPCAP_PRODUCT_NAME} Installation Wizard"
 
-    nsWeb::ShowWebInPage "$TEMP\WpBann.htm"
+    nsWeb::ShowWebInPage "$TEMP\CACE_Banner.htm"
 
   FunctionEnd
 
@@ -1027,10 +942,17 @@ ErrorCannotLoadDll:
 		
 ErrorCannotInstallNetmon:
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue"
-	SetErrors
-	goto End
+	;
+	IntFmt $FORMATTED_INT "0x%08X" $INT_RET
 
+	StrCmp $INT_RET "0x0004A020" RebootRequiredLabel  ;reboot required
+
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($FORMATTED_INT).$\r$\nYou will be able to use WinPcap on standard network adapters, but not on Dialup connections and VPNs.$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue"
+	SetErrors
+	
+RebootRequiredLabel:
+	SetRebootFlag true
+	
 End:
 
 FunctionEnd
