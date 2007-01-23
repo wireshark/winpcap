@@ -2,7 +2,7 @@ BODY,H1,H2,H3,H4,H5,H6,P,CENTER,TD,TH,UL,DL,DIV {
     font-family: Verdana,Arial,Helvetica;
 }
 BODY,TD {
-       font-size: 90%;
+       font-size: 80%;
 }
 H1 {
 	text-align: center;
