@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.11 2006/11/30 23:59:22 gianlucav Exp $
+$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.12 2007/01/23 17:51:29 gianlucav Exp $
 
 WINPCAP RELEASE PROCEDURE
 =========================
@@ -18,7 +18,7 @@ Needed tools/libraries (32bit and 64bit AMD)
 - Microsoft Driver Development Kit for Windows 2003 SP1
 - The cygnus environment on your path (needed to execute step 11 and 12).
   In particular you will need to have flex, bison, patch, touch, md5sum.
-- Doxygen 1.3.7 installed and on the path
+- Doxygen 1.5.1  installed and on the path
 - If packet.dll is compiled with airpcap support (default), the airpcap developer's
   pack should be available in the folder
 	%BUILD_TREE%\Airpcap_Devpack
