@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.10 2006/11/30 00:23:39 gianlucav Exp $
+$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.11 2006/11/30 23:59:22 gianlucav Exp $
 
 WINPCAP RELEASE PROCEDURE
 =========================
@@ -161,14 +161,35 @@ How to compile WinPcap
 
 32. The build is complete.
 
-How to create the installer for WinPcap
----------------------------------------
+How to sign the binaries and create the installer for WinPcap 
+-------------------------------------------------------------
 1.  Open a command prompt, go to 
 	  %BUILD_TREE%\winpcap\install
     and execute "copy_installer_files.bat"
-2.  Open 
+
+2. Sign the following binaries
+		
+		%BUILD_TREE%\winpcap\install\installer\distribution\2000\npf.sys
+		%BUILD_TREE%\winpcap\install\installer\distribution\2000\packet.dll
+		%BUILD_TREE%\winpcap\install\installer\distribution\2000\rpcapd.exe
+		%BUILD_TREE%\winpcap\install\installer\distribution\2000\WanPacket.dll
+		%BUILD_TREE%\winpcap\install\installer\distribution\2000\WinPcapInstall.dll
+		%BUILD_TREE%\winpcap\install\installer\distribution\nt\NPF.SYS					 
+		%BUILD_TREE%\winpcap\install\installer\distribution\nt\packet.dll			
+		%BUILD_TREE%\winpcap\install\installer\distribution\vista_x86\packet.dll		
+		%BUILD_TREE%\winpcap\install\installer\distribution\x86_64\npf.sys		
+		%BUILD_TREE%\winpcap\install\installer\distribution\wpcap.dll
+		with the company certificate + cross certificate
+		
+		The generic command is
+		   signtool sign /v /ac MSCV-VSClass3.cer /s my /n "CACE TECHNOLOGIES, LLC"
+		   /t http://timestamp.verisign.com/scripts/timestamp.dll <binary_name>
+3.  Open 
 	  %BUILd_TREE%\winpcap\install\installer\winpcap.nsi with NSIS and create the installer. 
     NSIS will fail if not all the binaries have been created correctly.
+4. Sign the installer
+		%BUILD_TREE%\winpcap\install\installer\WinPcap_<version>.exe
+		with the company certificate + cross certificate
 
 How to create the developer's pack for WinPcap
 ----------------------------------------------
