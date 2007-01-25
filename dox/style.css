@@ -5,7 +5,7 @@ BODY,TD {
        font-size: 80%;
 }
 CODE,PRE {
- font-size: 110%;
+ font-size: 120%;
 } 
 H1 {
 	text-align: center;
@@ -84,7 +84,6 @@ A:hover { text-decoration: none; background-color: #f2f2ff }
 DL.el { margin-left: -1cm }
 .fragment {
        font-family: monospace, fixed;
-       font-size: 95%;
 }
 PRE.fragment {
 	border: 1px solid #CCCCCC;
