@@ -10,7 +10,7 @@
 <body>
 <p>This section explains how to compile WinPcap, both the kernel level and
 the user-level portion, on the various Win32 platforms. The source code can be
-found on the WinPcap website, at <a href="http://www.winpcap.org/install/">http://www.winpcap.org/install/</a>.</p>
+found on the <a href="http://www.winpcap.org/">WinPcap website</a>.</p>
 <h2>Compiling the driver</h2>
 <p>Two main NPF source trees are available for compilation:&nbsp; Windows NTx and Windows 9x. Note that, since the NPF Driver is platform-dependent, it is
 STRONGLY suggested to compile it on the OS where it will be used, in order to
@@ -56,7 +56,7 @@ compilation process continue, they are due to bugs in some DDK versions.</p>
 <p>Software requirements:</p>
 <ul>
 	<li>Microsoft Driver Developer Kit (DDK) for Windows Windows
-    XP or Windows Server 2003. As of WinPcap 4.0 beta3, the preferred DDK 
+    XP or Windows Server 2003. As of WinPcap 4.0, the preferred DDK 
 	environment is &quot;DDK for Windows Server 2003SP1&quot;, also known as DDK 
 	3790.1830.</li>
 </ul>
@@ -87,7 +87,7 @@ a static code analysis tool shipped with recent versions of the DDK).</p>
 <h3>Compiling the driver on Windows 9x</h3>
 <p><font color="#FF0000">NOTE: this Windows platform is no longer supported by 
 WinPcap. However, the sources for these operating systems are still available in 
-the sources package</font></p>
+the sources package.</font></p>
 <p>To compile the driver for Windows 9x you will need:</p>
 <ul>
   <li>Driver Developer Kit (DDK) for Windows 95/98/ME
@@ -159,8 +159,8 @@ in the sources package.</font></p>
 	AirPcap developer's pack from
 	<a href="http://www.cacetech.com/products/airpcap.htm">
 	http://www.cacetech.com/products/airpcap.htm</a>. The AirPcap developer's 
-	pack needs to be unzipped in the same folder where the WinPcap developer's 
-	pack has been unzipped.</ul>
+	pack needs to be unzipped in a folder in the same folder where the WinPcap 
+	sources have been unzipped.</ul>
 <p>To compile the PACKET.DLL, load the project contained in the directory PacketNTx\dll\project
 in the Visual C++ IDE. There are several project 
 configurations:</p>
@@ -212,8 +212,7 @@ code distribution. Load wpcap.dsw from the Visual C++ IDE and build the program.
 	AirPcap wireless capture library, you will need to download the AirPcap 
 	developer's pack from <a href="http://www.cacetech.com/products/airpcap.htm">
 	http://www.cacetech.com/products/airpcap.htm</a>. The AirPcap developer's 
-	pack needs to be unzipped in the same folder where the WinPcap developer's 
-	pack has been unzipped.<br>
+	pack needs to be unzipped in the same folder where the WinPcap sources have been unzipped.<br>
 	<br>
 	There are eight build project configurations:<b><br><br>No support for Remore Capture, 
 	support for AirPcap, no support for DAG</b></li>
