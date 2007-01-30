@@ -945,7 +945,7 @@ ErrorCannotInstallNetmon:
 	;
 	IntFmt $FORMATTED_INT "0x%08X" $INT_RET
 
-	StrCmp $INT_RET "0x0004A020" RebootRequiredLabel  ;reboot required
+	StrCmp $FORMATTED_INT "0x0004A020" RebootRequiredLabel  ;reboot required
 
 	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($FORMATTED_INT).$\r$\nYou will be able to use WinPcap on standard network adapters, but not on Dialup connections and VPNs.$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue"
 	SetErrors
