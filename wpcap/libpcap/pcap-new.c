@@ -911,6 +911,11 @@ pcap_t *fp;
 			break;
 
 		case PCAP_SRC_IFLOCAL:
+
+#ifdef WIN32
+//
+// these flags are supported on Windows only
+//
 			fp = pcap_open_live(name, snaplen, (flags & PCAP_OPENFLAG_PROMISCUOUS), read_timeout, errbuf);
 
 			/* disable loopback capture if requested */
@@ -934,7 +939,7 @@ pcap_t *fp;
 					return NULL;
 				}
 			}
-			
+#endif //WIN32			
 
 			break;
 
