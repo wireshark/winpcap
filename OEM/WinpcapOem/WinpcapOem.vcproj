@@ -266,7 +266,7 @@
 				HeaderFileName=""/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="postbuild.bat"/>
+				CommandLine="postbuild_release.bat"/>
 			<Tool
 				Name="VCPreBuildEventTool"
 				CommandLine="$(ProjectDir)\prebuild_release.bat"/>
@@ -347,7 +347,8 @@ echo ****************************************************************
 copy .\Release_SIGNED\packet.dll .\binaries_signed\packet.dll
 copy ..\..\wpcap\PRJ\Release_REMOTE\wpcap.dll .\binaries_signed\wpcap.dll
 
-postbuild_release.bat"/>
+postbuild_release.bat
+"/>
 			<Tool
 				Name="VCPreBuildEventTool"
 				CommandLine="@echo off
@@ -359,6 +360,94 @@ echo *                    .\binaries_SIGNED\*.*                     *
 echo *                                                              *
 echo ****************************************************************
 "/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG; SIGNED_BINARIES"
+				Culture="0"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Release_TNT_SIGNED|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="..\..\..\winpcap\common,.\,..\..\..\common"
+				PreprocessorDefinitions="NDEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;TNT_BUILD"
+				StringPooling="TRUE"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="TRUE"
+				PrecompiledHeaderFile=".\Release_TNT/WinpcapOem.pch"
+				AssemblerListingLocation=".\Release_TNT/"
+				ObjectFile=".\Release_TNT/"
+				ProgramDataBaseFileName=".\Release_TNT/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="npptools.lib odbc32.lib odbccp32.lib"
+				OutputFile="Release_TNT_SIGNED/Packet.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="..\..\WinpcapOem\Release\"
+				ModuleDefinitionFile=".\WinpcapOem.def"
+				ProgramDatabaseFile=".\Release_TNT_SIGNED/Packet.pdb"
+				ImportLibrary=".\Release_TNT_SIGNED/Packet.lib"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Release_TNT/WinpcapOem.tlb"
+				HeaderFileName=""/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="@echo off
+echo ****************************************************************
+echo *                                                              *
+echo *    Remember to sign the following files                      *
+echo *                                                              *
+echo *          binaries_SIGNED\wpcap.dll                           *
+echo *          binaries_SIGNED\packet.dll                          *
+echo *                                                              *
+echo ****************************************************************
+
+copy .\Release_TNT_SIGNED\packet.dll .\binaries_signed\packet.dll
+copy ..\..\wpcap\PRJ\Release_REMOTE_TNT\wpcap.dll .\binaries_signed\wpcap.dll
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="@echo off
+echo ****************************************************************
+echo *                                                              *
+echo *    You should have signed the following binaries             *
+echo *                                                              *
+echo *                    .\binaries_SIGNED\*.*                     *
+echo *                                                              *
+echo ****************************************************************"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
 			<Tool
@@ -425,6 +514,14 @@ echo ****************************************************************
 						Optimization="2"
 						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release_TNT_SIGNED|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+						BrowseInformation="1"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="PacketWrapper.cpp">
@@ -467,6 +564,14 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release_TNT_SIGNED|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+						BrowseInformation="1"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -511,6 +616,14 @@ echo ****************************************************************
 						Optimization="2"
 						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release_TNT_SIGNED|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+						BrowseInformation="1"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="Security.cpp">
@@ -553,6 +666,14 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release_TNT_SIGNED|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+						BrowseInformation="1"/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -597,6 +718,14 @@ echo ****************************************************************
 						Optimization="2"
 						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release_TNT_SIGNED|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+						BrowseInformation="1"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="WinPcapOem.cpp">
@@ -639,6 +768,14 @@ echo ****************************************************************
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release_TNT_SIGNED|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+						BrowseInformation="1"/>
 				</FileConfiguration>
 			</File>
 		</Filter>
@@ -699,10 +836,10 @@ echo ****************************************************************
 			RelativePath="binaries\npfnt.sys">
 		</File>
 		<File
-			RelativePath="Packet2k.dll">
+			RelativePath="binaries\Packet2k.dll">
 		</File>
 		<File
-			RelativePath="binaries\Packet2k.dll">
+			RelativePath="Packet2k.dll">
 		</File>
 		<File
 			RelativePath="binaries\Packetnt.dll">
