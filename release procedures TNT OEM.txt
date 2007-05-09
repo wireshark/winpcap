@@ -1,5 +1,5 @@
-$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040TNT\040OEM.txt,v 1.4 2006/09/13 12:32:23 gianlucav Exp $
-OEM WINPCAP TOOLKIT RELEASE PROCEDURE
+$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040TNT\040OEM.txt,v 1.5 2006/09/13 12:34:44 gianlucav Exp $
+WINPCAP PRO TOOLKIT RELEASE PROCEDURE
 =====================================
 
 Needed tools
@@ -12,6 +12,10 @@ Dependencies
 ------------
 - you need to have the Airpcap developer's pack in 
 	  %BUILD_TREE%\Airpcap_Devpack
+- you need to have the NpfIm compiled sources in
+	  %BUILD_TREE%\NpfIm
+	  You should also have run the "NpfIm\build_dev_pack.bat" script
+	  to have the devpacks ready
 
 
 How to compile OEM WinPcap for the toolkit.
@@ -35,10 +39,10 @@ How to compile OEM WinPcap for the toolkit.
     *only* modified file in this module.
 
 6.  Tag the %BUILD_TREE%\winpcap_oem module with the tag 
-	  OEM_WINPCAP_<version>_TNT_<TNT version>
+	  WINPCAP_PRO_<version>_TNT_<TNT version>
 
 7.  Tag the %BUILD_TREE%\winpcap module with the tag 
-	  OEM_WINPCAP_<version>_TNT_<TNT version>
+	  WINPCAP_PRO_<version>_TNT_<TNT version>
 
 8.  Take the contents of %BUILD_TREE%\libpcap_<version> and copy it into
 	  %BUILD_TREE%\winpcap\wpcap\libpcap 
@@ -58,23 +62,24 @@ How to compile OEM WinPcap for the toolkit.
 
 13. Check that the version of wpcap in  
       %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 875
-        "static const char wpcap_version_string[] = "3.1";"
+        "static const char wpcap_version_string[] = "4.0";"
     is correct. 
     
 
-14. Zip the contents of the four folders 
+14. Zip the contents of the five folders 
 	  %BUILD_TREE%\winpcap_oem
 	  %BUILD_TREE%\winpcap
 	  %BUILD_TREE%\libpcap_<libpcap_version>
 	  %BUILD_TREE%\AirPcap_Devpack
+	  %BUILD_TREE%\NpfIm
 		  |
 		  V
 	  %BUILD_TREE%\sources.zip
 
 15. Open a Win 2000 DDK Free build environment. Go into 
 	  %BUILD_TREE%\winpcap_oem\packetntx. 
-	Execute "compileDriver.bat". Prefast 1.5.2402 should issue 8 warnings 
-	(20060710). 
+	Execute "compileDriver.bat". Prefast 1.5.2402 should issue 9 warnings 
+	(20070508). 
 	Close the build environment.
     NOTE: DO NOT EXECUTE 15. 16. and 17. at the same time, they overwrite files in 
     the build process that are incompatible between the two builds.
@@ -93,51 +98,87 @@ How to compile OEM WinPcap for the toolkit.
     NOTE: DO NOT EXECUTE 15. 16. and 17. at the same time, they overwrite files in 
     the build process that are incompatible between the two builds.
 
-18. Open %BUILD_TREE%\winpcap_oem\WinPcap OEM.sln with Visual Studio 2003. 
-    Choose the Release_TNT configuration, and then use Build->Rebuild Solution.
-    Some warnings should be issued related to the wpcap.dll project, only.
-    If you choose the Debug configuration, and then use Build->Rebuild Solution, the 
-    compilation will fail because the debug version of the NT4 driver is missing. Repeat
-    step 16 choosing the NT4 Checked build environment.
-    Close Visual Studio.
 
-19. The build is complete.
-	The DLLs are in the following folders:
+SIGNED BINARIES BUILD
 
+   18s. Open %BUILD_TREE%\winpcap_oem\WinPcap OEM.sln with Visual Studio 2003. 
+     Choose the "Release TNT SIGNED STEP1" configuration, and then use Build->Rebuild Solution.
+     No warnings should be generated.
+
+   19s. Sign all the binaries in 
+		%BUILD_TREE%\winpcap_oem\OEM\WinPcapOem\Binaries_SIGNED, namely
+			npfnt.sys
+			npf2k.sys
+			npfx64.sys
+			packetnt.dll
+			packet2k.dll
+			packetVista.dll
+		with the company certificate + cross certificate
+		
+		The generic command is
+		   signtool sign /v /ac MSCV-VSClass3.cer /s my /n "CACE TECHNOLOGIES, LLC"
+		   /t http://timestamp.verisign.com/scripts/timestamp.dll <binary_name>
+		   
+   20s. Go back to Visual studio 2003. Choose the "Release TNT SIGNED STEP2" configuration, and then
+     use Build->Rebuild solution. Some warnings should be generated when compiling wpcap.dll.
+
+	21s. Sign the following binaries in 
+		%BUILD_TREE%\winpcap_oem\OEM\WinPcapOem\Binaries_SIGNED\packet.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinPcapOem\Binaries_SIGNED\wpcap.dll
+		with the company certificate + cross certificate
+
+
+   21s. The build is complete. Check the versions *and* signature of the
+   following files:
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\wpcap.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\packet.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\npf2k.sys
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\npfnt.sys
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\npfx64.sys
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\packet2k.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\packetnt.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\packetVista.dll
+
+
+UNSIGNED BINARIES BUILD
+(NOTE GV: as of 20070508 this procedure has not been tested at all)
+
+18u.  Open %BUILD_TREE%\winpcap_oem\WinPcap OEM.sln with Visual Studio 2003. 
+     Choose the "Release TNT" configuration, and then use Build->Rebuild Solution.
+     Some warnings should be generated when compiling wpcap.dll.
+
+19u. The build is complete. Check the versions of the following files
 		%BUILD_TREE%\winpcap_oem\wpcap\PRJ\release_REMOTE_TNT\wpcap.dll
-		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release_TNT\packet.dll
-
-20. Check the DLLs/SYSs files for the versions
-		%BUILD_TREE%\winpcap_oem\wpcap\PRJ\release_REMOTE_TNT\wpcap.dll
-		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release_TNT\packet.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release\packet.dll
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\npf2k.sys
-		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\npfx64.sys
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\npfnt.sys
-		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packet2k.sys
-		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packetnt.sys
-
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\npfx64.sys
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packet2k.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packetnt.dll
+		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\binaries\packetVista.dll
 
 SCM procedures
 --------------
 
-1.  %BUILD_TREE%\winpcap_oem\wpcap\PRJ\release_REMOTE_TNT\wpcap.dll
-	%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release_TNT\packet.dll
+1.  %BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\wpcap.dll
+	%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Binaries_SIGNED\packet.dll
 		|
 		v
-	OEM_WinPcap_<version>_TNT_<TNT version>_Binaries.zip
+	WinPcapPro_<version>_TNT_<TNT version>_Binaries.zip
 
 2. 	%BUILD_TREE%\Sources.zip
 		|
 		V
-	OEM_WinPcap_<version>_TNT_<TNT version>_Sources.zip
+	WinPcapPro_<version>_TNT_<TNT version>_Sources.zip
 
 3.	%BUILD_TREE%\winpcap_oem
 	%BUILD_TREE%\winpcap
 	%BUILD_TREE%\libpcap_<libpcap_version>
 	%BUILD_TREE%\Airpcap_Devpack
+	%BUILD_TREE%\NpfIm
 		|
 		V
-	OEM_WinPcap_<version>_TNT_<TNT version>_Build_Tree.zip
+	WinPcapPro_<version>_TNT_<TNT version>_Build_Tree.zip
 		
 		
 MD5sum
@@ -145,6 +186,6 @@ MD5sum
 
 1.  Open a command prompt and go into %BUILD_TREE%
 
-2.  Type md5sum.exe OEM_* > md5sum.txt
+2.  Type md5sum.exe WinPcapPro_* > md5sum.txt
 
 		
