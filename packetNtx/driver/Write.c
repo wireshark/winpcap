@@ -86,6 +86,7 @@ NPF_Write(
 	//
 	if(IrpSp->Parameters.Write.Length == 0 || 	// Check that the buffer provided by the user is not empty
 		Open->MaxFrameSize == 0 ||	// Check that the MaxFrameSize is correctly initialized
+		Irp->MdlAddress == NULL ||
 		IrpSp->Parameters.Write.Length > Open->MaxFrameSize) // Check that the fame size is smaller that the MTU
 	{
 		TRACE_MESSAGE(PACKET_DEBUG_LOUD,"Frame size out of range, or maxFrameSize = 0. Send aborted");
