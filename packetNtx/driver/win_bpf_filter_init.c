@@ -53,6 +53,9 @@ uint32 bpf_filter_init(register struct bpf_insn *pc, MEM_TYPE *mem_ex, TME_CORE 
 		 * No filter means accept all.
 		 */
 		 return (uint32)-1;
+
+	RtlZeroMemory(mem, sizeof(mem));
+
 	A = 0;
 	X = 0;
 	--pc;

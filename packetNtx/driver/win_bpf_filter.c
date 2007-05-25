@@ -52,15 +52,14 @@
 #include "valid_insns.h"
 
 #define EXTRACT_SHORT(p)\
-	((u_short)\
-		((u_short)*((u_char *)p+0)<<8|\
-		 (u_short)*((u_char *)p+1)<<0))
-#define EXTRACT_LONG(p)\
-		((u_int32)*((u_char *)p+0)<<24|\
-		 (u_int32)*((u_char *)p+1)<<16|\
-		 (u_int32)*((u_char *)p+2)<<8|\
-		 (u_int32)*((u_char *)p+3)<<0)
+		((((u_short)(((u_char*)p)[0])) << 8) |\
+		 (((u_short)(((u_char*)p)[1])) << 0))
 
+#define EXTRACT_LONG(p)\
+		((((u_int32)(((u_char*)p)[0])) << 24) |\
+		 (((u_int32)(((u_char*)p)[1])) << 16) |\
+		 (((u_int32)(((u_char*)p)[2])) << 8 ) |\
+		 (((u_int32)(((u_char*)p)[3])) << 0 ))
 
 u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 	register struct bpf_insn *pc;
@@ -87,6 +86,8 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 	UNUSED(tme);
 	UNUSED(mem_ex);
 #endif
+
+	RtlZeroMemory(mem, sizeof(mem));
 
 	if (pc == 0)
 		/*
@@ -494,6 +495,8 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 	UNUSED(time_ref);
 	UNUSED(mem_ex);
 #endif 
+
+	RtlZeroMemory(mem, sizeof(mem));
 
 	if (pc == 0)
 		/*
