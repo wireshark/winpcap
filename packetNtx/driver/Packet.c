@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
- * Copyright (c) 2005 - 2006 CACE Technologies, Davis (California)
+ * Copyright (c) 2005 - 2007 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -688,7 +688,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
     PINTERNAL_REQUEST   pRequest;
     ULONG               FunctionCode;
     NDIS_STATUS	        Status;
-	ULONG				Information;
+	ULONG				Information = 0;
 	PLIST_ENTRY         PacketListEntry;
 	UINT				i;
 	PUCHAR				tpointer;
@@ -716,6 +716,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 #ifdef __NPF_AMD64__
     VOID*POINTER_32		hUserEvent32Bit;
 #endif
+	PMDL				mdl;
 
 	TRACE_ENTER();
 
@@ -743,7 +744,57 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			break;
 		}
 
-		pStats = (PUINT)(Irp->UserBuffer);
+		if (Irp->UserBuffer == NULL)
+		{
+			SET_FAILURE_UNSUCCESSFUL();
+			break;
+		}
+
+		//
+		// temp fix to a GIANT bug from LD. The CTL code has been defined as METHOD_NEITHER, so it
+		// might well be a dangling pointer. We need to probe and lock the address.
+		//
+
+		mdl = NULL;
+		pStats = NULL;
+
+		__try
+		{
+			mdl = IoAllocateMdl(
+				Irp->UserBuffer,  
+				IrpSp->Parameters.DeviceIoControl.OutputBufferLength,
+				FALSE,
+				TRUE,
+				NULL);
+
+			if (mdl == NULL)
+			{
+				SET_FAILURE_UNSUCCESSFUL();
+				break;
+			}
+
+			MmProbeAndLockPages(
+				mdl,
+				UserMode,
+				IoWriteAccess);
+
+			pStats = (PUINT)(Irp->UserBuffer);
+		}
+		__except(GetExceptionCode() == STATUS_ACCESS_VIOLATION)
+		{
+			pStats = NULL;
+		}
+
+		if (pStats == NULL)
+		{
+			if (mdl != NULL)
+			{
+				IoFreeMdl(mdl);
+			}
+
+			SET_FAILURE_UNSUCCESSFUL();
+			break;
+		}
 
 		pStats[3] = 0;
 		pStats[0] = 0;
@@ -758,6 +809,9 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			pStats[1] += Open->CpuData[i].Dropped;
 			pStats[2] += 0;		// Not yet supported
 		}
+		
+		MmUnlockPages(mdl);
+		IoFreeMdl(mdl);
 
 		SET_RESULT_SUCCESS(4*sizeof(UINT));
 		
@@ -1577,7 +1631,6 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	default:
 		
 		TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Unknown IOCTL code");
-
 		SET_FAILURE_INVALID_REQUEST();
 		break;
 	}
