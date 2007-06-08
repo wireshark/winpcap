@@ -185,6 +185,9 @@ DWORD WINAPI pcap_thread(LPVOID arg)
 	PAirpcapHandle airpcap_handle;
 	tx_ieee80211_radiotap_header *radio_header;
 #endif
+	u_int rate_index;
+
+	srand( (unsigned)time( NULL ) );
 
 	//
 	// Open the adapter
@@ -258,12 +261,13 @@ DWORD WINAPI pcap_thread(LPVOID arg)
 			radio_header->it_pad = 0;
 			radio_header->it_len = sizeof(tx_ieee80211_radiotap_header);
 			radio_header->it_present = 1 << 2;	// bit 2 is the rate
-			radio_header->it_rate = TxRateInfoTable[rand() % (sizeof(TxRateInfoTable) / sizeof(TxRateInfoTable[0]))];
+			rate_index = 18/*rand() % (sizeof(TxRateInfoTable) / sizeof(TxRateInfoTable[0]))*/;
+			radio_header->it_rate = 18/*TxRateInfoTable[rate_index]*/;
 		}
 #endif
 		for(i = 0; i < n_writes; i++)
 		{
-			if(pcap_sendpacket(fp, pkt_to_send, rand() % MAX_TX_PACKET_SIZE) != 0)
+			if(pcap_sendpacket(fp, pkt_to_send, (rand() % MAX_TX_PACKET_SIZE) + 10) != 0)
 			{
 //				EnterCriticalSection(&print_cs);
 //				printf("Write Error: %s\n", pcap_geterr(fp));
