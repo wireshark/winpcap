@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
- * Copyright (c) 2005 - 2006 CACE Technologies, Davis (California)
+ * Copyright (c) 2005 - 2007 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -113,6 +113,7 @@ typedef struct _AirpcapHandle *PAirpcapHandle;
 #define NdisMediumPPPSerial	-3	///< Custom linktype: NDIS doesn't provide an equivalent
 #define NdisMediumBare80211	-4	///< Custom linktype: NDIS doesn't provide an equivalent
 #define NdisMediumRadio80211	-5	///< Custom linktype: NDIS doesn't provide an equivalent
+#define NdisMediumPpi		-6	///< Custom linktype: NDIS doesn't provide an equivalent
 
 // Loopback behaviour definitions
 #define NPF_DISABLE_LOOPBACK	1	///< Drop the packets sent by the NPF driver
