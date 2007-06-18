@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.12 2007/01/23 17:51:29 gianlucav Exp $
+$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.13 2007/01/23 18:02:14 gianlucav Exp $
 
 WINPCAP RELEASE PROCEDURE
 =========================
@@ -85,6 +85,8 @@ How to compile WinPcap
       %BUILD_TREE%\winpcap\wpcap\libpcap
 
 14. On the command line, type "patch -p1 < remote_code.patch"
+
+14a.On the command line, type "patch -p0 gencode.c < wlan_filtering.patch"
 
 15. CD into %BUILD_TREE%\winpcap\wpcap\prj and execute 
 	  "build_scanner_parser.bat"	
