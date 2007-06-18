@@ -36,6 +36,7 @@
 #define NUM_THREADS 16
 #define MAX_NUM_READS 500
 #define MAX_NUM_WRITES 10000
+#define READ_TIMEOUT	100
 
 #define WRITES_FREQUENCY 2	// This constant specifies how often a thread will transmit instead of receiving
 							// packets. 
@@ -195,7 +196,7 @@ DWORD WINAPI pcap_thread(LPVOID arg)
 	if((fp = pcap_open_live(AdName,
 		65535,
 		0,								// promiscuous mode
-		1,								// read timeout
+		READ_TIMEOUT,								// read timeout
 		errbuf)) == NULL)
 	{
 		EnterCriticalSection(&print_cs);
