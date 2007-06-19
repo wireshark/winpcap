@@ -1372,6 +1372,9 @@ static BOOLEAN PacketAddAdapterAirpcap(PCHAR name, PCHAR description)
 		case AIRPCAP_LT_802_11_PLUS_RADIO:
 			TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMediumRadio80211;
 			break;
+		case AIRPCAP_LT_802_11_PLUS_PPI:
+			TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMediumPpi;
+			break;
 		default:
 			TmpAdInfo->LinkLayer.LinkType = (UINT)NdisMediumNull; // Note: custom linktype, NDIS doesn't provide an equivalent
 			break;
