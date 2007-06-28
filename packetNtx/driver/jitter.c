@@ -1,22 +1,34 @@
 /*
- * Copyright (c) 2002
- *	Politecnico di Torino.  All rights reserved.
+ * Copyright (c) 2002 - 2005 NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2005 - 2006 CACE Technologies, Davis (California)
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that: (1) source code distributions
- * retain the above copyright notice and this paragraph in its entirety, (2)
- * distributions including binary code include the above copyright notice and
- * this paragraph in its entirety in the documentation or other materials
- * provided with the distribution, and (3) all advertising materials mentioning
- * features or use of this software display the following acknowledgement:
- * ``This product includes software developed by the Politecnico
- * di Torino, and its contributors.'' Neither the name of
- * the University nor the names of its contributors may be used to endorse
- * or promote products derived from this software without specific prior
- * written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the Politecnico di Torino, CACE Technologies 
+ * nor the names of its contributors may be used to endorse or promote 
+ * products derived from this software without specific prior written 
+ * permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 #include "stdarg.h"
@@ -26,8 +38,6 @@
 
 #include "packet.h"
 #include "win_bpf.h"
-
-emit_func emitm;
 
 //
 // emit routine to update the jump table
@@ -77,11 +87,14 @@ BPF_filter_function BPFtoX86(struct bpf_insn *prog, UINT nins, INT *mem)
 	struct bpf_insn *ins;
 	UINT i, pass;
 	binary_stream stream;
+	
+	//NOTE: do not modify the name of this variable, as it's used by the macros to emit code.
+	emit_func emitm;  
 
 
 	// Allocate the reference table for the jumps
 #ifdef NTKERNEL
-	stream.refs=(UINT *)ExAllocatePool(NonPagedPool, (nins + 1)*sizeof(UINT));
+	stream.refs=(UINT *)ExAllocatePoolWithTag(NonPagedPool, (nins + 1)*sizeof(UINT), '0JWA');
 #else
 	stream.refs=(UINT *)malloc((nins + 1)*sizeof(UINT));
 #endif
@@ -568,7 +581,7 @@ BPF_filter_function BPFtoX86(struct bpf_insn *prog, UINT nins, INT *mem)
 		if(pass == 2) break;
 		
 #ifdef NTKERNEL
-		stream.ibuf=(CHAR*)ExAllocatePool(NonPagedPool, stream.cur_ip);
+		stream.ibuf=(CHAR*)ExAllocatePoolWithTag(NonPagedPool, stream.cur_ip, '1JWA');
 #else
 		stream.ibuf=(CHAR*)malloc(stream.cur_ip);
 #endif
@@ -612,7 +625,7 @@ JIT_BPF_Filter* BPF_jitter(struct bpf_insn *fp, INT nins)
 
 	// Allocate the filter structure
 #ifdef NTKERNEL
-	Filter=(struct JIT_BPF_Filter*)ExAllocatePool(NonPagedPool, sizeof(struct JIT_BPF_Filter));
+	Filter=(struct JIT_BPF_Filter*)ExAllocatePoolWithTag(NonPagedPool, sizeof(struct JIT_BPF_Filter), '2JWA');
 #else
 	Filter=(struct JIT_BPF_Filter*)malloc(sizeof(struct JIT_BPF_Filter));
 #endif
@@ -623,7 +636,7 @@ JIT_BPF_Filter* BPF_jitter(struct bpf_insn *fp, INT nins)
 
 	// Allocate the filter's memory
 #ifdef NTKERNEL
-	Filter->mem=(INT*)ExAllocatePool(NonPagedPool, BPF_MEMWORDS*sizeof(INT));
+	Filter->mem=(INT*)ExAllocatePoolWithTag(NonPagedPool, BPF_MEMWORDS*sizeof(INT), '3JWA');
 #else
 	Filter->mem=(INT*)malloc(BPF_MEMWORDS*sizeof(INT));
 #endif
@@ -646,9 +659,8 @@ JIT_BPF_Filter* BPF_jitter(struct bpf_insn *fp, INT nins)
 #else
 		free(Filter->mem);
 		free(Filter);
-
-		return NULL;
 #endif
+		return NULL;
 	}
 
 	return Filter;

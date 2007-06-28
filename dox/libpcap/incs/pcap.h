@@ -31,7 +31,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /tcpdump/master/libpcap/pcap.h,v 1.34 2001/12/09 05:10:03 guy Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot/winpcap/dox/libpcap/incs/pcap.h,v 1.4 2002/08/01 10:20:26 degioanni Exp $ (LBL)
  */
 
 
@@ -63,14 +63,14 @@ extern "C" {
  * predates the bpf typedefs for 64-bit support.
  */
 #if BPF_RELEASE - 0 < 199406
-typedef	int bpf_int32;
-typedef	u_int bpf_u_int32;
+typedef	int bpf_int32; ///< 32-bit integer
+typedef	u_int bpf_u_int32; ///< 32-bit unsigned integer
 #endif
 
 typedef struct pcap pcap_t; ///< Descriptor of an open capture instance. This structure is \b opaque to the user, that handles its content through the functions provided by wpcap.dll.
-typedef struct pcap_dumper pcap_dumper_t;
-typedef struct pcap_if pcap_if_t;
-typedef struct pcap_addr pcap_addr_t;
+typedef struct pcap_dumper pcap_dumper_t; ///< libpcap savefile descriptor.
+typedef struct pcap_if pcap_if_t; ///< Item in a list of interfaces, see pcap_if
+typedef struct pcap_addr pcap_addr_t; ///< Representation of an interface address, see pcap_addr
 
 /*! \brief Header of a libpcap dump file.
  *
@@ -134,9 +134,12 @@ struct pcap_pkthdr {
  * As returned by the pcap_stats()
  */
 struct pcap_stat {
-	u_int ps_recv;		///< number of packets received
-	u_int ps_drop;		///< number of packets dropped
+	u_int ps_recv;		///< number of packets transited on the network
+	u_int ps_drop;		///< number of packets dropped by the driver
 	u_int ps_ifdrop;	///< drops by interface, not yet supported
+#ifdef WIN32
+	u_int bs_capt;		///< <b>Win32 specific.</b> number of packets captured, i.e number of packets that are accepted by the filter, that find place in the kernel buffer and therefore that actually reach the application. For backward compatibility, pcap_stats() does not fill this member, so use pcap_stats_ex() to get it.
+#endif /* WIN32 */
 };
 
 /*! \brief
@@ -162,6 +165,9 @@ struct pcap_addr {
 	struct sockaddr *broadaddr;	///< if not NULL, a pointer to a struct sockaddr that contains the broadcast address corre­ sponding to the address pointed to by addr; may be null if the interface doesn't support broadcasts
 	struct sockaddr *dstaddr;	///< if not NULL, a pointer to a struct sockaddr that contains the destination address corre­ sponding to the address pointed to by addr; may be null if the interface isn't a point- to-point interface
 };
+
+#if defined(WIN32)
+
 
 #define MODE_CAPT 0	///< Capture mode, to be used when calling pcap_setmode()
 #define MODE_STAT 1	///< Statistical mode, to be used when calling pcap_setmode()

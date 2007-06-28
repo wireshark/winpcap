@@ -92,7 +92,6 @@ target: $(BIN) $(BIN)\$(DEVICE).VXD $(BIN)\$(DEVICE).RES
 
 $(BIN):
 	if not exist $(BIN)\nul md $(BIN)
-	copy ..\..\common\win_bpf_filter.c .\
 
 dbg:    depend
 		$(MAKE) BIN=debug DEB="$(DDEB)"
@@ -133,7 +132,7 @@ $(BIN)\$(DEVICE).VXD: $(OBJS) $(DEVICE).def $(LIBNDIS) $(LIBWRAPS)
 -MAP:$(BIN)\$(DEVICE).map
 -VXD
 $(LIBNDIS)
-vxdwraps.clb
+$(LIBWRAPS)
 $(OBJS: =^
 )
 

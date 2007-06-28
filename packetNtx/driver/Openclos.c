@@ -1,34 +1,49 @@
 /*
- * Copyright (c) 1999, 2000
- *	Politecnico di Torino.  All rights reserved.
+ * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2005 - 2006 CACE Technologies, Davis (California)
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that: (1) source code distributions
- * retain the above copyright notice and this paragraph in its entirety, (2)
- * distributions including binary code include the above copyright notice and
- * this paragraph in its entirety in the documentation or other materials
- * provided with the distribution, and (3) all advertising materials mentioning
- * features or use of this software display the following acknowledgement:
- * ``This product includes software developed by the Politecnico
- * di Torino, and its contributors.'' Neither the name of
- * the University nor the names of its contributors may be used to endorse
- * or promote products derived from this software without specific prior
- * written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the Politecnico di Torino, CACE Technologies 
+ * nor the names of its contributors may be used to endorse or promote 
+ * products derived from this software without specific prior written 
+ * permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
+#include "stdio.h"
 #include "ntddk.h"
 #include "ntiologc.h"
 #include "ndis.h"
 
 #include "debug.h"
 #include "packet.h"
+#include "..\..\Common\WpcapNames.h"
+
 
 static NDIS_MEDIUM MediumArray[] = {
 	NdisMedium802_3,
-	NdisMediumWan,
+//	NdisMediumWan,
 	NdisMediumFddi,
 	NdisMediumArcnet878_2,
 	NdisMediumAtm,
@@ -36,9 +51,6 @@ static NDIS_MEDIUM MediumArray[] = {
 };
 
 #define NUM_NDIS_MEDIA  (sizeof MediumArray / sizeof MediumArray[0])
-
-
-ULONG NamedEventsCounter=0;
 
 //Itoa. Replaces the buggy RtlIntegerToUnicodeString
 void PacketItoa(UINT n,PUCHAR buf){
@@ -52,380 +64,746 @@ int i;
 
 }
 
-//-------------------------------------------------------------------
+/// Global start time. Used as an absolute reference for timestamp conversion.
+struct time_conv G_Start_Time = {
+	0,	
+	{0, 0},	
+};
 
-NTSTATUS PacketOpen(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
+ULONG g_NumOpenedInstances = 0;
+
+BOOLEAN NPF_StartUsingBinding(
+    IN POPEN_INSTANCE pOpen)
 {
-
-    PDEVICE_EXTENSION DeviceExtension;
-
-    POPEN_INSTANCE    Open;
-
-    PIO_STACK_LOCATION  IrpSp;
-
-    NDIS_STATUS     Status;
-    NDIS_STATUS     ErrorStatus;
-    UINT            i;
-	PUCHAR			tpointer;
-    PLIST_ENTRY     PacketListEntry;
-	LARGE_INTEGER	TimeFreq;
-	LARGE_INTEGER	SystemTime;
-	LARGE_INTEGER	PTime;
-	PCHAR			EvName;
-
-
-    IF_LOUD(DbgPrint("NPF: OpenAdapter\n");)
-
-    DeviceExtension = DeviceObject->DeviceExtension;
-
-
-    IrpSp = IoGetCurrentIrpStackLocation(Irp);
-
-
-    //
-    //  allocate some memory for the open structure
-    //
-    Open=ExAllocatePool(NonPagedPool,sizeof(OPEN_INSTANCE));
-
-
-    if (Open==NULL) {
-        //
-        // no memory
-        //
-        Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
-        IoCompleteRequest(Irp, IO_NO_INCREMENT);
-        return STATUS_INSUFFICIENT_RESOURCES;
-    }
-
-    RtlZeroMemory(
-        Open,
-        sizeof(OPEN_INSTANCE)
-        );
-
-
-	EvName=ExAllocatePool(NonPagedPool, sizeof(L"\\BaseNamedObjects\\NPF0000000000"));
-
-    if (EvName==NULL) {
-        //
-        // no memory
-        //
-        ExFreePool(Open);
-	    Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
-        IoCompleteRequest(Irp, IO_NO_INCREMENT);
-        return STATUS_INSUFFICIENT_RESOURCES;
-    }
-
-    //
-    //  Save or open here
-    //
-    IrpSp->FileObject->FsContext=Open;
+	ASSERT(pOpen != NULL);
+	ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
 	
-    Open->DeviceExtension=DeviceExtension;
-	
-	
-    //
-    //  Save the Irp here for the completeion routine to retrieve
-    //
-    Open->OpenCloseIrp=Irp;
-	
-    //
-    //  Allocate a packet pool for our xmit and receive packets
-    //
-    NdisAllocatePacketPool(
-        &Status,
-        &Open->PacketPool,
-        TRANSMIT_PACKETS,
-        sizeof(PACKET_RESERVED));
-	
-	
-    if (Status != NDIS_STATUS_SUCCESS) {
-		
-        IF_LOUD(DbgPrint("NPF: Failed to allocate packet pool\n");)
-			
-		ExFreePool(Open);
-		ExFreePool(EvName);
-        Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
-        IoCompleteRequest(Irp, IO_NO_INCREMENT);
-        return STATUS_INSUFFICIENT_RESOURCES;
-    }
+	NdisAcquireSpinLock(&pOpen->AdapterHandleLock);
 
-
-	RtlCopyBytes(EvName,L"\\BaseNamedObjects\\NPF0000000000",sizeof(L"\\BaseNamedObjects\\NPF0000000000"));
-
-	//Create the string containing the name of the read event
-	RtlInitUnicodeString(&Open->ReadEventName,(PCWSTR) EvName);
-
-	PacketItoa(NamedEventsCounter,(PUCHAR)(Open->ReadEventName.Buffer+21));
-
-	InterlockedIncrement(&NamedEventsCounter);
-	
-	IF_LOUD(DbgPrint("\nCreated the named event for the read; name=%ws, counter=%d\n", Open->ReadEventName.Buffer,NamedEventsCounter-1);)
-
-	//allocate the event objects
-	Open->ReadEvent=IoCreateNotificationEvent(&Open->ReadEventName,&Open->ReadEventHandle);
-	if(Open->ReadEvent==NULL){
-		ExFreePool(Open);
-		ExFreePool(EvName);
-        Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
-        IoCompleteRequest(Irp, IO_NO_INCREMENT);
-        return STATUS_INSUFFICIENT_RESOURCES;
+	if (pOpen->AdapterBindingStatus != ADAPTER_BOUND)
+	{
+		NdisReleaseSpinLock(&pOpen->AdapterHandleLock);
+		return FALSE;
 	}
 	
-	KeInitializeEvent(Open->ReadEvent, NotificationEvent, FALSE);
-	KeClearEvent(Open->ReadEvent);
-	NdisInitializeEvent(&Open->WriteEvent);
-	NdisInitializeEvent(&Open->IOEvent);
- 	NdisInitializeEvent(&Open->DumpEvent);
+	pOpen->AdapterHandleUsageCounter++;
 
-    //  list to hold irp's want to reset the adapter
-    InitializeListHead(&Open->ResetIrpList);
+	NdisReleaseSpinLock(&pOpen->AdapterHandleLock);
 	
-	
-    //  Initialize the request list
-    KeInitializeSpinLock(&Open->RequestSpinLock);
-    InitializeListHead(&Open->RequestList);
-	
-	
-	// get the absolute value of the system boot time.   
-	PTime=KeQueryPerformanceCounter(&TimeFreq);
-	KeQuerySystemTime(&SystemTime);
-	Open->StartTime.QuadPart=(((SystemTime.QuadPart)%10000000)*TimeFreq.QuadPart)/10000000;
-	SystemTime.QuadPart=SystemTime.QuadPart/10000000-11644473600;
-	Open->StartTime.QuadPart+=(SystemTime.QuadPart)*TimeFreq.QuadPart-PTime.QuadPart;
-	
-	//initalize the open instance
-	Open->BufSize=0;
-	Open->Buffer=NULL;
-	Open->Bhead=0;
-	Open->Btail=0;
-	Open->BLastByte=0;
-	Open->Dropped=0;		//reset the dropped packets counter
-	Open->Received=0;		//reset the received packets counter
-	Open->bpfprogram=NULL;	//reset the filter
-	Open->mode=MODE_CAPT;
-	Open->Nbytes.QuadPart=0;
-	Open->Npackets.QuadPart=0;
-	Open->Nwrites=1;
-	Open->Multiple_Write_Counter=0;
-	Open->MinToCopy=0;
-	Open->TimeOut.QuadPart=(LONGLONG)1;
-	Open->Bound=TRUE;
-	Open->DumpFileName.Buffer=NULL;
-	Open->DumpFileHandle=NULL;
+	return TRUE;
+}
 
-	//allocate the spinlock for the statistic counters
-    NdisAllocateSpinLock(&Open->CountersLock);
+VOID NPF_StopUsingBinding(
+    IN POPEN_INSTANCE pOpen)
+{
+	ASSERT(pOpen != NULL);
+//
+//  There is no risk in calling this function from abobe passive level 
+//  (i.e. DISPATCH, in this driver) as we acquire a spinlock and decrement a 
+//  counter.
+//
+//	ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
 
-	//allocate the spinlock for the buffer pointers
-    NdisAllocateSpinLock(&Open->BufLock);
-	
-    IoMarkIrpPending(Irp);
-	
-	
-    //
-    //  Try to open the MAC
-    //
-    IF_LOUD(DbgPrint("NPF: Openinig the device %ws, BindingContext=%d\n",DeviceExtension->AdapterName.Buffer, Open);)
+	NdisAcquireSpinLock(&pOpen->AdapterHandleLock);
 
-	NdisOpenAdapter(
-        &Status,
-        &ErrorStatus,
-        &Open->AdapterHandle,
-        &Open->Medium,
-        MediumArray,
-        NUM_NDIS_MEDIA,
-        DeviceExtension->NdisProtocolHandle,
-        Open,
-        &DeviceExtension->AdapterName,
-        0,
-        NULL);
+	ASSERT(pOpen->AdapterHandleUsageCounter > 0);
+	ASSERT(pOpen->AdapterBindingStatus == ADAPTER_BOUND);
 
-    IF_LOUD(DbgPrint("NPF: Opened the device, Status=%x\n",Status);)
+	pOpen->AdapterHandleUsageCounter--;
 
-	if (Status != NDIS_STATUS_PENDING)
-    {
-		PacketOpenAdapterComplete(Open,Status,NDIS_STATUS_SUCCESS);
-    }
-	
-    return(STATUS_PENDING);
+	NdisReleaseSpinLock(&pOpen->AdapterHandleLock);
+}
+
+VOID
+NPF_CloseBinding(
+    IN POPEN_INSTANCE pOpen)
+{
+	NDIS_EVENT Event;
+	NDIS_STATUS Status;
+
+	ASSERT(pOpen != NULL);
+	ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
+
+	NdisInitializeEvent(&Event);
+	NdisResetEvent(&Event);
+
+	NdisAcquireSpinLock(&pOpen->AdapterHandleLock);
+
+	while(pOpen->AdapterHandleUsageCounter > 0)
+	{
+		NdisReleaseSpinLock(&pOpen->AdapterHandleLock);
+		NdisWaitEvent(&Event,1);
+		NdisAcquireSpinLock(&pOpen->AdapterHandleLock);
+	}
+
+	//
+	// now the UsageCounter is 0
+	//
+
+	while(pOpen->AdapterBindingStatus == ADAPTER_UNBINDING)
+	{
+		NdisReleaseSpinLock(&pOpen->AdapterHandleLock);
+		NdisWaitEvent(&Event,1);
+		NdisAcquireSpinLock(&pOpen->AdapterHandleLock);
+	}
+
+	//
+	// now the binding status is either bound or unbound
+	//
+
+	if (pOpen->AdapterBindingStatus == ADAPTER_UNBOUND)
+	{
+		NdisReleaseSpinLock(&pOpen->AdapterHandleLock);
+		return;
+	}
+
+	ASSERT(pOpen->AdapterBindingStatus == ADAPTER_BOUND);
+
+	pOpen->AdapterBindingStatus = ADAPTER_UNBINDING;
+
+	NdisReleaseSpinLock(&pOpen->AdapterHandleLock);
+
+	//
+	// do the release procedure
+	//
+	NdisResetEvent(&pOpen->NdisOpenCloseCompleteEvent);
+
+	// Close the adapter
+	NdisCloseAdapter(
+		&Status,
+		pOpen->AdapterHandle
+		);
+
+	if (Status == NDIS_STATUS_PENDING)
+	{
+		TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Pending NdisCloseAdapter");
+		NdisWaitEvent(&pOpen->NdisOpenCloseCompleteEvent, 0);
+	}
+	else
+	{
+		TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Not Pending NdisCloseAdapter");
+	}
+
+	NdisAcquireSpinLock(&pOpen->AdapterHandleLock);
+	pOpen->AdapterBindingStatus = ADAPTER_UNBOUND;
+	NdisReleaseSpinLock(&pOpen->AdapterHandleLock);
 }
 
 //-------------------------------------------------------------------
 
-VOID PacketOpenAdapterComplete(
+NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
+{
+
+	PDEVICE_EXTENSION	DeviceExtension;
+	POPEN_INSTANCE		Open;
+	PIO_STACK_LOCATION  IrpSp;
+	NDIS_STATUS			Status;
+	NDIS_STATUS			ErrorStatus;
+	UINT				i;
+	PUCHAR				tpointer;
+	PLIST_ENTRY			PacketListEntry;
+	NTSTATUS			returnStatus;
+
+//  
+//	Old registry based WinPcap names
+//
+//	WCHAR				EventPrefix[MAX_WINPCAP_KEY_CHARS];
+//	UINT				RegStrLen;
+
+	TRACE_ENTER();
+
+	DeviceExtension = DeviceObject->DeviceExtension;
+
+	IrpSp = IoGetCurrentIrpStackLocation(Irp);
+
+	//  allocate some memory for the open structure
+	Open=ExAllocatePoolWithTag(NonPagedPool, sizeof(OPEN_INSTANCE), '0OWA');
+
+	if (Open==NULL) {
+		// no memory
+		Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
+		IoCompleteRequest(Irp, IO_NO_INCREMENT);
+		return STATUS_INSUFFICIENT_RESOURCES;
+	}
+
+	RtlZeroMemory(
+		Open,
+		sizeof(OPEN_INSTANCE)
+		);
+
+//  
+//	Old registry based WinPcap names
+//
+//	//
+//	// Get the Event names base from the registry
+//	//
+//	RegStrLen = sizeof(EventPrefix)/sizeof(EventPrefix[0]);
+//
+//	NPF_QueryWinpcapRegistryString(NPF_EVENTS_NAMES_REG_KEY_WC,
+//		EventPrefix,
+//		RegStrLen,
+//		NPF_EVENTS_NAMES_WIDECHAR);
+//
+		
+	Open->DeviceExtension=DeviceExtension;
+
+	//  Allocate a packet pool for our xmit and receive packets
+	NdisAllocatePacketPool(
+		&Status,
+		&Open->PacketPool,
+		TRANSMIT_PACKETS,
+		sizeof(PACKET_RESERVED));
+
+	if (Status != NDIS_STATUS_SUCCESS) {
+
+		TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Failed to allocate packet pool");
+
+		ExFreePool(Open);
+		Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
+		IoCompleteRequest(Irp, IO_NO_INCREMENT);
+		return STATUS_INSUFFICIENT_RESOURCES;
+	}
+
+	NdisInitializeEvent(&Open->WriteEvent);
+	NdisInitializeEvent(&Open->NdisRequestEvent);
+	NdisInitializeEvent(&Open->NdisWriteCompleteEvent);
+	NdisInitializeEvent(&Open->DumpEvent);
+	NdisAllocateSpinLock(&Open->MachineLock);
+	NdisAllocateSpinLock(&Open->WriteLock);
+	Open->WriteInProgress = FALSE;
+
+	for (i = 0; i < NCpu; i++)
+	{
+		NdisAllocateSpinLock(&Open->CpuData[i].BufferLock);
+	}
+
+	NdisInitializeEvent(&Open->NdisOpenCloseCompleteEvent);
+
+	//  list to hold irp's want to reset the adapter
+	InitializeListHead(&Open->ResetIrpList);
+
+	//  Initialize the request list
+	KeInitializeSpinLock(&Open->RequestSpinLock);
+	InitializeListHead(&Open->RequestList);
+
+	// Initializes the extended memory of the NPF machine
+	Open->mem_ex.buffer = ExAllocatePoolWithTag(NonPagedPool, DEFAULT_MEM_EX_SIZE, '2OWA');
+	if((Open->mem_ex.buffer) == NULL)
+	{
+		//
+		// no memory
+		//
+		ExFreePool(Open);
+		Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
+		IoCompleteRequest(Irp, IO_NO_INCREMENT);
+		return STATUS_INSUFFICIENT_RESOURCES;
+	}
+
+	Open->mem_ex.size = DEFAULT_MEM_EX_SIZE;
+	RtlZeroMemory(Open->mem_ex.buffer, DEFAULT_MEM_EX_SIZE);
+
+	//
+	// Initialize the open instance
+	//
+	Open->bpfprogram = NULL;	//reset the filter
+	Open->mode = MODE_CAPT;
+	Open->Nbytes.QuadPart = 0;
+	Open->Npackets.QuadPart = 0;
+	Open->Nwrites = 1;
+	Open->Multiple_Write_Counter = 0;
+	Open->MinToCopy = 0;
+	Open->TimeOut.QuadPart = (LONGLONG)1;
+	Open->DumpFileName.Buffer = NULL;
+	Open->DumpFileHandle = NULL;
+	Open->tme.active = TME_NONE_ACTIVE;
+	Open->DumpLimitReached = FALSE;
+	Open->MaxFrameSize = 0;
+	Open->WriterSN=0;
+	Open->ReaderSN=0;
+	Open->Size=0;
+	Open->SkipSentPackets = FALSE;
+	Open->ReadEvent = NULL;
+
+	//
+	//allocate the spinlock for the statistic counters
+	//
+	NdisAllocateSpinLock(&Open->CountersLock);
+
+	//
+	//  link up the request stored in our open block
+	//
+	for (i = 0 ; i < MAX_REQUESTS ; i++ ) 
+	{
+		NdisInitializeEvent(&Open->Requests[i].InternalRequestCompletedEvent);
+
+		ExInterlockedInsertTailList(
+			&Open->RequestList,
+			&Open->Requests[i].ListElement,
+			&Open->RequestSpinLock);
+	}
+
+	NdisResetEvent(&Open->NdisOpenCloseCompleteEvent);
+
+	// 
+	// set the proper binding flags before trying to open the MAC
+	//
+	Open->AdapterBindingStatus = ADAPTER_BOUND;
+	Open->AdapterHandleUsageCounter = 0;
+	NdisAllocateSpinLock(&Open->AdapterHandleLock);
+
+	//
+	//  Try to open the MAC
+	//
+	TRACE_MESSAGE2(PACKET_DEBUG_LOUD,"Opening the device %ws, BindingContext=%p",DeviceExtension->AdapterName.Buffer, Open);
+
+	returnStatus = STATUS_SUCCESS;
+
+	NdisOpenAdapter(
+		&Status,
+		&ErrorStatus,
+		&Open->AdapterHandle,
+		&Open->Medium,
+		MediumArray,
+		NUM_NDIS_MEDIA,
+		DeviceExtension->NdisProtocolHandle,
+		Open,
+		&DeviceExtension->AdapterName,
+		0,
+		NULL);
+
+	TRACE_MESSAGE1(PACKET_DEBUG_LOUD,"Opened the device, Status=%x",Status);
+
+	if (Status == NDIS_STATUS_PENDING)
+	{
+		NdisWaitEvent(&Open->NdisOpenCloseCompleteEvent, 0);
+
+		if (!NT_SUCCESS(Open->OpenCloseStatus))
+		{
+			returnStatus = Open->OpenCloseStatus;
+		}
+		else
+		{
+			returnStatus = STATUS_SUCCESS;
+		}
+	}
+	else
+	{
+		//
+		// request not pending, we know the result, and OpenComplete has not been called.
+		//
+		if (Status == NDIS_STATUS_SUCCESS)
+		{
+			returnStatus = STATUS_SUCCESS;
+		}
+		else
+		{
+			//
+			// this is not completely correct, as we are converting an NDIS_STATUS to a NTSTATUS
+			//
+			returnStatus = Status;
+
+		}
+	}
+
+	if (returnStatus == STATUS_SUCCESS)
+	{
+		ULONG localNumOpenedInstances;	
+		//
+		// complete the open
+		//
+		localNumOpenedInstances = InterlockedIncrement(&g_NumOpenedInstances);
+
+		TRACE_MESSAGE1(PACKET_DEBUG_LOUD, "Opened Instances: %u", localNumOpenedInstances);
+
+		// Get the absolute value of the system boot time.
+		// This is used for timestamp conversion.
+		TIME_SYNCHRONIZE(&G_Start_Time);
+
+		returnStatus = NPF_GetDeviceMTU(Open, Irp, &Open->MaxFrameSize);
+
+		if (!NT_SUCCESS(returnStatus))
+		{
+			//
+			// Close the binding
+			//
+			NPF_CloseBinding(Open);
+		}
+	}
+
+	if (!NT_SUCCESS(returnStatus))
+	{
+		NPF_CloseOpenInstance(Open);
+	}
+	else
+	{
+		//  Save or open here
+		IrpSp->FileObject->FsContext=Open;
+	}
+
+	Irp->IoStatus.Status = returnStatus;
+	Irp->IoStatus.Information = 0;
+	IoCompleteRequest(Irp, IO_NO_INCREMENT);
+
+	TRACE_EXIT();
+	return returnStatus;
+}
+
+VOID
+NPF_CloseOpenInstance(POPEN_INSTANCE pOpen)
+{
+		PKEVENT pEvent;
+		UINT i;
+
+		TRACE_ENTER();
+
+		ASSERT(pOpen != NULL);
+		ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
+
+		TRACE_MESSAGE1(PACKET_DEBUG_LOUD, "Open= %p", pOpen);
+
+        NdisFreePacketPool(pOpen->PacketPool);
+
+		//
+		// free mem_ex
+		//
+		pOpen->mem_ex.size = 0;
+		if(pOpen->mem_ex.buffer != NULL)
+			ExFreePool(pOpen->mem_ex.buffer);
+
+		//
+		// Free the filter if it's present
+		//
+		if(pOpen->bpfprogram != NULL)
+			ExFreePool(pOpen->bpfprogram);
+
+//
+// Jitted filters are supported on x86 (32bit) only
+// 
+#ifdef __NPF_x86__
+		// Free the jitted filter if it's present
+		if(pOpen->Filter != NULL)
+			BPF_Destroy_JIT_Filter(pOpen->Filter);
+#endif
+
+		//
+		// Dereference the read event.
+		//
+
+		if (pOpen->ReadEvent != NULL)
+            ObDereferenceObject(pOpen->ReadEvent);
+
+		//
+		// free the buffer
+		// NOTE: the buffer is fragmented among the various CPUs, but the base pointer of the
+		// allocated chunk of memory is stored in the first slot (pOpen->CpuData[0])
+		//
+		if (pOpen->Size > 0)
+			ExFreePool(pOpen->CpuData[0].Buffer);
+
+		//
+		// free the per CPU spinlocks
+		//
+		for (i = 0; i < NCpu; i++)
+		{
+			NdisFreeSpinLock(&Open->CpuData[i].BufferLock);
+		}
+
+		//
+		// Free the string with the name of the dump file
+		//
+		if(pOpen->DumpFileName.Buffer!=NULL)
+			ExFreePool(pOpen->DumpFileName.Buffer);
+		
+		//
+		// Free the open instance itself
+		//
+		ExFreePool(pOpen);
+
+		TRACE_EXIT();
+}
+
+
+//-------------------------------------------------------------------
+
+VOID NPF_OpenAdapterComplete(
 	IN NDIS_HANDLE  ProtocolBindingContext,
     IN NDIS_STATUS  Status,
     IN NDIS_STATUS  OpenErrorStatus)
 {
 
-    PIRP              Irp;
-    POPEN_INSTANCE    Open;
+    POPEN_INSTANCE		Open;
+    PLIST_ENTRY			RequestListEntry;
+	PINTERNAL_REQUEST	MaxSizeReq;
+	NDIS_STATUS			ReqStatus;
 
-    IF_LOUD(DbgPrint("NPF: OpenAdapterComplete\n");)
+    TRACE_ENTER();
 
-    Open= (POPEN_INSTANCE)ProtocolBindingContext;
+    Open = (POPEN_INSTANCE)ProtocolBindingContext;
 
-    //
-    //  get the open irp
-    //
-    Irp=Open->OpenCloseIrp;
+	ASSERT(Open != NULL);
 
-    if (Status != NDIS_STATUS_SUCCESS) {
+    if (Status != NDIS_STATUS_SUCCESS) 
+	{
+		//
+		// this is not completely correct, as we are converting an NDIS_STATUS to a NTSTATUS
+		//
+		Open->OpenCloseStatus = Status;
+	}
+	else 
+	{
+		Open->OpenCloseStatus = STATUS_SUCCESS;
+	}
 
-        IF_LOUD(DbgPrint("NPF: OpenAdapterComplete-FAILURE\n");)
+	//
+	// wake up the caller of NdisOpen, that is NPF_Open
+	//
+	NdisSetEvent(&Open->NdisOpenCloseCompleteEvent);
+	
+    TRACE_EXIT();
+}
+ 
+NTSTATUS
+NPF_GetDeviceMTU(
+			 IN POPEN_INSTANCE pOpen,
+			 IN PIRP	pIrp,
+			 OUT PUINT  pMtu)
+{
+    PLIST_ENTRY			RequestListEntry;
+	PINTERNAL_REQUEST	MaxSizeReq;
+	NDIS_STATUS			ReqStatus;
 
-        NdisFreePacketPool(Open->PacketPool);
+	TRACE_ENTER();
 
-		ExFreePool(Open->ReadEventName.Buffer);
+	ASSERT(pOpen != NULL);
+	ASSERT(pIrp != NULL);
+	ASSERT(pMtu != NULL);
 
-        ExFreePool(Open);
-    }
+	// Extract a request from the list of free ones
+	RequestListEntry = ExInterlockedRemoveHeadList(&pOpen->RequestList, &pOpen->RequestSpinLock);
 
-    Irp->IoStatus.Status = Status;
-    Irp->IoStatus.Information = 0;
-    IoCompleteRequest(Irp, IO_NO_INCREMENT);
+	if (RequestListEntry == NULL)
+	{
+		//
+		// THIS IS WRONG
+		//
 
-    return;
+		//
+		// Assume Ethernet
+		//
+		*pMtu = 1514;	
+		TRACE_EXIT();
+		return STATUS_SUCCESS;
+	}
 
+	MaxSizeReq = CONTAINING_RECORD(RequestListEntry, INTERNAL_REQUEST, ListElement);
+
+	MaxSizeReq->Request.RequestType = NdisRequestQueryInformation;
+	MaxSizeReq->Request.DATA.QUERY_INFORMATION.Oid = OID_GEN_MAXIMUM_TOTAL_SIZE;
+
+	MaxSizeReq->Request.DATA.QUERY_INFORMATION.InformationBuffer = pMtu;
+	MaxSizeReq->Request.DATA.QUERY_INFORMATION.InformationBufferLength = sizeof(*pMtu);
+
+	NdisResetEvent(&MaxSizeReq->InternalRequestCompletedEvent);
+
+	//  submit the request
+	NdisRequest(
+		&ReqStatus,
+		pOpen->AdapterHandle,
+		&MaxSizeReq->Request);
+
+	if (ReqStatus == NDIS_STATUS_PENDING)
+	{
+		NdisWaitEvent(&MaxSizeReq->InternalRequestCompletedEvent, 0);
+		ReqStatus = MaxSizeReq->RequestStatus;
+	}
+
+	//
+	// Put the request in the list of the free ones
+	//
+	ExInterlockedInsertTailList(&pOpen->RequestList, &MaxSizeReq->ListElement, &pOpen->RequestSpinLock);
+
+	if (ReqStatus == NDIS_STATUS_SUCCESS)
+	{
+		TRACE_EXIT();
+		return STATUS_SUCCESS;
+	}
+	else
+	{
+		//
+		// THIS IS WRONG
+		//
+
+		//
+		// Assume Ethernet
+		//
+		*pMtu = 1514;	
+
+		TRACE_EXIT();
+		return STATUS_SUCCESS;
+	
+		// return ReqStatus;
+	}
+}
+
+
+//-------------------------------------------------------------------
+NTSTATUS
+NPF_Close(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
+{
+	TRACE_ENTER();
+
+	Irp->IoStatus.Status = STATUS_SUCCESS;
+	Irp->IoStatus.Information = 0;
+	IoCompleteRequest(Irp, IO_NO_INCREMENT);
+
+	TRACE_EXIT();
+	return STATUS_SUCCESS;
 }
 
 //-------------------------------------------------------------------
-
 NTSTATUS
-PacketClose(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
+NPF_Cleanup(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 {
 
-    POPEN_INSTANCE    Open;
-    NDIS_STATUS     Status;
-    PIO_STACK_LOCATION  IrpSp;
+	POPEN_INSTANCE    Open;
+	NDIS_STATUS     Status;
+	PIO_STACK_LOCATION  IrpSp;
+	LARGE_INTEGER ThreadDelay;
+	ULONG localNumOpenInstances;
 
-
-    IF_LOUD(DbgPrint("NPF: CloseAdapter\n");)
+	TRACE_ENTER();
 
 	IrpSp = IoGetCurrentIrpStackLocation(Irp);
-
-    Open=IrpSp->FileObject->FsContext;
-
- 	// Reset the buffer size. This tells the dump thread to stop.
- 	Open->BufSize=0;
-
-	if( Open->Bound == FALSE){
-
-		NdisWaitEvent(&Open->IOEvent,10000);
-
-		// Free the bpf program
-		if(Open->bpfprogram!=NULL)ExFreePool(Open->bpfprogram);
-		
-		// Free the JIT binary
-		BPF_Destroy_JIT_Filter(Open->Filter);
-
-		// Free the buffer
-		Open->BufSize=0;
-		if(Open->Buffer!=NULL)ExFreePool(Open->Buffer);
-
-		// Free the string with the name of the dump file
-		if(Open->DumpFileName.Buffer!=NULL)
-			ExFreePool(Open->DumpFileName.Buffer);
-		
-		NdisFreePacketPool(Open->PacketPool);
-				
-		ExFreePool(Open->ReadEventName.Buffer);
-		ExFreePool(Open);
-
-		Irp->IoStatus.Information = 0;
-		Irp->IoStatus.Status = STATUS_SUCCESS;
-		IoCompleteRequest(Irp, IO_NO_INCREMENT);
-		
-		return(STATUS_SUCCESS);
-	}
-
- 	// Unfreeze the consumer
- 	if(Open->mode & MODE_DUMP)
- 		NdisSetEvent(&Open->DumpEvent);
- 	else
- 		KeSetEvent(Open->ReadEvent,0,FALSE);
-
-    // Save the IRP
-    Open->OpenCloseIrp=Irp;
-
-    IoMarkIrpPending(Irp);
- 
-	// If this instance is in dump mode, complete the dump and close the file
- 	if((Open->mode & MODE_DUMP) && Open->DumpFileHandle != NULL)
- 		PacketCloseDumpFile(Open);
- 	
-	// Destroy the read Event
-	ZwClose(Open->ReadEventHandle);
-
-	// Close the adapter
-	NdisCloseAdapter(
-		&Status,
-		Open->AdapterHandle
-		);
-
-	if (Status != NDIS_STATUS_PENDING) {
-		
-		PacketCloseAdapterComplete(
-			Open,
-			Status
-			);
-		return STATUS_SUCCESS;
-		
-	}
+	Open = IrpSp->FileObject->FsContext;
 	
-	return(STATUS_PENDING);
+	TRACE_MESSAGE1(PACKET_DEBUG_LOUD, "Open = %p\n", Open);
+
+	ASSERT(Open != NULL);
+
+	if (Open->ReadEvent != NULL)
+		KeSetEvent(Open->ReadEvent,0,FALSE);
+
+	NPF_CloseBinding(Open);
+	
+	// NOTE:
+	// code commented out because the kernel dump feature is disabled
+	//
+	//if (AdapterAlreadyClosing == FALSE)
+	//{
+
+	//	
+	//	 Unfreeze the consumer
+	//	
+	//	if(Open->mode & MODE_DUMP)
+	//		NdisSetEvent(&Open->DumpEvent);
+	//	else
+	//		KeSetEvent(Open->ReadEvent,0,FALSE);
+
+	//	//
+	//	// If this instance is in dump mode, complete the dump and close the file
+	//	//
+	//	if((Open->mode & MODE_DUMP) && Open->DumpFileHandle != NULL)
+	//	{
+	//		NTSTATUS wres;
+
+	//		ThreadDelay.QuadPart = -50000000;
+
+	//		//
+	//		// Wait the completion of the thread
+	//		//
+	//		wres = KeWaitForSingleObject(Open->DumpThreadObject,
+	//			UserRequest,
+	//			KernelMode,
+	//			TRUE,
+	//			&ThreadDelay);
+
+	//		ObDereferenceObject(Open->DumpThreadObject);
+
+	//		//
+	//		// Flush and close the dump file
+	//		//
+	//		NPF_CloseDumpFile(Open);
+	//	}
+	//}
+
+
+	//
+	// release all the resources
+	//
+	NPF_CloseOpenInstance(Open);
+
+	IrpSp->FileObject->FsContext = NULL;
+	
+	//
+	// Decrease the counter of open instances
+	//
+	localNumOpenInstances = InterlockedDecrement(&g_NumOpenedInstances);
+	TRACE_MESSAGE1(PACKET_DEBUG_LOUD, "Opened Instances: %u", localNumOpenInstances);
+
+	if(localNumOpenInstances == 0)
+	{
+		//
+		// Force a synchronization at the next NPF_Open().
+		// This hopefully avoids the synchronization issues caused by hibernation or standby.
+		//
+		TIME_DESYNCHRONIZE(&G_Start_Time);
+	}
+
+
+	//
+	// and complete the IRP with status success
+	//
+	Irp->IoStatus.Information = 0;
+	Irp->IoStatus.Status = STATUS_SUCCESS;
+	IoCompleteRequest(Irp, IO_NO_INCREMENT);
+
+	TRACE_EXIT();
+
+	return(STATUS_SUCCESS);
 }
 
 //-------------------------------------------------------------------
 
 VOID
-PacketCloseAdapterComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  Status)
+NPF_CloseAdapterComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  Status)
 {
     POPEN_INSTANCE    Open;
     PIRP              Irp;
 
-    IF_LOUD(DbgPrint("NPF: CloseAdapterComplete\n");)
+	TRACE_ENTER();
 
-    Open= (POPEN_INSTANCE)ProtocolBindingContext;
+    Open = (POPEN_INSTANCE)ProtocolBindingContext;
 
-	// free the allocated structures only if the instance is still bound to the adapter
-	if(Open->Bound == TRUE){
-		
-		//free the bpf program
-		if(Open->bpfprogram!=NULL)ExFreePool(Open->bpfprogram);
-		
-		//free the buffer
-		Open->BufSize=0;
-		if(Open->Buffer!=NULL)ExFreePool(Open->Buffer);
-		
-		NdisFreePacketPool(Open->PacketPool);
-		
-		Irp=Open->OpenCloseIrp;
-		
-		// Free the string with the name of the dump file
-		if(Open->DumpFileName.Buffer!=NULL)
-			ExFreePool(Open->DumpFileName.Buffer);
+	ASSERT(Open != NULL);
 
-		ExFreePool(Open->ReadEventName.Buffer);
-		ExFreePool(Open);
-		
-		// Complete the request only if the instance is still bound to the adapter
-		Irp->IoStatus.Status = STATUS_SUCCESS;
-		Irp->IoStatus.Information = 0;
-		IoCompleteRequest(Irp, IO_NO_INCREMENT);
-	}
-	else
-		NdisSetEvent(&Open->IOEvent);
+	TRACE_MESSAGE1(PACKET_DEBUG_LOUD, "Open= %p", Open);
 
+	NdisSetEvent(&Open->NdisOpenCloseCompleteEvent);
 
+	TRACE_EXIT();
 	return;
 
 }
+//-------------------------------------------------------------------
+
+#ifdef NDIS50
+NDIS_STATUS
+NPF_PowerChange(IN NDIS_HANDLE ProtocolBindingContext, IN PNET_PNP_EVENT pNetPnPEvent)
+{
+	TRACE_ENTER();
+	
+	TIME_DESYNCHRONIZE(&G_Start_Time);
+	TIME_SYNCHRONIZE(&G_Start_Time);
+
+	TRACE_EXIT();
+	return STATUS_SUCCESS;
+}
+#endif
 
 //-------------------------------------------------------------------
 
 VOID
-PacketBindAdapter(
+NPF_BindAdapter(
     OUT PNDIS_STATUS            Status,
     IN  NDIS_HANDLE             BindContext,
     IN  PNDIS_STRING            DeviceName,
@@ -433,70 +811,60 @@ PacketBindAdapter(
     IN  PVOID                   SystemSpecific2
     )
 {
-	IF_LOUD(DbgPrint("NPF: PacketBindAdapter\n");)
+	TRACE_ENTER();
+	TRACE_EXIT();
 }
 
 //-------------------------------------------------------------------
 
 VOID
-PacketUnbindAdapter(
+NPF_UnbindAdapter(
     OUT PNDIS_STATUS        Status,
     IN  NDIS_HANDLE         ProtocolBindingContext,
     IN  NDIS_HANDLE         UnbindContext
     )
 {
     POPEN_INSTANCE   Open =(POPEN_INSTANCE)ProtocolBindingContext;
-	NDIS_STATUS		 lStatus;
 
-	IF_LOUD(DbgPrint("NPF: PacketUNBindAdapter\n");)
+	TRACE_ENTER();
 
-	// Reset the buffer size. This tells the dump thread to stop.
- 	Open->BufSize=0;
+	ASSERT(Open != NULL);
 
-	NdisResetEvent(&Open->IOEvent);
+	//
+	// The following code has been disabled bcause the kernel dump feature has been disabled.
+	//
+	////
+	//// Awake a possible pending read on this instance
+	//// TODO should be ok.
+	////
+ //	if(Open->mode & MODE_DUMP)
+ //		NdisSetEvent(&Open->DumpEvent);
+ //	else
+	if (Open->ReadEvent != NULL)
+	 	KeSetEvent(Open->ReadEvent,0,FALSE);
 
-	// This open instance is no more bound to the adapter, set Bound to False
-    InterlockedExchange( (PLONG) &Open->Bound, FALSE );
-
-	// Awake a possible pending read on this instance
- 	if(Open->mode & MODE_DUMP)
- 		NdisSetEvent(&Open->DumpEvent);
- 	else
- 		KeSetEvent(Open->ReadEvent,0,FALSE);
-
-	// If this instance is in dump mode, complete the dump and close the file
- 	if((Open->mode & MODE_DUMP) && Open->DumpFileHandle != NULL)
- 		PacketCloseDumpFile(Open);
-
-	// Destroy the read Event
-	ZwClose(Open->ReadEventHandle);
-
-    //  close the adapter
-    NdisCloseAdapter(
-        &lStatus,
-        Open->AdapterHandle
-	    );
-
-    if (lStatus != NDIS_STATUS_PENDING) {
-
-        PacketCloseAdapterComplete(
-            Open,
-            lStatus
-            );
-
-		*Status = NDIS_STATUS_SUCCESS;
-        return;
-
-    }
+	//
+	// The following code has been disabled bcause the kernel dump feature has been disabled.
+	//
+	////
+	//// If this instance is in dump mode, complete the dump and close the file
+	//// TODO needs to be checked again.
+	////
+ //	if((Open->mode & MODE_DUMP) && Open->DumpFileHandle != NULL)
+ //		NPF_CloseDumpFile(Open);
 
 	*Status = NDIS_STATUS_SUCCESS;
-    return;
+
+	NPF_CloseBinding(Open);
+
+	TRACE_EXIT();
+	return;
 }
 
 //-------------------------------------------------------------------
 
 VOID
-PacketResetComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  Status)
+NPF_ResetComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  Status)
 
 {
     POPEN_INSTANCE      Open;
@@ -504,10 +872,9 @@ PacketResetComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  Statu
 
     PLIST_ENTRY         ResetListEntry;
 
-    IF_LOUD(DbgPrint("NPF: PacketResetComplte\n");)
+	TRACE_ENTER();
 
-    Open= (POPEN_INSTANCE)ProtocolBindingContext;
-
+    Open = (POPEN_INSTANCE)ProtocolBindingContext;
 
     //
     //  remove the reset IRP from the list
@@ -517,19 +884,12 @@ PacketResetComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  Statu
                        &Open->RequestSpinLock
                        );
 
-#if DBG
-    if (ResetListEntry == NULL) {
-        DbgBreakPoint();
-        return;
-    }
-#endif
-
     Irp=CONTAINING_RECORD(ResetListEntry,IRP,Tail.Overlay.ListEntry);
 
     Irp->IoStatus.Status = STATUS_SUCCESS;
     IoCompleteRequest(Irp, IO_NO_INCREMENT);
 
-    IF_LOUD(DbgPrint("NPF: PacketResetComplte exit\n");)
+	TRACE_EXIT();
 
     return;
 

@@ -1,12 +1,12 @@
 LIBRARY packet
 
-DESCRIPTION 'Packet driver dll'
-
 EXPORTS
 		PacketLibraryVersion
 		PacketGetVersion
+		PacketGetDriverVersion
 		PacketOpenAdapter
 		PacketSendPacket
+		PacketSendPackets
 		PacketAllocatePacket
 		PacketInitPacket
 		PacketFreePacket
@@ -17,13 +17,19 @@ EXPORTS
 		PacketRequest
 		PacketSetBuff
 		PacketSetBpf
+		PacketSetSnapLen
 		PacketGetStats
+		PacketGetStatsEx
 		PacketGetNetType
 		PacketSetReadTimeout
 		PacketSetMode
 		PacketSetNumWrites
-		PacketGetNetInfo
 		PacketGetNetInfoEx
 		PacketSetMinToCopy
 		PacketGetReadEvent
 		PacketStopDriver
+		PacketSetDumpName
+		PacketSetDumpLimits
+		PacketIsDumpEnded
+		PacketSetLoopbackBehavior
+		PacketGetAirPcapHandle

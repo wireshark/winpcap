@@ -1,0 +1,713 @@
+diff -urb libpcap-2006.04.17/Makefile.in libpcap/Makefile.in
+--- libpcap-2006.04.17/Makefile.in	2005-08-09 23:19:06.000000000 -0700
++++ libpcap/Makefile.in	2006-04-20 20:35:58.328125000 -0700
+@@ -44,7 +44,8 @@
+ CC = @CC@
+ CCOPT = @V_CCOPT@
+ INCLS = -I. @V_INCLS@
+-DEFS = @DEFS@ @V_DEFS@
++# HAVE_REMOTE
++DEFS = @DEFS@ @V_DEFS@ @V_HAVE_REMOTE@
+ LIBS = @V_LIBS@
+ DYEXT = @DYEXT@
+ 
+@@ -77,13 +78,17 @@
+ CSRC =	pcap.c inet.c gencode.c optimize.c nametoaddr.c \
+ 	etherent.c savefile.c bpf_filter.c bpf_image.c bpf_dump.c
+ GENSRC = scanner.c grammar.c version.c
++# HAVE_REMOTE
++REMOTESRC = @V_REMOTE_FILES@
+ LIBOBJS = @LIBOBJS@
+ 
+-SRC =	$(PSRC) $(FSRC) $(CSRC) $(SSRC) $(GENSRC)
++# HAVE_REMOTE
++SRC =	$(PSRC) $(FSRC) $(CSRC) $(SSRC) $(GENSRC) $(REMOTESRC)
+ 
+ # We would like to say "OBJ = $(SRC:.c=.o)" but Ultrix's make cannot
+ # hack the extra indirection
+-OBJ =	$(PSRC:.c=.o) $(FSRC:.c=.o) $(CSRC:.c=.o) $(SSRC:.c=.o) $(GENSRC:.c=.o) $(LIBOBJS)
++# HAVE_REMOTE
++OBJ =	$(PSRC:.c=.o) $(FSRC:.c=.o) $(CSRC:.c=.o) $(SSRC:.c=.o) $(GENSRC:.c=.o) $(REMOTESRC:.c=.o) $(LIBOBJS)
+ HDR =	pcap.h pcap-int.h pcap-namedb.h pcap-nit.h pcap-pf.h \
+ 	ethertype.h gencode.h gnuc.h
+ GENHDR = \
+diff -urb libpcap-2006.04.17/Win32/Prj/libpcap.dsp libpcap/Win32/Prj/libpcap.dsp
+--- libpcap-2006.04.17/Win32/Prj/libpcap.dsp	2004-01-28 06:08:33.000000000 -0800
++++ libpcap/Win32/Prj/libpcap.dsp	2006-04-20 20:35:58.328125000 -0700
+@@ -4,7 +4,7 @@
+ 
+ # TARGTYPE "Win32 (x86) Static Library" 0x0104
+ 
+-CFG=libpcap - Win32 Debug
++CFG=libpcap - Win32 Debug REMOTE
+ !MESSAGE This is not a valid makefile. To build this project using NMAKE,
+ !MESSAGE use the Export Makefile command and run
+ !MESSAGE 
+@@ -13,12 +13,14 @@
+ !MESSAGE You can specify a configuration when running NMAKE
+ !MESSAGE by defining the macro CFG on the command line. For example:
+ !MESSAGE 
+-!MESSAGE NMAKE /f "libpcap.mak" CFG="libpcap - Win32 Debug"
++!MESSAGE NMAKE /f "libpcap.mak" CFG="libpcap - Win32 Debug REMOTE"
+ !MESSAGE 
+ !MESSAGE Possible choices for configuration are:
+ !MESSAGE 
+ !MESSAGE "libpcap - Win32 Release" (based on "Win32 (x86) Static Library")
+ !MESSAGE "libpcap - Win32 Debug" (based on "Win32 (x86) Static Library")
++!MESSAGE "libpcap - Win32 Debug REMOTE" (based on "Win32 (x86) Static Library")
++!MESSAGE "libpcap - Win32 Release REMOTE" (based on "Win32 (x86) Static Library")
+ !MESSAGE 
+ 
+ # Begin Project
+@@ -74,12 +76,60 @@
+ # ADD BASE LIB32 /nologo
+ # ADD LIB32 /nologo
+ 
++!ELSEIF  "$(CFG)" == "libpcap - Win32 Debug REMOTE"
++
++# PROP BASE Use_MFC 0
++# PROP BASE Use_Debug_Libraries 1
++# PROP BASE Output_Dir "libpcap___Win32_Debug_REMOTE"
++# PROP BASE Intermediate_Dir "libpcap___Win32_Debug_REMOTE"
++# PROP BASE Target_Dir ""
++# PROP Use_MFC 0
++# PROP Use_Debug_Libraries 1
++# PROP Output_Dir "Debug_REMOTE"
++# PROP Intermediate_Dir "Debug_REMOTE"
++# PROP Target_Dir ""
++# ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../" /I "../../lbl/" /I "../../bpf/" /I "../include/" /I "../../../../common" /I "../../../../dag/include" /I "../../../../dag/drv/windows" /D "_DEBUG" /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D "_MBCS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "HAVE_ADDRINFO" /D "WIN32" /D _U_= /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /YX /FD /GZ /c
++# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../" /I "../../lbl/" /I "../../bpf/" /I "../include/" /I "../../../../common" /I "../../../../dag/include" /I "../../../../dag/drv/windows" /D "_DEBUG" /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D "_MBCS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "HAVE_ADDRINFO" /D "WIN32" /D _U_= /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "HAVE_REMOTE" /YX /FD /GZ /c
++# ADD BASE RSC /l 0x409 /d "_DEBUG"
++# ADD RSC /l 0x409 /d "_DEBUG"
++BSC32=bscmake.exe
++# ADD BASE BSC32 /nologo
++# ADD BSC32 /nologo
++LIB32=link.exe -lib
++# ADD BASE LIB32 /nologo
++# ADD LIB32 /nologo
++
++!ELSEIF  "$(CFG)" == "libpcap - Win32 Release REMOTE"
++
++# PROP BASE Use_MFC 0
++# PROP BASE Use_Debug_Libraries 0
++# PROP BASE Output_Dir "libpcap___Win32_Release_REMOTE"
++# PROP BASE Intermediate_Dir "libpcap___Win32_Release_REMOTE"
++# PROP BASE Target_Dir ""
++# PROP Use_MFC 0
++# PROP Use_Debug_Libraries 0
++# PROP Output_Dir "Release_REMOTE"
++# PROP Intermediate_Dir "Release_REMOTE"
++# PROP Target_Dir ""
++# ADD BASE CPP /nologo /MT /W3 /GX /O2 /I "../../" /I "../../lbl/" /I "../../bpf/" /I "../include/" /I "../../../../common" /I "../../../../dag/include" /I "../../../../dag/drv/windows" /D "NDEBUG" /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D "_MBCS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "HAVE_ADDRINFO" /D "WIN32" /D _U_= /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /YX /FD /c
++# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../" /I "../../lbl/" /I "../../bpf/" /I "../include/" /I "../../../../common" /I "../../../../dag/include" /I "../../../../dag/drv/windows" /D "NDEBUG" /D "YY_NEVER_INTERACTIVE" /D yylval=pcap_lval /D "_USRDLL" /D "LIBPCAP_EXPORTS" /D "HAVE_STRERROR" /D "__STDC__" /D "INET6" /D "_WINDOWS" /D "_MBCS" /D SIZEOF_CHAR=1 /D SIZEOF_SHORT=2 /D SIZEOF_INT=4 /D "HAVE_ADDRINFO" /D "WIN32" /D _U_= /D "HAVE_SNPRINTF" /D "HAVE_VSNPRINTF" /D "HAVE_REMOTE" /YX /FD /c
++# ADD BASE RSC /l 0x409 /d "NDEBUG"
++# ADD RSC /l 0x409 /d "NDEBUG"
++BSC32=bscmake.exe
++# ADD BASE BSC32 /nologo
++# ADD BSC32 /nologo
++LIB32=link.exe -lib
++# ADD BASE LIB32 /nologo
++# ADD LIB32 /nologo
++
+ !ENDIF 
+ 
+ # Begin Target
+ 
+ # Name "libpcap - Win32 Release"
+ # Name "libpcap - Win32 Debug"
++# Name "libpcap - Win32 Debug REMOTE"
++# Name "libpcap - Win32 Release REMOTE"
+ # Begin Source File
+ 
+ SOURCE=..\..\bpf_dump.c
+diff -urb libpcap-2006.04.17/configure.in libpcap/configure.in
+--- libpcap-2006.04.17/configure.in	2006-04-07 00:07:25.000000000 -0700
++++ libpcap/configure.in	2006-04-20 20:35:58.328125000 -0700
+@@ -302,6 +302,58 @@
+ 		esac])
+ fi
+ 
++dnl HAVE_REMOTE
++AC_MSG_CHECKING(if --disable-remote option is specified)
++AC_ARG_ENABLE(remote, [  --disable-remote        disable remote capture capabilities])
++
++case "x$enable_remote" in
++xyes)	enable_remote=enabled	;;
++xno)	enable_remote=disabled	;;
++x)	enable_remote=enabled	;;
++esac
++
++AC_MSG_RESULT(${enable_remote})
++
++
++if test "$enable_remote" = "enabled"; then
++
++	dnl
++	dnl Checking if the remote features of libpcap are supported by
++	dnl the OS and must be compiled
++	dnl
++	
++	AC_MSG_CHECKING(if remote capture is supported)
++	
++	if test -e ./remote-ext.h ; then	# Check that the remote extensions are there
++	
++		case "$V_PCAP" in
++		
++		linux)
++			V_REMOTE_FILES="pcap-new.c pcap-remote.c sockutils.c"
++			V_HAVE_REMOTE="-DHAVE_REMOTE"
++			AC_DEFINE(HAVE_REMOTE,1,[Enable remote capture support])
++			have_remote=yes
++			;;
++		
++		bpf)
++			V_REMOTE_FILES="pcap-new.c pcap-remote.c sockutils.c"
++			V_HAVE_REMOTE="-DHAVE_REMOTE"
++			AC_DEFINE(HAVE_REMOTE,1,[Enable remote capture support])
++			have_remote=yes
++			;;
++		
++		*)
++			have_remote=no
++			;;
++		
++		esac
++	
++	AC_MSG_RESULT(${have_remote})
++	fi
++
++fi
++dnl END HAVE_REMOTE
++
+ AC_MSG_CHECKING(if --enable-ipv6 option is specified)
+ AC_ARG_ENABLE(ipv6, [  --enable-ipv6           build IPv6-capable version])
+ if test "$enable_ipv6" = "yes"; then
+@@ -779,6 +831,10 @@
+ AC_SUBST(V_LEX)
+ AC_SUBST(V_PCAP)
+ AC_SUBST(V_FINDALLDEVS)
++# HAVE_REMOTE
++AC_SUBST(V_HAVE_REMOTE)
++AC_SUBST(V_REMOTE_FILES)
++# END HAVE_REMOTE
+ AC_SUBST(V_RANLIB)
+ AC_SUBST(V_YACC)
+ AC_SUBST(SSRC)
+diff -urb libpcap-2006.04.17/gencode.c libpcap/gencode.c
+--- libpcap-2006.04.17/gencode.c	2006-03-16 00:46:13.000000000 -0800
++++ libpcap/gencode.c	2006-04-20 20:35:58.390625000 -0700
+@@ -353,6 +353,35 @@
+ 	extern int n_errors;
+ 	int len;
+ 
++#ifdef HAVE_REMOTE
++	/*
++	   Check if:
++	   - We are on an remote capture
++	   - we do not want to capture RPCAP traffic
++	   
++	   If so, we have to save the current filter, because we have to add some
++	   piece of stuff later
++	*/
++	if ( (p->rmt_clientside) && (p->rmt_flags & PCAP_OPENFLAG_NOCAPTURE_RPCAP) )
++	{
++	int bufferlen;
++
++		if (p->currentfilter)
++			free (p->currentfilter);
++
++		if (buf)
++			bufferlen= strlen(buf) + 1;
++		else
++			bufferlen= 1;
++
++		p->currentfilter= (char *) malloc( sizeof(char) * bufferlen);
++
++		strncpy(p->currentfilter, buf, bufferlen);
++
++		p->currentfilter[bufferlen - 1]= 0;
++	}
++#endif /* HAVE_REMOTE */
++
+ 	no_optimize = 0;
+ 	n_errors = 0;
+ 	root = NULL;
+diff -urb libpcap-2006.04.17/pcap-bpf.c libpcap/pcap-bpf.c
+--- libpcap-2006.04.17/pcap-bpf.c	2006-01-21 21:28:12.000000000 -0800
++++ libpcap/pcap-bpf.c	2006-04-20 20:35:58.390625000 -0700
+@@ -102,6 +102,10 @@
+ #include "os-proto.h"
+ #endif
+ 
++#ifdef HAVE_REMOTE
++#include <pcap-remote.h>
++#endif /* HAVE_REMOTE */
++
+ #include "gencode.h"	/* for "no_optimize" */
+ 
+ static int pcap_setfilter_bpf(pcap_t *p, struct bpf_program *fp);
+@@ -597,6 +601,37 @@
+ 	struct bpf_program total_prog;
+ 	struct utsname osinfo;
+ 
++#ifdef HAVE_REMOTE
++	/*
++		Retrofit; we have to make older applications compatible with the remote capture
++		So, we're calling the pcap_open_remote() from here, that is a very dirty thing.
++		Obviously, we cannot exploit all the new features; for instance, we cannot
++		send authentication, we cannot use a UDP data connection, and so on.
++	*/
++
++	char host[PCAP_BUF_SIZE + 1];
++	char port[PCAP_BUF_SIZE + 1];
++	char name[PCAP_BUF_SIZE + 1];
++	int srctype;
++
++	if (pcap_parsesrcstr(device, &srctype, host, port, name, ebuf) )
++		return NULL;
++
++	if (srctype == PCAP_SRC_IFREMOTE)
++	{
++		p= pcap_opensource_remote(device, NULL, ebuf);
++
++		if (p == NULL) 
++			return NULL;
++
++		p->snapshot= snaplen;
++		p->timeout= to_ms;
++		p->rmt_flags= (promisc) ? PCAP_OPENFLAG_PROMISCUOUS : 0;
++
++		return p;
++	}
++#endif		/* HAVE_REMOTE */
++
+ #ifdef HAVE_DAG_API
+ 	if (strstr(device, "dag")) {
+ 		return dag_open_live(device, snaplen, promisc, to_ms, ebuf);
+diff -urb libpcap-2006.04.17/pcap-int.h libpcap/pcap-int.h
+--- libpcap-2006.04.17/pcap-int.h	2006-02-22 09:09:02.000000000 -0800
++++ libpcap/pcap-int.h	2006-04-20 20:35:58.406250000 -0700
+@@ -107,6 +107,37 @@
+ 				 * Same as in linux above, introduce
+ 				 * generally? */
+ #endif /* HAVE_DAG_API */
++
++#ifdef HAVE_REMOTE
++/*!
++	There is really a mess with previous variables, and it seems to me that they are not used
++	(they are used in pcap_pf.c only). I think we have to start using them.
++	The meaning is the following:
++
++	- TotPkts: the amount of packets received by the bpf filter, *before* applying the filter
++	- TotAccepted: the amount of packets that satisfies the filter
++	- TotDrops: the amount of packet that were dropped into the kernel buffer because of lack of space
++	- TotMissed: the amount of packets that were dropped by the physical interface; it is basically 
++	the value of the hardware counter into the card. This number is never put to zero, so this number
++	takes into account the *total* number of interface drops starting from the interface power-on.
++	- OrigMissed: the amount of packets that were dropped by the interface *when the capture begins*.
++	This value is used to detect the number of packets dropped by the interface *during the present
++	capture*, so that (ps_ifdrops= TotMissed - OrigMissed).
++*/
++	unsigned int TotNetDrops;	//!< keeps the number of packets that have been dropped by the network
++/*!
++	\brief It keeps the number of packets that have been received by the application.
++	
++	Packets dropped by the kernel buffer are not counted in this variable. The variable is always 
++	equal to (TotAccepted - TotDrops), exept for the case of remote capture, in which we have also
++	packets in fligh, i.e. that have been transmitted by the remote host, but that have not been 
++	received (yet) from the client. In this case, (TotAccepted - TotDrops - TotNetDrops) gives a
++	wrong result, since this number does not corresponds always to the number of packet received by 
++	the application. For this reason, in the remote capture we need another variable that takes
++	into account of the number of packets actually received by the application.
++*/
++	unsigned int TotCapt;
++#endif /* HAVE_REMOTE */
+ };
+ 
+ /*
+@@ -186,6 +217,22 @@
+ 	u_int *dlt_list;
+ 
+ 	struct pcap_pkthdr pcap_header;	/* This is needed for the pcap_next_ex() to work */
++
++#ifdef HAVE_REMOTE
++#ifndef WIN32	// Win32 already defines 'timeout'
++	int timeout;				//!< timeout to be used in the pcap_open()
++#endif
++	/*! \brief '1' if we're the network client; needed by several functions (like pcap_setfilter() ) to know if 
++		they have to use the socket or they have to open the local adapter. */
++	int rmt_clientside;
++
++	SOCKET rmt_sockctrl;		//!< socket ID of the socket used for the control connection
++	SOCKET rmt_sockdata;		//!< socket ID of the socket used for the data connection
++	int rmt_flags;				//!< we have to save flags, since they are passed by the pcap_open_live(), but they are used by the pcap_startcapture()
++	int rmt_capstarted;			//!< 'true' if the capture is already started (needed to knoe if we have to call the pcap_startcapture()
++	struct pcap_samp rmt_samp;	//!< Keeps the parameters related to the sampling process.
++	char *currentfilter;		//!< Pointer to a buffer (allocated at run-time) that stores the current filter. Needed when flag PCAP_OPENFLAG_NOCAPTURE_RPCAP is turned on.
++#endif /* HAVE_REMOTE */
+ };
+ 
+ /*
+diff -urb libpcap-2006.04.17/pcap-linux.c libpcap/pcap-linux.c
+--- libpcap-2006.04.17/pcap-linux.c	2006-04-07 01:02:28.000000000 -0700
++++ libpcap/pcap-linux.c	2006-04-20 20:35:58.406250000 -0700
+@@ -101,6 +101,10 @@
+ #include <linux/if_ether.h>
+ #include <net/if_arp.h>
+ 
++#ifdef HAVE_REMOTE
++#include <pcap-remote.h>
++#endif
++
+ /*
+  * If PF_PACKET is defined, we can use {SOCK_RAW,SOCK_DGRAM}/PF_PACKET
+  * sockets rather than SOCK_PACKET sockets.
+@@ -243,6 +247,37 @@
+ 	int		live_open_ok = 0;
+ 	struct utsname	utsname;
+ 
++#ifdef HAVE_REMOTE
++	/*
++		Retrofit; we have to make older applications compatible with the remote capture
++		So, we're calling the pcap_open_remote() from here, that is a very dirty thing.
++		Obviously, we cannot exploit all the new features; for instance, we cannot
++		send authentication, we cannot use a UDP data connection, and so on.
++	*/
++
++	char host[PCAP_BUF_SIZE + 1];
++	char port[PCAP_BUF_SIZE + 1];
++	char name[PCAP_BUF_SIZE + 1];
++	int srctype;
++
++	if (pcap_parsesrcstr(device, &srctype, host, port, name, ebuf) )
++		return NULL;
++
++	if (srctype == PCAP_SRC_IFREMOTE)
++	{
++		handle= pcap_opensource_remote(device, NULL, ebuf);
++
++		if (handle == NULL) 
++			return NULL;
++
++		handle->snapshot= snaplen;
++		handle->md.timeout= to_ms;
++		handle->rmt_flags= (promisc) ? PCAP_OPENFLAG_PROMISCUOUS : 0;
++
++		return handle;
++	}
++#endif		/* HAVE_REMOTE */
++
+ #ifdef HAVE_DAG_API
+ 	if (strstr(device, "dag")) {
+ 		return dag_open_live(device, snaplen, promisc, to_ms, ebuf);
+diff -urb libpcap-2006.04.17/pcap-win32.c libpcap/pcap-win32.c
+--- libpcap-2006.04.17/pcap-win32.c	2006-02-22 09:08:31.000000000 -0800
++++ libpcap/pcap-win32.c	2006-04-20 20:35:58.421875000 -0700
+@@ -48,6 +48,10 @@
+ #define errno (*_errno())
+ #endif /* __MINGW32__ */
+ 
++#ifdef HAVE_REMOTE
++#include <pcap-remote.h>
++#endif	/* HAVE_REMOTE */
++
+ static int pcap_setfilter_win32_npf(pcap_t *, struct bpf_program *);
+ static int pcap_setfilter_win32_dag(pcap_t *, struct bpf_program *);
+ static int pcap_getnonblock_win32(pcap_t *, char *);
+@@ -107,6 +111,11 @@
+ 	int n = 0;
+ 	register u_char *bp, *ep;
+ 
++#ifdef HAVE_REMOTE
++	static int samp_npkt;				// parameter needed for sampling, with '1 out of N' method has been requested
++	static struct timeval samp_time;	// parameter needed for sampling, with '1 every N ms' method has been requested
++#endif	/* HAVE_REMOTE */
++
+ 	cc = p->cc;
+ 	if (p->cc == 0) {
+ 		/*
+@@ -168,6 +177,42 @@
+ 		caplen = bhp->bh_caplen;
+ 		hdrlen = bhp->bh_hdrlen;
+ 
++#ifdef HAVE_REMOTE
++		if (p->rmt_samp.method == PCAP_SAMP_1_EVERY_N)
++		{
++			samp_npkt= (samp_npkt + 1) % p->rmt_samp.value;
++
++			// Discard all packets that are not '1 out of N'
++			if (samp_npkt != 0)
++			{
++				bp += BPF_WORDALIGN(caplen + hdrlen);
++				continue;
++			}
++		}
++
++		if (p->rmt_samp.method == PCAP_SAMP_FIRST_AFTER_N_MS)
++		{
++		struct pcap_pkthdr *pkt_header= (struct pcap_pkthdr*) bp;
++
++			// Check if the timestamp of the arrived packet is smaller than our target time
++			if ( (pkt_header->ts.tv_sec < samp_time.tv_sec) ||
++					( (pkt_header->ts.tv_sec == samp_time.tv_sec) && (pkt_header->ts.tv_usec < samp_time.tv_usec) ) )
++			{
++				bp += BPF_WORDALIGN(caplen + hdrlen);
++				continue;
++			}
++
++			// The arrived packet is suitable for being sent to the remote host
++			// So, let's update the target time
++			samp_time.tv_usec= pkt_header->ts.tv_usec + p->rmt_samp.value * 1000;
++			if (samp_time.tv_usec > 1000000)
++			{
++				samp_time.tv_sec= pkt_header->ts.tv_sec + samp_time.tv_usec / 1000000;
++				samp_time.tv_usec= samp_time.tv_usec % 1000000;
++			}
++		}
++#endif	/* HAVE_REMOTE */
++
+ 		/*
+ 		 * XXX A bpf_hdr matches a pcap_pkthdr.
+ 		 */
+@@ -396,6 +441,36 @@
+ 	register pcap_t *p;
+ 	NetType type;
+ 
++#ifdef HAVE_REMOTE
++	char host[PCAP_BUF_SIZE + 1];
++	char port[PCAP_BUF_SIZE + 1];
++	char name[PCAP_BUF_SIZE + 1];
++	int srctype;
++
++	/*
++		Retrofit; we have to make older applications compatible with the remote capture
++		So, we're calling the pcap_open_remote() from here, that is a very dirty thing.
++		Obviously, we cannot exploit all the new features; for instance, we cannot
++		send authentication, we cannot use a UDP data connection, and so on.
++	*/
++	if (pcap_parsesrcstr(device, &srctype, host, port, name, ebuf) )
++		return NULL;
++
++	if (srctype == PCAP_SRC_IFREMOTE)
++	{
++		p= pcap_opensource_remote(device, NULL, ebuf);
++
++		if (p == NULL) 
++			return NULL;
++
++		p->snapshot= snaplen;
++		p->timeout= to_ms;
++		p->rmt_flags= (promisc) ? PCAP_OPENFLAG_PROMISCUOUS : 0;
++
++		return p;
++	}
++#endif	/* HAVE_REMOTE */
++
+ 	/* Init WinSock */
+ 	wsockinit();
+ 
+@@ -743,6 +818,14 @@
+ int 
+ pcap_setbuff(pcap_t *p, int dim)
+ {
++#ifdef HAVE_REMOTE
++	if (p->rmt_clientside)
++	{
++		/* Currently, this is a bug: the capture buffer cannot be set with remote capture */
++		return 0;
++	}
++#endif	/* HAVE_REMOTE */
++
+ 	if (p->adapter==NULL)
+ 	{
+ 		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "The kernel buffer size cannot be set while reading from a file");
+diff -urb libpcap-2006.04.17/pcap.c libpcap/pcap.c
+--- libpcap-2006.04.17/pcap.c	2006-01-22 12:11:26.000000000 -0800
++++ libpcap/pcap.c	2006-04-20 20:37:59.187500000 -0700
+@@ -70,10 +70,28 @@
+ #include <dagapi.h>
+ #endif
+ 
++#ifdef HAVE_REMOTE
++#include <pcap-remote.h>
++#endif
++
+ int
+ pcap_dispatch(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
+ {
+ 
++#ifdef HAVE_REMOTE
++	/* Checks the capture type */
++	if (p->rmt_clientside)
++	{
++		/* We are on an remote capture */
++		if (!p->rmt_capstarted)
++		{
++			// if the capture has not started yet, please start it
++			if (pcap_startcapture_remote(p) )
++				return -1;
++		}
++	}
++#endif /* HAVE_REMOTE */
++
+ 	return p->read_op(p, cnt, callback, user);
+ }
+ 
+@@ -92,6 +110,20 @@
+ {
+ 	register int n;
+ 
++#ifdef HAVE_REMOTE
++	/* Checks the capture type */
++	if (p->rmt_clientside)
++	{
++		/* We are on an remote capture */
++		if (!p->rmt_capstarted)
++		{
++			// if the capture has not started yet, please start it
++			if (pcap_startcapture_remote(p) )
++				return -1;
++		}
++	}
++#endif /* HAVE_REMOTE */
++
+ 	for (;;) {
+ 		if (p->sf.rfile != NULL) {
+ 			/*
+@@ -169,6 +201,22 @@
+ 	/* Saves a pointer to the packet headers */
+ 	*pkt_header= &p->pcap_header;
+ 
++#ifdef HAVE_REMOTE
++	/* Checks the capture type */
++	if (p->rmt_clientside)
++	{
++		/* We are on an remote capture */
++		if (!p->rmt_capstarted)
++		{
++			// if the capture has not started yet, please start it
++			if (pcap_startcapture_remote(p) )
++				return -1;
++		}
++
++		return pcap_read_nocb_remote(p, pkt_header, (u_char **) pkt_data);
++	}
++#endif /* HAVE_REMOTE */
++
+ 	if (p->sf.rfile != NULL) {
+ 		int status;
+ 
+@@ -538,6 +586,11 @@
+ int
+ pcap_fileno(pcap_t *p)
+ {
++#ifdef HAVE_REMOTE
++	if (p->rmt_clientside)
++		return(p->rmt_sockdata);
++#endif /* HAVE_REMOTE */
++
+ #ifndef WIN32
+ 	return (p->fd);
+ #else
+diff -urb libpcap-2006.04.17/pcap.h libpcap/pcap.h
+--- libpcap-2006.04.17/pcap.h	2006-02-09 14:26:12.000000000 -0800
++++ libpcap/pcap.h	2006-04-20 20:35:58.453125000 -0700
+@@ -53,6 +53,19 @@
+ 
+ #include <stdio.h>
+ 
++#ifdef HAVE_REMOTE
++	// We have to define the SOCKET here, although it has been defined in sockutils.h
++	// This is to avoid the distribution of the 'sockutils.h' file around
++	// (for example in the WinPcap developer's pack)
++	#ifndef SOCKET
++		#ifdef WIN32
++			#define SOCKET unsigned int
++		#else
++			#define SOCKET int
++		#endif
++	#endif
++#endif
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+@@ -151,9 +164,11 @@
+ 	u_int ps_recv;		/* number of packets received */
+ 	u_int ps_drop;		/* number of packets dropped */
+ 	u_int ps_ifdrop;	/* drops by interface XXX not yet supported */
+-#ifdef WIN32
+-	u_int bs_capt;		/* number of packets that reach the application */
+-#endif /* WIN32 */
++#ifdef HAVE_REMOTE
++	u_int ps_capt;		/* number of packets that are received by the application; please get rid off the Win32 ifdef */
++	u_int ps_sent;		/* number of packets sent by the server on the network */
++	u_int ps_netdrop;	/* number of packets lost on the network */
++#endif /* HAVE_REMOTE */
+ };
+ 
+ #ifdef MSDOS
+@@ -317,6 +332,11 @@
+ 
+ #endif /* WIN32/MSDOS/UN*X */
+ 
++#ifdef HAVE_REMOTE
++/* Includes most of the public stuff that is needed for the remote capture */
++#include "remote-ext.h"
++#endif	 /* HAVE_REMOTE */
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff -urb libpcap-2006.04.17/savefile.c libpcap/savefile.c
+--- libpcap-2006.04.17/savefile.c	2005-12-13 05:41:39.000000000 -0800
++++ libpcap/savefile.c	2006-04-20 20:35:58.468750000 -0700
+@@ -1130,6 +1130,11 @@
+ 	int status = 0;
+ 	int n = 0;
+ 
++#ifdef HAVE_REMOTE
++	static int samp_npkt;				// parameter needed for sampling, whtn '1 out of N' method has been requested
++	static struct timeval samp_time;	// parameter needed for sampling, whtn '1 every N ms' method has been requested
++#endif /* HAVE_REMOTE */
++
+ 	while (status == 0) {
+ 		struct pcap_pkthdr h;
+ 
+@@ -1159,6 +1164,36 @@
+ 
+ 		if ((fcode = p->fcode.bf_insns) == NULL ||
+ 		    bpf_filter(fcode, p->buffer, h.len, h.caplen)) {
++
++#ifdef HAVE_REMOTE
++			if (p->rmt_samp.method == PCAP_SAMP_1_EVERY_N)
++			{
++				samp_npkt= (samp_npkt + 1) % p->rmt_samp.value;
++
++				// Discard all packets that are not '1 out of N'
++				if (samp_npkt != 0)
++					continue;
++			}
++
++			if (p->rmt_samp.method == PCAP_SAMP_FIRST_AFTER_N_MS)
++			{
++				// Check if the timestamp of the arrived packet is smaller than our target time
++				if ( (h.ts.tv_sec < samp_time.tv_sec) ||
++						( (h.ts.tv_sec == samp_time.tv_sec) && (h.ts.tv_usec < samp_time.tv_usec) ) )
++					continue;
++
++				// The arrived packet is suitable for being sent to the remote host
++				// So, let's update the target time
++				samp_time.tv_usec= h.ts.tv_usec + p->rmt_samp.value * 1000;
++				if (samp_time.tv_usec > 1000000)
++				{
++					samp_time.tv_sec= h.ts.tv_sec + samp_time.tv_usec / 1000000;
++					samp_time.tv_usec= samp_time.tv_usec % 1000000;
++				}
++
++			}
++#endif /* HAVE_REMOTE */
++
+ 			(*callback)(user, &h, p->buffer);
+ 			if (++n >= cnt && cnt > 0)
+ 				break;

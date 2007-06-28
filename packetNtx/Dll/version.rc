@@ -1,6 +1,5 @@
-//Microsoft Developer Studio generated resource script.
+// Microsoft Visual C++ generated resource script.
 //
-#include "resource.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -13,11 +12,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Italian (Italy) resources
+// Neutral resources
 
-#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ITA)
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_NEU)
 #ifdef _WIN32
-LANGUAGE LANG_ITALIAN, SUBLANG_ITALIAN
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 #pragma code_page(1252)
 #endif //_WIN32
 
@@ -27,72 +26,28 @@ LANGUAGE LANG_ITALIAN, SUBLANG_ITALIAN
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE DISCARDABLE 
+1 TEXTINCLUDE 
 BEGIN
-    "resource.h\0"
+    "\r\n"
+    "\0"
 END
 
-2 TEXTINCLUDE DISCARDABLE 
+2 TEXTINCLUDE 
 BEGIN
     "#include ""afxres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE DISCARDABLE 
+3 TEXTINCLUDE 
 BEGIN
+    "#include ""version.rc2""\r\n"
     "\r\n"
     "\0"
 END
 
 #endif    // APSTUDIO_INVOKED
 
-
-#ifndef _MAC
-/////////////////////////////////////////////////////////////////////////////
-//
-// Version
-//
-
-VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,3,0,33
- PRODUCTVERSION 2,3,0,33
- FILEFLAGSMASK 0x3fL
-#ifdef _DEBUG
- FILEFLAGS 0x1L
-#else
- FILEFLAGS 0x0L
-#endif
- FILEOS 0x40004L
- FILETYPE 0x2L
- FILESUBTYPE 0x0L
-BEGIN
-    BLOCK "StringFileInfo"
-    BEGIN
-        BLOCK "040904b0"
-        BEGIN
-            VALUE "Comments", "WinPcap low level packet library\0"
-            VALUE "CompanyName", "Politecnico di Torino\0"
-            VALUE "FileDescription", "Packet\0"
-            VALUE "FileVersion", "2, 3, 0, 33\0"
-            VALUE "InternalName", "Packet\0"
-            VALUE "LegalCopyright", "Copyright © 1999-2002\0"
-            VALUE "LegalTrademarks", "\0"
-            VALUE "OriginalFilename", "Packet.dll\0"
-            VALUE "PrivateBuild", "\0"
-            VALUE "ProductName", "WinPcap low level packet library\0"
-            VALUE "ProductVersion", "2, 3, 0, 33\0"
-            VALUE "SpecialBuild", "\0"
-        END
-    END
-    BLOCK "VarFileInfo"
-    BEGIN
-        VALUE "Translation", 0x409, 1200
-    END
-END
-
-#endif    // !_MAC
-
-#endif    // Italian (Italy) resources
+#endif    // Neutral resources
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -102,7 +57,7 @@ END
 //
 // Generated from the TEXTINCLUDE 3 resource.
 //
-
+#include "Version.rc2"
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
