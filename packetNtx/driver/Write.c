@@ -381,16 +381,6 @@ NPF_BufferedWrite(
 		// Allocate a packet from our free list
 		NdisAllocatePacket( &Status, &pPacket, Open->PacketPool);
 		
-		// If asked, set the flags for this packet.
-		// Currently, the only situation in which we set the flags is to disable the reception of loopback
-		// packets, i.e. of the packets sent by us.
-		if(Open->SkipSentPackets)
-		{
-			NdisSetPacketFlags(
-				pPacket,
-				g_SendPacketFlags);
-		}
-
 		if (Status != NDIS_STATUS_SUCCESS) 
 		{
 			//  No more free packets
@@ -403,13 +393,6 @@ NPF_BufferedWrite(
 			// Try again to allocate a packet
 			NdisAllocatePacket( &Status, &pPacket, Open->PacketPool);
 
-			if(Open->SkipSentPackets)
-			{
-				NdisSetPacketFlags(
-					pPacket,
-					g_SendPacketFlags);
-			}
-			
 			if (Status != NDIS_STATUS_SUCCESS) 
 			{
 				// Second failure, report an error
@@ -422,10 +405,17 @@ NPF_BufferedWrite(
 				return -1;
 			}
 
-//			IoFreeMdl(TmpMdl);
-//			return (PCHAR)winpcap_hdr - UserBuff;
 		}
 
+		// If asked, set the flags for this packet.
+		// Currently, the only situation in which we set the flags is to disable the reception of loopback
+		// packets, i.e. of the packets sent by us.
+		if(Open->SkipSentPackets)
+		{
+			NdisSetPacketFlags(
+				pPacket,
+				g_SendPacketFlags);
+		}
 		
 		// The packet has a buffer that needs to be freed after every single write
 		RESERVED(pPacket)->FreeBufAfterWrite = TRUE;
