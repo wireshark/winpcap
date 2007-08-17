@@ -912,31 +912,34 @@ pcap_t *fp;
 
 		case PCAP_SRC_IFLOCAL:
 
+			fp = pcap_open_live(name, snaplen, (flags & PCAP_OPENFLAG_PROMISCUOUS), read_timeout, errbuf);
+
 #ifdef WIN32
 //
 // these flags are supported on Windows only
 //
-			fp = pcap_open_live(name, snaplen, (flags & PCAP_OPENFLAG_PROMISCUOUS), read_timeout, errbuf);
-
-			/* disable loopback capture if requested */
-			if(flags & PCAP_OPENFLAG_NOCAPTURE_LOCAL)
+			if (fp != NULL)
 			{
-				if(!PacketSetLoopbackBehavior(fp->adapter, NPF_DISABLE_LOOPBACK))
+				/* disable loopback capture if requested */
+				if(flags & PCAP_OPENFLAG_NOCAPTURE_LOCAL)
 				{
-					snprintf(errbuf, PCAP_ERRBUF_SIZE, "Unable to disable the capture of loopback packets.");
-					pcap_close(fp);
-					return NULL;
+					if(!PacketSetLoopbackBehavior(fp->adapter, NPF_DISABLE_LOOPBACK))
+					{
+						snprintf(errbuf, PCAP_ERRBUF_SIZE, "Unable to disable the capture of loopback packets.");
+						pcap_close(fp);
+						return NULL;
+					}
 				}
-			}
 
-			/* set mintocopy to zero if requested */
-			if(flags & PCAP_OPENFLAG_MAX_RESPONSIVENESS)
-			{
-				if(!PacketSetMinToCopy(fp->adapter, 0))
+				/* set mintocopy to zero if requested */
+				if(flags & PCAP_OPENFLAG_MAX_RESPONSIVENESS)
 				{
-					snprintf(errbuf, PCAP_ERRBUF_SIZE, "Unable to set max responsiveness.");
-					pcap_close(fp);
-					return NULL;
+					if(!PacketSetMinToCopy(fp->adapter, 0))
+					{
+						snprintf(errbuf, PCAP_ERRBUF_SIZE, "Unable to set max responsiveness.");
+						pcap_close(fp);
+						return NULL;
+					}
 				}
 			}
 #endif //WIN32			
