@@ -82,3 +82,4 @@ EXPORTS
 		pcap_dump_file
 		pcap_dump_ftell
 		pcap_start_oem
+		pcap_get_airpcap_handle
