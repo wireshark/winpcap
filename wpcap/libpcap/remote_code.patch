@@ -610,8 +610,8 @@ diff -urb libpcap-2006.04.17/pcap.c libpcap/pcap.c
  	return (p->fd);
  #else
 diff -urb libpcap-2006.04.17/pcap.h libpcap/pcap.h
---- libpcap-2006.04.17/pcap.h	2006-02-09 14:26:12.000000000 -0800
-+++ libpcap/pcap.h	2006-04-20 20:35:58.453125000 -0700
+--- libpcap-2006.04.17/pcap/pcap.h	2006-02-09 14:26:12.000000000 -0800
++++ libpcap/pcap/pcap.h	2006-04-20 20:35:58.453125000 -0700
 @@ -53,6 +53,19 @@
  
  #include <stdio.h>
