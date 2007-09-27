@@ -47,8 +47,6 @@
 
 #include <winsock2.h>
 
-#include "devioctl.h"
-
 #ifdef HAVE_AIRPCAP_API
 #include <airpcap.h>
 #else
