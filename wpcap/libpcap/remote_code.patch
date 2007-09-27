@@ -609,7 +609,7 @@ diff -urb libpcap-2006.04.17/pcap.c libpcap/pcap.c
  #ifndef WIN32
  	return (p->fd);
  #else
-diff -urb libpcap-2006.04.17/pcap.h libpcap/pcap.h
+diff -urb libpcap-2006.04.17/pcap/pcap.h libpcap/pcap/pcap.h
 --- libpcap-2006.04.17/pcap/pcap.h	2006-02-09 14:26:12.000000000 -0800
 +++ libpcap/pcap/pcap.h	2006-04-20 20:35:58.453125000 -0700
 @@ -53,6 +53,19 @@
@@ -653,7 +653,7 @@ diff -urb libpcap-2006.04.17/pcap.h libpcap/pcap.h
  
 +#ifdef HAVE_REMOTE
 +/* Includes most of the public stuff that is needed for the remote capture */
-+#include "remote-ext.h"
++#include <remote-ext.h>
 +#endif	 /* HAVE_REMOTE */
 +
  #ifdef __cplusplus
