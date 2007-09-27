@@ -34,8 +34,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define HAVE_REMOTE
 #include <pcap.h>
-#include <remote-ext.h>
 
 void usage();
 
