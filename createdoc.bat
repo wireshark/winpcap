@@ -1,7 +1,7 @@
 @echo off
 cd dox\prj\
 @echo #### Delete existing WinPcap documentation
-del /q docs\*.*
+del /q docs\*.* 2> nul > nul
 @echo #### Create new documentation
 doxygen winpcap_noc.dox >nul
 @echo #### Copy all gif files
