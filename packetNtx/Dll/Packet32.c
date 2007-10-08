@@ -2690,7 +2690,7 @@ BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len)
 
 	// Try to catch malformed strings
 	if(len>2048){
-		if(((PUCHAR)name)[1]!=0 && len>1) free(FileName);
+		if(((PUCHAR)name)[1]!=0 && len>1) GlobalFreePtr(FileName);
 
 		TRACE_EXIT("PacketSetDumpName");
 
@@ -2698,7 +2698,7 @@ BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len)
 	}
 
     res = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,pBIOCSETDUMPFILENAME,NameWithPath,len,NULL,0,&BytesReturned,NULL);
-	free(FileName);
+	if(((PUCHAR)name)[1]!=0 && len>1) GlobalFreePtr(FileName);
 
 	TRACE_EXIT("PacketSetDumpName");
 	return res;
