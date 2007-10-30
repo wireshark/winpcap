@@ -1,7 +1,7 @@
 #include <pcap-int.h>
 
 /*!
-	\name OEM-specific Functions
+	\name Functions specific to WinPcap Professional
 */
 //\{ 
 
