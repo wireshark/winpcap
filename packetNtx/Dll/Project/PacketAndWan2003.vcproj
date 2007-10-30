@@ -45,7 +45,7 @@
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="../../../../winpcap/PacketNtx/Dll/Packet.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)/Packet.pdb"
+				ProgramDatabaseFile="$(OutDir)/Packet2k.pdb"
 				SubSystem="2"
 				ImportLibrary="$(OutDir)/Packet.lib"
 				TargetMachine="1"/>
@@ -114,7 +114,7 @@
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="../../../../winpcap/PacketNtx/Dll/Packet.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)/Packet.pdb"
+				ProgramDatabaseFile="$(OutDir)/Packet2k.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				ImportLibrary="$(OutDir)/Packet.lib"
@@ -184,7 +184,7 @@
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="../../../../winpcap/PacketNtx/Dll/Packet.def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)/Packet.pdb"
+				ProgramDatabaseFile="$(OutDir)/Packet2k.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				ImportLibrary="$(OutDir)/Packet.lib"
@@ -205,9 +205,9 @@ mkdir ..\..\..\OEM\WinPcapOem\Binaries_SIGNED &gt;NUL 2&gt;NUL
 copy .\Packet_Release_2k\packet.dll ..\..\..\OEM\WinPcapOem\Binaries_SIGNED\Packet2k.dll
 
 Echo Copying the drivers
-copy ..\..\Driver\bin\2k\i386\npf.sys ..\..\..\OEM\WinPcapOem\Binaries_SIGNED\npf2k.sys 
-copy ..\..\Driver\bin\NT4\i386\free\npf.sys ..\..\..\OEM\WinPcapOem\Binaries_SIGNED\npfnt.sys 
-copy ..\..\Driver\bin\xp\AMD64\npf.sys ..\..\..\OEM\WinPcapOem\Binaries_SIGNED\npfx64.sys 
+copy ..\..\Driver\bin\2k\i386\npf.sys ..\..\..\OEM\WinPcapOem\Binaries_SIGNED\npf2k.sys
+copy ..\..\Driver\bin\NT4\i386\free\npf.sys ..\..\..\OEM\WinPcapOem\Binaries_SIGNED\npfnt.sys
+copy ..\..\Driver\bin\xp\AMD64\npf.sys ..\..\..\OEM\WinPcapOem\Binaries_SIGNED\npfx64.sys
 "/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
