@@ -35,6 +35,7 @@
 				ProgramDataBaseFileName=".\Release_REMOTE_TNT/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
@@ -240,6 +241,7 @@
 				ProgramDataBaseFileName=".\Release_REMOTE/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
