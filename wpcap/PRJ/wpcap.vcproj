@@ -47,6 +47,7 @@
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libcmtd.lib"
 				ModuleDefinitionFile=".\wpcap.def"
+				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Release_REMOTE_TNT/wpcap.pdb"
 				ImportLibrary=".\Release_REMOTE_TNT/wpcap.lib"
 				TargetMachine="1"/>
@@ -251,6 +252,7 @@
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libcmtd.lib"
 				ModuleDefinitionFile=".\wpcap.def"
+				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Release_REMOTE/wpcap.pdb"
 				ImportLibrary=".\Release_REMOTE/wpcap.lib"
 				TargetMachine="1"/>

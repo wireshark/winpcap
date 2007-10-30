@@ -46,6 +46,7 @@
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\..\WinpcapOem\Release\"
 				ModuleDefinitionFile=".\WinpcapOem.def"
+				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Release/Packet.pdb"
 				ImportLibrary=".\Release/Packet.lib"
 				TargetMachine="1"/>
@@ -253,6 +254,7 @@
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\..\WinpcapOem\Release\"
 				ModuleDefinitionFile=".\WinpcapOem.def"
+				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Release_TNT/Packet.pdb"
 				ImportLibrary=".\Release_TNT/Packet.lib"
 				TargetMachine="1"/>
@@ -321,6 +323,7 @@
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\..\WinpcapOem\Release\"
 				ModuleDefinitionFile=".\WinpcapOem.def"
+				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Release_SIGNED/Packet.pdb"
 				ImportLibrary=".\Release_SIGNED/Packet.lib"
 				TargetMachine="1"/>
@@ -412,6 +415,7 @@ echo ****************************************************************
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\..\WinpcapOem\Release\"
 				ModuleDefinitionFile=".\WinpcapOem.def"
+				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Release_TNT_SIGNED/Packet.pdb"
 				ImportLibrary=".\Release_TNT_SIGNED/Packet.lib"
 				TargetMachine="1"/>
@@ -447,7 +451,8 @@ echo *    You should have signed the following binaries             *
 echo *                                                              *
 echo *                    .\binaries_SIGNED\*.*                     *
 echo *                                                              *
-echo ****************************************************************"/>
+echo ****************************************************************
+"/>
 			<Tool
 				Name="VCPreLinkEventTool"/>
 			<Tool
@@ -836,10 +841,10 @@ echo ****************************************************************"/>
 			RelativePath="binaries\npfnt.sys">
 		</File>
 		<File
-			RelativePath="binaries\Packet2k.dll">
+			RelativePath="Packet2k.dll">
 		</File>
 		<File
-			RelativePath="Packet2k.dll">
+			RelativePath="binaries\Packet2k.dll">
 		</File>
 		<File
 			RelativePath="binaries\Packetnt.dll">
