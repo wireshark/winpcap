@@ -117,6 +117,7 @@
 				ProgramDatabaseFile="$(OutDir)/Packet2k.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
+				SetChecksum="TRUE"
 				ImportLibrary="$(OutDir)/Packet.lib"
 				TargetMachine="1"/>
 			<Tool
@@ -187,6 +188,7 @@
 				ProgramDatabaseFile="$(OutDir)/Packet2k.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
+				SetChecksum="TRUE"
 				ImportLibrary="$(OutDir)/Packet.lib"
 				TargetMachine="1"/>
 			<Tool

@@ -49,6 +49,7 @@
 				ModuleDefinitionFile=".\WinpcapOem.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Release/Packet.pdb"
+				SetChecksum="TRUE"
 				ImportLibrary=".\Release/Packet.lib"
 				TargetMachine="1"/>
 			<Tool
@@ -258,6 +259,7 @@
 				ModuleDefinitionFile=".\WinpcapOem.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Release_TNT/Packet.pdb"
+				SetChecksum="TRUE"
 				ImportLibrary=".\Release_TNT/Packet.lib"
 				TargetMachine="1"/>
 			<Tool
@@ -328,6 +330,7 @@
 				ModuleDefinitionFile=".\WinpcapOem.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Release_SIGNED/Packet.pdb"
+				SetChecksum="TRUE"
 				ImportLibrary=".\Release_SIGNED/Packet.lib"
 				TargetMachine="1"/>
 			<Tool
@@ -421,6 +424,7 @@ echo ****************************************************************
 				ModuleDefinitionFile=".\WinpcapOem.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Release_TNT_SIGNED/Packet.pdb"
+				SetChecksum="TRUE"
 				ImportLibrary=".\Release_TNT_SIGNED/Packet.lib"
 				TargetMachine="1"/>
 			<Tool
@@ -845,10 +849,10 @@ echo ****************************************************************
 			RelativePath="binaries\npfnt.sys">
 		</File>
 		<File
-			RelativePath="binaries\Packet2k.dll">
+			RelativePath="Packet2k.dll">
 		</File>
 		<File
-			RelativePath="Packet2k.dll">
+			RelativePath="binaries\Packet2k.dll">
 		</File>
 		<File
 			RelativePath="binaries\Packetnt.dll">
