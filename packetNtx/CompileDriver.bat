@@ -21,17 +21,21 @@ mkdir driver\bin 2> nul
 mkdir driver\bin\2k 2> nul
 rem mkdir driver\bin\2k\%DDKBUILDENV% 2> nul
 
-rem copy driver\NPF_NT5.RC driver\NPF.RC
-
 set TARGETPATH=bin\2k
-set NPF_C_DEFINES=-D__NPF_x86__ -DNDIS50
-set NPF_TME_JIT_FILES=tme.c count_packets.c tcp_session.c functions.c bucket_lookup.c normal_lookup.c jitter.c win_bpf_filter_init.c
+set NPF_C_DEFINES=-DNDIS50
+
+rem ** enable the following line to enable the TME extensions **
+rem set NPF_TME_FILES=tme.c count_packets.c tcp_session.c functions.c bucket_lookup.c normal_lookup.c win_bpf_filter_init.c
+rem set NPF_C_DEFINES=%NPF_C_DEFINES% -DHAVE_BUGGY_TME_SUPPORT
+
+set NPF_JIT_FILES=jitter.c
 
 prefast build -cefw
 
 set TARGETPATH=
 set NPF_C_DEFINES=
-set NPF_TME_JIT_FILES=
+set NPF_TME_FILES=
+set NPF_JIT_FILES=
 
 goto end
 
@@ -44,21 +48,21 @@ echo *******************************************************
 mkdir driver\bin 2> nul
 mkdir driver\bin\xp 2> nul
 
-rem copy driver\NPF_NT5.RC driver\NPF.RC
-
 set TARGETPATH=bin\xp
-set NPF_C_DEFINES=-D__NPF_AMD64__ -DNDIS50
+set NPF_C_DEFINES=-DNDIS50
 
 rem
 rem The TME extensions and the JIT is not supported on x64, at the moment
 rem
-set NPF_TME_JIT_FILES=
+set NPF_TME_FILES=
+set NPF_JIT_FILES=
 
 build -cefw
 
 set TARGETPATH=
 set NPF_C_DEFINES=
-set NPF_TME_JIT_FILES=
+set NPF_TME_FILES=
+set NPF_JIT_FILES=
 
 goto end
 
@@ -88,11 +92,14 @@ mkdir driver\bin\NT4\i386 2> nul
 mkdir driver\bin\NT4\i386\free 2> nul
 mkdir driver\bin\NT4\i386\checked 2> nul
 
-rem copy driver\NPF_NT4.RC driver\NPF.RC
-
 set TARGETPATH=bin\NT4
-set NPF_C_DEFINES=-D__NPF_x86__ -DNDIS30 -D__NPF_NT4__
-set NPF_TME_JIT_FILES=tme.c count_packets.c tcp_session.c functions.c bucket_lookup.c normal_lookup.c jitter.c win_bpf_filter_init.c
+set NPF_C_DEFINES=-DNDIS30 -D__NPF_NT4__
+
+rem ** enable the following line to enable the TME extensions **
+rem set NPF_TME_FILES=tme.c count_packets.c tcp_session.c functions.c bucket_lookup.c normal_lookup.c win_bpf_filter_init.c
+rem set NPF_C_DEFINES=%NPF_C_DEFINES% -DHAVE_BUGGY_TME_SUPPORT
+
+set NPF_JIT_FILES=jitter.c
 
 if NOT "%NPF_COMPILED%" == "1" (
 		set Include=%BASEDIR%\src\network\inc;%BASEDIR%\inc;%Include%
@@ -103,7 +110,8 @@ build -cefw
 
 set TARGETPATH=
 set NPF_C_DEFINES=
-set NPF_TME_JIT_FILES=
+set NPF_TME_FILES=
+set NPF_JIT_FILES=
 
 goto end
 
