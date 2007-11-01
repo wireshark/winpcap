@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
- * Copyright (c) 2005 CACE Technologies, Davis (California)
+ * Copyright (c) 2005 - 2007 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,14 +74,14 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 	register u_int32 A, X;
 	register int k;
 
-#ifdef __NPF_x86__
+#ifdef HAVE_BUGGY_TME_SUPPORT
 	u_int32 j,tmp;
 	u_short tmp2;
-#endif
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 	int32 mem[BPF_MEMWORDS];
 
-#ifndef __NPF_x86__
+#ifndef HAVE_BUGGY_TME_SUPPORT
 	UNUSED(time_ref);
 	UNUSED(tme);
 	UNUSED(mem_ex);
@@ -191,7 +191,7 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 			X = mem[pc->k];
 			continue;
 
-#ifdef __NPF_x86__
+#ifdef HAVE_BUGGY_TME_SUPPORT
 		//
 		// these instructions use the TME extensions,
 		// not supported on x86-64 and IA64 architectures.
@@ -248,7 +248,7 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 			continue;
 		/* END LD NO PACKET INSTRUCTIONS */
 
-#endif //__NPF_x86__
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 		case BPF_ST:
 			mem[pc->k] = A;
@@ -258,7 +258,7 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 			mem[pc->k] = X;
 			continue;
 
-#ifdef __NPF_x86__
+#ifdef HAVE_BUGGY_TME_SUPPORT
 		//
 		// these instructions use the TME extensions,
 		// not supported on x86-64 and IA64 architectures.
@@ -309,7 +309,7 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 		
 		/* END STORE INSTRUCTIONS */
 
-#endif //__NPF_x86__
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 		case BPF_JMP|BPF_JA:
 			pc += pc->k;
@@ -425,7 +425,7 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 			A = X;
 			continue;
 
-#ifdef __NPF_x86__
+#ifdef HAVE_BUGGY_TME_SUPPORT
 		//
 		// these instructions use the TME extensions,
 		// not supported on x86-64 and IA64 architectures.
@@ -462,7 +462,7 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 			continue;
 		
 		/* END TME INSTRUCTIONS */
-#endif //__NPF_x86__
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 
 		}
@@ -485,16 +485,16 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 	register u_int32 A, X;
 	register int k;
 	int32 mem[BPF_MEMWORDS];
-#ifdef __NPF_x86__
+#ifdef HAVE_BUGGY_TME_SUPPORT
 	u_int32 j,tmp;
 	u_short tmp2;
-#endif
+#endif //HAVE_BUGGY_TME_SUPPORT
 
-#ifndef __NPF_x86__
+#ifndef HAVE_BUGGY_TME_SUPPORT
 	UNUSED(tme);
 	UNUSED(time_ref);
 	UNUSED(mem_ex);
-#endif 
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 	RtlZeroMemory(mem, sizeof(mem));
 
@@ -687,7 +687,7 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 			X = mem[pc->k];
 			continue;
 		
-#ifdef __NPF_x86__
+#ifdef HAVE_BUGGY_TME_SUPPORT
 		//
 		// these instructions use the TME extensions,
 		// not supported on x86-64 and IA64 architectures.
@@ -745,7 +745,7 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 
 		/* END LD NO PACKET INSTRUCTIONS */
 
-#endif //__NPF_x86__
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 		case BPF_ST:
 			mem[pc->k] = A;
@@ -755,7 +755,7 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 			mem[pc->k] = X;
 			continue;
 
-#ifdef __NPF_x86__
+#ifdef HAVE_BUGGY_TME_SUPPORT
 		//
 		// these instructions use the TME extensions,
 		// not supported on x86-64 and IA64 architectures.
@@ -806,7 +806,7 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 		
 		/* END STORE INSTRUCTIONS */
 
-#endif //__NPF_x86__		
+#endif //HAVE_BUGGY_TME_SUPPORT		
 
 		case BPF_JMP|BPF_JA:
 			pc += pc->k;
@@ -922,7 +922,7 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 			A = X;
 			continue;
 
-#ifdef __NPF_x86__
+#ifdef HAVE_BUGGY_TME_SUPPORT
 		//
 		// these instructions use the TME extensions,
 		// not supported on x86-64 and IA64 architectures.
@@ -960,7 +960,7 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 		
 		/* END TME INSTRUCTIONS */
 
-#endif //__NPF_x86__
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 		}
 	}
@@ -977,9 +977,9 @@ bpf_validate(f, len,mem_ex_size)
 	register struct bpf_insn *p;
 	int32 flag;
 
-#ifndef __NPF_x86__
+#ifndef HAVE_BUGGY_TME_SUPPORT
 	UNUSED(mem_ex_size);
-#endif
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 	if (len < 1)
 		return 0;
@@ -1027,7 +1027,7 @@ bpf_validate(f, len,mem_ex_size)
 		case BPF_ST:
 		case BPF_STX:
 
-#ifdef __NPF_x86__
+#ifdef HAVE_BUGGY_TME_SUPPORT
 			//
 			// these instructions use the TME extensions,
 			// not supported on x86-64 and IA64 architectures.
@@ -1063,10 +1063,10 @@ bpf_validate(f, len,mem_ex_size)
 						return 0;
 				}
 			}
-#else // ! __NPF_x86__
+#else // ! HAVE_BUGGY_TME_SUPPORT
 			if (p->k >= BPF_MEMWORDS)
 				return 0;
-#endif // __NPF_x86__
+#endif // HAVE_BUGGY_TME_SUPPORT
 			
 			TRACE_MESSAGE(PACKET_DEBUG_LOUD,"Validating program: no wrong ST memory locations");
 			break;
