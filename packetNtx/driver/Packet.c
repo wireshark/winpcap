@@ -33,7 +33,6 @@
 
 #include <ntddk.h>
 #include <ndis.h>
-#include <ntddpack.h>
 
 #include "debug.h"
 #include "packet.h"
@@ -1449,22 +1448,22 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		SET_RESULT_SUCCESS(0);
 		break;
 		
-	case IOCTL_PROTOCOL_RESET:
-
-		TRACE_MESSAGE(PACKET_DEBUG_LOUD, "IOCTL_PROTOCOL_RESET");
-
-		IoMarkIrpPending(Irp);
-		Irp->IoStatus.Status = STATUS_SUCCESS;
-
-		ExInterlockedInsertTailList(&Open->ResetIrpList,&Irp->Tail.Overlay.ListEntry,&Open->RequestSpinLock);
-        NdisReset(&Status,Open->AdapterHandle);
-        if (Status != NDIS_STATUS_PENDING)
-        {
-            IF_LOUD(DbgPrint("NPF: IoControl - ResetComplete being called\n");)
-				NPF_ResetComplete(Open,Status);
-        }
-		
-		break;
+//	case IOCTL_PROTOCOL_RESET:
+//
+//		TRACE_MESSAGE(PACKET_DEBUG_LOUD, "IOCTL_PROTOCOL_RESET");
+//
+//		IoMarkIrpPending(Irp);
+//		Irp->IoStatus.Status = STATUS_SUCCESS;
+//
+//		ExInterlockedInsertTailList(&Open->ResetIrpList,&Irp->Tail.Overlay.ListEntry,&Open->RequestSpinLock);
+//      NdisReset(&Status,Open->AdapterHandle);
+//      if (Status != NDIS_STATUS_PENDING)
+//        {
+//            IF_LOUD(DbgPrint("NPF: IoControl - ResetComplete being called\n");)
+//				NPF_ResetComplete(Open,Status);
+//        }
+//		
+//		break;
 		
 	case BIOCSETOID:
 	case BIOCQUERYOID:
