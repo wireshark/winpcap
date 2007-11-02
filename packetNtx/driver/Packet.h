@@ -271,6 +271,24 @@ struct sf_pkthdr {
 };
 
 /*!
+  \brief Structure containing an OID request.
+
+  It is used by the PacketRequest() function to send an OID to the interface card driver. 
+  It can be used, for example, to retrieve the status of the error counters on the adapter, its MAC address, 
+  the list of the multicast groups defined on it, and so on.
+*/
+typedef struct _PACKET_OID_DATA {
+    ULONG Oid;					///< OID code. See the Microsoft DDK documentation or the file ntddndis.h
+								///< for a complete list of valid codes.
+    ULONG Length;				///< Length of the data field
+    UCHAR Data[1];				///< variable-lenght field that contains the information passed to or received 
+								///< from the adapter.
+}
+	PACKET_OID_DATA, *PPACKET_OID_DATA;
+
+C_ASSERT(sizeof(PACKET_OID_DATA) == 12);
+
+/*!
   \brief Stores an OID request.
   
   This structure is used by the driver to perform OID query or set operations on the underlying NIC driver. 
