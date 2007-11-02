@@ -140,27 +140,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\Common\Devioctl.h"
-				>
-			</File>
-			<File
 				RelativePath=".\jitter.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\Common\Ntddndis.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\Common\Ntddpack.h"
-				>
-			</File>
-			<File
 				RelativePath=".\Packet.h"
-				>
-			</File>
-			<File
-				RelativePath=".\resource.h"
 				>
 			</File>
 			<File
