@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
- * Copyright (c) 2005 - 2006 CACE Technologies, Davis (California)
+ * Copyright (c) 2005 - 2007 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,10 +31,8 @@
  *
  */
 
-#include "stdio.h"
-#include "ntddk.h"
-#include "ntiologc.h"
-#include "ndis.h"
+#include <ntddk.h>
+#include <ndis.h>
 
 #include "debug.h"
 #include "packet.h"
@@ -479,11 +477,11 @@ NPF_CloseOpenInstance(POPEN_INSTANCE pOpen)
 //
 // Jitted filters are supported on x86 (32bit) only
 // 
-#ifdef __NPF_x86__
+#ifdef _X86_
 		// Free the jitted filter if it's present
 		if(pOpen->Filter != NULL)
 			BPF_Destroy_JIT_Filter(pOpen->Filter);
-#endif
+#endif //_X86_
 
 		//
 		// Dereference the read event.
