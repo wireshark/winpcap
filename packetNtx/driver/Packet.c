@@ -31,12 +31,9 @@
  *
  */
 
-#include "stdarg.h"
-#include "ntddk.h"
-#include "ntiologc.h"
-#include "ndis.h"
-
-#include "ntddpack.h"
+#include <ntddk.h>
+#include <ndis.h>
+#include <ntddpack.h>
 
 #include "debug.h"
 #include "packet.h"
@@ -713,9 +710,9 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 	HANDLE				hUserEvent;
 	PKEVENT				pKernelEvent;
-#ifdef __NPF_AMD64__
+#ifdef _AMD64_
     VOID*POINTER_32		hUserEvent32Bit;
-#endif
+#endif //_AMD64_
 	PMDL				mdl;
 
 	TRACE_ENTER();
@@ -908,13 +905,13 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 //
 // Jitted filters are supported on x86 (32bit) only
 // 
-#ifdef __NPF_x86__
+#ifdef _X86_
 			if (Open->Filter != NULL)
 			{
 				BPF_Destroy_JIT_Filter(Open->Filter);
 				Open->Filter = NULL;
 			}
-#endif // __NPF_x86__
+#endif // _X86_
 
 			insns = (IrpSp->Parameters.DeviceIoControl.InputBufferLength)/sizeof(struct bpf_insn);
 		
@@ -923,7 +920,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 			TRACE_MESSAGE1(PACKET_DEBUG_LOUD, "Operative instructions=%u", cnt);
 
-#ifdef __NPF_x86__
+#ifdef HAVE_BUGGY_TME_SUPPORT
 			if ( (cnt != insns) && (insns != cnt+1) && (NewBpfProgram[cnt].code == BPF_SEPARATION)) 
 			{
 				TRACE_MESSAGE1(PACKET_DEBUG_LOUD,"Initialization instructions = %u",insns-cnt-1);
@@ -941,7 +938,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 					break;
 				}
 			}
-#else  //x86-64 and IA64
+#else  // HAVE_BUGGY_TME_SUPPORT
 			if ( cnt != insns)
 			{
 				TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Error installing the BPF filter. The filter contains TME extensions,"
@@ -950,7 +947,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 				SET_FAILURE_INVALID_REQUEST();
 				break;
 			}
-#endif
+#endif // HAVE_BUGGY_TME_SUPPORT
 
 			//the NPF processor has been initialized, we have to validate the operative instructions
 			insns = cnt;
@@ -982,7 +979,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			//
 			// At the moment the JIT compiler works on x86 (32 bit) only
 			//
-#ifdef __NPF_x86__
+#ifdef _X86_
 			// Create the new JIT filter function
 			if(!IsExtendedFilter)
 			{
@@ -996,7 +993,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 					break;
 				}
 			}
-#endif
+#endif //_X86_
 
 			//copy the program in the new buffer
 			RtlCopyMemory(TmpBPFProgram,NewBpfProgram,cnt*sizeof(struct bpf_insn));
@@ -1049,12 +1046,12 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			// 64 bit architectures
 			//
 
-#ifdef __NPF_x86__
+#ifdef HAVE_BUGGY_TME_SUPPORT
 			Open->mode = MODE_MON;
 			SET_RESULT_SUCCESS(0);
-#else // _NPF_x86__
+#else // HAVE_BUGGY_TME_SUPPORT
 			SET_FAILURE_INVALID_REQUEST();
-#endif // __NPF_x86__
+#endif // HAVE_BUGGY_TME_SUPPORT
 
 			break;
 		}	
@@ -1239,7 +1236,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 		TRACE_MESSAGE(PACKET_DEBUG_LOUD, "BIOCSETEVENTHANDLE");
 		
-#ifdef __NPF_AMD64__
+#ifdef _AMD64_
 		if (IoIs32bitProcess(Irp))
 		{
             //
@@ -1255,7 +1252,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			hUserEvent = hUserEvent32Bit;
 		}
 		else
-#endif //__NPF_AMD64__
+#endif //_AMD64_
 		{
             //
 			// validate the input
