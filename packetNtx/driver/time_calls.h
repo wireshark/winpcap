@@ -163,7 +163,7 @@ __inline void SynchronizeOnCpu(struct timeval *start)
 // a small function for this. 
 //
 
-#ifdef __NPF_x86__
+#ifdef _X86_
 /*RDTSC timestamps			*/
 /* callers must be at IRQL=PASSIVE_LEVEL*/
 __inline VOID TimeSynchronizeRDTSC(struct time_conv *data)
@@ -277,7 +277,7 @@ __inline VOID TimeSynchronizeRDTSC(struct time_conv *data)
 
 	IF_LOUD(DbgPrint("Frequency %I64u MHz\n",data->reference);)
 }
-#endif //__NPF_x86__
+#endif //_X86_
 
 #pragma optimize ("g",on)  //Due to some weird behaviour of the optimizer of DDK build 2600 
 
@@ -313,13 +313,13 @@ __inline VOID TIME_SYNCHRONIZE(struct time_conv *data)
 //
 // This timestamp mode is supported on x86 (32 bit) only
 //
-#ifdef __NPF_x86__
+#ifdef _X86_
 	if ( TimestampMode == TIMESTAMPMODE_RDTSC )
 	{
 		TimeSynchronizeRDTSC(data);
 	}
 	else
-#endif // __NPF_x86__
+#endif // _X86_
 	{	//it should be only the normal case i.e. TIMESTAMPMODE_SINGLESYNCHRONIZATION
 		SynchronizeOnCpu(data->start);
 		data->reference = 1;
@@ -388,7 +388,7 @@ __inline void GetTimeKQPC(struct timeval *dst, struct time_conv *data)
 // a small function for this. 
 //
 
-#ifdef __NPF_x86__
+#ifdef _X86_
 __inline void GetTimeRDTSC(struct timeval *dst, struct time_conv *data)
 {
 
@@ -427,7 +427,7 @@ __inline void GetTimeRDTSC(struct timeval *dst, struct time_conv *data)
 
 
 }
-#endif //__NPF_x86__
+#endif //_X86_
 
 __inline void GetTimeQST(struct timeval *dst, struct time_conv *data)
 {
@@ -449,13 +449,13 @@ __inline void GET_TIME(struct timeval *dst, struct time_conv *data)
 //
 // This timestamp mode is supported on x86 (32 bit) only
 //
-#ifdef __NPF_x86__
+#ifdef _X86_
 	if ( TimestampMode == TIMESTAMPMODE_RDTSC )
 	{
 		GetTimeRDTSC(dst,data);
 	}
 	else
-#endif
+#endif // _X86_
 	if ( TimestampMode == TIMESTAMPMODE_QUERYSYSTEMTIME )
 	{
 		GetTimeQST(dst,data);
