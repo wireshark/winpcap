@@ -25,7 +25,7 @@ BEGIN
 			VALUE "CompanyName",       WINPCAP_COMPANY_NAME
 #ifdef __NPF_NT4__
 			VALUE "FileDescription",   "npf.sys (NT4) Kernel Driver"
-#elif defined(__NPF_AMD64__)
+#elif defined(_AMD64_)
 			VALUE "FileDescription",   "npf.sys (NT5/6 AMD64) Kernel Driver"
 #else
 			VALUE "FileDescription",   "npf.sys (NT5/6 x86) Kernel Driver"
