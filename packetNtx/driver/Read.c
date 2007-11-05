@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
- * Copyright (c) 2005 - 2006 CACE Technologies, Davis (California)
+ * Copyright (c) 2005 - 2007 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,16 +31,17 @@
  *
  */
 
-#include <stdarg.h>
-#include "ntddk.h"
-#include <ntiologc.h>
+#include <ntddk.h>
 #include <ndis.h>
+
 #include "debug.h"
 #include "packet.h"
 #include "win_bpf.h"
-
-#include "tme.h"
 #include "time_calls.h"
+
+#ifdef HAVE_BUGGY_TME_SUPPORT
+#include "tme.h"
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 extern struct time_conv G_Start_Time; // from openclos.c
 
@@ -169,7 +170,7 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 // The MONITOR_MODE (aka TME extensions) is not supported on 
 // 64 bit architectures
 //
-#ifdef __NPF_x86__
+#ifdef HAVE_BUGGY_TME_SUPPORT
 
 		if(Open->mode==MODE_MON)   //this capture instance is in monitor mode
 		{   
@@ -254,12 +255,12 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			EXIT_SUCCESS(0);
 		}
 				
-	#else // not __NPF_x86__ , so x86-64 or IA64
+#else // not HAVE_BUGGY_TME_SUPPORT
 		if(Open->mode==MODE_MON)   //this capture instance is in monitor mode
 		{   
 			EXIT_FAILURE(0);
 		}
-	#endif // __NPF_x86__
+#endif // HAVE_BUGGY_TME_SUPPORT
 
 	}
 
@@ -430,7 +431,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 //
 // the jit filter is available on x86 (32 bit) only
 //
-#ifdef __NPF_x86__
+#ifdef _X86_
 
 		if(Open->Filter != NULL)
 		{
@@ -444,7 +445,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 				fres = -1;
 		}
 		else
-#endif //__NPF_x86__
+#endif //_X86_
 			fres=bpf_filter((struct bpf_insn*)(Open->bpfprogram),
  		                HeaderBuffer,
  						PacketSize+HeaderBufferSize,
@@ -459,7 +460,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 // The MONITOR_MODE (aka TME extensions) is not supported on 
 // 64 bit architectures
 //
-#ifdef __NPF_x86__
+#ifdef HAVE_BUGGY_TME_SUPPORT
 	if(Open->mode==MODE_MON)
 	// we are in monitor mode
 	{
@@ -473,7 +474,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 		return NDIS_STATUS_NOT_ACCEPTED;
 
 	}
-#endif
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 	if(fres==0)
 	{
