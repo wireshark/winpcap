@@ -23,8 +23,12 @@ mkdir .\driver\bin\2k 2> nul
 copy driver\NPF_NT5.RC ..\..\winpcap\packetntx\driver\NPF.RC
 
 set TARGETPATH=..\..\..\winpcap_oem\PacketNtx\driver\bin\2k
-set NPF_C_DEFINES=-D__NPF_x86__ -DNDIS50 -DWPCAP_OEM
-set NPF_TME_JIT_FILES=tme.c count_packets.c tcp_session.c functions.c bucket_lookup.c normal_lookup.c jitter.c win_bpf_filter_init.c
+set NPF_C_DEFINES=-DNDIS50 -DWPCAP_OEM
+rem ** enable the following line to enable the TME extensions **
+rem set NPF_TME_FILES=tme.c count_packets.c tcp_session.c functions.c bucket_lookup.c normal_lookup.c win_bpf_filter_init.c
+rem set NPF_C_DEFINES=%NPF_C_DEFINES% -DHAVE_BUGGY_TME_SUPPORT
+
+set NPF_JIT_FILES=jitter.c
 
 pushd ..\..\winpcap\packetntx\driver
 
@@ -34,7 +38,8 @@ popd
 
 set TARGETPATH=
 set NPF_C_DEFINES=
-set NPF_TME_JIT_FILES=
+set NPF_TME_FILES=
+set NPF_JIT_FILES=
 
 goto end
 
@@ -50,12 +55,13 @@ mkdir driver\bin\xp 2> nul
 copy driver\NPF_NT5_x64.RC ..\..\winpcap\packetntx\driver\NPF.RC
 
 set TARGETPATH=..\..\..\winpcap_oem\PacketNtx\driver\bin\xp
-set NPF_C_DEFINES=-D__NPF_AMD64__ -DNDIS50  -DWPCAP_OEM
+set NPF_C_DEFINES=-DNDIS50 -DWPCAP_OEM
 
 rem
 rem The TME extensions and the JIT is not supported on x64, at the moment
 rem
-set NPF_TME_JIT_FILES=
+set NPF_TME_FILES=
+set NPF_JIT_FILES=
 
 pushd ..\..\winpcap\packetntx\driver
 
@@ -65,7 +71,8 @@ popd
 
 set TARGETPATH=
 set NPF_C_DEFINES=
-set NPF_TME_JIT_FILES=
+set NPF_TME_FILES=
+set NPF_JIT_FILES=
 
 goto end
 
@@ -100,8 +107,13 @@ copy driver\NPF_NT4.RC ..\..\winpcap\packetntx\driver\NPF.RC
 
 set TARGETPATH=..\..\..\winpcap_oem\PacketNtx\driver\bin\NT4
 
-set NPF_C_DEFINES=-D__NPF_x86__ -DNDIS30 -D__NPF_NT4__  -DWPCAP_OEM
-set NPF_TME_JIT_FILES=tme.c count_packets.c tcp_session.c functions.c bucket_lookup.c normal_lookup.c jitter.c win_bpf_filter_init.c
+set NPF_C_DEFINES=-DNDIS30 -D__NPF_NT4__ -DWPCAP_OEM
+
+rem ** enable the following line to enable the TME extensions **
+rem set NPF_TME_FILES=tme.c count_packets.c tcp_session.c functions.c bucket_lookup.c normal_lookup.c win_bpf_filter_init.c
+rem set NPF_C_DEFINES=%NPF_C_DEFINES% -DHAVE_BUGGY_TME_SUPPORT
+
+set NPF_JIT_FILES=jitter.c
 
 if NOT "%NPF_COMPILED%" == "1" (
 		set Include=%BASEDIR%\src\network\inc;%BASEDIR%\inc;%Include%
@@ -116,7 +128,8 @@ popd
 
 set TARGETPATH=
 set NPF_C_DEFINES=
-set NPF_TME_JIT_FILES=
+set NPF_TME_FILES=
+set NPF_JIT_FILES=
 
 goto end
 
