@@ -44,12 +44,12 @@
   !define WINPCAP_PRJ_MAJOR "4"
   !define WINPCAP_PRJ_MINOR "0"
   !define WINPCAP_PRJ_REV "0"
-  !define WINPCAP_PRJ_BUILD "901"
-  !define WINPCAP_PROJ_VERSION_DOTTED "4.0.0.901"
+  !define WINPCAP_PRJ_BUILD "1039"
+  !define WINPCAP_PROJ_VERSION_DOTTED "4.0.0.1039"
   !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2007 CACE Technologies"
-  !define WINPCAP_PRODUCT_NAME "WinPcap 4.0.1"
+  !define WINPCAP_PRODUCT_NAME "WinPcap 4.0.2"
   !define WINPCAP_COMPANY_NAME "CACE Technologies"
-  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_1.exe"
+  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_build1039.exe"
 
 ; letter 'r'
   !define REINSTALL_FLAG "114"  
@@ -1285,7 +1285,7 @@ lbl_winnt_2003:
 Function IsWinPcapInstalled
 
   StrCpy $WINPCAP_OLD_FOUND "false"
-  ${Locate} "$SYSDIR" "/M=packet.dll" 'PacketFound'
+  ${Locate} "$SYSDIR" "/M=packet.dll /G=0 /L=F" 'PacketFound'
 
 FunctionEnd
 
