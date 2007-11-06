@@ -1285,7 +1285,7 @@ lbl_winnt_2003:
 Function IsWinPcapInstalled
 
   StrCpy $WINPCAP_OLD_FOUND "false"
-  ${Locate} "$SYSDIR" "/M=packet.dll" 'PacketFound'
+  ${Locate} "$SYSDIR" "/M=packet.dll /G=0 /L=F" 'PacketFound'
 
 FunctionEnd
 
