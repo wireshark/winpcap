@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040WOEM.txt,v 1.12 2007/01/22 19:02:47 gianlucav Exp $
+$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040WOEM.txt,v 1.13 2007/01/22 23:41:46 gianlucav Exp $
 
 WINPCAP PRO RELEASE PROCEDURE
 =============================
@@ -89,8 +89,8 @@ How to compile WinPcap PRO (NOT for the Toolkit)
 
 15. Open a Win 2000 DDK Free build environment. Go into 
 	  %BUILD_TREE%\winpcap_oem\packetntx. 
-	Execute "compileDriver.bat". Prefast 1.5.2402 should issue 9 warnings 
-	(20061127). 
+	Execute "compileDriver.bat". Prefast 1.5.2402 should issue 8 warnings 
+	(20071107). 
 	Close the build environment.
     NOTE: DO NOT EXECUTE 15. and 16. and 17. at the same time, they overwrite files in 
     the build process that are incompatible between the two builds.
@@ -115,6 +115,9 @@ SIGNED BINARIES BUILD
    18s. Open %BUILD_TREE%\winpcap_oem\WinPcap OEM.sln with Visual Studio 2003. 
      Choose the "Release SIGNED STEP1" configuration, and then use Build->Rebuild Solution.
      No warnings should be generated.
+
+	NOTE(GV 20071107): due to a bug in the build procedure, first you need to build with the
+	"Release" configuration, then Rebuild with the "Release SIGNED STEP1" configuration.
 
    19s. Sign all the binaries in 
 		%BUILD_TREE%\winpcap_oem\OEM\WinPcapOem\Binaries_SIGNED, namely
