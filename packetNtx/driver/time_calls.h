@@ -295,7 +295,11 @@ __inline VOID TIME_SYNCHRONIZE(struct time_conv *data)
 	{
 		for (i = 0 ;  i < NumberOfCpus ; i++ )
 		{
-			AffinityMask = (1 << i);
+			//
+			// the following cast is needed because KAFFINITY is defined as a 32bit value on x86 and a 64bit integer on x64.
+			// The constant 1 is implicitely 32bit only, so a shift won't work properly on x64.
+			//
+			AffinityMask = ((KAFFINITY)1 << i);
 			ZwSetInformationThread(NtCurrentThread(), ThreadAffinityMask, &AffinityMask, sizeof(KAFFINITY));
 			SynchronizeOnCpu(&(data->start[i]));		
 		}
