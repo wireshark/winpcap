@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003 - 2005 NetGroup, Politecnico di Torino (Italy).
- * Copyright (c) 2005 - 2006 CACE Technologies, Davis (California).
+ * Copyright (c) 2005 - 2007 CACE Technologies, Davis (California).
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,7 +61,7 @@ typedef WINADVAPI BOOL  (WINAPI *MyChangeServiceConfig2)(
 int WINAPI manage_rpcapd_service(LPCTSTR LogFileName, char operation)
 {
 	FILE *log;
-	int ReturnValue;
+	DWORD ReturnValue;
 
 	if (LogFileName != NULL)
 		log = fopen(LogFileName, "a");
@@ -111,7 +111,7 @@ int WINAPI manage_rpcapd_service(LPCTSTR LogFileName, char operation)
 		break;
 
 	default:
-		ReturnValue = -1;
+		ReturnValue = ERROR_INVALID_PARAMETER;
 	}
 
 	if (log != NULL)

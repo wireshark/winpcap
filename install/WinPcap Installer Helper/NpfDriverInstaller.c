@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003 - 2005 NetGroup, Politecnico di Torino (Italy).
- * Copyright (c) 2005 - 2006 CACE Technologies, Davis (California).
+ * Copyright (c) 2005 - 2007 CACE Technologies, Davis (California).
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,18 +40,18 @@
 
 #include "WinPcapInstallerHelper.h"
 
-static int delete_service(FILE* log,LPCTSTR ServiceName);
-static int stop_service(FILE* log,LPCTSTR ServiceName);
-static int start_service(FILE* log,LPCTSTR ServiceName);
-static int create_driver_service(FILE* log,LPCTSTR ServiceName,LPCTSTR ServiceDescription,LPCTSTR ServicePath);
-static int change_start_type_service(FILE* log,LPCTSTR ServiceName, DWORD StartType);
+static DWORD delete_service(FILE* log,LPCTSTR ServiceName);
+static DWORD stop_service(FILE* log,LPCTSTR ServiceName);
+static DWORD start_service(FILE* log,LPCTSTR ServiceName);
+static DWORD create_driver_service(FILE* log,LPCTSTR ServiceName,LPCTSTR ServiceDescription,LPCTSTR ServicePath);
+static DWORD change_start_type_service(FILE* log,LPCTSTR ServiceName, DWORD StartType);
 
 static void DisplayErrorText(DWORD dwLastError,FILE* output);
 
 int WINAPI manage_npf_driver(LPCTSTR LogFileName, char operation)
 {
 	FILE *log;
-	int ReturnValue;
+	DWORD ReturnValue = NO_ERROR;
 
 	if (LogFileName != NULL)
 		log = fopen(LogFileName, "a");
@@ -91,24 +91,24 @@ int WINAPI manage_npf_driver(LPCTSTR LogFileName, char operation)
 		break;
 
 	default:
-		ReturnValue = -1;
+		ReturnValue = ERROR_INVALID_PARAMETER;
 		break;
 	}
 
 	if (log != NULL)
 		fclose(log);
 
-	return ReturnValue;
+	return (int)ReturnValue;
 
 }
 
-int delete_service(FILE* log,LPCTSTR ServiceName)
+DWORD delete_service(FILE* log,LPCTSTR ServiceName)
 {
 	SC_HANDLE SCM_Handle;
 	SC_HANDLE ServiceHandle;
 	SERVICE_STATUS ServiceStatus;
 
-	DWORD ReturnValue;
+	DWORD ReturnValue = NO_ERROR;
 
 	SCM_Handle=OpenSCManager(NULL,  /*local machine  */
 		NULL,						/*active database*/
@@ -116,12 +116,13 @@ int delete_service(FILE* log,LPCTSTR ServiceName)
 
 	if (SCM_Handle==NULL)
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)	
 		{
 			fprintf(log,"Error opening Service Control Manager: ");
-			DisplayErrorText(GetLastError(),log);
+			DisplayErrorText(ReturnValue,log);
 		}
-		return -1;
+		return ReturnValue;
 	}
 
 	ServiceHandle=OpenService(SCM_Handle,
@@ -131,17 +132,18 @@ int delete_service(FILE* log,LPCTSTR ServiceName)
 
 	if (ServiceHandle==NULL)
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)
 		{
 			fprintf(log,"Error opening Service Control Manager: ");
-			DisplayErrorText(GetLastError(),log);
+			DisplayErrorText(ReturnValue,log);
 		}
 		
 		if (!CloseServiceHandle(SCM_Handle))
 			if (log != NULL)
 				fprintf(log,"Error closing Service control Manager\n");
 					
-		return -1;
+		return ReturnValue;
 	}
 
 	ReturnValue=0;
@@ -157,7 +159,8 @@ int delete_service(FILE* log,LPCTSTR ServiceName)
 				fprintf(log,"Error stopping service %s: ",ServiceName);
 				DisplayErrorText(Err,log);
 			}
-			ReturnValue=-1;
+
+			ReturnValue = Err;
 		}
 	}
 	else
@@ -166,46 +169,48 @@ int delete_service(FILE* log,LPCTSTR ServiceName)
 
 	if (!DeleteService(ServiceHandle))
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)
 		{
 			fprintf(log,"Error deleting service %s: ",ServiceName);
-			DisplayErrorText(GetLastError(),log);
+			DisplayErrorText(ReturnValue,log);
 		}
-		ReturnValue=-1;
 		
 	}
 	else
+	{
 		if (log != NULL)
 			fprintf(log,"Service %s successfully deleted\n",ServiceName);
+	}
 	
 	if (!CloseServiceHandle(ServiceHandle))
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)
 		{
 			fprintf(log,"Error closing service %s: ",ServiceName);
-			DisplayErrorText(GetLastError(),log);
+			DisplayErrorText(ReturnValue,log);
 		}
-		ReturnValue=-1;
 	}
 
 
 	if (!CloseServiceHandle(SCM_Handle))
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)
 			fprintf(log,"Error closing Service control Manager\n");
-		ReturnValue=-1;
 	}
 	
 	return ReturnValue;
 
 }
 
-int stop_service(FILE* log,LPCTSTR ServiceName)
+DWORD stop_service(FILE* log,LPCTSTR ServiceName)
 {
 	SC_HANDLE SCM_Handle;
 	SC_HANDLE ServiceHandle;
 	SERVICE_STATUS ServiceStatus;
-	DWORD ReturnValue;
+	DWORD ReturnValue = NO_ERROR;
 
 	SCM_Handle=OpenSCManager(NULL,  /*local machine  */
 		NULL,						/*active database*/
@@ -213,13 +218,14 @@ int stop_service(FILE* log,LPCTSTR ServiceName)
 
 	if (SCM_Handle==NULL)
 	{
+		ReturnValue = GetLastError();
 		if (log !=NULL)
 		{
 			fprintf(log,"Error opening Service Control Manager: ");
-			DisplayErrorText(GetLastError(),log);
+			DisplayErrorText(ReturnValue,log);
 		}
 		
-		return -1;
+		return ReturnValue;
 	}
 
 	ServiceHandle=OpenService(SCM_Handle,
@@ -229,51 +235,51 @@ int stop_service(FILE* log,LPCTSTR ServiceName)
 
 	if (ServiceHandle==NULL)
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)
 		{
 			fprintf(log,"Error opening service %s:",ServiceName);
-			DisplayErrorText(GetLastError(),log);
+			DisplayErrorText(ReturnValue,log);
 		}
 
 		if (!CloseServiceHandle(SCM_Handle))
 			if (log != NULL)		
 				fprintf(log,"Error closing Service control Manager\n");
 					
-		return -1;
+		return ReturnValue;
 	}
-
-	ReturnValue=0;
 
 	if (!ControlService(ServiceHandle,SERVICE_CONTROL_STOP,&ServiceStatus))
 	{
+		ReturnValue = GetLastError();
+
 		if (log != NULL)
 		{
 			fprintf(log,"Error stopping service %s: ",ServiceName);
-			DisplayErrorText(GetLastError(),log);
+			DisplayErrorText(ReturnValue,log);
 		}
-		ReturnValue=-1;
-		
 	}
 	else
+	{
 		if (log != NULL)
 			fprintf(log,"Service %s successfully stopped\n",ServiceName);
+	}
 	
 	if (!CloseServiceHandle(ServiceHandle))
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)
 		{
 			fprintf(log,"Error closing service %s: ",ServiceName);
-			DisplayErrorText(GetLastError(),log);
+			DisplayErrorText(ReturnValue,log);
 		}
-		
-		ReturnValue=-1;
 	}
 
 	if (!CloseServiceHandle(SCM_Handle))
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)
 			fprintf(log,"Error closing Service control Manager\n");
-		ReturnValue=-1;
 	}
 	
 	return ReturnValue;
@@ -281,11 +287,11 @@ int stop_service(FILE* log,LPCTSTR ServiceName)
 }
 
 
-int change_start_type_service(FILE* log,LPCTSTR ServiceName, DWORD StartType)
+DWORD change_start_type_service(FILE* log,LPCTSTR ServiceName, DWORD StartType)
 {
 	SC_HANDLE SCM_Handle;
 	SC_HANDLE ServiceHandle;
-	DWORD ReturnValue;
+	DWORD ReturnValue = NO_ERROR;
 
 	SCM_Handle=OpenSCManager(NULL,  /*local machine  */
 		NULL,						/*active database*/
@@ -295,10 +301,11 @@ int change_start_type_service(FILE* log,LPCTSTR ServiceName, DWORD StartType)
 	{
 		if (log != NULL)
 		{
+			ReturnValue = GetLastError();
 			fprintf(log,"Error opening Service Control Manager: ");
-			DisplayErrorText(GetLastError(),log);
+			DisplayErrorText(ReturnValue,log);
 		}
-		return -1;
+		return ReturnValue;
 	}
 
 	ServiceHandle=OpenService(SCM_Handle,
@@ -308,20 +315,23 @@ int change_start_type_service(FILE* log,LPCTSTR ServiceName, DWORD StartType)
 
 	if (ServiceHandle == NULL)
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)
 		{
 			fprintf(log,"Error opening service %s: ",ServiceName);
-			DisplayErrorText(GetLastError(),log);
+			DisplayErrorText(ReturnValue,log);
 		}
 
 		if (!CloseServiceHandle(SCM_Handle))
+		{
 			if (log != NULL)
+			{
 				fprintf(log,"Error closing Service control Manager\n");
+			}
+		}
 					
-		return -1;
+		return ReturnValue;
 	}
-
-	ReturnValue=0;
 
 	if (!ChangeServiceConfig(ServiceHandle,
 		SERVICE_NO_CHANGE,
@@ -335,31 +345,35 @@ int change_start_type_service(FILE* log,LPCTSTR ServiceName, DWORD StartType)
 		NULL,
 		NULL))
 	{
+		ReturnValue = GetLastError();
+
 		if (log != NULL)
 		{
 			fprintf(log, "Error changing start type for service %s:",ServiceName);
-			DisplayErrorText(GetLastError(),log);
+			DisplayErrorText(ReturnValue,log);
 		}
-		ReturnValue=-1;
-		
 	}
 	else
-		if (log != NULL)
-			fprintf(log,"Successfully changed start-type for service %s\n",ServiceName);
-	
-	if (!CloseServiceHandle(ServiceHandle))
 	{
 		if (log != NULL)
+			fprintf(log,"Successfully changed start-type for service %s\n",ServiceName);
+	}
+
+	if (!CloseServiceHandle(ServiceHandle))
+	{
+		ReturnValue = GetLastError();
+		if (log != NULL)
+		{
 			fprintf(log,"Error closing service %s\n",ServiceName);
-		ReturnValue=-1;
+		}
 	}
 
 
 	if (!CloseServiceHandle(SCM_Handle))
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)
 			fprintf(log,"Error closing Service control Manager\n");
-		ReturnValue=-1;
 	}
 	
 	return ReturnValue;
@@ -367,11 +381,11 @@ int change_start_type_service(FILE* log,LPCTSTR ServiceName, DWORD StartType)
 }
 
 
-int start_service(FILE* log,LPCTSTR ServiceName)
+DWORD start_service(FILE* log,LPCTSTR ServiceName)
 {
 	SC_HANDLE SCM_Handle;
 	SC_HANDLE ServiceHandle;
-	DWORD ReturnValue;
+	DWORD ReturnValue = NO_ERROR;
 
 	SCM_Handle=OpenSCManager(NULL,  /*local machine  */
 		NULL,						/*active database*/
@@ -379,12 +393,13 @@ int start_service(FILE* log,LPCTSTR ServiceName)
 
 	if (SCM_Handle == NULL)
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)
 		{
 			fprintf(log,"Error opening Service Control Manager: ");
-			DisplayErrorText(GetLastError(),log);
+			DisplayErrorText(ReturnValue,log);
 		}
-		return -1;
+		return ReturnValue;
 	}
 
 	ServiceHandle=OpenService(SCM_Handle,
@@ -394,48 +409,58 @@ int start_service(FILE* log,LPCTSTR ServiceName)
 
 	if (ServiceHandle == NULL)
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)
 		{
 			fprintf(log,"Error opening service %s: ",ServiceName);
-			DisplayErrorText(GetLastError(),log);
+			DisplayErrorText(ReturnValue,log);
 		}
 
 		if (!CloseServiceHandle(SCM_Handle))
+		{
 			if (log != NULL)
+			{
 				fprintf(log,"Error closing Service control Manager\n");
+			}
+		}
 					
-		return -1;
+		return ReturnValue;
 	}
-
-	ReturnValue=0;
 
 	if (!StartService(ServiceHandle,0,NULL))
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)
 		{
 			fprintf(log, "Error starting service %s:",ServiceName);
-			DisplayErrorText(GetLastError(),log);
+			DisplayErrorText(ReturnValue,log);
 		}
-		ReturnValue=-1;
-		
 	}
 	else
+	{
 		if (log != NULL)
+		{
 			fprintf(log,"Service %s successfully started\n",ServiceName);
+		}
+	}
 	
 	if (!CloseServiceHandle(ServiceHandle))
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)
+		{
 			fprintf(log,"Error closing service %s\n",ServiceName);
-		ReturnValue=-1;
+		}
 	}
 
 
 	if (!CloseServiceHandle(SCM_Handle))
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)
+		{
 			fprintf(log,"Error closing Service control Manager\n");
-		ReturnValue=-1;
+		}
 	}
 	
 	return ReturnValue;
@@ -443,11 +468,11 @@ int start_service(FILE* log,LPCTSTR ServiceName)
 }
 
 
-int create_driver_service(FILE* log,LPCTSTR ServiceName,LPCTSTR ServiceDescription,LPCTSTR ServicePath)
+DWORD create_driver_service(FILE* log,LPCTSTR ServiceName,LPCTSTR ServiceDescription,LPCTSTR ServicePath)
 {
 	SC_HANDLE SCM_Handle;
 	SC_HANDLE ServiceHandle;
-	DWORD ReturnValue;
+	DWORD ReturnValue = NO_ERROR;
 
 	SCM_Handle=OpenSCManager(NULL,  /*local machine  */
 		NULL,						/*active database*/
@@ -455,14 +480,15 @@ int create_driver_service(FILE* log,LPCTSTR ServiceName,LPCTSTR ServiceDescripti
 
 	if (SCM_Handle==NULL)
 	{
+		ReturnValue = GetLastError();
 
 		if (log != NULL)
 		{
 			fprintf(log,"Error opening Service Control Manager: ");
-			DisplayErrorText(GetLastError(),log);
+			DisplayErrorText(ReturnValue,log);
 		}
 		
-		return -1;
+		return ReturnValue;
 	}
 
 	ServiceHandle=CreateService(SCM_Handle,
@@ -481,38 +507,48 @@ int create_driver_service(FILE* log,LPCTSTR ServiceName,LPCTSTR ServiceDescripti
 
 	if (ServiceHandle==NULL)
 	{
+		ReturnValue = GetLastError();
 
 		if (log != NULL)
 		{
 			fprintf(log,"Error creating service %s: ",ServiceName);
-			DisplayErrorText(GetLastError(),log);
+			DisplayErrorText(ReturnValue,log);
 		}
 
 		if (!CloseServiceHandle(SCM_Handle))
+		{
 			if (log != NULL)
+			{
 				fprintf(log,"Error closing Service control Manager\n");
+			}
+		}
 					
-		return -1;
+		return ReturnValue;
 	}
 
 	if (log != NULL)
+	{
 		fprintf(log,"Service %s successfully created.\n",ServiceName);
+	}
 
-	ReturnValue=0;
 
 	if (!CloseServiceHandle(ServiceHandle))
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)
+		{
 			fprintf(log,"Error closing service %s.\n",ServiceName);
-		ReturnValue=-1;
+		}
 	}
 
 
 	if (!CloseServiceHandle(SCM_Handle))
 	{
+		ReturnValue = GetLastError();
 		if (log != NULL)
+		{
 			fprintf(log,"Error closing Service control Manager\n");
-		ReturnValue=-1;
+		}
 	}
 	
 	return ReturnValue;
