@@ -796,7 +796,9 @@ ErrorCannotLoadDll:
 		
 ErrorCannotInstallNpfDriver:
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue anyway."
+	IntFmt $FORMATTED_INT "0x%08X" $INT_RET
+
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($FORMATTED_INT). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue anyway."
 	SetErrors
 	goto End
 
@@ -833,7 +835,9 @@ ErrorCannotLoadDll:
 		
 ErrorCannotUninstallNpfDriver:
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue"
+	IntFmt $FORMATTED_INT "0x%08X" $INT_RET
+
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($FORMATTED_INT). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue"
 	SetErrors
 	goto End
 
@@ -869,7 +873,9 @@ ErrorCannotLoadDll:
 		
 ErrorCannotInstallRpcapd:
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue"
+	IntFmt $FORMATTED_INT "0x%08X" $INT_RET
+
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($FORMATTED_INT). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue"
 	SetErrors
 	goto End
 
@@ -905,7 +911,9 @@ ErrorCannotLoadDll:
 		
 ErrorCannotUninstallRpcapd:
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($INT_RET). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue"
+	IntFmt $FORMATTED_INT "0x%08X" $INT_RET
+
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($FORMATTED_INT). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue"
 	SetErrors
 	goto End
 
