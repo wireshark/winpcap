@@ -93,6 +93,9 @@ LINK32=link.exe
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
+# Begin Group "TME"
+
+# PROP Default_Filter ""
 # Begin Source File
 
 SOURCE=..\..\driver\bucket_lookup.c
@@ -119,6 +122,11 @@ SOURCE=..\..\driver\tme.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\driver\win_bpf_filter_init.c
+# End Source File
+# End Group
+# Begin Source File
+
 SOURCE=.\version.rc
 # End Source File
 # Begin Source File
@@ -129,14 +137,13 @@ SOURCE=.\WanPacket.cpp
 
 SOURCE=..\..\driver\win_bpf_filter.c
 # End Source File
-# Begin Source File
-
-SOURCE=..\..\driver\win_bpf_filter_init.c
-# End Source File
 # End Group
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Group "TME No. 1"
+
+# PROP Default_Filter ""
 # Begin Source File
 
 SOURCE=..\..\driver\bucket_lookup.h
@@ -144,10 +151,6 @@ SOURCE=..\..\driver\bucket_lookup.h
 # Begin Source File
 
 SOURCE=..\..\driver\count_packets.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\driver\DEBUG.H
 # End Source File
 # Begin Source File
 
@@ -167,10 +170,6 @@ SOURCE=..\..\driver\tcp_session.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\driver\time_calls.h
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\driver\tme.h
 # End Source File
 # Begin Source File
@@ -179,11 +178,20 @@ SOURCE=..\..\driver\valid_insns.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\driver\win_bpf.h
+SOURCE=..\..\driver\win_bpf_filter_init.h
+# End Source File
+# End Group
+# Begin Source File
+
+SOURCE=..\..\driver\DEBUG.H
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\driver\win_bpf_filter_init.h
+SOURCE=..\..\driver\time_calls.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\driver\win_bpf.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
