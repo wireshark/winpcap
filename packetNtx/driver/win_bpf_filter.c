@@ -61,6 +61,7 @@
 		 (((u_int32)(((u_char*)p)[2])) << 8 ) |\
 		 (((u_int32)(((u_char*)p)[3])) << 0 ))
 
+#ifdef HAVE_BUGGY_TME_SUPPORT
 u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 	register struct bpf_insn *pc;
 	register u_char *p;
@@ -69,6 +70,13 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 	PMEM_TYPE mem_ex;
 	PTME_CORE tme;
 	struct time_conv *time_ref;
+#else  //HAVE_BUGGY_TME_SUPPORT
+u_int bpf_filter(pc, p, wirelen, buflen)
+	register struct bpf_insn *pc;
+	register u_char *p;
+	u_int wirelen;
+	register u_int buflen;
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 {
 	register u_int32 A, X;
@@ -79,13 +87,7 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 	u_short tmp2;
 #endif //HAVE_BUGGY_TME_SUPPORT
 
-	int32 mem[BPF_MEMWORDS];
-
-#ifndef HAVE_BUGGY_TME_SUPPORT
-	UNUSED(time_ref);
-	UNUSED(tme);
-	UNUSED(mem_ex);
-#endif
+	int mem[BPF_MEMWORDS];
 
 	RtlZeroMemory(mem, sizeof(mem));
 
@@ -113,7 +115,7 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 
 		case BPF_LD|BPF_W|BPF_ABS:
 			k = pc->k;
-			if (k + sizeof(int32) > buflen) {
+			if (k + sizeof(int) > buflen) {
 				return 0;
 			}
 			A = EXTRACT_LONG(&p[k]);
@@ -145,7 +147,7 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 
 		case BPF_LD|BPF_W|BPF_IND:
 			k = X + pc->k;
-			if (k + sizeof(int32) > buflen) {
+			if (k + sizeof(int) > buflen) {
 				return 0;
 			}
 			A = EXTRACT_LONG(&p[k]);
@@ -471,6 +473,7 @@ u_int bpf_filter(pc, p, wirelen, buflen,mem_ex,tme,time_ref)
 
 //-------------------------------------------------------------------
 
+#ifdef HAVE_BUGGY_TME_SUPPORT
 u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,tme,time_ref)
 	register struct bpf_insn *pc;
 	register u_char *p;
@@ -481,19 +484,22 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 	PMEM_TYPE mem_ex;
 	PTME_CORE tme;
 	struct time_conv *time_ref;
-{
+#else //HAVE_BUGGY_TME_SUPPORT
+u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen)
+	register struct bpf_insn *pc;
+	register u_char *p;
+	register u_char *pd;
+	register int headersize; 
+	u_int wirelen;
+	register u_int buflen;
+#endif //HAVE_BUGGY_TME_SUPPORT
+	{
 	register u_int32 A, X;
 	register int k;
-	int32 mem[BPF_MEMWORDS];
+	int mem[BPF_MEMWORDS];
 #ifdef HAVE_BUGGY_TME_SUPPORT
 	u_int32 j,tmp;
 	u_short tmp2;
-#endif //HAVE_BUGGY_TME_SUPPORT
-
-#ifndef HAVE_BUGGY_TME_SUPPORT
-	UNUSED(tme);
-	UNUSED(time_ref);
-	UNUSED(mem_ex);
 #endif //HAVE_BUGGY_TME_SUPPORT
 
 	RtlZeroMemory(mem, sizeof(mem));
@@ -595,7 +601,7 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 
 		case BPF_LD|BPF_W|BPF_IND:
 			k = X + pc->k;
-			if (k + sizeof(int32) > buflen) {
+			if (k + sizeof(int) > buflen) {
 				return 0;
 			}
 
@@ -966,25 +972,28 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen, mem_ex,t
 	}
 }
 
-int32
+#ifdef HAVE_BUGGY_TME_SUPPORT
+int
 bpf_validate(f, len,mem_ex_size)
 	struct bpf_insn *f;
-	int32 len;
+	int len;
 	uint32 mem_ex_size;	
-{
-	register uint32 i, from;
-	register int32 j;
-	register struct bpf_insn *p;
-	int32 flag;
-
-#ifndef HAVE_BUGGY_TME_SUPPORT
-	UNUSED(mem_ex_size);
+#else
+int
+bpf_validate(f, len)
+	struct bpf_insn *f;
+	int len;
 #endif //HAVE_BUGGY_TME_SUPPORT
+	{
+	register u_int32 i, from;
+	register int j;
+	register struct bpf_insn *p;
+	int flag;
 
 	if (len < 1)
 		return 0;
 
-	for (i = 0; i < (uint32)len; ++i) {
+	for (i = 0; i < (u_int32)len; ++i) {
 		p = &f[i];
 
 		TRACE_MESSAGE(PACKET_DEBUG_LOUD,"Validating program");
@@ -1111,14 +1120,14 @@ bpf_validate(f, len,mem_ex_size)
 			from = i + 1;
 			switch (BPF_OP(p->code)) {
 			case BPF_JA:
-				if (from + p->k < from || from + p->k >= (uint32)len)
+				if (from + p->k < from || from + p->k >= (u_int32)len)
 					return 0;
 				break;
 			case BPF_JEQ:
 			case BPF_JGT:
 			case BPF_JGE:
 			case BPF_JSET:
-				if (from + p->jt >= (uint32)len || from + p->jf >= (uint32)len)
+				if (from + p->jt >= (u_int32)len || from + p->jf >= (u_int32)len)
 					return 0;
 				break;
 			default:
