@@ -512,7 +512,7 @@ extern "C" int WINAPI manage_netmon(LPCTSTR LogFileName, char operation)
 		
 		break;
 	default:
-		ReturnValue = -1;
+		ReturnValue = ERROR_INVALID_PARAMETER;
 		;
 		
 	}
