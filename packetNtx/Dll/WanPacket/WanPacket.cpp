@@ -43,7 +43,10 @@ HMODULE g_hModule = NULL;
 #include <netmon.h>
 
 #include "win_bpf.h"
+
+#ifdef HAVE_BUGGY_TME_SUPPORT
 #include "win_bpf_filter_init.h"
+#endif HAVE_BUGGY_TME_SUPPORT
 
 #include <packet32.h>
 #include "wanpacket.h"
@@ -73,8 +76,10 @@ struct WAN_ADAPTER_INT
 	DWORD			Mode;				///< Working mode of the driver. See PacketSetMode() for details.
 	LARGE_INTEGER	Nbytes;				///< Amount of bytes accepted by the filter when this instance is in statistical mode.
 	LARGE_INTEGER	Npackets;			///< Number of packets accepted by the filter when this instance is in statistical mode.
+#ifdef HAVE_BUGGY_TME_SUPPORT
 	MEM_TYPE		MemEx;				///< Memory used by the TME virtual co-processor
 	TME_CORE		Tme;				///< Data structure containing the virtualization of the TME co-processor
+#endif //HAVE_BUGGY_TME_SUPPORT
 	IRTC			*pIRTC;				///< Pointer to the NetMon IRTC COM interface used to capture packets.
 };
 
@@ -157,6 +162,7 @@ DWORD WINAPI WanPacketReceiverCallback(UPDATE_EVENT Event)
 		EnterCriticalSection( &pWanAdapter->CriticalSection );
 		pWanAdapter->Received ++;
 
+#ifdef HAVE_BUGGY_TME_SUPPORT
 		FilterResult = bpf_filter(pWanAdapter->FilterCode, 
 			lpFrameDesc->FramePointer, 
 			lpFrameDesc->FrameLength, 
@@ -164,6 +170,12 @@ DWORD WINAPI WanPacketReceiverCallback(UPDATE_EVENT Event)
 			&pWanAdapter->MemEx,
 			&pWanAdapter->Tme,
 			&TimeConv);
+#else 
+		FilterResult = bpf_filter(pWanAdapter->FilterCode, 
+			lpFrameDesc->FramePointer, 
+			lpFrameDesc->FrameLength, 
+			lpFrameDesc->nBytesAvail);
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 		if ( pWanAdapter->Mode == PACKET_MODE_MON && FilterResult == 1 )
 			SetEvent( pWanAdapter->hReadEvent );
@@ -414,12 +426,14 @@ PWAN_ADAPTER WanPacketOpenAdapter()
 	if ( pWanAdapter->hReadEvent == NULL )
 		goto error;
 
+#ifdef HAVE_BUGGY_TME_SUPPORT
 	pWanAdapter->MemEx.buffer = (PUCHAR)GlobalAlloc(GPTR, DEFAULT_MEM_EX_SIZE);
 	if (pWanAdapter->MemEx.buffer == NULL)
 		goto error;
 	
 	pWanAdapter->MemEx.size = DEFAULT_MEM_EX_SIZE;
 	pWanAdapter->Tme.active = TME_NONE_ACTIVE;
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 	if (CreateNPPInterface(pWanAdapter->hCaptureBlob, IID_IRTC, (void**) &pWanAdapter->pIRTC) == NMERR_SUCCESS && pWanAdapter->pIRTC != NULL) 
 	{
@@ -500,9 +514,11 @@ BOOLEAN WanPacketCloseAdapter(PWAN_ADAPTER pWanAdapter)
 
 	DeleteCriticalSection(&pWanAdapter->CriticalSection);
 
+#ifdef HAVE_BUGGY_TME_SUPPORT
 	//deallocate the extended memory, if any.
 	if (pWanAdapter->MemEx.size > 0)
 		GlobalFree(pWanAdapter->MemEx.buffer);
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 	GlobalFree(pWanAdapter);
 	//uninitialize COM
@@ -571,6 +587,7 @@ BOOLEAN WanPacketSetBpfFilter(PWAN_ADAPTER pWanAdapter, PUCHAR FilterCode, DWORD
 			TimeConv.start[0].tv_sec = 0;
 			TimeConv.start[0].tv_usec = 0;
 			
+#ifdef HAVE_BUGGY_TME_SUPPORT
 			if ( bpf_filter_init(InitializationCode,
 				&pWanAdapter->MemEx,
 				&pWanAdapter->Tme,
@@ -579,11 +596,16 @@ BOOLEAN WanPacketSetBpfFilter(PWAN_ADAPTER pWanAdapter, PUCHAR FilterCode, DWORD
 				LeaveCriticalSection(&pWanAdapter->CriticalSection);
 				return FALSE;
 			}
+#endif //HAVE_BUGGY_TME_SUPPORT
 		}
 
 		NumberOfInstructions = Counter;
 
+#ifdef HAVE_BUGGY_TME_SUPPORT
 		if ( bpf_validate((struct bpf_insn*)FilterCode, Counter, pWanAdapter->MemEx.size) == 0)
+#else
+		if ( bpf_validate((struct bpf_insn*)FilterCode, Counter) == 0)
+#endif //HAVE_BUGGY_TME_SUPPORT
 		{
 			//filter not validated
 			//FIXME: the machine has been initialized(?), but the operative code is wrong. 
@@ -709,6 +731,7 @@ DWORD WanPacketReceivePacket(PWAN_ADAPTER pWanAdapter, PUCHAR Buffer, DWORD Buff
 	}
 
 
+#ifdef HAVE_BUGGY_TME_SUPPORT
 	if ( pWanAdapter->Mode == PACKET_MODE_MON )
 	{
 		PTME_DATA pTmeData;
@@ -752,6 +775,8 @@ DWORD WanPacketReceivePacket(PWAN_ADAPTER pWanAdapter, PUCHAR Buffer, DWORD Buff
 			ReadBytes = ByteCopy + sizeof(struct bpf_hdr);
 		}
 	}
+#endif //HAVE_BUGGY_TME_SUPPORT
+
 	//done with the pWanAdapter data
 	LeaveCriticalSection(&pWanAdapter->CriticalSection);
 
