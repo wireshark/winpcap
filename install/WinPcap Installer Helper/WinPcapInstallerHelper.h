@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006 CACE Technologies, Davis (California).
+ * Copyright (c) 2006 - 2007 CACE Technologies, Davis (California).
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
