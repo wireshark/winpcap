@@ -37,7 +37,7 @@
  *
  *      @(#)bpf.h       7.1 (Berkeley) 5/7/91
  *
- * @(#) $Header: /usr/cvsroot_private/winpcap/packetNtx/driver/win_bpf.h,v 1.2.2.1 2005/12/02 22:12:58 gianlucav Exp $ (LBL)
+ * @(#) $Header: /usr/cvsroot_private/winpcap/packetNtx/driver/win_bpf.h,v 1.3 2005/12/02 22:41:52 gianlucav Exp $ (LBL)
  */
 
 #ifndef BPF_MAJOR_VERSION
@@ -49,8 +49,9 @@
 #include <ndis.h>
 #endif
 
-
+#ifdef HAVE_BUGGY_TME_SUPPORT
 #include "tme.h"
+#endif 
 #include "time_calls.h"
 
 typedef	UCHAR u_char;
@@ -356,7 +357,11 @@ extern "C"
   This function returns true if f is a valid filter program. The constraints are that each jump be forward and 
   to a valid code.  The code must terminate with either an accept or reject. 
 */
-int32 bpf_validate(struct bpf_insn *f,int32 len, uint32 mem_ex_size);
+#ifdef HAVE_BUGGY_TME_SUPPORT
+int bpf_validate(struct bpf_insn *f,int len, uint32 mem_ex_size);
+#else //HAVE_BUGGY_TME_SUPPORT
+int bpf_validate(struct bpf_insn *f,int len);
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 /*!
   \brief The filtering pseudo-machine interpreter.
@@ -374,6 +379,7 @@ int32 bpf_validate(struct bpf_insn *f,int32 len, uint32 mem_ex_size);
   \note this function is not used in normal situations, because the jitter creates a native filtering function
   that is faster than the interpreter.
 */
+#ifdef HAVE_BUGGY_TME_SUPPORT
 u_int bpf_filter(register struct bpf_insn *pc,
 				register UCHAR *p,
 				u_int wirelen,
@@ -381,7 +387,12 @@ u_int bpf_filter(register struct bpf_insn *pc,
 				PMEM_TYPE mem_ex,
 				PTME_CORE tme ,
 				struct time_conv *time_ref);
-
+#else //HAVE_BUGGY_TME_SUPPORT
+u_int bpf_filter(register struct bpf_insn *pc,
+				register UCHAR *p,
+				u_int wirelen,
+				register u_int buflen);
+#endif //HAVE_BUGGY_TME_SUPPORT
 /*!
   \brief The filtering pseudo-machine interpreter with two buffers. This function is slower than bpf_filter(), 
   but works correctly also if the MAC header and the data of the packet are in two different buffers.
@@ -399,6 +410,7 @@ u_int bpf_filter(register struct bpf_insn *pc,
   
   This function is used when NDIS passes the packet to NPF_tap() in two buffers instaed than in a single one.
 */
+#ifdef HAVE_BUGGY_TME_SUPPORT
 u_int bpf_filter_with_2_buffers(register struct bpf_insn *pc,
 							   register u_char *p,
 							   register u_char *pd,
@@ -408,7 +420,14 @@ u_int bpf_filter_with_2_buffers(register struct bpf_insn *pc,
 							   PMEM_TYPE mem_ex,
 				               PTME_CORE tme,
 							   struct time_conv *time_ref);
-
+#else //HAVE_BUGGY_TME_SUPPORT
+u_int bpf_filter_with_2_buffers(register struct bpf_insn *pc,
+							   register u_char *p,
+							   register u_char *pd,
+							   register int headersize,
+							   u_int wirelen,
+							   register u_int buflen);
+#endif
 #ifdef __cplusplus
 }
 #endif
