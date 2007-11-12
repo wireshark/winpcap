@@ -406,6 +406,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	IF_LOUD(DbgPrint("Received on CPU %d \t%d\n",Cpu,LocalData->Received);)
 //	Open->Received++;		// Number of packets received by filter ++
 
+
 	NdisAcquireSpinLock(&Open->MachineLock);
 
 	//
@@ -416,6 +417,8 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	//things like this) bpf_filter_with_2_buffers() is executed.
 	//
 	if((UINT)((PUCHAR)LookaheadBuffer-(PUCHAR)HeaderBuffer) != HeaderBufferSize)
+	{
+#ifdef  HAVE_BUGGY_TME_SUPPORT
 		fres=bpf_filter_with_2_buffers((struct bpf_insn*)(Open->bpfprogram),
 									   HeaderBuffer,
 									   LookaheadBuffer,
@@ -425,8 +428,15 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 									   &Open->mem_ex,
 									   &Open->tme,
 									   &G_Start_Time);
-	
-	
+#else // HAVE_BUGGY_TME_SUPPORT
+		fres=bpf_filter_with_2_buffers((struct bpf_insn*)(Open->bpfprogram),
+									   HeaderBuffer,
+									   LookaheadBuffer,
+									   HeaderBufferSize,
+									   PacketSize+HeaderBufferSize,
+									   LookaheadBufferSize+HeaderBufferSize);
+#endif // HAVE_BUGGY_TME_SUPPORT
+	}	
 	else 
 //
 // the jit filter is available on x86 (32 bit) only
@@ -446,6 +456,8 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 		}
 		else
 #endif //_X86_
+	
+#ifdef HAVE_BUGGY_TME_SUPPORT
 			fres=bpf_filter((struct bpf_insn*)(Open->bpfprogram),
  		                HeaderBuffer,
  						PacketSize+HeaderBufferSize,
@@ -453,6 +465,12 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 						&Open->mem_ex,
 						&Open->tme,
 						&G_Start_Time);
+#else //HAVE_BUGGY_TME_SUPPORT
+			fres=bpf_filter((struct bpf_insn*)(Open->bpfprogram),
+ 		                HeaderBuffer,
+ 						PacketSize+HeaderBufferSize,
+						LookaheadBufferSize+HeaderBufferSize);
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 	NdisReleaseSpinLock(&Open->MachineLock);
 

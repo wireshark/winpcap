@@ -37,7 +37,11 @@
 #include "debug.h"
 #include "packet.h"
 #include "win_bpf.h"
+
+#ifdef HAVE_BUGGY_TME_SUPPORT
 #include "win_bpf_filter_init.h"
+#endif //HAVE_BUGGY_TME_SUPPORT
+
 #include "..\..\Common\WpcapNames.h"
 
 
@@ -953,7 +957,11 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		
 			//NOTE: the validation code checks for TME instructions, and fails if a TME instruction is
 			//encountered on 64 bit machines
+#ifdef HAVE_BUGGY_TME_SUPPORT
 			if(bpf_validate(NewBpfProgram, cnt, Open->mem_ex.size) == 0)
+#else //HAVE_BUGGY_TME_SUPPORT
+			if(bpf_validate(NewBpfProgram, cnt) == 0)
+#endif //HAVE_BUGGY_TME_SUPPORT
 			{
 				TRACE_MESSAGE(PACKET_DEBUG_LOUD, "Error validating program");
 				//FIXME: the machine has been initialized(?), but the operative code is wrong. 
