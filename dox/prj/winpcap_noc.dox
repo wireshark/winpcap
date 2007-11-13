@@ -51,7 +51,9 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = ../../packetNtx/driver/Packet.h \
+INPUT                  = \
+						../../packetntx/driver/ioctls.h \
+						../../packetNtx/driver/Packet.h \
                          ../../packetNtx/driver/jitter.h \
 						 ../libpcap/incs/pcap.h \
                          ../libpcap/funcs/pcap.h \
