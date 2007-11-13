@@ -42,6 +42,13 @@
 #include "NpfImExt.h"
 #endif //HAVE_NPFIM_API
 
+#ifdef __MINGW32__
+#include <ddk/ntddndis.h>
+#else
+#include <ntddndis.h>
+#endif //__MINGW32__
+
+
 //
 // Internal functions
 //
