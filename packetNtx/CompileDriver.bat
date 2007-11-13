@@ -57,7 +57,7 @@ rem
 set NPF_TME_FILES=
 set NPF_JIT_FILES=
 
-build -cefw
+prefast build -cefw
 
 set TARGETPATH=
 set NPF_C_DEFINES=
