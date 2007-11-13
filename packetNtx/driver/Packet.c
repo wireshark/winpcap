@@ -37,6 +37,7 @@
 #include "debug.h"
 #include "packet.h"
 #include "win_bpf.h"
+#include "ioctls.h"
 
 #ifdef HAVE_BUGGY_TME_SUPPORT
 #include "win_bpf_filter_init.h"

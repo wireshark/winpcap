@@ -44,6 +44,7 @@
 #include <StrSafe.h>
 
 #include "Packet32-Int.h"
+#include "..\driver\ioctls.h"
 
 #ifdef HAVE_WANPACKET_API
 #include "wanpacket/wanpacket.h"

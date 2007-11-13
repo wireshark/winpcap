@@ -67,39 +67,6 @@ typedef struct _AirpcapHandle *PAirpcapHandle;
 #define PACKET_MODE_DUMP 0x10 ///< Dump mode
 #define PACKET_MODE_STAT_DUMP MODE_DUMP | MODE_STAT ///< Statistical dump Mode
 
-// ioctls
-#define FILE_DEVICE_PROTOCOL        0x8000
-
-#define IOCTL_PROTOCOL_STATISTICS   CTL_CODE(FILE_DEVICE_PROTOCOL, 2 , METHOD_BUFFERED, FILE_ANY_ACCESS)
-#define IOCTL_PROTOCOL_RESET        CTL_CODE(FILE_DEVICE_PROTOCOL, 3 , METHOD_BUFFERED, FILE_ANY_ACCESS)
-#define IOCTL_PROTOCOL_READ         CTL_CODE(FILE_DEVICE_PROTOCOL, 4 , METHOD_BUFFERED, FILE_ANY_ACCESS)
-#define IOCTL_PROTOCOL_WRITE        CTL_CODE(FILE_DEVICE_PROTOCOL, 5 , METHOD_BUFFERED, FILE_ANY_ACCESS)
-#define IOCTL_PROTOCOL_MACNAME      CTL_CODE(FILE_DEVICE_PROTOCOL, 6 , METHOD_BUFFERED, FILE_ANY_ACCESS)
-#define IOCTL_OPEN                  CTL_CODE(FILE_DEVICE_PROTOCOL, 7 , METHOD_BUFFERED, FILE_ANY_ACCESS)
-#define IOCTL_CLOSE                 CTL_CODE(FILE_DEVICE_PROTOCOL, 8 , METHOD_BUFFERED, FILE_ANY_ACCESS)
-
-#define	 pBIOCSETBUFFERSIZE 9592		///< IOCTL code: set kernel buffer size.
-#define	 pBIOCSETF 9030					///< IOCTL code: set packet filtering program.
-#define  pBIOCGSTATS 9031				///< IOCTL code: get the capture stats.
-#define	 pBIOCSRTIMEOUT 7416			///< IOCTL code: set the read timeout.
-#define	 pBIOCSMODE 7412				///< IOCTL code: set working mode.
-#define	 pBIOCSWRITEREP 7413			///< IOCTL code: set number of physical repetions of every packet written by the app.
-#define	 pBIOCSMINTOCOPY 7414			///< IOCTL code: set minimum amount of data in the kernel buffer that unlocks a read call.
-#define	 pBIOCSETOID 2147483648U		///< IOCTL code: set an OID value.
-#define	 pBIOCQUERYOID 2147483652U		///< IOCTL code: get an OID value.
-#define	 pATTACHPROCESS 7117			///< IOCTL code: attach a process to the driver. Used in Win9x only.
-#define	 pDETACHPROCESS 7118			///< IOCTL code: detach a process from the driver. Used in Win9x only.
-#define  pBIOCSETDUMPFILENAME 9029		///< IOCTL code: set the name of a the file used by kernel dump mode.
-#define  pBIOCEVNAME 7415				///< IOCTL code: get the name of the event that the driver signals when some data is present in the buffer.
-#define  pBIOCSENDPACKETSNOSYNC 9032	///< IOCTL code: Send a buffer containing multiple packets to the network, ignoring the timestamps associated with the packets.
-#define  pBIOCSENDPACKETSSYNC 9033		///< IOCTL code: Send a buffer containing multiple packets to the network, respecting the timestamps associated with the packets.
-#define  pBIOCSETDUMPLIMITS 9034		///< IOCTL code: Set the dump file limits. See the PacketSetDumpLimits() function.
-#define  pBIOCISDUMPENDED 7411			///< IOCTL code: Get the status of the kernel dump process. See the PacketIsDumpEnded() function.
-#define  pBIOCISETLOBBEH 7410			///< IOCTL code: Set the loopback behavior of the driver with packets sent by itself: capture or drop.
-#define  pBIOCSETEVENTHANDLE 7920		///< IOCTL code: Passes the read event HANDLE allocated by the user (packet.dll) to the kernel level driver.
-
-#define  pBIOCSTIMEZONE 7471			///< IOCTL code: set time zone. Used in Win9x only.
-
 
 /// Alignment macro. Defines the alignment size.
 #define Packet_ALIGNMENT sizeof(int)
