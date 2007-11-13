@@ -1,3 +1,12 @@
+*********************************************************
+*                                                       *
+*                     Nov 13th, 2007                    *
+*    This document is outdated. Please refer to the     *
+*    compilation instructions in the documentation      *
+*    section of the WinPcap developer's pack            *
+*                                                       *
+*********************************************************
+
 This readme explains how to compile WinPcap, both the kernel level and the
 user-level portion, on the various Win32 platforms. The source code can be
 found on the WinPcap website, at http://www.winpcap.org/install/.
