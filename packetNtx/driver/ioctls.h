@@ -36,6 +36,14 @@
 /*         IOCTLs          */
 /***************************/
 
+/** @addtogroup NPF 
+ *  @{
+ */
+
+/** @defgroup NPF_ioctl NPF I/O control codes 
+ *  @{
+ */
+
 /*!
   \brief IOCTL code: set kernel buffer size.
 
@@ -181,7 +189,13 @@
 */
 #define BIOCSETEVENTHANDLE 7920
 
+/** 
+ *  @}
+ */
 
+/** 
+ *  @}
+ */
 
 
 

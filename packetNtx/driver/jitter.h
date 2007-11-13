@@ -35,6 +35,10 @@
  *  @{
  */
 
+/** @defgroup NPF_jitter NPF Just-in-time compiler definitions
+ *  @{
+ */
+
 //
 // Registers
 //
@@ -381,6 +385,10 @@ BPF_filter_function BPFtoX86(struct bpf_insn *ins, UINT nins, INT *mem);
   This function frees the variuos buffers (code, memory, etc.) associated with a filtering function.
 */ 
 void BPF_Destroy_JIT_Filter(JIT_BPF_Filter *Filter);
+
+/**
+ *  @}
+ */
 
 /**
  *  @}
