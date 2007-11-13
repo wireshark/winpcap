@@ -32,32 +32,6 @@
 #ifndef __NPF_IOCTLS_H__
 #define __NPF_IOCTLS_H__
 
-
-//
-// I/O Control codes coming from packet.dll
-// 
-#define	 pBIOCSETBUFFERSIZE 9592		///< IOCTL code: set kernel buffer size.
-#define	 pBIOCSETF 9030					///< IOCTL code: set packet filtering program.
-#define  pBIOCGSTATS 9031				///< IOCTL code: get the capture stats.
-#define	 pBIOCSRTIMEOUT 7416			///< IOCTL code: set the read timeout.
-#define	 pBIOCSMODE 7412				///< IOCTL code: set working mode.
-#define	 pBIOCSWRITEREP 7413			///< IOCTL code: set number of physical repetions of every packet written by the app.
-#define	 pBIOCSMINTOCOPY 7414			///< IOCTL code: set minimum amount of data in the kernel buffer that unlocks a read call.
-#define	 pBIOCSETOID 2147483648U		///< IOCTL code: set an OID value.
-#define	 pBIOCQUERYOID 2147483652U		///< IOCTL code: get an OID value.
-#define	 pATTACHPROCESS 7117			///< IOCTL code: attach a process to the driver. Used in Win9x only.
-#define	 pDETACHPROCESS 7118			///< IOCTL code: detach a process from the driver. Used in Win9x only.
-#define  pBIOCSETDUMPFILENAME 9029		///< IOCTL code: set the name of a the file used by kernel dump mode.
-#define  pBIOCEVNAME 7415				///< IOCTL code: get the name of the event that the driver signals when some data is present in the buffer.
-#define  pBIOCSENDPACKETSNOSYNC 9032	///< IOCTL code: Send a buffer containing multiple packets to the network, ignoring the timestamps associated with the packets.
-#define  pBIOCSENDPACKETSSYNC 9033		///< IOCTL code: Send a buffer containing multiple packets to the network, respecting the timestamps associated with the packets.
-#define  pBIOCSETDUMPLIMITS 9034		///< IOCTL code: Set the dump file limits. See the PacketSetDumpLimits() function.
-#define  pBIOCISDUMPENDED 7411			///< IOCTL code: Get the status of the kernel dump process. See the PacketIsDumpEnded() function.
-#define  pBIOCISETLOBBEH 7410			///< IOCTL code: Set the loopback behavior of the driver with packets sent by itself: capture or drop.
-#define  pBIOCSETEVENTHANDLE 7920		///< IOCTL code: Passes the read event HANDLE allocated by the user (packet.dll) to the kernel level driver.
-
-#define  pBIOCSTIMEZONE 7471			///< IOCTL code: set time zone. Used in Win9x only.
-
 /***************************/
 /*         IOCTLs          */
 /***************************/

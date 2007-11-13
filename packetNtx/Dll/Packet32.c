@@ -765,7 +765,7 @@ BOOLEAN PacketSetReadEvt(LPADAPTER AdapterObject)
 	}
 
 	if(DeviceIoControl(AdapterObject->hFile,
-			pBIOCSETEVENTHANDLE,
+			BIOCSETEVENTHANDLE,
 			&hEvent,
 			sizeof(hEvent),
 			NULL,
@@ -2423,7 +2423,7 @@ INT PacketSendPackets(LPADAPTER AdapterObject, PVOID PacketBuff, ULONG Size, BOO
 			// Send the data to the driver
 			//TODO Res is NEVER checked, this is REALLY bad.
 			Res = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,
-				(Sync)?pBIOCSENDPACKETSSYNC:pBIOCSENDPACKETSNOSYNC,
+				(Sync)?BIOCSENDPACKETSSYNC:BIOCSENDPACKETSNOSYNC,
 				(PCHAR)PacketBuff + TotBytesTransfered,
 				Size - TotBytesTransfered,
 				NULL,
@@ -2527,7 +2527,7 @@ BOOLEAN PacketSetMinToCopy(LPADAPTER AdapterObject,int nbytes)
 		
 	if (AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
 	{
-		Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,pBIOCSMINTOCOPY,&nbytes,4,NULL,0,&BytesReturned,NULL);
+		Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,BIOCSMINTOCOPY,&nbytes,4,NULL,0,&BytesReturned,NULL);
 	}
 	else
 	{
@@ -2631,7 +2631,7 @@ BOOLEAN PacketSetMode(LPADAPTER AdapterObject,int mode)
 
    if (AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
    {
-		Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,pBIOCSMODE,&mode,4,NULL,0,&BytesReturned,NULL);
+		Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,BIOCSMODE,&mode,4,NULL,0,&BytesReturned,NULL);
    }
    else
    {
@@ -2698,7 +2698,7 @@ BOOLEAN PacketSetDumpName(LPADAPTER AdapterObject, void *name, int len)
 		return FALSE;
 	}
 
-    res = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,pBIOCSETDUMPFILENAME,NameWithPath,len,NULL,0,&BytesReturned,NULL);
+    res = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,BIOCSETDUMPFILENAME,NameWithPath,len,NULL,0,&BytesReturned,NULL);
 	if(((PUCHAR)name)[1]!=0 && len>1) GlobalFreePtr(FileName);
 
 	TRACE_EXIT("PacketSetDumpName");
@@ -2739,7 +2739,7 @@ BOOLEAN PacketSetDumpLimits(LPADAPTER AdapterObject, UINT maxfilesize, UINT maxn
 	valbuff[1] = maxnpacks;
 
     Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,
-		pBIOCSETDUMPLIMITS,
+		BIOCSETDUMPLIMITS,
 		valbuff,
 		sizeof valbuff,
 		NULL,
@@ -2787,7 +2787,7 @@ BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync)
 		WaitForSingleObject(AdapterObject->ReadEvent, INFINITE);
 
     res = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,
-		pBIOCISDUMPENDED,
+		BIOCISDUMPENDED,
 		NULL,
 		0,
 		&IsDumpEnded,
@@ -2850,7 +2850,7 @@ BOOLEAN PacketSetNumWrites(LPADAPTER AdapterObject,int nwrites)
 		return FALSE;
 	}
 
-    Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,pBIOCSWRITEREP,&nwrites,4,NULL,0,&BytesReturned,NULL);
+    Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,BIOCSWRITEREP,&nwrites,4,NULL,0,&BytesReturned,NULL);
 
 	TRACE_EXIT("PacketSetNumWrites");
 
@@ -3027,7 +3027,7 @@ BOOLEAN PacketSetBuff(LPADAPTER AdapterObject,int dim)
 
 	if (AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
 	{
-		Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,pBIOCSETBUFFERSIZE,&dim,sizeof(dim),NULL,0,&BytesReturned,NULL);
+		Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,BIOCSETBUFFERSIZE,&dim,sizeof(dim),NULL,0,&BytesReturned,NULL);
 	}
 	else
 	{
@@ -3111,7 +3111,7 @@ BOOLEAN PacketSetBpf(LPADAPTER AdapterObject, struct bpf_program *fp)
 
 	if (AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
 	{
-		Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,pBIOCSETF,(char*)fp->bf_insns,fp->bf_len*sizeof(struct bpf_insn),NULL,0,&BytesReturned,NULL);
+		Result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,BIOCSETF,(char*)fp->bf_insns,fp->bf_len*sizeof(struct bpf_insn),NULL,0,&BytesReturned,NULL);
 	}
 	else
 	{
@@ -3152,7 +3152,7 @@ BOOLEAN PacketSetLoopbackBehavior(LPADAPTER  AdapterObject, UINT LoopbackBehavio
 
 
 	result = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,
-		pBIOCISETLOBBEH,
+		BIOCISETLOBBEH,
 		&LoopbackBehavior,
 		sizeof(UINT),
 		NULL,
@@ -3324,7 +3324,7 @@ BOOLEAN PacketGetStats(LPADAPTER AdapterObject,struct bpf_stat *s)
 	if (AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
 	{
 			Res = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,
-			pBIOCGSTATS,
+			BIOCGSTATS,
 			NULL,
 			0,
 			&tmpstat,
@@ -3422,7 +3422,7 @@ BOOLEAN PacketGetStatsEx(LPADAPTER AdapterObject,struct bpf_stat *s)
 	if (AdapterObject->Flags == INFO_FLAG_NDIS_ADAPTER)
 	{
 			Res = (BOOLEAN)DeviceIoControl(AdapterObject->hFile,
-			pBIOCGSTATS,
+			BIOCGSTATS,
 			NULL,
 			0,
 			&tmpstat,
@@ -3495,7 +3495,7 @@ BOOLEAN PacketRequest(LPADAPTER  AdapterObject,BOOLEAN Set,PPACKET_OID_DATA  Oid
 		return FALSE;
 	}
 
-	Result=(BOOLEAN)DeviceIoControl(AdapterObject->hFile,(DWORD) Set ? (DWORD)pBIOCSETOID : (DWORD)pBIOCQUERYOID,
+	Result=(BOOLEAN)DeviceIoControl(AdapterObject->hFile,(DWORD) Set ? (DWORD)BIOCSETOID : (DWORD)BIOCQUERYOID,
                            OidData,sizeof(PACKET_OID_DATA)-1+OidData->Length,OidData,
                            sizeof(PACKET_OID_DATA)-1+OidData->Length,&BytesReturned,NULL);
     
