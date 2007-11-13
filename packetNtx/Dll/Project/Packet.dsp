@@ -71,7 +71,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
+PostBuild_Cmds=copy                    $(OutDir)\packet.lib                    ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug"
@@ -103,7 +103,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Debug
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
+PostBuild_Cmds=copy                    $(OutDir)\packet.lib                    ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Debug"
@@ -137,7 +137,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\NT4_Debug
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
+PostBuild_Cmds=copy                    $(OutDir)\packet.lib                    ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Release"
@@ -170,7 +170,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\NT4_Release
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
+PostBuild_Cmds=copy                    $(OutDir)\packet.lib                    ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug LOG_TO_FILE"
@@ -204,7 +204,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Debug_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
+PostBuild_Cmds=copy                    $(OutDir)\packet.lib                    ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release LOG_TO_FILE"
@@ -238,7 +238,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
+PostBuild_Cmds=copy                    $(OutDir)\packet.lib                    ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Debug LOG_TO_FILE"
@@ -272,7 +272,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\NT4_Debug_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
+PostBuild_Cmds=copy                    $(OutDir)\packet.lib                    ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 NT4 Release LOG_TO_FILE"
@@ -306,7 +306,7 @@ LINK32=link.exe
 OutDir=.\NT4_Release_LOG_TO_FILE
 SOURCE="$(InputPath)"
 PostBuild_Desc=Copy packet.lib into Common
-PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
+PostBuild_Cmds=copy                    $(OutDir)\packet.lib                    ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug No AirPcap"
@@ -340,7 +340,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Debug_No_AirPcap
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
+PostBuild_Cmds=copy                    $(OutDir)\packet.lib                    ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release No AirPcap"
@@ -373,7 +373,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release_No_AirPcap
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
+PostBuild_Cmds=copy                    $(OutDir)\packet.lib                    ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug NpfIm"
@@ -407,7 +407,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Debug_No_NpfIm
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
+PostBuild_Cmds=copy                    $(OutDir)\packet.lib                    ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release NpfIm"
@@ -440,7 +440,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release_No_NpfIm
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
+PostBuild_Cmds=copy                    $(OutDir)\packet.lib                    ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Debug Vista"
@@ -474,7 +474,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Debug_Vista
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
+PostBuild_Cmds=copy                    $(OutDir)\packet.lib                    ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release Vista"
@@ -508,7 +508,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release_Vista
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
+PostBuild_Cmds=copy                    $(OutDir)\packet.lib                    ..\..\..\Common\ 
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "PacketNT - Win32 Release Vista LOG_TO_FILE"
@@ -544,7 +544,7 @@ LINK32=link.exe
 # Begin Special Build Tool
 OutDir=.\Release_Vista_LOG_TO_FILE
 SOURCE="$(InputPath)"
-PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\..\..\Common\ 
+PostBuild_Cmds=copy                    $(OutDir)\packet.lib                    ..\..\..\Common\ 
 # End Special Build Tool
 
 !ENDIF 
@@ -566,6 +566,9 @@ PostBuild_Cmds=copy                   $(OutDir)\packet.lib                   ..\
 # Name "PacketNT - Win32 Debug Vista"
 # Name "PacketNT - Win32 Release Vista"
 # Name "PacketNT - Win32 Release Vista LOG_TO_FILE"
+# Begin Group "Source files"
+
+# PROP Default_Filter "*.c *.cpp"
 # Begin Source File
 
 SOURCE=..\AdInfo.c
@@ -576,15 +579,44 @@ SOURCE=..\NpfImExt.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Packet.def
+SOURCE=..\PACKET32.C
+# End Source File
+# End Group
+# Begin Group "Header files"
+
+# PROP Default_Filter "*.h"
+# Begin Source File
+
+SOURCE=..\debug.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\PACKET32.C
+SOURCE=..\..\driver\ioctls.h
 # End Source File
+# Begin Source File
+
+SOURCE="..\Packet32-Int.h"
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\Packet32.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\Common\WpcapNames.h
+# End Source File
+# End Group
+# Begin Group "Resources"
+
+# PROP Default_Filter ""
 # Begin Source File
 
 SOURCE=..\version.rc
+# End Source File
+# End Group
+# Begin Source File
+
+SOURCE=..\Packet.def
 # End Source File
 # End Target
 # End Project
