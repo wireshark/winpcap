@@ -9,10 +9,15 @@ mkdir %WPDPACKDESTDIR% >nul 2>nul
 mkdir %WPDPACKDESTDIR%\docs >nul 2>nul
 mkdir %WPDPACKDESTDIR%\docs\html >nul 2>nul
 
-pushd %CD%
+pushd %WINPCAPSOURCEDIR%\dox\prj
 
-chdir %WINPCAPSOURCEDIR%
-call createdoc.bat
+echo - Deleting existing WinPcap documentation
+del /q docs\*.* 2> nul > nul
+echo - Creating new documentation
+doxygen winpcap_noc.dox >nul
+echo - Copying all gif files
+xcopy ..\pics\*.gif docs\. /v /y /q >nul
+xcopy ..\*.gif docs\. /v /y /q >nul
 
 popd
 
