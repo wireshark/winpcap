@@ -97,8 +97,6 @@ CHAR g_LogFileName[1024] = "winpcap_debug.txt";
 #include <Iphlpapi.h>
 #include <IPIfCons.h>
 
-#include <ntddndis.h>
-
 #include <WpcapNames.h>
 
 //

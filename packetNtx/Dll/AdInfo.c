@@ -59,14 +59,9 @@
 #include <windows.h>
 #include <windowsx.h>
 #include <Iphlpapi.h>
-
-
-
 #include <strsafe.h>
-
-#include <ntddndis.h>
-
 #include <WpcapNames.h>
+
 
 static BOOLEAN PacketAddFakeNdisWanAdapter();
 
