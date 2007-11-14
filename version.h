@@ -11,14 +11,15 @@
 // 4.0.0.703  -->  WinPcap  4.0 beta3
 // 4.0.0.755  -->  WinPcap  4.0 RTM
 // 4.1.0.902  -->  WinPcap  4.1 beta
+// 4.1.0.1048 -->  WinPcap  4.1 beta2
 
 #define WINPCAP_MAJOR	4
 #define WINPCAP_MINOR	1
 #define WINPCAP_REV		0
-#define WINPCAP_BUILD	1036
-#define WINPCAP_VER_STRING	"4.1.0.1036"
-#define WINPCAP_PACKET9x_STRING_VERSION	"4.1 beta"
-#define WINPCAP_WPCAP_STRING_VERSION "4.1 beta"
+#define WINPCAP_BUILD	1048
+#define WINPCAP_VER_STRING	"4.1.0.1048"
+#define WINPCAP_PACKET9x_STRING_VERSION	"4.1 beta2"
+#define WINPCAP_WPCAP_STRING_VERSION "4.1 beta2"
 
 #define WINPCAP_COMPANY_NAME 			"CACE Technologies"
 
@@ -31,4 +32,4 @@
 
 #define WINPCAP_BUILD_DESCRIPTION 		""
 #define WINPCAP_PRIVATE_BUILD			""
-#define WINPCAP_LIBPCAP_VERSION			"0.9.6 - branch"
+#define WINPCAP_LIBPCAP_VERSION			"1.0 - branch"
