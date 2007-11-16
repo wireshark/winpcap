@@ -6,7 +6,7 @@
  */
 
 #ifndef __WOEM_DEBUG_H_
-#define __WOEM_TRACE_H_
+#define __WOEM_DEBUG_H_
 
 #include <windows.h>
 #include <stdio.h>
