@@ -472,6 +472,7 @@ HRESULT HrReleaseINetCfg(BOOL fHasWriteLock, INetCfg* pnc)
     return hr;
 }
 
+#define MAX_DELAY_STOP_SERVICE		3000 //ms
 
 ///////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////
@@ -483,7 +484,8 @@ int delete_service(LPCTSTR ServiceName)
 	SC_HANDLE SCM_Handle;
 	SC_HANDLE ServiceHandle;
 	SERVICE_STATUS ServiceStatus;
-	
+	ULONG delay;
+
 	DWORD ReturnValue;
 	
 	SCM_Handle=OpenSCManager(NULL,  /*local machine  */
@@ -529,6 +531,27 @@ int delete_service(LPCTSTR ServiceName)
 	else
 		TRACE_MESSAGE("Service %s successfully stopped\n",ServiceName);
 	
+	//
+	// We can delete the service only if it's stopped. If the service is not stopped, it will be marked for deletion,
+	// which is a pain in the butt. Please see the long explanation about this problem in DllMain
+	// 
+	delay = 0;
+	while((QueryServiceStatus(ServiceHandle, &ServiceStatus) == TRUE) && (ServiceStatus.dwCurrentState != SERVICE_STOPPED) && delay < MAX_DELAY_STOP_SERVICE)
+	{
+		TRACE_MESSAGE("The service status is now %u", ServiceStatus.dwCurrentState);
+		Sleep(100);
+		delay += 100;
+	}
+
+	//
+	// If by this time the service is not stopped, just fail to delete the service
+	//
+	if (ServiceStatus.dwCurrentState != SERVICE_STOPPED)
+	{
+		TRACE_MESSAGE("The service cannot be stopped (pending handles?)");
+		return -1;
+	}
+
 	if(!DeleteService(ServiceHandle))
 	{
 		TRACE_MESSAGE("Error deleting service %s: ",ServiceName);
@@ -538,14 +561,13 @@ int delete_service(LPCTSTR ServiceName)
 	}
 	else
 		TRACE_MESSAGE("Service %s successfully deleted\n",ServiceName);
-	
+
 	if(!CloseServiceHandle(ServiceHandle))
 	{
 		TRACE_MESSAGE("Error closing service %s: ",ServiceName);
 		DisplayErrorText(GetLastError());
 		ReturnValue=-1;
 	}
-	
 	
 	if(!CloseServiceHandle(SCM_Handle))
 	{
