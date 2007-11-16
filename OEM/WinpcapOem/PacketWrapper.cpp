@@ -176,6 +176,16 @@ LPADAPTER PacketOpenAdapter(PCHAR AdapterName)
 		returnValue = PacketOpenAdapterH(AdapterName);
 	}
 
+	if (returnValue != NULL)
+	{
+		if (RegisterPacketHandleForDllUnloadHandlesSweep(returnValue) == FALSE)
+		{
+			PacketCloseAdapterH(returnValue);
+			SetLastError(ERROR_OUTOFMEMORY);
+			returnValue = FALSE;
+		}
+	}
+
 	TRACE_EXIT("PacketOpenAdapter");
 	return returnValue;
 }
@@ -193,7 +203,10 @@ VOID PacketCloseAdapter(LPADAPTER lpAdapter)
 	}
 	else
 	{
+		DeregisterPacketHandleForDllUnloadHandlesSweep(lpAdapter);
+		
 		PacketCloseAdapterH(lpAdapter);
+
 	}
 	
 	TRACE_EXIT("PacketCloseAdapter");

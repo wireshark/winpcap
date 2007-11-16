@@ -22,6 +22,9 @@ BOOL g_IsProcAuthorized = FALSE;
 
 CRITICAL_SECTION g_CritSectionProtectingWoemEnterDll;
 
+static VOID InitializePacketHandleForDllUnloadHandlesSweep();
+static VOID SweepPacketHandles();
+
 ////////////////////////////////////////////////////////////////////
 // DLL Entry point
 ////////////////////////////////////////////////////////////////////
@@ -33,7 +36,8 @@ BOOL APIENTRY DllMain(HINSTANCE Dllh, DWORD Reason, LPVOID lpReserved)
 	case DLL_PROCESS_ATTACH:
 		
 		g_DllHandle = Dllh;
-		InitializeCriticalSection(&::g_CritSectionProtectingWoemEnterDll);
+		InitializeCriticalSection(&g_CritSectionProtectingWoemEnterDll);
+		InitializePacketHandleForDllUnloadHandlesSweep();
 		
 #ifdef TNT_BUILD
 		//
@@ -46,6 +50,24 @@ BOOL APIENTRY DllMain(HINSTANCE Dllh, DWORD Reason, LPVOID lpReserved)
 		
 	case DLL_PROCESS_DETACH:
 		
+		//
+		// Before trying to tear down any driver, we need to make sure that all the open handles
+		// to the NPF driver has been closed. The reason for this is quite complex. If there's even
+		// single open handle to the NPF driver, the driver cannot be unloaded. When you try to stop
+		// the driver service with the SCM (ControlService), the service will go into the SERVICE_STOP_PENDING
+		// status until the last handle gets closed. But ControlService returns immediately, way before the service
+		// has been stopped.
+		// If after this you call DeleteService, the service is still running and is marked for deletion. When a service
+		// is marked for deletion, you cannot reinstall it until it gets completely deleted. It's true that when the process
+		// is killed by the OS, all the open handles are closed (hence the NPF driver is unloaded). But it takes a bit of time
+		// between when the process is closed (hence the handles are closed) and when the driver is actually unloaded and the service
+		// deleted. If in the meanwhile someone tries to restart the winpcap-pro based app, the attempt to reinstall the driver 
+		// may fail because the driver is still in the "marked for deletion" status.
+		// 
+		// What we do here is closing the handles, and then the delete_service function makes sure that the service is stopped before deleting it, 
+		// waiting for a certain amount of time. If by the timeout the service is not stopped, we do not delete the service.
+		//
+		SweepPacketHandles();
 		WoemLeaveDll();
 		
 		break;
@@ -1445,3 +1467,151 @@ BOOL WoemDeleteNameRegistryEntries()
 }
 
 #endif
+
+CRITICAL_SECTION g_PacketHandleSweepCriticalSection;
+typedef struct _HANDLE_ITEM
+{
+	struct _HANDLE_ITEM	*Next;
+	HANDLE				hFile;
+}
+	HANDLE_ITEM, *PHANDLE_ITEM;
+
+PHANDLE_ITEM g_HandleList;
+
+//
+// Initialize the global list of open handles to the NPF driver
+//
+// Please see the long note in DllMain for the reason why we need
+// this hack.
+//
+VOID InitializePacketHandleForDllUnloadHandlesSweep()
+{
+	TRACE_ENTER("InitializePacketHandleForDllUnloadHandlesSweep");
+	g_HandleList = NULL;
+	InitializeCriticalSection(&g_PacketHandleSweepCriticalSection);
+	TRACE_EXIT("InitializePacketHandleForDllUnloadHandlesSweep");
+}
+
+//
+// Register the open handle to the NPF driver in our global list
+// The function returns TRUE if the registration was successful
+// (or the ADAPTER instance is not related to an NPF adapter)
+//
+// Please see the long note in DllMain for the reason why we need
+// this hack.
+//
+BOOL RegisterPacketHandleForDllUnloadHandlesSweep(LPADAPTER pAdapter)
+{
+	BOOL result = TRUE;
+	PHANDLE_ITEM pItem;
+
+	TRACE_ENTER("RegisterPacketHandleForDllUnloadHandlesSweep");
+	if (pAdapter->Flags == INFO_FLAG_NDIS_ADAPTER && pAdapter->hFile != NULL && pAdapter->hFile != INVALID_HANDLE_VALUE)
+	{
+		pItem = (PHANDLE_ITEM)GlobalAlloc(GPTR, sizeof(HANDLE_ITEM));
+		if (pItem == NULL)
+		{
+			result = FALSE;
+		}
+		else
+		{
+			pItem->hFile = pAdapter->hFile;
+			EnterCriticalSection(&g_PacketHandleSweepCriticalSection);
+			pItem->Next = g_HandleList;
+			g_HandleList = pItem;
+			LeaveCriticalSection(&g_PacketHandleSweepCriticalSection);
+		}
+	}
+
+	TRACE_EXIT("RegisterPacketHandleForDllUnloadHandlesSweep");
+	return result;
+}
+
+//
+// Deregister the open handle to the NPF driver from our global list
+// Please note that this function does NOT close the handle, it
+// just removes it from the global list
+//
+// Please see the long note in DllMain for the reason why we need
+// this hack.
+//
+VOID DeregisterPacketHandleForDllUnloadHandlesSweep(LPADAPTER pAdapter)
+{
+	PHANDLE_ITEM pCursor, pPrev;
+	TRACE_ENTER("DeregisterPacketHandleForDllUnloadHandlesSweep");
+
+	if (pAdapter->Flags == INFO_FLAG_NDIS_ADAPTER && pAdapter->hFile != NULL && pAdapter->hFile != INVALID_HANDLE_VALUE)
+	{
+		pPrev = NULL;
+
+		EnterCriticalSection(&g_PacketHandleSweepCriticalSection);
+
+		pCursor = g_HandleList;
+		while(pCursor != NULL)
+		{
+			if (pCursor->hFile == pAdapter->hFile)
+			{
+				if (pPrev != NULL)
+				{
+					pPrev->Next = pCursor->Next;
+				}
+				else
+				{
+					g_HandleList = pCursor->Next;
+				}
+				
+				GlobalFree(pCursor);
+				break;
+			}
+
+			pPrev = pCursor;
+			pCursor = pCursor->Next;
+		}
+		LeaveCriticalSection(&g_PacketHandleSweepCriticalSection);
+	}
+	
+	TRACE_EXIT("DeregisterPacketHandleForDllUnloadHandlesSweep");
+
+}
+
+//
+// Close all the open handles to the NPF driver that have been registered
+// with RegisterPacketHandleForDllUnloadHandlesSweep
+//
+// Please see the long note in DllMain for the reason why we need
+// this hack.
+//
+VOID SweepPacketHandles()
+{
+	PHANDLE_ITEM pCursor, pNext;
+	
+	TRACE_ENTER("SweepPacketHandles");
+
+	//
+	// NOTE: there is a possibility of a deadlock here. 
+	// if the application dies when we were calling a (De)RegisterHandle
+	// and the criticalsection was held, we would deadlock here.
+	// 
+	// What we do here is not locking at all.
+	// In any case, g_HandleList always contains valid elements (the Deregister removes the item 
+	// after having updated the list)
+	//
+	//
+	//EnterCriticalSection(&g_PacketHandleSweepCriticalSection);
+
+	pCursor = g_HandleList;
+
+	while(pCursor != NULL)
+	{
+		pNext = pCursor->Next;
+
+		(VOID)CloseHandle(pCursor->hFile);
+		GlobalFree(pCursor);
+		pCursor = pNext;
+	}
+
+	//LeaveCriticalSection(&g_PacketHandleSweepCriticalSection);
+
+	TRACE_EXIT("SweepPacketHandles");
+
+}

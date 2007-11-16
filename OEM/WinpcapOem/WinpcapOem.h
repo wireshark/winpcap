@@ -74,4 +74,16 @@ BOOL WoemDeleteDriverBinary(char* FileName, BOOL bDisableFsRedirector);
 //BOOL WoemDeleteNameRegistryEntries();
 BOOL WoemCreateBinaryNames();
 
+////////////////////////////////////////////////////////////////////
+// Functions to register the open handles to NPF in a global list.
+// This hack is needed to close all the handles before unloading the 
+// driver on DllUnload
+////////////////////////////////////////////////////////////////////
+typedef struct _ADAPTER *LPADAPTER;
+
+BOOL RegisterPacketHandleForDllUnloadHandlesSweep(LPADAPTER pAdapter);
+VOID DeregisterPacketHandleForDllUnloadHandlesSweep(LPADAPTER pAdapter);
+
+
+
 #endif //__WINPCAP_OEM_H_E4C69242_4757_4139_A7E4_CA06F37A5B73
