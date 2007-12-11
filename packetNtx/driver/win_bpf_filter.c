@@ -657,7 +657,7 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen)
 				return 0;
 			}
 
-			if(k <= headersize) 
+			if( k + 1 <= headersize) 
 				A = p[k];
 			 else 
 				A = pd[k-headersize];
@@ -670,10 +670,10 @@ u_int bpf_filter_with_2_buffers(pc, p, pd, headersize, wirelen, buflen)
 				return 0;
 			}
 			
-			if((int)(pc->k) <= headersize) 
-				X = (p[pc->k] & 0xf) << 2;
+			if( k + 1 <= headersize) 
+				X = (p[k] & 0xf) << 2;
 			 else 
-				X = (pd[(pc->k)-headersize] & 0xf) << 2;
+				X = (pd[k-headersize] & 0xf) << 2;
 
 			continue;
 
