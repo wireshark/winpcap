@@ -1084,6 +1084,7 @@ bpf_validate(f, len)
 			switch (BPF_OP(p->code)) {
 			case BPF_ADD:
 			case BPF_SUB:
+			case BPF_MUL:
 			case BPF_OR:
 			case BPF_AND:
 			case BPF_LSH:
@@ -1096,6 +1097,7 @@ bpf_validate(f, len)
 				 */
 				if (BPF_RVAL(p->code) == BPF_K && p->k == 0)
 					return 0;
+				break;
 			default:
 				return 0;
 			}
