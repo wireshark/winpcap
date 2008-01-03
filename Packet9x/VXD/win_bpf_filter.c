@@ -44,7 +44,7 @@
 
 #if !(defined(lint) || defined(KERNEL))
 static const char rcsid[] =
-    "@(#) $Header: /usr/cvsroot_private/winpcap/Packet9x/VXD/win_bpf_filter.c,v 1.4.2.1 2005/12/02 22:29:46 gianlucav Exp $ (LBL)";
+    "@(#) $Header: /usr/cvsroot_private/winpcap/Packet9x/VXD/win_bpf_filter.c,v 1.5 2005/12/02 22:31:26 gianlucav Exp $ (LBL)";
 #endif
 
 #ifndef WIN32
@@ -695,6 +695,7 @@ bpf_validate(f, len)
 			switch (BPF_OP(p->code)) {
 			case BPF_ADD:
 			case BPF_SUB:
+			case BPF_MUL:
 			case BPF_OR:
 			case BPF_AND:
 			case BPF_LSH:
@@ -707,6 +708,7 @@ bpf_validate(f, len)
 				 */
 				if (BPF_RVAL(p->code) == BPF_K && p->k == 0)
 					return 0;
+				break;
 			default:
 				return 0;
 			}
