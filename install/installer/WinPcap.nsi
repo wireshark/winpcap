@@ -1,4 +1,4 @@
-; Copyright (c) 2005 - 2007
+; Copyright (c) 2005 - 2008
 ; CACE Technologies
 ; All rights reserved.
 ; 
@@ -103,6 +103,8 @@
   Var WOW_FS_REDIR_OLD_VAL
   Var BOOL_RET  
   Var INT_RET  
+  Var NPPTOOLS_DLL_FOUND
+  Var INSTALL_VISTA_PACKET_DLL_ON_NT5
 ;--------------------------------
 ;General
 
@@ -456,9 +458,32 @@ MainInstallationProcedure:
 	
 
 CopyFilesNT5:
-    File "Distribution\2000\packet.dll"
-    File "Distribution\2000\wanpacket.dll"
+
+; The NetMon component is not available on x64 and on vista!
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" NoNetMonInstallation
+    StrCmp $WINPCAP_TARGET_OS "vista" NoNetMonInstallation
+    
+;	This sets INSTALL_VISTA_PACKET_DLL_ON_NT5 if needed
+    Call InstallNetMon
 	
+NoNetMonInstallation:
+
+;
+; This is a workaround to the problem of not having netmon on some xp installations
+;
+    File "Distribution\2000\wanpacket.dll"
+
+StrCmp $INSTALL_VISTA_PACKET_DLL_ON_NT5 "true" CopyVistaPacketDll CopyXpPacketDll
+
+CopyXpPacketDll:
+    File "Distribution\2000\packet.dll"
+    Goto DriverInstall
+
+CopyVistaPacketDll:
+    File "Distribution\Vista_x86\packet.dll"
+    Goto DriverInstall
+	
+DriverInstall:	
 	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" CopyX86DriverLabel
 	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" CopyAMD64DriverLabel
 	
@@ -477,12 +502,6 @@ CopiedNT5Files:
 	Call InstallNpfService
     Call InstallRpcapdService
 
-; The NetMon component is not available on x64 and on vista!
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" EndCopy
-    StrCmp $WINPCAP_TARGET_OS "vista" EndCopy
-    
-    Call InstallNetMon
-    
     Goto EndCopy
 
 CopyFilesNT4:
@@ -955,8 +974,23 @@ ErrorCannotInstallNetmon:
 
 	StrCmp $FORMATTED_INT "0x0004A020" RebootRequiredLabel  ;reboot required
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($FORMATTED_INT).$\r$\nYou will be able to use WinPcap on standard network adapters, but not on Dialup connections and VPNs.$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue"
+	;
+	; We cannot install NetMon. Let's check if the needed DLLs are in case available on the system. Otherwise we revert to installing
+	; 
+	Call IsNppToolsDllInstalled
+	StrCmp $NPPTOOLS_DLL_FOUND "true" NppToolsAvailableButNotWorking NpptoolsUnavailable
+
+NpptoolsUnavailable:
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($FORMATTED_INT - NPPTOOLS=false).$\r$\nThe setup will now install a version of WinPcap without support for Dialup connections and VPNs.$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> reporting this specific warning message."
+	StrCpy $INSTALL_VISTA_PACKET_DLL_ON_NT5 "true"
 	SetErrors
+	Goto End
+
+	
+NppToolsAvailableButNotWorking:
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($FORMATTED_INT - NPPTOOLS=true).$\r$\nYou will be able to use WinPcap on standard network adapters, but not on Dialup connections and VPNs.$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> reporting this specific warning message.$\r$\nThe installation will now continue"
+	SetErrors
+	Goto End
 	
 RebootRequiredLabel:
 	SetRebootFlag true
@@ -1287,6 +1321,27 @@ lbl_winnt_2003:
    Pop $R0
  
  FunctionEnd
+
+;--------------------------------
+;this function checks if the netmon main dll is installed, and stores all the information in NPPTOOLS_DLL_FOUND
+Function IsNppToolsDllInstalled
+
+  StrCpy $NPPTOOLS_DLL_FOUND "false"
+  ${Locate} "$SYSDIR" "/M=npptools.dll /G=0 /L=F" 'NppToolsDllFound'
+
+FunctionEnd
+
+; this callback is called when packet.dll is found. It stores the version of the dll 
+; into  WINPCAP_OLD_PROJ_VERSION_DOTTED
+Function NppToolsDllFound
+
+  StrCpy $NPPTOOLS_DLL_FOUND "true"
+
+FunctionEnd
+
+
+
+
 
 ;--------------------------------
 ;this function checks if WinPcap is installed, and stores all the information into the WINPCAP_OLD_xxx variable
