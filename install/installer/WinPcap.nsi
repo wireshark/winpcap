@@ -468,11 +468,14 @@ CopyFilesNT5:
 	
 NoNetMonInstallation:
 
-;
-; This is a workaround to the problem of not having netmon on some xp installations
-;
     File "Distribution\2000\wanpacket.dll"
 
+;
+; This is a workaround to the problem of not having netmon on some xp installations
+; NOTE: we keep installing wanpacket.dll even if the vista version of packet.dll
+; doesn't depend on it because we do not want to add too much logic to the installer
+; to check if we need to uninstall wanpacket.dll.
+;
 StrCmp $INSTALL_VISTA_PACKET_DLL_ON_NT5 "true" CopyVistaPacketDll CopyXpPacketDll
 
 CopyXpPacketDll:
