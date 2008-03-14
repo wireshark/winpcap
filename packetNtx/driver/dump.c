@@ -38,6 +38,10 @@
 #include "packet.h"
 #include "win_bpf.h"
 
+#ifdef __NPF_NT4__
+extern POBJECT_TYPE *PsThreadType;
+#endif
+
 //-------------------------------------------------------------------
 
 NTSTATUS
@@ -245,8 +249,8 @@ NPF_StartDump(POPEN_INSTANCE Open)
 
    ntStatus = ObReferenceObjectByHandle(Open->DumpThreadHandle,
       THREAD_ALL_ACCESS,
-      NULL,
-      KernelMode,
+	  *PsThreadType,
+	  KernelMode,
       &Open->DumpThreadObject,
       0);
 
