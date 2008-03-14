@@ -37,8 +37,6 @@
 #include "debug.h"
 #include "packet.h"
 
-extern UINT g_SendPacketFlags;
-
 //-------------------------------------------------------------------
 
 NTSTATUS

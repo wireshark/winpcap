@@ -43,10 +43,6 @@
 #include "tme.h"
 #endif //HAVE_BUGGY_TME_SUPPORT
 
-extern struct time_conv G_Start_Time; // from openclos.c
-
-extern ULONG NCpu; //from packet.c
-
 NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 {
     POPEN_INSTANCE      Open;
@@ -101,11 +97,11 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	
 	Occupation=0;
 
-	for(i=0;i<NCpu;i++)
+	for(i=0;i<g_NCpu;i++)
 		Occupation += (Open->Size - Open->CpuData[i].Free);
 	
 	//See if the buffer is full enough to be copied
-	if( Occupation <= Open->MinToCopy*NCpu || Open->mode & MODE_DUMP )
+	if( Occupation <= Open->MinToCopy*g_NCpu || Open->mode & MODE_DUMP )
 	{
 		if (Open->ReadEvent != NULL)
 		{
@@ -244,7 +240,7 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 		Occupation=0;
 
-		for(i=0;i<NCpu;i++)
+		for(i=0;i<g_NCpu;i++)
 			Occupation += (Open->Size - Open->CpuData[i].Free);
 
 
@@ -285,7 +281,7 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	if (Open->ReadEvent != NULL)
 		KeClearEvent(Open->ReadEvent);
 
-	while (count < NCpu) //round robin on the CPUs, if count = NCpu there are no packets left to be copied
+	while (count < g_NCpu) //round robin on the CPUs, if count = NCpu there are no packets left to be copied
 	{
 		if (available == copied)
 		{
@@ -348,14 +344,14 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			}
 			else
 			{
-				current_cpu=(current_cpu+1)%NCpu;
+				current_cpu=(current_cpu+1)%g_NCpu;
 				count++;	
 			}
 		
 		}
 		else
 		{
-			current_cpu=(current_cpu+1)%NCpu;
+			current_cpu=(current_cpu+1)%g_NCpu;
 			count++;	
 		}
 	}
@@ -536,7 +532,7 @@ NDIS_STATUS NPF_tap (IN NDIS_HANDLE ProtocolBindingContext,IN NDIS_HANDLE MacRec
 	if(Open->mode & MODE_DUMP && Open->MaxDumpPacks)
 	{
 		ULONG Accepted=0;
-		for(i=0;i<NCpu;i++)
+		for(i=0;i<g_NCpu;i++)
 			Accepted+=Open->CpuData[i].Accepted;
 		
 		if(  Accepted > Open->MaxDumpPacks)

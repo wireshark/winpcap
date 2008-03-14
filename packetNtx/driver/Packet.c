@@ -76,9 +76,9 @@ NDIS_STRING g_WinpcapGlobalKey = NDIS_STRING_CONST("\\Registry\\Machine\\" WINPC
 /// Global variable that points to the names of the bound adapters
 WCHAR* bindP = NULL;
 
-extern struct time_conv G_Start_Time; // from openclos.c
+NDIS_HANDLE	g_NdisProtocolHandle = NULL;
 
-ULONG NCpu;
+ULONG g_NCpu;
 
 ULONG TimestampMode;
 UINT g_SendPacketFlags = 0;
@@ -107,7 +107,6 @@ DriverEntry(
     PWSTR          ExportString;
     PWSTR          BindStringSave;
     PWSTR          ExportStringSave;
-    NDIS_HANDLE    NdisProtocolHandle;
 	WCHAR* bindT;
 	PKEY_VALUE_PARTIAL_INFORMATION tcpBindingsP;
 	UNICODE_STRING macName;
@@ -179,7 +178,7 @@ DriverEntry(
 	//
 	// Get number of CPUs and save it
 	//
-	NCpu = NdisSystemProcessorCount();
+	g_NCpu = NdisSystemProcessorCount();
 
 	RtlZeroMemory(&ProtocolChar,sizeof(NDIS_PROTOCOL_CHARACTERISTICS));
 
@@ -213,7 +212,7 @@ DriverEntry(
 
     NdisRegisterProtocol(
         &Status,
-        &NdisProtocolHandle,
+        &g_NdisProtocolHandle,
         &ProtocolChar,
         sizeof(NDIS_PROTOCOL_CHARACTERISTICS));
 
@@ -263,7 +262,7 @@ DriverEntry(
 	for (; *bindT != UNICODE_NULL; bindT += (macName.Length + sizeof(UNICODE_NULL)) / sizeof(WCHAR)) 
 	{
 		RtlInitUnicodeString(&macName, bindT);
-		createDevice(DriverObject, &macName, NdisProtocolHandle);
+		NPF_CreateDevice(DriverObject, &macName);
 	}
 
 	TRACE_EXIT();
@@ -273,7 +272,7 @@ RegistryError:
 
     NdisDeregisterProtocol(
         &Status,
-        NdisProtocolHandle
+        g_NdisProtocolHandle
         );
 
     Status=STATUS_UNSUCCESSFUL;
@@ -514,8 +513,8 @@ PKEY_VALUE_PARTIAL_INFORMATION getTcpBindings(void)
 
 //-------------------------------------------------------------------
 
-BOOLEAN createDevice(IN OUT PDRIVER_OBJECT adriverObjectP,
-					 IN PUNICODE_STRING amacNameP, NDIS_HANDLE aProtoHandle)
+BOOLEAN NPF_CreateDevice(IN OUT PDRIVER_OBJECT adriverObjectP,
+					 IN PUNICODE_STRING amacNameP)
 {
 	NTSTATUS status;
 	PDEVICE_OBJECT devObjP;
@@ -578,7 +577,6 @@ BOOLEAN createDevice(IN OUT PDRIVER_OBJECT adriverObjectP,
 
 		devObjP->Flags |= DO_DIRECT_IO;
 		RtlInitUnicodeString(&devExtP->AdapterName,amacNameP->Buffer);   
-		devExtP->NdisProtocolHandle=aProtoHandle;
 
 		IF_LOUD(DbgPrint("Trying to create SymLink %ws\n",deviceSymLink.Buffer););
 
@@ -620,10 +618,7 @@ VOID NPF_Unload(IN PDRIVER_OBJECT DriverObject)
 	PDEVICE_OBJECT     DeviceObject;
 	PDEVICE_OBJECT     OldDeviceObject;
 	PDEVICE_EXTENSION  DeviceExtension;
-
-	NDIS_HANDLE        NdisProtocolHandle = NULL;
 	NDIS_STATUS        Status;
-
 	NDIS_STRING		   SymLink;
 
 	TRACE_ENTER();
@@ -636,8 +631,6 @@ VOID NPF_Unload(IN PDRIVER_OBJECT DriverObject)
 		DeviceObject = DeviceObject->NextDevice;
 
 		DeviceExtension = OldDeviceObject->DeviceExtension;
-
-		NdisProtocolHandle=DeviceExtension->NdisProtocolHandle;
 
 		TRACE_MESSAGE4(PACKET_DEBUG_LOUD,"Deleting Adapter %ws, Protocol Handle=%p, Device Obj=%p (%p)",
 			DeviceExtension->AdapterName.Buffer,
@@ -660,7 +653,7 @@ VOID NPF_Unload(IN PDRIVER_OBJECT DriverObject)
 
 	NdisDeregisterProtocol(
 		&Status,
-		NdisProtocolHandle
+		g_NdisProtocolHandle
 		);
 
 	// Free the adapters names
@@ -820,7 +813,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		pStats[1] = 0;
 		pStats[2] = 0;		// Not yet supported
 
-		for(i = 0 ; i < NCpu ; i++)
+		for(i = 0 ; i < g_NCpu ; i++)
 		{
 
 			pStats[3] += Open->CpuData[i].Accepted;
@@ -1353,7 +1346,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		// Get the number of bytes to allocate
 		dim = *((PULONG)Irp->AssociatedIrp.SystemBuffer);
 
-		if (dim / NCpu < sizeof(struct PacketHeader))
+		if (dim / g_NCpu < sizeof(struct PacketHeader))
 		{
 			dim = 0;
 		}
@@ -1371,7 +1364,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		//
 		// acquire the locks for all the buffers
 		//
-		for (i = 0; i < NCpu ; i++)
+		for (i = 0; i < g_NCpu ; i++)
 		{
 #pragma prefast(suppress:8103, "There's no Spinlock leak here, as it's released some lines below.")
 			NdisAcquireSpinLock(&Open->CpuData[i].BufferLock);
@@ -1385,13 +1378,13 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			ExFreePool(Open->CpuData[0].Buffer);
 		}
 
-		for (i = 0 ; i < NCpu ; i++)
+		for (i = 0 ; i < g_NCpu ; i++)
 		{
 			if (dim > 0) 
-				Open->CpuData[i].Buffer=(PUCHAR)tpointer + (dim/NCpu)*i;
+				Open->CpuData[i].Buffer=(PUCHAR)tpointer + (dim/g_NCpu)*i;
 			else
 				Open->CpuData[i].Buffer = NULL;
-			Open->CpuData[i].Free = dim/NCpu;
+			Open->CpuData[i].Free = dim/g_NCpu;
 			Open->CpuData[i].P = 0;
 			Open->CpuData[i].C = 0;
 			Open->CpuData[i].Accepted = 0;
@@ -1402,12 +1395,12 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		Open->ReaderSN=0;
 		Open->WriterSN=0;
 
-		Open->Size = dim/NCpu;
+		Open->Size = dim/g_NCpu;
 
 		//
 		// acquire the locks for all the buffers
 		//
-		i = NCpu;
+		i = g_NCpu;
 
 		do
 		{
@@ -1470,7 +1463,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			break;
 		}
 
-		Open->MinToCopy = (*((PULONG)Irp->AssociatedIrp.SystemBuffer))/NCpu;  //An hack to make the NCPU-buffers behave like a larger one
+		Open->MinToCopy = (*((PULONG)Irp->AssociatedIrp.SystemBuffer))/g_NCpu;  //An hack to make the NCPU-buffers behave like a larger one
 		
 		SET_RESULT_SUCCESS(0);
 		break;
@@ -1882,7 +1875,7 @@ VOID NPF_ResetBufferContents(POPEN_INSTANCE Open)
 	//
 	// lock all the buffers
 	//
-	for (i = 0 ; i < NCpu ; i++)
+	for (i = 0 ; i < g_NCpu ; i++)
 	{
 //#pragma prefast(suppress:8103, "There's no Spinlock leak here, as it's released some lines below.")
 		NdisAcquireSpinLock(&Open->CpuData[i].BufferLock);
@@ -1894,7 +1887,7 @@ VOID NPF_ResetBufferContents(POPEN_INSTANCE Open)
 	//
 	// reset their pointers
 	//
-	for (i = 0 ; i < NCpu ; i++)
+	for (i = 0 ; i < g_NCpu ; i++)
 	{
 		Open->CpuData[i].C=0;
 		Open->CpuData[i].P=0;
@@ -1907,7 +1900,7 @@ VOID NPF_ResetBufferContents(POPEN_INSTANCE Open)
 	// 
 	// release the locks in reverse order
 	//
-	i = NCpu;
+	i = g_NCpu;
 
 	do
 	{

@@ -190,7 +190,6 @@ typedef struct _PACKET_RESERVED {
   Structure containing some data relative to every adapter on which NPF is bound.
 */
 typedef struct _DEVICE_EXTENSION {
-    NDIS_HANDLE    NdisProtocolHandle;	///< NDIS handle of NPF.
     NDIS_STRING    AdapterName;			///< Name of the adapter.
 	PWSTR		   ExportString;		///< Name of the exported device, i.e. name that the applications will use 
 										///< to open this adapter through WinPcap.
@@ -338,8 +337,10 @@ struct PacketHeader
 	struct bpf_hdr header;					///< bpf header, created by the tap, and copied unmodified to user level programs.
 };
 
-extern ULONG NCpu;
-
+extern ULONG		g_NCpu;
+extern NDIS_HANDLE	g_NdisProtocolHandle;
+extern struct time_conv G_Start_Time; // from openclos.c
+extern UINT			g_SendPacketFlags;
 
 #define TRANSMIT_PACKETS 256	///< Maximum number of packets in the transmit packet pool. This value is an upper bound to the number
 								///< of packets that can be transmitted at the same time or with a single call to NdisSendPackets.
@@ -411,18 +412,16 @@ PKEY_VALUE_PARTIAL_INFORMATION getTcpBindings(VOID);
   \brief Creates a device for a given MAC.
   \param adriverObjectP The driver object that will be associated with the device, i.e. the one of NPF.
   \param amacNameP The name of the network interface that the device will point.
-  \param aProtoHandle NDIS protocol handle of NPF.
   \return If the function succeeds, the return value is nonzero.
 
   NPF creates a device for every valid network adapter. The new device points to the NPF driver, but contains
   information about the original device. In this way, when the user opens the new device, NPF will be able to
   determine the correct adapter to use.
 */
-BOOLEAN createDevice(
+BOOLEAN NPF_CreateDevice(
 	IN OUT PDRIVER_OBJECT adriverObjectP,
-	IN PUNICODE_STRING amacNameP,
-	NDIS_HANDLE aProtoHandle);
-
+	IN PUNICODE_STRING amacNameP
+	);
 /*!
   \brief Opens a new instance of the driver.
   \param DeviceObject Pointer to the device object utilized by the user.

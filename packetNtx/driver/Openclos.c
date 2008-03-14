@@ -214,6 +214,8 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 
 	IrpSp = IoGetCurrentIrpStackLocation(Irp);
 
+	DbgPrint(__FUNCTION__ " --> FileObject = %p, FsContext = %p\n", IrpSp->FileObject, IrpSp->FileObject->FsContext);
+
 	//  allocate some memory for the open structure
 	Open=ExAllocatePoolWithTag(NonPagedPool, sizeof(OPEN_INSTANCE), '0OWA');
 
@@ -221,6 +223,7 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 		// no memory
 		Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
 		IoCompleteRequest(Irp, IO_NO_INCREMENT);
+		DbgPrint(__FUNCTION__ " <-- %08x\n", Irp->IoStatus.Status);
 		return STATUS_INSUFFICIENT_RESOURCES;
 	}
 
@@ -259,6 +262,7 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 		ExFreePool(Open);
 		Irp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
 		IoCompleteRequest(Irp, IO_NO_INCREMENT);
+		DbgPrint(__FUNCTION__ " <-- %08x\n", Irp->IoStatus.Status);
 		return STATUS_INSUFFICIENT_RESOURCES;
 	}
 
@@ -270,7 +274,7 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	NdisAllocateSpinLock(&Open->WriteLock);
 	Open->WriteInProgress = FALSE;
 
-	for (i = 0; i < NCpu; i++)
+	for (i = 0; i < g_NCpu; i++)
 	{
 		NdisAllocateSpinLock(&Open->CpuData[i].BufferLock);
 	}
@@ -368,7 +372,7 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 		&Open->Medium,
 		MediumArray,
 		NUM_NDIS_MEDIA,
-		DeviceExtension->NdisProtocolHandle,
+		g_NdisProtocolHandle,
 		Open,
 		&DeviceExtension->AdapterName,
 		0,
@@ -446,6 +450,7 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	Irp->IoStatus.Status = returnStatus;
 	Irp->IoStatus.Information = 0;
 	IoCompleteRequest(Irp, IO_NO_INCREMENT);
+	DbgPrint(__FUNCTION__ " <-- %08x\n", Irp->IoStatus.Status);
 
 	TRACE_EXIT();
 	return returnStatus;
@@ -508,7 +513,7 @@ NPF_CloseOpenInstance(POPEN_INSTANCE pOpen)
 		//
 		// free the per CPU spinlocks
 		//
-		for (i = 0; i < NCpu; i++)
+		for (i = 0; i < g_NCpu; i++)
 		{
 			NdisFreeSpinLock(&Open->CpuData[i].BufferLock);
 		}
@@ -681,6 +686,8 @@ NPF_Cleanup(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	IrpSp = IoGetCurrentIrpStackLocation(Irp);
 	Open = IrpSp->FileObject->FsContext;
 	
+	DbgPrint(__FUNCTION__ " --> FileObject = %p, FsContext = %p\n", IrpSp->FileObject, IrpSp->FileObject->FsContext);
+
 	TRACE_MESSAGE1(PACKET_DEBUG_LOUD, "Open = %p\n", Open);
 
 	ASSERT(Open != NULL);
