@@ -432,64 +432,82 @@ PKEY_VALUE_PARTIAL_INFORMATION getTcpBindings(void)
   HANDLE keyHandle;
 
   InitializeObjectAttributes(&objAttrs, &tcpLinkageKeyName,
-                             OBJ_CASE_INSENSITIVE, NULL, NULL);
+	  OBJ_CASE_INSENSITIVE, NULL, NULL);
   status = ZwOpenKey(&keyHandle, KEY_READ, &objAttrs);
-  if (!NT_SUCCESS(status)) {
-    IF_LOUD(DbgPrint("\n\nStatus of %x opening %ws\n", status, tcpLinkageKeyName.Buffer);)
+  if (!NT_SUCCESS(status)) 
+  {
+	  IF_LOUD(DbgPrint("\n\nStatus of %x opening %ws\n", status, tcpLinkageKeyName.Buffer);)
   }
-  else {
-    ULONG resultLength;
-    KEY_VALUE_PARTIAL_INFORMATION valueInfo;
+  else 
+  {
+	  ULONG resultLength;
+	  KEY_VALUE_PARTIAL_INFORMATION valueInfo;
 
-    IF_LOUD(DbgPrint("\n\nOpened %ws\n", tcpLinkageKeyName.Buffer);)
+	  IF_LOUD(DbgPrint("\n\nOpened %ws\n", tcpLinkageKeyName.Buffer);)
 
-    status = ZwQueryValueKey(keyHandle, &bindValueName,
-                             KeyValuePartialInformation, &valueInfo,
-                             sizeof(valueInfo), &resultLength);
-    if (!NT_SUCCESS(status) && (status != STATUS_BUFFER_OVERFLOW)) {
-      IF_LOUD(DbgPrint("\n\nStatus of %x querying key value for size\n", status);)
-    }
-    else {                      // We know how big it needs to be.
-      ULONG valueInfoLength = valueInfo.DataLength + FIELD_OFFSET(KEY_VALUE_PARTIAL_INFORMATION, Data[0]);
-      PKEY_VALUE_PARTIAL_INFORMATION valueInfoP =
-        (PKEY_VALUE_PARTIAL_INFORMATION)ExAllocatePoolWithTag(PagedPool, valueInfoLength, '2PWA');
-      
-	  if (valueInfoP != NULL) {
-        status = ZwQueryValueKey(keyHandle, &bindValueName,
-                                 KeyValuePartialInformation,
-                                 valueInfoP,
-                                 valueInfoLength, &resultLength);
-      
-		if (!NT_SUCCESS(status)) {
-          IF_LOUD(DbgPrint("\n\nStatus of %x querying key value\n", status);)
-        }
-        else if (valueInfoLength != resultLength) {
-          IF_LOUD(DbgPrint("\n\nQuerying key value result len = %u "
-                     "but previous len = %u\n",
-                     resultLength, valueInfoLength);)
-        }
-        else if (valueInfoP->Type != REG_MULTI_SZ) {
-          IF_LOUD(DbgPrint("\n\nTcpip bind value not REG_MULTI_SZ but %u\n",
-                     valueInfoP->Type);)
-        }
-        else {                  // It's OK
+		  status = ZwQueryValueKey(keyHandle, &bindValueName,
+		  KeyValuePartialInformation, &valueInfo,
+		  sizeof(valueInfo), &resultLength);
+	  if (!NT_SUCCESS(status) && (status != STATUS_BUFFER_OVERFLOW)) 
+	  {
+		  IF_LOUD(DbgPrint("\n\nStatus of %x querying key value for size\n", status);)
+	  }
+	  else 
+	  {                      // We know how big it needs to be.
+		  ULONG valueInfoLength = valueInfo.DataLength + FIELD_OFFSET(KEY_VALUE_PARTIAL_INFORMATION, Data[0]);
+		  PKEY_VALUE_PARTIAL_INFORMATION valueInfoP =
+			  (PKEY_VALUE_PARTIAL_INFORMATION)ExAllocatePoolWithTag(PagedPool, valueInfoLength, '2PWA');
+
+		  if (valueInfoP != NULL) 
+		  {
+			  status = ZwQueryValueKey(keyHandle, &bindValueName,
+				  KeyValuePartialInformation,
+				  valueInfoP,
+				  valueInfoLength, &resultLength);
+
+			  if (!NT_SUCCESS(status)) 
+			  {
+				  IF_LOUD(DbgPrint("\n\nStatus of %x querying key value\n", status);)
+				  ExFreePool(valueInfoP);
+			  }
+			  else 
+			  {
+				  if (valueInfoLength != resultLength) 
+				  {
+					  IF_LOUD(DbgPrint("\n\nQuerying key value result len = %u "
+						  "but previous len = %u\n",
+						  resultLength, valueInfoLength);)
+					  ExFreePool(valueInfoP);
+				  }
+				  else 
+				  {
+					  if (valueInfoP->Type != REG_MULTI_SZ) 
+					  {
+						  IF_LOUD(DbgPrint("\n\nTcpip bind value not REG_MULTI_SZ but %u\n",
+							  valueInfoP->Type);)
+							  ExFreePool(valueInfoP);
+					  }
+					  else 
+					  {                  // It's OK
 #if DBG
-          ULONG i;
-          WCHAR* dataP = (WCHAR*)(&valueInfoP->Data[0]);
-          IF_LOUD(DbgPrint("\n\nBind value:\n");)
-          for (i = 0; *dataP != UNICODE_NULL; i++) {
-            UNICODE_STRING macName;
-            RtlInitUnicodeString(&macName, dataP);
-            IF_LOUD(DbgPrint("\n\nMac %u = %ws\n", i, macName.Buffer);)
-            dataP +=
-              (macName.Length + sizeof(UNICODE_NULL)) / sizeof(WCHAR);
-          }
+						  ULONG i;
+						  WCHAR* dataP = (WCHAR*)(&valueInfoP->Data[0]);
+						  IF_LOUD(DbgPrint("\n\nBind value:\n");)
+							  for (i = 0; *dataP != UNICODE_NULL; i++) {
+								  UNICODE_STRING macName;
+								  RtlInitUnicodeString(&macName, dataP);
+								  IF_LOUD(DbgPrint("\n\nMac %u = %ws\n", i, macName.Buffer);)
+									  dataP +=
+									  (macName.Length + sizeof(UNICODE_NULL)) / sizeof(WCHAR);
+							  }
 #endif // DBG
-          result = valueInfoP;
-        }
-      }
-    }
-    ZwClose(keyHandle);
+						  result = valueInfoP;
+					  }
+				  }
+			  }
+		  }
+	  }
+	  ZwClose(keyHandle);
   }
   return result;
 }
