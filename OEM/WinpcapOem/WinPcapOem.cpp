@@ -161,6 +161,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	DWORD keyType;
 	DWORD bufSize;
     HRESULT hr;
+	BOOL npfDriverIsAlreadyRunning = FALSE;
 #ifdef TNT_BUILD
 	DWORD Result;
 #endif 
@@ -509,30 +510,10 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		if(check_if_service_is_running(NPF_DRIVER_NAME) == 0)
 		{
 			//
-			// If we are here and the service is running, it's almost surely the result 
-			// of some mess. We try to cleanup.
+			// if the service is running, just skip restarting it
 			//
-			if (delete_service(NPF_DRIVER_NAME) == -1)
-			{
-				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Error deleting an existing copy of the NPF service");
-
-				ReleaseMutex(g_hGlobalMutex);
-
-				if(g_hGlobalMutex!=0)
-				{
-					CloseHandle(g_hGlobalMutex);
-					g_hGlobalMutex = NULL;
-
-				}
-				if (g_hGlobalSemaphore!=0)
-				{
-					CloseHandle(g_hGlobalSemaphore);
-					g_hGlobalSemaphore = NULL;
-				}
-				
-				TRACE_EXIT("WoemEnterDllInternal");
-				return FALSE;
-			}
+			TRACE_MESSAGE("The NPF driver (service " NPF_DRIVER_NAME ") is still running, do not reinstall it");
+			npfDriverIsAlreadyRunning = TRUE;
 		}
 		
 		//
@@ -569,7 +550,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 				return FALSE;
 			}
 			
-			//
+				//
 			// Extract the driver to disk
 			//
 			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DRINT, g_DriverFullPath, FALSE))
@@ -754,110 +735,113 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			
 		}
 
-		//
-		// Create the driver service
-		//		
-		if(create_driver_service(NPF_DRIVER_NAME, 
-			NPF_SERVICE_DESC, 
-			NPF_DRIVER_COMPLETE_PATH) == -1)
+		if (!npfDriverIsAlreadyRunning)
 		{
-			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("unable to create the packet driver service");
 
-			_unlink(g_DllFullPath);
-			_unlink(g_DriverFullPath);
-			
-			ReleaseMutex(g_hGlobalMutex);
-			
-			if(g_hGlobalMutex!=0)
+			//
+			// Create the driver service
+			//		
+			if(create_driver_service(NPF_DRIVER_NAME, 
+				NPF_SERVICE_DESC, 
+				NPF_DRIVER_COMPLETE_PATH) == -1)
 			{
-				CloseHandle(g_hGlobalMutex);
-				g_hGlobalMutex = NULL;
-				
-			}
-			if (g_hGlobalSemaphore!=0)
-			{
-				CloseHandle(g_hGlobalSemaphore);
-				g_hGlobalSemaphore = NULL;
-			}
-			
-			TRACE_EXIT("WoemEnterDllInternal");
-			return FALSE;
-		}
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("unable to create the packet driver service");
 
-		//
-		// Load the driver
-		//
-		if(start_service(NPF_DRIVER_NAME) == -1)
-		{
-			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("unable to start the packet driver service");
-
-			delete_service(NPF_DRIVER_NAME);
-			_unlink(g_DllFullPath);
-			_unlink(g_DriverFullPath);
-			
-			ReleaseMutex(g_hGlobalMutex);
-			
-			if(g_hGlobalMutex!=0)
-			{
-				CloseHandle(g_hGlobalMutex);
-				g_hGlobalMutex = NULL;
-				
-			}
-			if (g_hGlobalSemaphore!=0)
-			{
-				CloseHandle(g_hGlobalSemaphore);
-				g_hGlobalSemaphore = NULL;
-			}
-			
-			TRACE_EXIT("WoemEnterDllInternal");
-			return FALSE;
-		}
-
-		//
-		// Wait until the service is running
-		//
-		i = 0;
-		while(TRUE)
-		{
-			if(check_if_service_is_running(NPF_DRIVER_NAME) == 0)
-			{
-				break;
-			}
-			
-			i++;
-			if(i == 300)
-			{
-				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("timeout while starting the packet driver");
-	
-				delete_service(NPF_DRIVER_NAME);
 				_unlink(g_DllFullPath);
-
-				WoemDeleteDriverBinary(g_DriverFullPath, is64BitOs);
-
 				_unlink(g_DriverFullPath);
-				
+
 				ReleaseMutex(g_hGlobalMutex);
 
 				if(g_hGlobalMutex!=0)
 				{
 					CloseHandle(g_hGlobalMutex);
 					g_hGlobalMutex = NULL;
-					
+
 				}
 				if (g_hGlobalSemaphore!=0)
 				{
 					CloseHandle(g_hGlobalSemaphore);
 					g_hGlobalSemaphore = NULL;
 				}
-				
+
 				TRACE_EXIT("WoemEnterDllInternal");
 				return FALSE;
-				
+			}
+			//
+			// Load the driver
+			//
+			if(start_service(NPF_DRIVER_NAME) == -1)
+			{
+				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("unable to start the packet driver service");
+
+				delete_service(NPF_DRIVER_NAME);
+				_unlink(g_DllFullPath);
+				_unlink(g_DriverFullPath);
+
+				ReleaseMutex(g_hGlobalMutex);
+
+				if(g_hGlobalMutex!=0)
+				{
+					CloseHandle(g_hGlobalMutex);
+					g_hGlobalMutex = NULL;
+
+				}
+				if (g_hGlobalSemaphore!=0)
+				{
+					CloseHandle(g_hGlobalSemaphore);
+					g_hGlobalSemaphore = NULL;
+				}
+
+				TRACE_EXIT("WoemEnterDllInternal");
+				return FALSE;
 			}
 
-			Sleep(100);
+			//
+			// Wait until the service is running
+			//
+			i = 0;
+			while(TRUE)
+			{
+				if(check_if_service_is_running(NPF_DRIVER_NAME) == 0)
+				{
+					break;
+				}
+
+				i++;
+				if(i == 300)
+				{
+					WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("timeout while starting the packet driver");
+
+					delete_service(NPF_DRIVER_NAME);
+					_unlink(g_DllFullPath);
+
+					WoemDeleteDriverBinary(g_DriverFullPath, is64BitOs);
+
+					_unlink(g_DriverFullPath);
+
+					ReleaseMutex(g_hGlobalMutex);
+
+					if(g_hGlobalMutex!=0)
+					{
+						CloseHandle(g_hGlobalMutex);
+						g_hGlobalMutex = NULL;
+
+					}
+					if (g_hGlobalSemaphore!=0)
+					{
+						CloseHandle(g_hGlobalSemaphore);
+						g_hGlobalSemaphore = NULL;
+					}
+
+					TRACE_EXIT("WoemEnterDllInternal");
+					return FALSE;
+
+				}
+
+				Sleep(100);
+			}
+
 		}
-		
 		//
 		// We've loaded the driver, we can delete its binary
 		//
