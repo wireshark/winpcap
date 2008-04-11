@@ -1,6 +1,6 @@
-diff -urb libpcap/Makefile.in libpcap_winpcap/Makefile.in
---- libpcap/Makefile.in	2008-01-06 13:14:56.000000000 -0800
-+++ libpcap_winpcap/Makefile.in	2008-01-29 13:59:35.562500000 -0800
+diff -urb libpcap_clean/Makefile.in libpcap/Makefile.in
+--- libpcap_clean/Makefile.in	2008-04-08 12:12:58.343750000 -0700
++++ libpcap/Makefile.in	2008-04-11 15:29:15.234375000 -0700
 @@ -45,7 +45,8 @@
  CC = @CC@
  CCOPT = @V_CCOPT@
@@ -31,9 +31,9 @@ diff -urb libpcap/Makefile.in libpcap_winpcap/Makefile.in
  HDR =	pcap.h pcap-int.h pcap-namedb.h pcap-nit.h pcap-pf.h \
  	ethertype.h gencode.h gnuc.h
  GENHDR = \
-diff -urb libpcap/Win32/Prj/libpcap.dsp libpcap_winpcap/Win32/Prj/libpcap.dsp
---- libpcap/Win32/Prj/libpcap.dsp	2004-01-28 06:08:33.000000000 -0800
-+++ libpcap_winpcap/Win32/Prj/libpcap.dsp	2008-01-29 13:59:35.578125000 -0800
+diff -urb libpcap_clean/Win32/Prj/libpcap.dsp libpcap/Win32/Prj/libpcap.dsp
+--- libpcap_clean/Win32/Prj/libpcap.dsp	2004-01-28 06:08:33.000000000 -0800
++++ libpcap/Win32/Prj/libpcap.dsp	2008-04-11 15:29:15.531250000 -0700
 @@ -4,7 +4,7 @@
  
  # TARGTYPE "Win32 (x86) Static Library" 0x0104
@@ -120,12 +120,12 @@ diff -urb libpcap/Win32/Prj/libpcap.dsp libpcap_winpcap/Win32/Prj/libpcap.dsp
  # Begin Source File
  
  SOURCE=..\..\bpf_dump.c
-diff -urb libpcap/configure.in libpcap_winpcap/configure.in
---- libpcap/configure.in	2008-01-06 12:24:12.000000000 -0800
-+++ libpcap_winpcap/configure.in	2008-01-29 13:59:35.593750000 -0800
-@@ -349,6 +349,58 @@
+diff -urb libpcap_clean/configure.in libpcap/configure.in
+--- libpcap_clean/configure.in	2008-04-08 12:12:59.031250000 -0700
++++ libpcap/configure.in	2008-04-11 15:29:15.265625000 -0700
+@@ -390,6 +390,58 @@
  fi
- ])
+ AC_MSG_RESULT($have_socklen_t)
  
 +dnl HAVE_REMOTE
 +AC_MSG_CHECKING(if --disable-remote option is specified)
@@ -182,7 +182,7 @@ diff -urb libpcap/configure.in libpcap_winpcap/configure.in
  AC_MSG_CHECKING(if --enable-ipv6 option is specified)
  AC_ARG_ENABLE(ipv6, [  --enable-ipv6           build IPv6-capable version])
  if test "$enable_ipv6" = "yes"; then
-@@ -847,6 +899,10 @@
+@@ -906,6 +958,10 @@
  AC_SUBST(V_LEX)
  AC_SUBST(V_PCAP)
  AC_SUBST(V_FINDALLDEVS)
@@ -190,12 +190,12 @@ diff -urb libpcap/configure.in libpcap_winpcap/configure.in
 +AC_SUBST(V_HAVE_REMOTE)
 +AC_SUBST(V_REMOTE_FILES)
 +# END HAVE_REMOTE
- AC_SUBST(V_RANLIB)
  AC_SUBST(V_YACC)
  AC_SUBST(SSRC)
-diff -urb libpcap/gencode.c libpcap_winpcap/gencode.c
---- libpcap/gencode.c	2007-12-29 15:15:43.000000000 -0800
-+++ libpcap_winpcap/gencode.c	2008-01-29 13:59:35.625000000 -0800
+ AC_SUBST(DYEXT)
+diff -urb libpcap_clean/gencode.c libpcap/gencode.c
+--- libpcap_clean/gencode.c	2007-12-29 15:15:43.000000000 -0800
++++ libpcap/gencode.c	2008-04-11 15:29:15.328125000 -0700
 @@ -374,6 +374,35 @@
  	const char * volatile xbuf = buf;
  	int len;
@@ -232,9 +232,9 @@ diff -urb libpcap/gencode.c libpcap_winpcap/gencode.c
  	no_optimize = 0;
  	n_errors = 0;
  	root = NULL;
-diff -urb libpcap/pcap/pcap.h libpcap_winpcap/pcap/pcap.h
---- libpcap/pcap/pcap.h	2008-01-01 20:22:16.000000000 -0800
-+++ libpcap_winpcap/pcap/pcap.h	2008-01-29 13:59:35.765625000 -0800
+diff -urb libpcap_clean/pcap/pcap.h libpcap/pcap/pcap.h
+--- libpcap_clean/pcap/pcap.h	2008-04-08 12:13:03.296875000 -0700
++++ libpcap/pcap/pcap.h	2008-04-11 15:29:15.343750000 -0700
 @@ -53,6 +53,19 @@
  
  #include <stdio.h>
@@ -270,7 +270,7 @@ diff -urb libpcap/pcap/pcap.h libpcap_winpcap/pcap/pcap.h
  };
  
  #ifdef MSDOS
-@@ -328,6 +343,11 @@
+@@ -348,6 +363,11 @@
  
  #endif /* WIN32/MSDOS/UN*X */
  
@@ -282,11 +282,10 @@ diff -urb libpcap/pcap/pcap.h libpcap_winpcap/pcap/pcap.h
  #ifdef __cplusplus
  }
  #endif
-Only in libpcap_winpcap/pcap: pcap.h.orig
-diff -urb libpcap/pcap-bpf.c libpcap_winpcap/pcap-bpf.c
---- libpcap/pcap-bpf.c	2008-01-29 02:13:11.000000000 -0800
-+++ libpcap_winpcap/pcap-bpf.c	2008-01-29 14:00:37.015625000 -0800
-@@ -102,6 +102,10 @@
+diff -urb libpcap_clean/pcap-bpf.c libpcap/pcap-bpf.c
+--- libpcap_clean/pcap-bpf.c	2008-04-08 12:12:59.640625000 -0700
++++ libpcap/pcap-bpf.c	2008-04-11 15:29:15.359375000 -0700
+@@ -106,6 +106,10 @@
  #include "os-proto.h"
  #endif
  
@@ -294,12 +293,12 @@ diff -urb libpcap/pcap-bpf.c libpcap_winpcap/pcap-bpf.c
 +#include <pcap-remote.h>
 +#endif /* HAVE_REMOTE */
 +
- static int pcap_setfilter_bpf(pcap_t *p, struct bpf_program *fp);
- static int pcap_setdirection_bpf(pcap_t *, pcap_direction_t);
- static int pcap_set_datalink_bpf(pcap_t *p, int dlt);
-@@ -605,6 +609,37 @@
- 	struct bpf_program total_prog;
- 	struct utsname osinfo;
+ #ifdef BIOCGDLTLIST
+ # if (defined(HAVE_NET_IF_MEDIA_H) && defined(IFM_IEEE80211)) && !defined(__APPLE__)
+ #define HAVE_BSD_IEEE80211
+@@ -163,6 +167,37 @@
+ {
+ 	pcap_t *p;
  
 +#ifdef HAVE_REMOTE
 +	/*
@@ -333,12 +332,12 @@ diff -urb libpcap/pcap-bpf.c libpcap_winpcap/pcap-bpf.c
 +#endif		/* HAVE_REMOTE */
 +
  #ifdef HAVE_DAG_API
- 	if (strstr(device, "dag")) {
- 		return dag_open_live(device, snaplen, promisc, to_ms, ebuf);
-diff -urb libpcap/pcap-int.h libpcap_winpcap/pcap-int.h
---- libpcap/pcap-int.h	2008-01-06 12:24:12.000000000 -0800
-+++ libpcap_winpcap/pcap-int.h	2008-01-29 13:59:35.671875000 -0800
-@@ -141,6 +141,37 @@
+ 	if (strstr(device, "dag"))
+ 		return (dag_create(device, ebuf));
+diff -urb libpcap_clean/pcap-int.h libpcap/pcap-int.h
+--- libpcap_clean/pcap-int.h	2008-04-08 12:13:00.046875000 -0700
++++ libpcap/pcap-int.h	2008-04-11 15:29:15.375000000 -0700
+@@ -150,6 +150,37 @@
  				 * Same as in linux above, introduce
  				 * generally? */
  #endif /* HAVE_DAG_API */
@@ -376,7 +375,7 @@ diff -urb libpcap/pcap-int.h libpcap_winpcap/pcap-int.h
  };
  
  /*
-@@ -241,6 +272,22 @@
+@@ -282,6 +313,22 @@
  	u_int *dlt_list;
  
  	struct pcap_pkthdr pcap_header;	/* This is needed for the pcap_next_ex() to work */
@@ -399,12 +398,12 @@ diff -urb libpcap/pcap-int.h libpcap_winpcap/pcap-int.h
  };
  
  /*
-diff -urb libpcap/pcap-linux.c libpcap_winpcap/pcap-linux.c
---- libpcap/pcap-linux.c	2008-01-24 12:21:34.000000000 -0800
-+++ libpcap_winpcap/pcap-linux.c	2008-01-29 13:59:35.703125000 -0800
-@@ -118,6 +118,10 @@
- #include <net/if_arp.h>
- #include <poll.h>
+diff -urb libpcap_clean/pcap-linux.c libpcap/pcap-linux.c
+--- libpcap_clean/pcap-linux.c	2008-04-08 12:13:00.921875000 -0700
++++ libpcap/pcap-linux.c	2008-04-11 15:29:15.421875000 -0700
+@@ -125,6 +125,10 @@
+ #include "pcap-bt-linux.h"
+ #endif
  
 +#ifdef HAVE_REMOTE
 +#include <pcap-remote.h>
@@ -413,9 +412,9 @@ diff -urb libpcap/pcap-linux.c libpcap_winpcap/pcap-linux.c
  /*
   * If PF_PACKET is defined, we can use {SOCK_RAW,SOCK_DGRAM}/PF_PACKET
   * sockets rather than SOCK_PACKET sockets.
-@@ -282,6 +286,37 @@
- 	int		err;
- 	int		live_open_ok = 0;
+@@ -281,6 +285,37 @@
+ {
+ 	pcap_t *handle;
  
 +#ifdef HAVE_REMOTE
 +	/*
@@ -450,10 +449,10 @@ diff -urb libpcap/pcap-linux.c libpcap_winpcap/pcap-linux.c
 +
  #ifdef HAVE_DAG_API
  	if (strstr(device, "dag")) {
- 		return dag_open_live(device, snaplen, promisc, to_ms, ebuf);
-diff -urb libpcap/pcap-win32.c libpcap_winpcap/pcap-win32.c
---- libpcap/pcap-win32.c	2007-11-13 13:56:04.000000000 -0800
-+++ libpcap_winpcap/pcap-win32.c	2008-01-29 13:59:35.718750000 -0800
+ 		return dag_create(device, ebuf);
+diff -urb libpcap_clean/pcap-win32.c libpcap/pcap-win32.c
+--- libpcap_clean/pcap-win32.c	2008-04-09 14:17:54.000000000 -0700
++++ libpcap/pcap-win32.c	2008-04-11 15:29:15.437500000 -0700
 @@ -52,6 +52,10 @@
  #define errno (*_errno())
  #endif /* __MINGW32__ */
@@ -535,9 +534,9 @@ diff -urb libpcap/pcap-win32.c libpcap_winpcap/pcap-win32.c
  		/*
  		 * XXX A bpf_hdr matches a pcap_pkthdr.
  		 */
-@@ -437,6 +490,36 @@
- 	register pcap_t *p;
- 	NetType type;
+@@ -444,6 +497,36 @@
+ 		return (PCAP_ERROR_RFMON_NOTSUP);
+ 	}
  
 +#ifdef HAVE_REMOTE
 +	char host[PCAP_BUF_SIZE + 1];
@@ -572,10 +571,10 @@ diff -urb libpcap/pcap-win32.c libpcap_winpcap/pcap-win32.c
  	/* Init WinSock */
  	wsockinit();
  
-diff -urb libpcap/pcap.c libpcap_winpcap/pcap.c
---- libpcap/pcap.c	2007-11-06 08:21:20.000000000 -0800
-+++ libpcap_winpcap/pcap.c	2008-01-29 13:59:35.734375000 -0800
-@@ -70,10 +70,28 @@
+diff -urb libpcap_clean/pcap.c libpcap/pcap.c
+--- libpcap_clean/pcap.c	2008-04-08 12:13:01.390625000 -0700
++++ libpcap/pcap.c	2008-04-11 15:30:38.500000000 -0700
+@@ -70,6 +70,10 @@
  #include <dagapi.h>
  #endif
  
@@ -583,10 +582,13 @@ diff -urb libpcap/pcap.c libpcap_winpcap/pcap.c
 +#include <pcap-remote.h>
 +#endif
 +
+ int 
+ pcap_not_initialized(pcap_t *pcap)
+ {
+@@ -256,6 +260,20 @@
  int
  pcap_dispatch(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
  {
- 
 +#ifdef HAVE_REMOTE
 +	/* Checks the capture type */
 +	if (p->rmt_clientside)
@@ -604,7 +606,7 @@ diff -urb libpcap/pcap.c libpcap_winpcap/pcap.c
  	return p->read_op(p, cnt, callback, user);
  }
  
-@@ -92,6 +110,20 @@
+@@ -274,6 +292,20 @@
  {
  	register int n;
  
@@ -625,7 +627,7 @@ diff -urb libpcap/pcap.c libpcap_winpcap/pcap.c
  	for (;;) {
  		if (p->sf.rfile != NULL) {
  			/*
-@@ -169,6 +201,22 @@
+@@ -351,6 +383,22 @@
  	/* Saves a pointer to the packet headers */
  	*pkt_header= &p->pcap_header;
  
@@ -648,7 +650,7 @@ diff -urb libpcap/pcap.c libpcap_winpcap/pcap.c
  	if (p->sf.rfile != NULL) {
  		int status;
  
-@@ -568,6 +616,11 @@
+@@ -750,6 +798,11 @@
  int
  pcap_fileno(pcap_t *p)
  {
@@ -660,10 +662,10 @@ diff -urb libpcap/pcap.c libpcap_winpcap/pcap.c
  #ifndef WIN32
  	return (p->fd);
  #else
-diff -urb libpcap/savefile.c libpcap_winpcap/savefile.c
---- libpcap/savefile.c	2007-12-22 20:42:14.000000000 -0800
-+++ libpcap_winpcap/savefile.c	2008-01-29 13:59:35.781250000 -0800
-@@ -1483,6 +1483,11 @@
+diff -urb libpcap_clean/savefile.c libpcap/savefile.c
+--- libpcap_clean/savefile.c	2008-04-08 12:13:03.062500000 -0700
++++ libpcap/savefile.c	2008-04-11 15:29:15.468750000 -0700
+@@ -1530,6 +1530,11 @@
  	int status = 0;
  	int n = 0;
  
@@ -675,7 +677,7 @@ diff -urb libpcap/savefile.c libpcap_winpcap/savefile.c
  	while (status == 0) {
  		struct pcap_pkthdr h;
  
-@@ -1512,6 +1517,36 @@
+@@ -1559,6 +1564,36 @@
  
  		if ((fcode = p->fcode.bf_insns) == NULL ||
  		    bpf_filter(fcode, p->buffer, h.len, h.caplen)) {
