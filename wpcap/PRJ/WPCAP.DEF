@@ -84,3 +84,9 @@ EXPORTS
 		pcap_dump_file
 		pcap_dump_ftell
 		pcap_get_airpcap_handle
+		pcap_create
+		pcap_activate
+		pcap_set_promisc
+		pcap_set_snaplen
+		pcap_set_timeout
+		pcap_set_buffer_size
