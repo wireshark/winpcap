@@ -390,7 +390,7 @@ int n = 0;
 
 	\warning Since we're closing the connection, we do not check for errors.
 */
-void pcap_close_remote(pcap_t *fp)
+void pcap_cleanup_remote(pcap_t *fp)
 {
 struct rpcap_header header;		// header of the RPCAP packet
 struct activehosts *temp;		// temp var needed to scan the host list chain, to detect if we're in active mode
@@ -806,7 +806,7 @@ struct rpcap_openreply openreply;	// open reply message
 	fp->getnonblock_op= NULL;					// This is not implemented in remote capture
 	fp->setnonblock_op= NULL;	// This is not implemented in remote capture
 	fp->stats_op= pcap_stats_remote;
-	fp->close_op= pcap_close_remote;
+	fp->cleanup_op= pcap_cleanup_remote;
 
 	// Checks if all the data has been read; if not, discard the data in excess
 	if (nread != ntohl(header.plen))

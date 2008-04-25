@@ -349,7 +349,7 @@ int pcap_setfilter_remote(pcap_t *fp, struct bpf_program *prog);
 int pcap_stats_remote(pcap_t *p, struct pcap_stat *ps);
 int pcap_setsampling_remote(pcap_t *p);
 struct pcap_stat *pcap_stats_ex_remote(pcap_t *p);
-void pcap_close_remote(pcap_t *p);
+void pcap_cleanup_remote(pcap_t *p);
 
 void rpcap_createhdr(struct rpcap_header *header, uint8 type, uint16 value, uint32 length);
 int rpcap_deseraddr(struct sockaddr_storage *sockaddrin, struct sockaddr_storage **sockaddrout, char *errbuf);
