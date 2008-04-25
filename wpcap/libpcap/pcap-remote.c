@@ -1,33 +1,34 @@
 /*
- * Copyright (c) 2002 - 2003
- * NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2002 - 2005 NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2005 - 2008 CACE Technologies, Davis (California)
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
- * 
- * 1. Redistributions of source code must retain the above copyright 
+ *
+ * 1. Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright 
- * notice, this list of conditions and the following disclaimer in the 
- * documentation and/or other materials provided with the distribution. 
- * 3. Neither the name of the Politecnico di Torino nor the names of its 
- * contributors may be used to endorse or promote products derived from 
- * this software without specific prior written permission. 
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the Politecnico di Torino, CACE Technologies 
+ * nor the names of its contributors may be used to endorse or promote 
+ * products derived from this software without specific prior written 
+ * permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
 
@@ -208,13 +209,8 @@ struct timeval tv;						// maximum time the select() can block waiting for data
 
 	// Define the read timeout, to be used in the select()
 	// 'timeout', in pcap_t, is in milliseconds; we have to convert it into sec and microsec
-#ifdef linux
 	tv.tv_sec = p->md.timeout/1000;
 	tv.tv_usec = (p->md.timeout - tv.tv_sec * 1000 )* 1000;
-#else
-	tv.tv_sec = p->timeout/1000;
-	tv.tv_usec = (p->timeout - tv.tv_sec * 1000 )* 1000;
-#endif
 
 	// Watch out sockdata to see if it has input
 	FD_ZERO(&rfds);
@@ -655,28 +651,25 @@ error:
 	Since the other libpcap functions do not share this way of life, we have to make
 	some dirty things in order to make everyting working.
 
+	\param fp: A pointer to a pcap_t structure that has been previously created with
+		\ref pcap_create().
 	\param source: see pcap_open().
 	\param auth: see pcap_open().
 
-	\param errbuf: a pointer to a user-allocated buffer (of size PCAP_ERRBUF_SIZE)
-	that will contain the error message (in case there is one). It could be either a network problem,
-	an RPCAP problem (e.g. authentication failed), and more.
-
-	\return A pointer to a 'pcap_t' which can be used as a parameter to the following
-	calls (pcap_compile() and so on) and that specifies an opened WinPcap session. In case of 
-	problems, it returns NULL and the 'errbuf' variable keeps the error message.
+	\return 0 in case of success, -1 otherwise. In case of success, the pcap_t pointer in fp can be
+	used as a parameter to the following calls (pcap_compile() and so on). In case of 
+	problems, fp->errbuf contains a text explanation of error.
 
 	\warning In case we call the pcap_compile() and the capture is not started, the filter
 	will be saved into the pcap_t structure, and it will be sent to the other host later
 	(when the pcap_startcapture_remote() is called).
 */
-pcap_t *pcap_opensource_remote(const char *source, struct pcap_rmtauth *auth, char *errbuf)
+int pcap_opensource_remote(pcap_t *fp, struct pcap_rmtauth *auth)
 {
 char host[PCAP_BUF_SIZE], ctrlport[PCAP_BUF_SIZE], iface[PCAP_BUF_SIZE];
 
 char sendbuf[RPCAP_NETBUF_SIZE];// temporary buffer in which data to be sent is buffered
 int sendbufidx= 0;				// index which keeps the number of bytes currently buffered
-struct pcap *fp= NULL;			// pcap_t main variable
 unsigned int nread= 0;			// number of bytes of the payload read from the socket
 int retval;						// store the return value of the functions
 int active= 0;						// '1' if we're in active mode
@@ -694,26 +687,26 @@ struct rpcap_openreply openreply;	// open reply message
 	// determine the type of the source (NULL, file, local, remote)
 	// You must have a valid source string even if we're in active mode, because otherwise
 	// the call to the following funciton will fail.
-	if (pcap_parsesrcstr(source, &retval, host, ctrlport, iface, errbuf) == -1)
-		return NULL;
+	if (pcap_parsesrcstr(fp->opt.source, &retval, host, ctrlport, iface, fp->errbuf) == -1)
+		return -1;
 
 	if ( retval != PCAP_SRC_IFREMOTE)
 	{
-		snprintf(errbuf, PCAP_ERRBUF_SIZE, "This function is able to open only remote interfaces");
-		return NULL;
+		snprintf(fp->errbuf, PCAP_ERRBUF_SIZE, "This function is able to open only remote interfaces");
+		return -1;
 	}
 
 	addrinfo= NULL;
 
 	// Warning: this call can be the first one called by the user.
 	// For this reason, we have to initialize the WinSock support.
-	if (sock_init(errbuf, PCAP_ERRBUF_SIZE) == -1)
-		return NULL;
+	if (sock_init(fp->errbuf, PCAP_ERRBUF_SIZE) == -1)
+		return -1;
 
-	retval= rpcap_remoteact_getsock(host, errbuf);
+	retval= rpcap_remoteact_getsock(host, fp->errbuf);
 
 	if (retval == -1)
-		return NULL;
+		return -1;
 
 	// The capturing machine is in active mode
 	if (retval)
@@ -730,23 +723,23 @@ struct rpcap_openreply openreply;	// open reply message
 		if ( (ctrlport == NULL) || (ctrlport[0] == 0) )
 		{
 			// the user chose not to specify the port
-			if (sock_initaddress(host, RPCAP_DEFAULT_NETPORT, &hints, &addrinfo, errbuf, PCAP_ERRBUF_SIZE) == -1)
-				return NULL;
+			if (sock_initaddress(host, RPCAP_DEFAULT_NETPORT, &hints, &addrinfo, fp->errbuf, PCAP_ERRBUF_SIZE) == -1)
+				return -1;
 		}
 		else
 		{
 			// the user chose not to specify the port
-			if (sock_initaddress(host, ctrlport, &hints, &addrinfo, errbuf, PCAP_ERRBUF_SIZE) == -1)
-				return NULL;
+			if (sock_initaddress(host, ctrlport, &hints, &addrinfo, fp->errbuf, PCAP_ERRBUF_SIZE) == -1)
+				return -1;
 		}
 
-		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, errbuf, PCAP_ERRBUF_SIZE)) == -1)
+		if ( (sockctrl= sock_open(addrinfo, SOCKOPEN_CLIENT, 0, fp->errbuf, PCAP_ERRBUF_SIZE)) == -1)
 			goto error;
 
 		freeaddrinfo(addrinfo);
 		addrinfo= NULL;
 
-		if ( rpcap_sendauth(sockctrl, auth, errbuf) == -1)
+		if ( rpcap_sendauth(sockctrl, auth, fp->errbuf) == -1)
 			goto error;
 	}
 
@@ -754,24 +747,24 @@ struct rpcap_openreply openreply;	// open reply message
 	// Now it's time to start playing with the RPCAP protocol
 	// RPCAP open command: create the request message
 	if ( sock_bufferize(NULL, sizeof(struct rpcap_header), NULL, 
-		&sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, errbuf, PCAP_ERRBUF_SIZE) )
+		&sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, fp->errbuf, PCAP_ERRBUF_SIZE) )
 		goto error;
 
 	rpcap_createhdr( (struct rpcap_header *) sendbuf, RPCAP_MSG_OPEN_REQ, 0, strlen(iface) );
 
 	if ( sock_bufferize(iface, strlen(iface), sendbuf, &sendbufidx, 
-		RPCAP_NETBUF_SIZE, SOCKBUF_BUFFERIZE, errbuf, PCAP_ERRBUF_SIZE) )
+		RPCAP_NETBUF_SIZE, SOCKBUF_BUFFERIZE, fp->errbuf, PCAP_ERRBUF_SIZE) )
 		goto error;
 
-	if ( sock_send(sockctrl, sendbuf, sendbufidx, errbuf, PCAP_ERRBUF_SIZE) )
+	if ( sock_send(sockctrl, sendbuf, sendbufidx, fp->errbuf, PCAP_ERRBUF_SIZE) )
 		goto error;
 
 	// Receive the RPCAP open reply message
-	if (sock_recv(sockctrl, (char *) &header, sizeof(struct rpcap_header), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE) == -1)
+	if (sock_recv(sockctrl, (char *) &header, sizeof(struct rpcap_header), SOCK_RECEIVEALL_YES, fp->errbuf, PCAP_ERRBUF_SIZE) == -1)
 		goto error;
 
 	// Checks if the message is correct
-	retval= rpcap_checkmsg(errbuf, sockctrl, &header, RPCAP_MSG_OPEN_REPLY, RPCAP_MSG_ERROR, 0);
+	retval= rpcap_checkmsg(fp->errbuf, sockctrl, &header, RPCAP_MSG_OPEN_REPLY, RPCAP_MSG_ERROR, 0);
 
 	if (retval != RPCAP_MSG_OPEN_REPLY)		// the message is not the one expected
 	{
@@ -790,25 +783,15 @@ struct rpcap_openreply openreply;	// open reply message
 
 			default:
 			{
-				snprintf(errbuf, PCAP_ERRBUF_SIZE, "Internal error");
+				snprintf(fp->errbuf, PCAP_ERRBUF_SIZE, "Internal error");
 				goto error;
 			};
 		}
 	}
 
 
-	if ( (nread+= sock_recv(sockctrl, (char *) &openreply, sizeof(struct rpcap_openreply), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE)) == -1)
+	if ( (nread+= sock_recv(sockctrl, (char *) &openreply, sizeof(struct rpcap_openreply), SOCK_RECEIVEALL_YES, fp->errbuf, PCAP_ERRBUF_SIZE)) == -1)
 		goto error;
-
-	// Allocates a pcap_t struct for this end of the connection
-	fp = (pcap_t *) malloc( sizeof(pcap_t) );
-	if (fp == NULL)
-	{
-		snprintf(errbuf, PCAP_ERRBUF_SIZE, "malloc() failed: %s", pcap_strerror(errno));
-		goto error;
-	}
-
-	memset(fp, 0, sizeof(pcap_t));
 
 	// Set proper fields into the pcap_t struct
 	fp->linktype= ntohl(openreply.linktype);
@@ -831,7 +814,7 @@ struct rpcap_openreply openreply;	// open reply message
 		if (sock_discard(sockctrl, ntohl(header.plen) - nread, NULL, 0) == 1)
 			goto error;
 	}
-	return fp;
+	return 0;
 
 error:
 // When the connection has been established, we have to close it. So, at the
@@ -849,13 +832,7 @@ error:
 	if (!active)
 		sock_close(sockctrl, NULL, 0);
 
-	if (fp)
-	{
-		pcap_close(fp);
-		fp= NULL;
-	}
-
-	return NULL;
+	return -1;
 }
 
 
@@ -1020,13 +997,8 @@ int sockbufsize= 0;
 	memset(startcapreq, 0, sizeof(struct rpcap_startcapreq) );
 
 	// By default, apply half the timeout on one side, half of the other
-#ifdef linux
 	fp->md.timeout= fp->md.timeout/2;
 	startcapreq->read_timeout= htonl(fp->md.timeout);
-#else
-	fp->timeout= fp->timeout/2;
-	startcapreq->read_timeout= htonl(fp->timeout);
-#endif
 
 	// portdata on the openreq is meaningful only if we're in active mode
 	if ( (active) || (fp->rmt_flags & PCAP_OPENFLAG_DATATX_UDP) )
@@ -1107,7 +1079,6 @@ int sockbufsize= 0;
 			memset(&hints, 0, sizeof(struct addrinfo) );
 			hints.ai_family = ai_family;		// Use the same address family of the control socket
 			hints.ai_socktype = (fp->rmt_flags & PCAP_OPENFLAG_DATATX_UDP) ? SOCK_DGRAM : SOCK_STREAM;
-
 			sprintf(portdata, "%d", ntohs(startcapreply.portdata) );
 
 			// Let's the server pick up a free network port for us

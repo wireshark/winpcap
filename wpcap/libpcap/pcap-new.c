@@ -1,33 +1,34 @@
 /*
- * Copyright (c) 2002 - 2003
- * NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2002 - 2005 NetGroup, Politecnico di Torino (Italy)
+ * Copyright (c) 2005 - 2008 CACE Technologies, Davis (California)
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
- * 
- * 1. Redistributions of source code must retain the above copyright 
+ *
+ * 1. Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright 
- * notice, this list of conditions and the following disclaimer in the 
- * documentation and/or other materials provided with the distribution. 
- * 3. Neither the name of the Politecnico di Torino nor the names of its 
- * contributors may be used to endorse or promote products derived from 
- * this software without specific prior written permission. 
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the Politecnico di Torino, CACE Technologies 
+ * nor the names of its contributors may be used to endorse or promote 
+ * products derived from this software without specific prior written 
+ * permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
 #include <pcap-int.h>	// for the details of the pcap_t structure
@@ -874,6 +875,7 @@ pcap_t *pcap_open(const char *source, int snaplen, int flags, int read_timeout, 
 char host[PCAP_BUF_SIZE], port[PCAP_BUF_SIZE], name[PCAP_BUF_SIZE];
 int type;
 pcap_t *fp;
+int result;
 
 	if (strlen(source) > PCAP_BUF_SIZE)
 	{
@@ -893,20 +895,26 @@ pcap_t *fp;
 			break;
 
 		case PCAP_SRC_IFREMOTE:
+			fp= pcap_create(source, errbuf);
+			if (fp == NULL)
+			{
+				return NULL;
+			}
+
 			// Although we already have host, port and iface, we prefer TO PASS only 'pars' to the 
 			// pcap_open_remote() so that it has to call the pcap_parsesrcstr() again.
 			// This is less optimized, but much clearer.
-			fp= pcap_opensource_remote(source, auth, errbuf);
+			
+			result= pcap_opensource_remote(fp, auth);
 
-			if (fp == NULL)
+			if (result != 0)
+			{
+				pcap_close(fp);
 				return NULL;
+			}
 
 			fp->snapshot= snaplen;
-#ifdef linux
 			fp->md.timeout= read_timeout;
-#else
-			fp->timeout= read_timeout;
-#endif
 			fp->rmt_flags= flags;
 			break;
 
@@ -918,7 +926,7 @@ pcap_t *fp;
 //
 // these flags are supported on Windows only
 //
-			if (fp != NULL)
+			if (fp != NULL && fp->adapter != NULL)
 			{
 				/* disable loopback capture if requested */
 				if(flags & PCAP_OPENFLAG_NOCAPTURE_LOCAL)
