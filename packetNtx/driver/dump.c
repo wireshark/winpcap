@@ -520,6 +520,22 @@ static NTSTATUS PacketDumpCompletion(PDEVICE_OBJECT DeviceObject,
                                 PVOID Context)
 {
 
+	//
+	// From Sebastian Gottschalk, 
+	// Wednesday, May 07, 2008 4:55 PM
+	//
+	// The issue is within dump.c!PacketDumpCompletion. As an I/O completion 
+	// routine it is bound to the contract that every pending IRP passed to this 
+	// routine has to be marked as pending in case that is wasn't yet. Since the 
+	// device returning this IRP is a filesystem device (PacketDumpCompletion is 
+	// setup by WriteDumpFile), such cases might happen and would then hang the 
+	// filesystem, soon hanging up then entire system.
+	//
+	// Solution: (TO BE TESTED)
+	//
+	if (Irp->PendingReturned)
+		IoMarkIrpPending(Irp);
+
     // Copy the status information back into the "user" IOSB
     *Irp->UserIosb = Irp->IoStatus;
     
