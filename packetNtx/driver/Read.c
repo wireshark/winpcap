@@ -129,6 +129,24 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 				EXIT_FAILURE(0);
 			}
 
+			if (Open->mode & MODE_DUMP)
+			{
+				if (IrpSp->Parameters.Read.Length < sizeof(struct bpf_hdr) + 24)
+				{
+					Irp->IoStatus.Status = STATUS_BUFFER_TOO_SMALL;
+					IoCompleteRequest(Irp, IO_NO_INCREMENT);
+					return STATUS_BUFFER_TOO_SMALL;
+				}
+			}
+			else
+			{
+				if (IrpSp->Parameters.Read.Length < sizeof(struct bpf_hdr) + 16)
+				{
+					Irp->IoStatus.Status = STATUS_BUFFER_TOO_SMALL;
+					IoCompleteRequest(Irp, IO_NO_INCREMENT);
+					return STATUS_BUFFER_TOO_SMALL;
+				}
+			}
 
 			//fill the bpf header for this packet
 			header=(struct bpf_hdr*)CurrBuff;
