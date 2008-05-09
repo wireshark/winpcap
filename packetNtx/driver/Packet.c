@@ -722,6 +722,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	ULONG				NeededBytes;
 	BOOLEAN				Flag;
 	PUINT				pStats;
+	ULONG				StatsLength;
 
 	HANDLE				hUserEvent;
 	PKEVENT				pKernelEvent;
@@ -750,7 +751,8 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 		TRACE_MESSAGE(PACKET_DEBUG_LOUD, "BIOCGSTATS");
 
-		if(IrpSp->Parameters.DeviceIoControl.OutputBufferLength < 4*sizeof(UINT))
+		StatsLength = 4*sizeof(UINT);
+		if(IrpSp->Parameters.DeviceIoControl.OutputBufferLength < StatsLength)
 		{			
 			SET_FAILURE_BUFFER_SMALL();
 			break;
@@ -774,7 +776,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		{
 			mdl = IoAllocateMdl(
 				Irp->UserBuffer,  
-				IrpSp->Parameters.DeviceIoControl.OutputBufferLength,
+				StatsLength,
 				FALSE,
 				TRUE,
 				NULL);
@@ -825,7 +827,7 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		MmUnlockPages(mdl);
 		IoFreeMdl(mdl);
 
-		SET_RESULT_SUCCESS(4*sizeof(UINT));
+		SET_RESULT_SUCCESS(StatsLength);
 		
 		break;
 		
