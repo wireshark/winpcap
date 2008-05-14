@@ -296,7 +296,7 @@ diff -urb libpcap_clean/pcap-bpf.c libpcap/pcap-bpf.c
  #ifdef BIOCGDLTLIST
  # if (defined(HAVE_NET_IF_MEDIA_H) && defined(IFM_IEEE80211)) && !defined(__APPLE__)
  #define HAVE_BSD_IEEE80211
-@@ -163,6 +167,37 @@
+@@ -163,6 +167,65 @@
  {
  	pcap_t *p;
  
@@ -329,6 +329,34 @@ diff -urb libpcap_clean/pcap-bpf.c libpcap/pcap-bpf.c
 +
 +		return p;
 +	}
++
++	if (srctype == PCAP_SRC_IFLOCAL)
++	{
++		/*
++		 * If it starts with rpcap://, cut down the string
++		 */
++		if (strncmp(p->opt.source, PCAP_SRC_IF_STRING, strlen(PCAP_SRC_IF_STRING)) == 0)
++		{
++			size_t len = strlen(p->opt.source) - strlen(PCAP_SRC_IF_STRING) + 1;
++			char *new_string;
++			/*
++			 * allocate a new string and free the old one
++			 */
++			if (len > 0)
++			{
++				new_string = (char*)malloc(len);
++				if (new_string != NULL)
++				{
++					char *tmp;
++					strcpy(new_string, p->opt.source + strlen(PCAP_SRC_IF_STRING));
++					tmp = p->opt.source;
++					p->opt.source = new_string;
++					free(tmp);
++				}
++			}
++		}
++	}
++
 +#endif		/* HAVE_REMOTE */
 +
  #ifdef HAVE_DAG_API
@@ -409,7 +437,7 @@ diff -urb libpcap_clean/pcap-linux.c libpcap/pcap-linux.c
  /*
   * If PF_PACKET is defined, we can use {SOCK_RAW,SOCK_DGRAM}/PF_PACKET
   * sockets rather than SOCK_PACKET sockets.
-@@ -281,6 +285,37 @@
+@@ -281,6 +285,64 @@
  {
  	pcap_t *handle;
  
@@ -441,6 +469,33 @@ diff -urb libpcap_clean/pcap-linux.c libpcap/pcap-linux.c
 +		handle->rmt_flags= (promisc) ? PCAP_OPENFLAG_PROMISCUOUS : 0;
 +
 +		return handle;
++	}
++
++	if (srctype == PCAP_SRC_IFLOCAL)
++	{
++		/*
++		 * If it starts with rpcap://, cut down the string
++		 */
++		if (strncmp(p->opt.source, PCAP_SRC_IF_STRING, strlen(PCAP_SRC_IF_STRING)) == 0)
++		{
++			size_t len = strlen(p->opt.source) - strlen(PCAP_SRC_IF_STRING) + 1;
++			char *new_string;
++			/*
++			 * allocate a new string and free the old one
++			 */
++			if (len > 0)
++			{
++				new_string = (char*)malloc(len);
++				if (new_string != NULL)
++				{
++					char *tmp;
++					strcpy(new_string, p->opt.source + strlen(PCAP_SRC_IF_STRING));
++					tmp = p->opt.source;
++					p->opt.source = new_string;
++					free(tmp);
++				}
++			}
++		}
 +	}
 +#endif		/* HAVE_REMOTE */
 +
@@ -531,7 +586,7 @@ diff -urb libpcap_clean/pcap-win32.c libpcap/pcap-win32.c
  		/*
  		 * XXX A bpf_hdr matches a pcap_pkthdr.
  		 */
-@@ -435,6 +488,35 @@
+@@ -435,6 +488,63 @@
  {
  	NetType type;
  
@@ -562,6 +617,34 @@ diff -urb libpcap_clean/pcap-win32.c libpcap/pcap-win32.c
 +
 +		return 0;
 +	}
++
++	if (srctype == PCAP_SRC_IFLOCAL)
++	{
++		/*
++		 * If it starts with rpcap://, cut down the string
++		 */
++		if (strncmp(p->opt.source, PCAP_SRC_IF_STRING, strlen(PCAP_SRC_IF_STRING)) == 0)
++		{
++			size_t len = strlen(p->opt.source) - strlen(PCAP_SRC_IF_STRING) + 1;
++			char *new_string;
++			/*
++			 * allocate a new string and free the old one
++			 */
++			if (len > 0)
++			{
++				new_string = (char*)malloc(len);
++				if (new_string != NULL)
++				{
++					char *tmp;
++					strcpy(new_string, p->opt.source + strlen(PCAP_SRC_IF_STRING));
++					tmp = p->opt.source;
++					p->opt.source = new_string;
++					free(tmp);
++				}
++			}
++		}
++	}
++
 +#endif	/* HAVE_REMOTE */
 +
  	if (p->opt.rfmon) {
