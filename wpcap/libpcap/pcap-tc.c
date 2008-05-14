@@ -113,6 +113,7 @@ static int TcStats(pcap_t *p, struct pcap_stat *ps);
 static int TcSetFilter(pcap_t *p, struct bpf_program *fp);
 static int TcGetNonBlock(pcap_t *p, char *errbuf);
 static int TcSetNonBlock(pcap_t *p, int nonblock, char *errbuf);
+static int TcSetDatalink(pcap_t *p, int dlt);
 
 TC_FUNCTIONS g_TcFunctions = 
 {
@@ -140,6 +141,60 @@ TC_FUNCTIONS g_TcFunctions =
 	NULL  /* StatisticsQueryValue */
 };
 
+#define MAX_TC_PACKET_SIZE	9500
+
+#pragma pack(push, 1)
+
+#define PPH_PH_FLAG_PADDING	((UCHAR)0x01)
+#define PPH_PH_VERSION		((UCHAR)0x00)
+
+typedef struct _PPI_PACKET_HEADER
+{
+	UCHAR	PphVersion;
+	UCHAR	PphFlags;
+	USHORT	PphLength;
+	ULONG	PphDlt;
+}
+	PPI_PACKET_HEADER, *PPPI_PACKET_HEADER;
+
+typedef struct _PPI_FIELD_HEADER
+{
+	USHORT PfhType;
+	USHORT PfhLength;
+}
+	PPI_FIELD_HEADER, *PPPI_FIELD_HEADER;
+
+
+#define		PPI_FIELD_TYPE_AGGREGATION_EXTENSION	((UCHAR)0x08)
+
+typedef struct _PPI_FIELD_AGGREGATION_EXTENSION
+{
+	ULONG		InterfaceId;
+}
+	PPI_FIELD_AGGREGATION_EXTENSION, *PPPI_FIELD_AGGREGATION_EXTENSION;
+
+
+#define		PPI_FIELD_TYPE_802_3_EXTENSION			((UCHAR)0x09)
+
+#define PPI_FLD_802_3_EXT_FLAG_FCS_PRESENT			((ULONG)0x00000001)
+
+typedef struct _PPI_FIELD_802_3_EXTENSION
+{
+	ULONG		Flags;
+	ULONG		Errors;
+}
+	PPI_FIELD_802_3_EXTENSION, *PPPI_FIELD_802_3_EXTENSION;
+
+typedef struct _PPI_HEADER
+{
+	PPI_PACKET_HEADER PacketHeader;
+	PPI_FIELD_HEADER  AggregationFieldHeader;
+	PPI_FIELD_AGGREGATION_EXTENSION AggregationField;
+	PPI_FIELD_HEADER  Dot3FieldHeader;
+	PPI_FIELD_802_3_EXTENSION Dot3Field;
+}
+	PPI_HEADER, *PPPI_HEADER;
+#pragma pack(pop)
 
 /*
  * NOTE: this function should be called by the pcap functions that can theoretically
@@ -423,6 +478,7 @@ TcActivate(pcap_t *p)
 {
 	TC_STATUS status;
 	ULONG timeout;
+	PPPI_HEADER pPpiHeader;
 
 	if (p->opt.rfmon) 
 	{
@@ -433,6 +489,31 @@ TcActivate(pcap_t *p)
 		 */
 		return (PCAP_ERROR_RFMON_NOTSUP);
 	}
+
+	p->PpiPacket = (PCHAR)malloc(sizeof(PPI_HEADER) + MAX_TC_PACKET_SIZE);
+
+	if (p->PpiPacket == NULL)
+	{
+		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "Error allocating memory");
+		return PCAP_ERROR;
+	}
+
+	/*
+	 * Initialize the PPI fixed fields
+	 */
+	pPpiHeader = (PPPI_HEADER)p->PpiPacket;
+	pPpiHeader->PacketHeader.PphDlt = DLT_EN10MB;
+	pPpiHeader->PacketHeader.PphLength = sizeof(PPI_HEADER);
+	pPpiHeader->PacketHeader.PphFlags = 0;
+	pPpiHeader->PacketHeader.PphVersion = 0;
+
+	pPpiHeader->AggregationFieldHeader.PfhLength = sizeof(PPI_FIELD_AGGREGATION_EXTENSION);
+	pPpiHeader->AggregationFieldHeader.PfhType = PPI_FIELD_TYPE_AGGREGATION_EXTENSION;
+
+	pPpiHeader->Dot3Field.Errors = 0;
+	pPpiHeader->Dot3Field.Flags = 0;
+	pPpiHeader->Dot3FieldHeader.PfhLength = sizeof(PPI_FIELD_802_3_EXTENSION);
+	pPpiHeader->Dot3FieldHeader.PfhType = PPI_FIELD_TYPE_802_3_EXTENSION;
 
 	status = g_TcFunctions.InstanceOpenByName(p->opt.source, &p->TcInstance);
 
@@ -501,7 +582,10 @@ TcActivate(pcap_t *p)
 	else
 	if (p->md.timeout < 0)
 	{
-		timeout = 10; // we insert a minimal timeout here
+		/*
+		 *  we insert a minimal timeout here
+		 */
+		timeout = 10; 
 	}
 	else
 	{
@@ -519,7 +603,7 @@ TcActivate(pcap_t *p)
 	p->read_op = TcRead; 
 	p->setfilter_op = TcSetFilter; 
 	p->setdirection_op = NULL;	/* Not implemented. */
-	p->set_datalink_op = NULL;	/* can't change data link type at the moment */
+	p->set_datalink_op = TcSetDatalink;
 	p->getnonblock_op = NULL;
 	p->setnonblock_op = NULL;
 	p->stats_op = TcStats;
@@ -532,6 +616,14 @@ TcActivate(pcap_t *p)
 bad:
 	TcCleanup(p);
 	return (PCAP_ERROR);
+}
+
+static int TcSetDatalink(pcap_t *p, int dlt)
+{
+	/*
+	 * always return 0, as the check is done by pcap_set_datalink
+	 */
+	return 0;
 }
 
 static void TcCleanup(pcap_t *p)
@@ -549,6 +641,12 @@ static void TcCleanup(pcap_t *p)
 		 */
 		g_TcFunctions.InstanceClose(p->TcInstance);
 		p->TcInstance = NULL;
+	}
+
+	if (p->PpiPacket != NULL)
+	{
+		free(p->PpiPacket);
+		p->PpiPacket = NULL;
 	}
 
 	pcap_cleanup_live_common(p);
@@ -699,12 +797,38 @@ static int TcRead(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 		
 		p->TcAcceptedCount ++;
 		
-		hdr.caplen = tcHeader.CapturedLength;
-		hdr.len = tcHeader.Length;
 		hdr.ts.tv_sec = (bpf_u_int32)(tcHeader.Timestamp / (ULONGLONG)(1000  * 1000 * 1000));
 		hdr.ts.tv_usec = (bpf_u_int32)((tcHeader.Timestamp % (ULONGLONG)(1000  * 1000 * 1000)) / 1000);
 
-		(*callback)(user, &hdr, data);
+		if (p->linktype == DLT_EN10MB)
+		{
+			hdr.caplen = tcHeader.CapturedLength;
+			hdr.len = tcHeader.Length;
+			(*callback)(user, &hdr, data);
+		}
+		else
+		{
+			PPPI_HEADER pPpiHeader = (PPPI_HEADER)p->PpiPacket;
+			PVOID data2 = pPpiHeader + 1;
+
+			pPpiHeader->AggregationField.InterfaceId = TC_PH_FLAGS_RX_PORT_ID(tcHeader.Flags);
+
+			if (tcHeader.CapturedLength <= MAX_TC_PACKET_SIZE)
+			{
+				memcpy(data2, data, tcHeader.CapturedLength);
+				hdr.caplen = sizeof(PPI_HEADER) + tcHeader.CapturedLength;
+				hdr.len = sizeof(PPI_HEADER) + tcHeader.Length;
+			}
+			else
+			{
+				memcpy(data2, data, MAX_TC_PACKET_SIZE);
+				hdr.caplen = sizeof(PPI_HEADER) + MAX_TC_PACKET_SIZE;
+				hdr.len = sizeof(PPI_HEADER) + tcHeader.Length;
+			}
+
+			(*callback)(user, &hdr, p->PpiPacket);
+
+		}
 
 		if (++n >= cnt && cnt > 0) 
 		{

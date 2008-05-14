@@ -38,7 +38,7 @@ diff -urb libpcap/pcap-int.h libpcap_tc/pcap-int.h
  #endif /* WIN32 */
  
  #ifdef MSDOS
-@@ -231,6 +232,11 @@
+@@ -231,6 +232,12 @@
  	ADAPTER *adapter;
  	LPPACKET Packet;
  	int nonblock;
@@ -46,6 +46,7 @@ diff -urb libpcap/pcap-int.h libpcap_tc/pcap-int.h
 +	TC_INSTANCE TcInstance;
 +	TC_PACKETS_BUFFER TcPacketsBuffer;
 +	ULONG	TcAcceptedCount;
++	PCHAR   PpiPacket;
 +
  #else
  	int fd;
