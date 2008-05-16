@@ -966,3 +966,8 @@ TcSetFilter(pcap_t *p, struct bpf_program *fp)
 	return (0);
 }
 
+HANDLE TcGetReceiveWaitHandle(pcap_t *p)
+{
+	return g_TcFunctions.InstanceGetReceiveWaitHandle(p->TcInstance);
+}
+

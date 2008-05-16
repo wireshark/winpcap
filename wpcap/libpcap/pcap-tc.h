@@ -55,5 +55,7 @@ IsTcDevice(pcap_t *p);
 int
 TcActivate(pcap_t *p);
 
+HANDLE 
+TcGetReceiveWaitHandle(pcap_t *p);
 
 #endif
