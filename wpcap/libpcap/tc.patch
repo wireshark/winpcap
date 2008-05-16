@@ -1,6 +1,6 @@
-diff -urb libpcap/Win32/Prj/libpcap.dsp libpcap_tc/Win32/Prj/libpcap.dsp
---- libpcap/Win32/Prj/libpcap.dsp	2008-04-30 15:44:39.406250000 -0700
-+++ libpcap_tc/Win32/Prj/libpcap.dsp	2008-04-30 15:41:49.093750000 -0700
+diff -urb libpcap_notc/Win32/Prj/libpcap.dsp libpcap/Win32/Prj/libpcap.dsp
+--- libpcap_notc/Win32/Prj/libpcap.dsp	2008-05-16 10:06:05.828125000 -0700
++++ libpcap/Win32/Prj/libpcap.dsp	2008-05-16 10:08:56.906250000 -0700
 @@ -200,6 +200,14 @@
  # End Source File
  # Begin Source File
@@ -16,9 +16,9 @@ diff -urb libpcap/Win32/Prj/libpcap.dsp libpcap_tc/Win32/Prj/libpcap.dsp
  SOURCE="..\..\Pcap-win32.c"
  # End Source File
  # Begin Source File
-diff -urb libpcap/fad-win32.c libpcap_tc/fad-win32.c
---- libpcap/fad-win32.c	2007-09-25 13:34:36.000000000 -0700
-+++ libpcap_tc/fad-win32.c	2008-04-25 14:13:35.984375000 -0700
+diff -urb libpcap_notc/fad-win32.c libpcap/fad-win32.c
+--- libpcap_notc/fad-win32.c	2007-09-25 13:34:36.000000000 -0700
++++ libpcap/fad-win32.c	2008-05-16 10:08:56.828125000 -0700
 @@ -43,6 +43,7 @@
  #include <pcap.h>
  #include <pcap-int.h>
@@ -27,9 +27,31 @@ diff -urb libpcap/fad-win32.c libpcap_tc/fad-win32.c
  
  #include <errno.h>
  	
-diff -urb libpcap/pcap-int.h libpcap_tc/pcap-int.h
---- libpcap/pcap-int.h	2008-04-30 15:44:39.234375000 -0700
-+++ libpcap_tc/pcap-int.h	2008-04-30 11:43:28.531250000 -0700
+diff -urb libpcap_notc/gencode.c libpcap/gencode.c
+--- libpcap_notc/gencode.c	2008-05-16 10:06:05.703125000 -0700
++++ libpcap/gencode.c	2008-05-16 10:05:03.468750000 -0700
+@@ -374,6 +374,18 @@
+ 	const char * volatile xbuf = buf;
+ 	int len;
+ 
++	/*
++	 * We cannot generate PPI filters with TurboCap ports, as the
++	 * compiler doesn't generate the correct filtering code in case
++	 * of ethernet over PPI. It only generates 802.11 over PPI code
++	 */
++	if (p->TcInstance != NULL && p->linktype == DLT_PPI)
++	{
++		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "pcap_compile cannot generate filters for a TurboCap port when the PPI linktype is used.");
++		return -1;
++	
++	}
++
+ #ifdef HAVE_REMOTE
+ 	/*
+ 	   Check if:
+diff -urb libpcap_notc/pcap-int.h libpcap/pcap-int.h
+--- libpcap_notc/pcap-int.h	2008-05-16 10:06:05.703125000 -0700
++++ libpcap/pcap-int.h	2008-05-16 10:08:56.843750000 -0700
 @@ -48,6 +48,7 @@
  
  #ifdef WIN32
@@ -51,9 +73,9 @@ diff -urb libpcap/pcap-int.h libpcap_tc/pcap-int.h
  #else
  	int fd;
  	int selectable_fd;
-diff -urb libpcap/pcap-win32.c libpcap_tc/pcap-win32.c
---- libpcap/pcap-win32.c	2008-04-30 15:44:39.250000000 -0700
-+++ libpcap_tc/pcap-win32.c	2008-04-30 11:43:28.546875000 -0700
+diff -urb libpcap_notc/pcap-win32.c libpcap/pcap-win32.c
+--- libpcap_notc/pcap-win32.c	2008-05-16 10:06:05.718750000 -0700
++++ libpcap/pcap-win32.c	2008-05-16 10:08:56.843750000 -0700
 @@ -56,6 +56,8 @@
  #include <pcap-remote.h>
  #endif	/* HAVE_REMOTE */
@@ -63,7 +85,7 @@ diff -urb libpcap/pcap-win32.c libpcap_tc/pcap-win32.c
  static int pcap_setfilter_win32_npf(pcap_t *, struct bpf_program *);
  static int pcap_setfilter_win32_dag(pcap_t *, struct bpf_program *);
  static int pcap_getnonblock_win32(pcap_t *, char *);
-@@ -784,7 +785,15 @@
+@@ -812,7 +814,15 @@
  	if (p == NULL)
  		return (NULL);
  
@@ -79,7 +101,7 @@ diff -urb libpcap/pcap-win32.c libpcap_tc/pcap-win32.c
  	return (p);
  }
  
-@@ -878,5 +887,5 @@
+@@ -906,5 +916,5 @@
  int
  pcap_platform_finddevs(pcap_if_t **alldevsp, char *errbuf)
  {
