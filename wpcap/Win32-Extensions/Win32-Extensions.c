@@ -43,6 +43,11 @@
 HANDLE
 pcap_getevent(pcap_t *p)
 {
+	if (p->TcInstance != NULL)
+	{
+		return TcGetReceiveWaitHandle(p);
+	}
+	else
 	if (p->adapter==NULL)
 	{
 		sprintf(p->errbuf, "The read event cannot be retrieved while reading from a file");
@@ -72,6 +77,13 @@ pcap_stats_ex(pcap_t *p, int *pcap_stat_size)
 		return pcap_stats_ex_remote(p);
 	}
 #endif
+
+	if (p->adapter == NULL)
+	{
+		sprintf(p->errbuf, "Cannot retrieve the extended statistics from a file or a TurboCap port");
+		return NULL;
+	}
+
 	if(PacketGetStatsEx(p->adapter, (struct bpf_stat*) (&p->md.stat) ) != TRUE){
 		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "PacketGetStatsEx error: %s", pcap_win32strerror());
 		return NULL;
@@ -140,7 +152,7 @@ pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue* queue, int sync){
 
 	if (p->adapter==NULL)
 	{
-		sprintf(p->errbuf, "Cannot transmit a queue to an offline capture");
+		sprintf(p->errbuf, "Cannot transmit a queue to an offline capture or to a TurboCap port");
 		return -1;
 	}	
 
@@ -279,7 +291,7 @@ pcap_setuserbuffer(pcap_t *p, int size)
 	unsigned char *new_buff;
 
 	if (!p->adapter) {
-		sprintf(p->errbuf,"Impossible to set user buffer while reading from a file");
+		sprintf(p->errbuf,"Impossible to set user buffer while reading from a file or on a TurboCap port");
 		return -1;
 	}
 
@@ -316,7 +328,7 @@ pcap_live_dump(pcap_t *p, char *filename, int maxsize, int maxpacks){
 
 	if (p->adapter==NULL)
 	{
-		sprintf(p->errbuf, "live dump needs a physical interface");
+		sprintf(p->errbuf, "live dump needs a physical interface supported by the NPF driver");
 		return -1;
 	}	
 
@@ -345,7 +357,7 @@ pcap_live_dump_ended(pcap_t *p, int sync){
 
 	if (p->adapter == NULL)
 	{
-		sprintf(p->errbuf, "wrong interface type. A physical interface is needed");
+		sprintf(p->errbuf, "wrong interface type. A physical interface supported by the NPF driver is needed");
 		return -1;
 	}	
 
