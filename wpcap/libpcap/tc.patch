@@ -39,7 +39,7 @@ diff -urb libpcap_notc/gencode.c libpcap/gencode.c
 +	 * compiler doesn't generate the correct filtering code in case
 +	 * of ethernet over PPI. It only generates 802.11 over PPI code
 +	 */
-+	if (p->TcInstance != NULL && p->linktype == DLT_PPI)
++	if (p->TcInstance != NULL && p->linktype == DLT_PPI && strlen(buf) > 0)
 +	{
 +		snprintf(p->errbuf, PCAP_ERRBUF_SIZE, "pcap_compile cannot generate filters for a TurboCap port when the PPI linktype is used.");
 +		return -1;
