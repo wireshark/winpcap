@@ -20,7 +20,7 @@
  */
 
 /*
- * $cacever: turbocap2/api/TcApi.h,v 1.12 2008/05/08 00:49:05 gianlucav Exp $ 
+ * $cacever: turbocap2/api/TcApi.h,v 1.15
  */
 
 #ifndef __TC_API_HEADER__
@@ -82,9 +82,25 @@
 #define TC_PH_FLAGS_RX_PORT_ID(flags)	((UCHAR)((flags)>>24))
 
 /*!
-	\brief On reception, the received packet has an invalid frame check sentence (FCS)
+	\brief On reception, the received packet has an invalid frame check sequence (FCS)
 */
 #define TC_PH_ERROR_CHECKSUM			0x00000001
+
+/*!
+	\brief On reception, the received packet had a sequence error. A valid delimiter sequence
+	consists of 
+	idle->start-of-frame(SOF)->data, ->pad(optional)->end-of-frame(EOF)-fill(optional)->idle
+*/
+#define TC_PH_ERROR_SEQUENCE	0x00000002
+/*!
+	\brief On reception, the received packet had a symbol error.
+*/
+#define TC_PH_ERROR_SYMBOL		0x00000004
+
+/*!
+	\brief On reception, the received packet had a data error.
+*/
+#define TC_PH_ERROR_DATA		0x00000008
 
 /*!
 	\brief Macro to align a 16 bit quantity on a 64bit boundary. Used when processing the packets
@@ -155,6 +171,9 @@ typedef struct _TC_PACKET_HEADER
 		The packet had a reception error if this field is different from 0.
 		In case of errors, it's an OR combination of the following bit values
 		- \ref TC_PH_ERROR_CHECKSUM
+		- \ref TC_PH_ERROR_SYMBOL
+		- \ref TC_PH_ERROR_SEQUENCE
+		- \ref TC_PH_ERROR_DATA
 
 		On transmission, it should be set to 0.
 	*/
@@ -1004,6 +1023,27 @@ PCHAR
 TC_CALLCONV 
 TcPortGetDescription(
 							__in__ TC_PORT port
+					);
+
+/*!
+	\brief It sets the description of a given physical port.
+
+	\param port The handle of a port to set the description of.
+	\param pPortName Pointer to a string containing the port description.
+
+	\return One of the \ref error_codes values.
+
+	\note
+		- the description string gets copied internally, and can be freed upon this function returns.
+		- it's not possible to change the description of aggregating (BAP and T2AP) ports.
+
+	<b>Thread safety</b>: this function is thread safe if called on different ports. Calling this function on the same port from multiple threads concurrently can lead to unexpected results.
+*/
+TC_STATUS
+TC_CALLCONV
+TcPortSetDescription(
+							__in__ TC_PORT port,
+							__in__ PCHAR pPortName
 					);
 
 /*!
