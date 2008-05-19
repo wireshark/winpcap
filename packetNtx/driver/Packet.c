@@ -565,7 +565,11 @@ BOOLEAN NPF_CreateDevice(IN OUT PDRIVER_OBJECT adriverObjectP,
 		sizeof(DEVICE_EXTENSION),
 		&deviceName, 
 		FILE_DEVICE_TRANSPORT, 
+#ifdef __NPF_NT4__
 		0, 
+#else //__NPF_NT4__
+		FILE_DEVICE_SECURE_OPEN,	
+#endif //__NPF_NT4__
 		FALSE,
 		&devObjP);
 
