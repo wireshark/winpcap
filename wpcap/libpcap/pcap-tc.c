@@ -510,8 +510,6 @@ TcActivate(pcap_t *p)
 	pPpiHeader->AggregationFieldHeader.PfhLength = sizeof(PPI_FIELD_AGGREGATION_EXTENSION);
 	pPpiHeader->AggregationFieldHeader.PfhType = PPI_FIELD_TYPE_AGGREGATION_EXTENSION;
 
-	pPpiHeader->Dot3Field.Errors = 0;
-	pPpiHeader->Dot3Field.Flags = 0;
 	pPpiHeader->Dot3FieldHeader.PfhLength = sizeof(PPI_FIELD_802_3_EXTENSION);
 	pPpiHeader->Dot3FieldHeader.PfhType = PPI_FIELD_TYPE_802_3_EXTENSION;
 
@@ -812,6 +810,15 @@ static int TcRead(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 			PVOID data2 = pPpiHeader + 1;
 
 			pPpiHeader->AggregationField.InterfaceId = TC_PH_FLAGS_RX_PORT_ID(tcHeader.Flags);
+			pPpiHeader->Dot3Field.Errors = tcHeader.Errors;
+			if (tcHeader.Flags & TC_PH_FLAGS_CHECKSUM)
+			{
+				pPpiHeader->Dot3Field.Flags = PPI_FLD_802_3_EXT_FLAG_FCS_PRESENT;
+			}
+			else
+			{
+				pPpiHeader->Dot3Field.Flags = 0;
+			}
 
 			if (tcHeader.CapturedLength <= MAX_TC_PACKET_SIZE)
 			{
