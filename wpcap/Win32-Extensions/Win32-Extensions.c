@@ -365,17 +365,6 @@ pcap_live_dump_ended(pcap_t *p, int sync){
 
 }
 
-
-int pcap_offline_filter(struct bpf_program *prog, const struct pcap_pkthdr *header, const u_char *pkt_data)
-{
-	struct bpf_insn *fcode = prog->bf_insns;
-
-	if (fcode != NULL) 
-		return (bpf_filter(fcode, (u_char *) pkt_data, header->len, header->caplen));
-	else
-		return 0;
-}
-
 PAirpcapHandle pcap_get_airpcap_handle(pcap_t *p)
 {
 #ifdef HAVE_AIRPCAP_API
