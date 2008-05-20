@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.14 2007/06/18 22:29:23 gianlucav Exp $
+$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.15 2007/11/13 19:41:28 gianlucav Exp $
 
 WINPCAP RELEASE PROCEDURE
 =========================
@@ -87,6 +87,9 @@ How to compile WinPcap
     Applying remote code patch...
     Applying remote code patch -- Done
     ---------------------------------------
+    Applying TurboCap code patch...
+    Applying TurboCap code patch -- Done
+    ---------------------------------------
     DOS'ifing the libpcap makefile...
     libpcap.dsp: done.
     DOS'ifing the libpcap makefile -- Done
@@ -97,12 +100,12 @@ How to compile WinPcap
     Generating the compiler files -- Done
 
 13. Check that the version of libpcap in
-      %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 865
+      %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 1300
       "static const char pcap_version_string[] = "libpcap version 0.9[.x]";"
     makes sense (??? WHAT DOES IT MEAN???)
 
 14. Check that the version of wpcap in  
-      %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 875
+      %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 1309
         "static const char wpcap_version_string[] = "3.1";"
     matches the version of WinPcap. 
 
@@ -117,13 +120,13 @@ How to compile WinPcap
 16. Open a Win 2000 WDK Free build environment. Go into 
 	  %BUILD_TREE%\winpcap\packetntx. 
 	Execute "compileDriver.bat". 
-	Prefast 8.0.86081 should issue 21 warnings (20071113). 
+	Prefast 8.0.86081 should issue 20 warnings (20080520). 
 	Close the build environment.
 
 17. Open the Win 2003 WDK free x64 build environment.  Go into 
 	  %BUILD_TREE%\winpcap\packetntx. 
 	Execute "compileDriver.bat". 
-	Prefast 8.0.86081 should issue 23 warnings (20071113). 
+	Prefast 8.0.86081 should issue 22 warnings (20080520). 
 	Close the build environment.
 	
 18. Open the WinNT4 DDK Release build environment. Go into 
@@ -134,7 +137,7 @@ How to compile WinPcap
 
 19. Open %BUILD_TREE%\winpcap\packetNtx\dll\project\packet.dsw with Visual Studio 6. 
 	Go to Build->Batch Build, choose *all* the configurations (excluding the NpfIm ones) and hit "rebuild all".
-	[20060423]No warnings should be generated.
+	[20080520] Some warnings related to ntddndis.h should be generated.
     Close Visual Studio.
 
 20. Open %BUILD_TREE%\winpcap\wpcap\prj\wpcap.dsw with Visual Studio 6. 
