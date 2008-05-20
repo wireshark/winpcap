@@ -59,6 +59,7 @@ OBJS = ../libpcap/bpf/net/bpf_filter.o \
 	../libpcap/pcap-remote.o \
 	../libpcap/sockutils.o \
 	../libpcap/Win32/Src/gai_strerror.o \
+	../libpcap/pcap-tc.o \
 	../Win32-Extensions/Win32-Extensions.o
 
 main: ${OBJS}
