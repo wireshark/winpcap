@@ -13,13 +13,13 @@
 // 4.1.0.902  -->  WinPcap  4.1 beta
 // 4.1.0.1048 -->  WinPcap  4.1 beta2
 // 4.1.0.1124 -->  WinPcap  4.1 beta3
-// 4.1.0.1235 -->  WinPcap  4.1 beta4
+// 4.1.0.1236 -->  WinPcap  4.1 beta4
 
 #define WINPCAP_MAJOR	4
 #define WINPCAP_MINOR	1
 #define WINPCAP_REV		0
-#define WINPCAP_BUILD	1235
-#define WINPCAP_VER_STRING	"4.1.0.1235"
+#define WINPCAP_BUILD	1236
+#define WINPCAP_VER_STRING	"4.1.0.1236"
 #define WINPCAP_PACKET9x_STRING_VERSION	"4.1 beta4"
 #define WINPCAP_WPCAP_STRING_VERSION "4.1 beta4"
 
