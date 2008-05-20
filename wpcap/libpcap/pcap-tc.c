@@ -558,16 +558,11 @@ TcActivate(pcap_t *p)
 	 * enable transmission
 	 */
 	status = g_TcFunctions.InstanceSetFeature(p->TcInstance, TC_INST_FT_TX_STATUS, 1);
+	/*
+	 * Ignore the error here.
+	 */
 
-	if (status == TC_SUCCESS)
-	{
-		p->inject_op = TcInject;
-	}
-	else
-	{
-		p->inject_op = NULL;
-	}
-
+	p->inject_op = TcInject;
 	/*
 	 * if the timeout is -1, it means immediate return, no timeout
 	 * if the timeout is 0, it means INFINITE
@@ -602,8 +597,8 @@ TcActivate(pcap_t *p)
 	p->setfilter_op = TcSetFilter; 
 	p->setdirection_op = NULL;	/* Not implemented. */
 	p->set_datalink_op = TcSetDatalink;
-	p->getnonblock_op = NULL;
-	p->setnonblock_op = NULL;
+	p->getnonblock_op = TcGetNonBlock;
+	p->setnonblock_op = TcSetNonBlock;
 	p->stats_op = TcStats;
 	p->setbuff_op = TcSetBuff;
 	p->setmode_op = TcSetMode;
@@ -623,6 +618,25 @@ static int TcSetDatalink(pcap_t *p, int dlt)
 	 */
 	return 0;
 }
+
+static int TcGetNonBlock(pcap_t *p, char *errbuf)
+{
+	snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+		    "Getting the non blocking status is not available for TurboCap ports");
+	snprintf(errbuf, PCAP_ERRBUF_SIZE,
+		    "Getting the non blocking status is not available for TurboCap ports");
+		return -1;
+
+}
+static int TcSetNonBlock(pcap_t *p, int nonblock, char *errbuf)
+{
+	snprintf(p->errbuf, PCAP_ERRBUF_SIZE,
+		    "Setting the non blocking status is not available for TurboCap ports");
+	snprintf(errbuf, PCAP_ERRBUF_SIZE,
+		    "Setting the non blocking status is not available for TurboCap ports");
+		return -1;
+}
+
 
 static void TcCleanup(pcap_t *p)
 {
