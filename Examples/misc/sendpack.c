@@ -56,7 +56,7 @@ int i;
 	/* Send down the packet */
 	if (pcap_sendpacket(fp, packet, 100 /* size */) != 0)
 	{
-		fprintf(stderr,"\nError sending the packet: \n", pcap_geterr(fp));
+		fprintf(stderr,"\nError sending the packet: %s\n", pcap_geterr(fp));
 		return;
 	}
 
