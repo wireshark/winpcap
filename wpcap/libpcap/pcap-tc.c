@@ -940,8 +940,9 @@ TcStats(pcap_t *p, struct pcap_stat *ps)
 		s.ps_drop = 0xFFFFFFFF;
 	}
 
+#ifdef HAVE_REMOTE
 	s.ps_capt = p->TcAcceptedCount;
-
+#endif
 	*ps = s;
 
 	return 0;
