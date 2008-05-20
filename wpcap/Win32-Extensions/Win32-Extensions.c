@@ -153,7 +153,7 @@ pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue* queue, int sync){
 	if (p->adapter==NULL)
 	{
 		sprintf(p->errbuf, "Cannot transmit a queue to an offline capture or to a TurboCap port");
-		return -1;
+		return 0;
 	}	
 
 	res = PacketSendPackets(p->adapter,
