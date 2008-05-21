@@ -20,7 +20,7 @@
  */
 
 /*
- * $cacever: turbocap2/api/TcApi.h,v 1.15
+ * $cacever: turbocap2/api/TcApi.h,v 1.18
  */
 
 #ifndef __TC_API_HEADER__
@@ -46,18 +46,18 @@
 #define TC_PH_FLAGS_CHECKSUM	0x00000001	///< The packet contain the FCS at the end of the packet. 
 
 /*!
-	The packet will be transmitted without any scheduling policy i.e. as soon as possible, respecting
+	\brief The packet will be transmitted without any scheduling policy i.e. as soon as possible, respecting
 	the minimum interframe gap (IFG) of the link layer.
 	The \ref TC_PACKET_HEADER::Timestamp field is ignored by the transmission scheduler.
 */
 #define TC_TX_SCHEDULING_MODE_NO_SCHED	0x00
 
 /*!
-	\todo To be defined yet. Not supported by the EXPI9402 board
+	\brief Reserved.
 */
 #define TC_TX_SCHEDULING_MODE_HW_REF	0x01
 /*!
-	\todo To be defined yet. Not supported by the EXPI9402 board
+	\brief Reserved.
 */
 #define TC_TX_SCHEDULING_MODE_SW_REF	0x02
 
@@ -67,8 +67,8 @@
 	The result of this macro should be OR combined with the \ref TC_PACKET_HEADER::Flags field.
 	\param a One of these values
 	- \ref TC_TX_SCHEDULING_MODE_NO_SCHED
-	- \ref TC_TX_SCHEDULING_MODE_HW_REF
-	- \ref TC_TX_SCHEDULING_MODE_SW_REF
+	- \ref TC_TX_SCHEDULING_MODE_HW_REF (currently not supported)
+	- \ref TC_TX_SCHEDULING_MODE_SW_REF (currently not supported)
 */
 #define TC_PH_FLAGS_TX_SCHEDULING_MODE(a)	((a)<<24)
 
@@ -122,13 +122,15 @@ typedef struct _TC_PACKET_HEADER
 	/*!
 		On reception, the timestamp of the packet, with nanosecond precision. The
 			timestamp is taken when the first byte of the MAC header is received.
+			The timestamp is the number of nanoseconds elapsed since midnight 
+			Coordinated Universal Time (UTC) of January 1, 1970, not counting leap seconds.
 
 		On transmission, the scheduled time for the transmission of the packet, with nanosecond
 			precision. The Flags field defines the scheduling policy of the packet and how the
 			timestamp will be interpreted by the underlying transmission engine or hardware.
-
-		\todo 
-		- The time reference is not specified yet.
+		
+		The timestamp is the number of nanoseconds elapsed since midnight 
+		Coordinated Universal Time (UTC) of January 1, 1970, not counting leap seconds.
 	*/
 	ULONGLONG		Timestamp;
 	/*!
@@ -440,28 +442,39 @@ typedef ULONG TC_STATUS;
  */
 
 /*!
-	\brief Total number of bytes received by a physical port. This counter accounts for errored frames, too.
+	\brief Total number of bytes received by a port. In case of an aggregated port, it represents the sum of the packets received on each physical port
+		which is part of the aggregation. This counter accounts for errored frames, too.
 */
 #define TC_COUNTER_PORT_TOTAL_RX_BYTES			((ULONG)0x00000001)
 
 /*!
-	\brief Total number of packets received by a physical port. This counter accounts for errored frames, too.
+	\brief Total number of packets received by a port. In case of an aggregated port, it represents the sum of the packets received on each physical port
+		which is part of the aggregation. This counter accounts for errored frames, too.
 */
 #define TC_COUNTER_PORT_TOTAL_RX_PACKETS		((ULONG)0x00000002)
+
 /*!
-	\brief TODO
+	\brief Total number of packets received by a port with no errors. In case of an aggregated port, it represents the sum of the packets received on each physical port
+		which is part of the aggregation.
 */
 #define TC_COUNTER_PORT_RX_OK_PACKETS			((ULONG)0x00000003)
+
 /*!
-	\brief TODO
+	\brief Total number of packets received by a port with errors. In case of an aggregated port, it represents the sum of the packets received on each physical port
+		which is part of the aggregation.
 */
 #define TC_COUNTER_PORT_RX_ERROR_PACKETS		((ULONG)0x00000004)
+
 /*!
-	\brief TODO
+	\brief Total number of packets delivered to the physical port for transmission. This counter is incremented before the packets are actually
+	transmitted by the underlying hardware. If the port link is down, this counter is incremented anyways, because the packets are stored in the port transmission buffer.
 */
 #define TC_COUNTER_PORT_TOTAL_TX_PACKETS		((ULONG)0x00000005)
+
 /*!
-	\brief TODO
+	\brief Total number of bytes delivered to the physical port for transmission. This counter is incremented before the packets are actually
+	transmitted by the underlying hardware. If the port link is down, this counter is incremented anyways, because the packets are stored in the port transmission buffer.
+	In case of an aggregated port, this counter is always 0.
 */
 #define TC_COUNTER_PORT_TOTAL_TX_BYTES			((ULONG)0x00000006)
 
@@ -469,28 +482,36 @@ typedef ULONG TC_STATUS;
 	\brief Total number of bytes received by an instance.
 */
 #define TC_COUNTER_INSTANCE_TOTAL_RX_BYTES		((ULONG)0x00010001)
+
 /*!
 	\brief Total number of packets received by an instance.
 */
 #define TC_COUNTER_INSTANCE_TOTAL_RX_PACKETS	((ULONG)0x00010002)
+
 /*!
-	\brief TODO
+	\brief Total number of bytes delivered to the physical port for transmission from this instance. This counter is incremented before the packets are actually
+	transmitted by the underlying hardware. If the port link is down, this counter is incremented anyways, because the packets are stored in the port transmission buffer.
 */
 #define TC_COUNTER_INSTANCE_TOTAL_TX_BYTES		((ULONG)0x00010003)
+
 /*!
-	\brief TODO
+	\brief Total number of packets delivered to the physical port for transmission from this instance. This counter is incremented before the packets are actually
+	transmitted by the underlying hardware. If the port link is down, this counter is incremented anyways, because the packets are stored in the port transmission buffer.
 */
 #define TC_COUNTER_INSTANCE_TOTAL_TX_PACKETS	((ULONG)0x00010004)
+
 /*!
-	\brief TODO
+	\brief Total number of packets received by an instance with no errors.
 */
 #define TC_COUNTER_INSTANCE_RX_OK_PACKETS		((ULONG)0x00010005)
+
 /*!
-	\brief TODO
+	\brief Total number of packets received by an instance with errors.
 */
 #define TC_COUNTER_INSTANCE_RX_ERROR_PACKETS	((ULONG)0x00010006)
+
 /*!
-	\brief TODO
+	\brief Total number of packets dropped by the hardware because the application is not fast enough at processing packets.
 */
 #define TC_COUNTER_INSTANCE_RX_DROPPED_PACKETS	((ULONG)0x00010007)
 
@@ -708,7 +729,7 @@ typedef ULONG TC_STATUS;
 	<br>
 	<b>Possible values</b>:
 */
-#define TC_PRT_FT_RX_SLOT_SIZE	0x00000003	//R
+#define TC_PRT_FT_RX_SLOT_SIZE	0x00000004	//R
 /*!
 	\brief Internal feature.
 
@@ -718,7 +739,7 @@ typedef ULONG TC_STATUS;
 	<br>
 	<b>Possible values</b>:
 */
-#define TC_PRT_FT_TX_SLOT_SIZE	0x00000004	//R
+#define TC_PRT_FT_TX_SLOT_SIZE	0x00000005	//R
 /*!
 	\brief Internal feature.
 
@@ -728,7 +749,7 @@ typedef ULONG TC_STATUS;
 	<br>
 	<b>Possible values</b>:
 */
-#define TC_PRT_FT_RX_SLOTS		0x00000005	//R
+#define TC_PRT_FT_RX_SLOTS		0x00000006	//R
 /*!
 	\brief Internal feature.
 
@@ -738,7 +759,7 @@ typedef ULONG TC_STATUS;
 	<br>
 	<b>Possible values</b>:
 */
-#define TC_PRT_FT_TX_SLOTS		0x00000006	//R
+#define TC_PRT_FT_TX_SLOTS		0x00000007	//R
 /*!
 	\brief Internal feature.
 
@@ -748,7 +769,7 @@ typedef ULONG TC_STATUS;
 	<br>
 	<b>Possible values</b>:
 */
-#define TC_PRT_FT_RX_DESCS		0x00000007	//R
+#define TC_PRT_FT_RX_DESCS		0x00000008	//R
 /*!
 	\brief Internal feature.
 
@@ -758,7 +779,7 @@ typedef ULONG TC_STATUS;
 	<br>
 	<b>Possible values</b>:
 */
-#define TC_PRT_FT_TX_DESCS		0x00000008	//R
+#define TC_PRT_FT_TX_DESCS		0x00000009	//R
 
 /*!
 	\brief It controls the snapshot feature of a reception/transmission instance.
@@ -795,10 +816,7 @@ typedef ULONG TC_STATUS;
 		- \ref TC_HW_FILTER_CORRECT	Packets with no errors
 		- \ref TC_HW_FILTER_WRONG_FCS  Packets with wrong FCS
 		- \ref TC_HW_FILTER_PHY_ERROR  The PHY detected a physical error while receiving the packet.
-
-		\todo should we define this as a port feature? this would be a good optimization!!
-		\todo define default values, for this and the other options
-
+	<b>Default value</b>: TC_HW_FILTER_CORRECT | TC_HW_FILTER_WRONG_FCS
 */
 #define TC_INST_FT_HW_FILTER	0x00000002	//R/W
 
@@ -814,7 +832,7 @@ typedef ULONG TC_STATUS;
 	<b>Possible values</b>: 0 - 0xFFFFFFFF
 		If mintocopy is set to 0, the reception wait handle is never signalled.
 		\todo does this make sense? or it should be 0xFFFFFFF = no signal?
-		\todo define default values, for this and the other options
+	<b>Default value</b>: 0xFFFF
 */
 #define TC_INST_FT_MINTOCOPY	0x00000003	//R/W
 
@@ -1158,7 +1176,7 @@ TcPortQueryLinkStatus(
 
 	\note It's not possible to query the statistics of a virtual port.
 
-	<b>Thread safety</b>: TBD \todo define Thread safety
+	<b>Thread safety</b>: this function is thread safe i.e. it can be called from multiple threads concurrently.
 */
 TC_STATUS
 TC_CALLCONV
@@ -1551,6 +1569,8 @@ TcInstanceQueryFeature(
 	<b>Thread safety</b>: this function is thread safe. It's possible to call this function on the same instance from concurrent threads at the same time.
 		Moreover, the returned packets buffers returned by this function can be destroyed (with \ref TcPacketsBufferDestroy) on an arbitrary thread without
 		the need of any synchronization, with the condition that the instance must not be destroyed in the meantime.
+		Also, it's safe to call this function and \ref TcInstanceQueryStatistics from different threads concurrently.
+
 */
 TC_STATUS
 TC_CALLCONV
@@ -1590,13 +1610,10 @@ TcInstanceGetReceiveWaitHandle(
 		- When the function returns, the caller is again the owner of the packets buffer and can release it.
 		- When this function successfully returns, it means that the packets have all been moved to the tranmission engine, and the board is still
 			transmitting the packets.
-	\todo 
-	- should we add a note related to the fact that if you try to use scheduling and the timestamps are too far away, the API seems to block indefinitely?
-	- we should definitely think of adding an async transmission function.
-	- we need to add some documentation on how to retransmit a packet buffer that was received with \ref TcInstanceReceivePackets
-
-	<b>Thread safety</b>: TBD \todo define Thread safety
- */
+	
+	<b>Thread safety</b>: this function is thread safe if called on different instance handles (\ref TC_INSTANCE). 
+		Calling this function on the same instance from concurrent threads must be synchronized. 
+*/
 TC_STATUS
 TC_CALLCONV
 TcInstanceTransmitPackets(
@@ -1613,8 +1630,8 @@ TcInstanceTransmitPackets(
 	\return One of the \ref error_codes values.
 
 	<b>Thread safety</b>: this function is thread safe if called on different instance handles (\ref TC_INSTANCE). 
-		Calling this function on the same instance from concurrent threads must be synchronized.
-	\todo - Thread safety? Is it possible to have a thread receiving packets and another one querying the stats?
+		Calling this function on the same instance from concurrent threads must be synchronized. Also, it's safe
+		to call this function and \ref TcInstanceReceivePackets from different threads concurrently.
 */
 TC_STATUS
 TC_CALLCONV
