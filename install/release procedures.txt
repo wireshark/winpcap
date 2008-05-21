@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.15 2007/11/13 19:41:28 gianlucav Exp $
+$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.16 2008/05/20 17:08:20 gianlucav Exp $
 
 WINPCAP RELEASE PROCEDURE
 =========================
@@ -234,6 +234,24 @@ How to create the public sources zip file
 7.  Done.
 	
 
+SCM procedures part #1
+----------------------
+
+1.  %BUILD_TREE%\winpcap\wpdpack\
+		|
+		v
+	WinPcap_<version>_WpdPack.zip
+
+2.  %BUILD_TREE%\Sources\winpcap
+        |
+        V
+    WinPcap_<version>_PublicSources.zip
+ 
+3.  %BUILD_TREE%\winpcap\install\installer\WinPcap_<version>.exe
+        |
+        V
+    WinPcap_<version>_Installer.exe
+    
 WEB FOLDER
 ----------
 
@@ -311,47 +329,33 @@ WEB FOLDER
 		%BUILD_TREE%\web\install\bin\WpcapSrc_<version_short>.zip (e.g. WpcapSrc_4_0_beta3.zip)
 
 
-SCM procedures
---------------
+SCM procedures part #2
+----------------------
 
-1.  %BUILD_TREE%\winpcap\wpdpack\
-		|
-		v
-	WinPcap_<version>_WpdPack.zip
-
-2. 	%BUILD_TREE%\Sources.zip
+1. 	%BUILD_TREE%\Sources.zip
 		|
 		V
 	WinPcap_<version>_InternalSources.zip
 
-3.  %BUILD_TREE%\AirPcap_DevPack
+2.  %BUILD_TREE%\AirPcap_DevPack
 	 %BUILD_TREE%\LibPcap_<libpcap_version>
 	 %BUILD_TREE%\winpcap
 		|
 		V
 	WinPcap_<version>_Build_Tree.zip
 		
-4.  %BUILD_TREE%\Sources\winpcap
-        |
-        V
-    WinPcap_<version>_PublicSources.zip
- 
-5.  %BUILD_TREE%\winpcap\install\installer\WinPcap_<version>.exe
-        |
-        V
-    WinPcap_<version>_Installer.exe
-    
-6.  %BUILD_TREE%\web\
+3.  %BUILD_TREE%\web\
 			|
 			V
     WinPcap_<version>_Web.zip
 			
 
-MD5 checksums
+MD5/SHA1 checksums
 -------------
 1. Open a command line and go into %BUILD_TREE%\
 2. Execute
 		md5sum.exe WinPcap_<version>* > md5sum.txt
+		sha1sum.exe WinPcap_<version>* > sha1sum.txt
 		
 
 
