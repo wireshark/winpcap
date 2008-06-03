@@ -478,6 +478,99 @@ echo ****************************************************************
 			<Tool
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
+		<Configuration
+			Name="Release SIGNED Tracing|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories=".\,..\..\..\winpcap\common,..\..\..\common"
+				PreprocessorDefinitions="NDEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;ENABLE_TRACE;_DEBUG_TO_FILE"
+				StringPooling="TRUE"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="TRUE"
+				PrecompiledHeaderFile=".\Release_SIGNED/WinpcapOem.pch"
+				AssemblerListingLocation=".\Release_SIGNED/"
+				ObjectFile=".\Release_SIGNED/"
+				ProgramDataBaseFileName=".\Release_SIGNED/"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="npptools.lib odbc32.lib odbccp32.lib"
+				OutputFile="Release_SIGNED/Packet.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				AdditionalLibraryDirectories="..\..\WinpcapOem\Release\"
+				ModuleDefinitionFile=".\WinpcapOem.def"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\Release_SIGNED/Packet.pdb"
+				SetChecksum="TRUE"
+				ImportLibrary=".\Release_SIGNED/Packet.lib"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Release/WinpcapOem.tlb"
+				HeaderFileName=""/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="@echo off
+echo ****************************************************************
+echo *                                                              *
+echo *    Remember to sign the following files                      *
+echo *                                                              *
+echo *          binaries_SIGNED\wpcap.dll                           *
+echo *          binaries_SIGNED\packet.dll                          *
+echo *                                                              *
+echo ****************************************************************
+
+copy .\Release_SIGNED\packet.dll .\binaries_signed\packet.dll
+copy ..\..\wpcap\PRJ\Release_REMOTE\wpcap.dll .\binaries_signed\wpcap.dll
+
+postbuild_release.bat
+"/>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="@echo off
+echo ****************************************************************
+echo *                                                              *
+echo *    You should have signed the following binaries             *
+echo *                                                              *
+echo *                    .\binaries_SIGNED\*.*                     *
+echo *                                                              *
+echo ****************************************************************
+"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG; SIGNED_BINARIES"
+				Culture="0"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -535,6 +628,13 @@ echo ****************************************************************
 						AdditionalIncludeDirectories=""
 						BrowseInformation="1"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release SIGNED Tracing|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="PacketWrapper.cpp">
@@ -585,6 +685,13 @@ echo ****************************************************************
 						Optimization="2"
 						AdditionalIncludeDirectories=""
 						BrowseInformation="1"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release SIGNED Tracing|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -637,6 +744,13 @@ echo ****************************************************************
 						AdditionalIncludeDirectories=""
 						BrowseInformation="1"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release SIGNED Tracing|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="Security.cpp">
@@ -687,6 +801,13 @@ echo ****************************************************************
 						Optimization="2"
 						AdditionalIncludeDirectories=""
 						BrowseInformation="1"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release SIGNED Tracing|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 			</File>
 			<File
@@ -739,6 +860,13 @@ echo ****************************************************************
 						AdditionalIncludeDirectories=""
 						BrowseInformation="1"/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Release SIGNED Tracing|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="WinPcapOem.cpp">
@@ -789,6 +917,13 @@ echo ****************************************************************
 						Optimization="2"
 						AdditionalIncludeDirectories=""
 						BrowseInformation="1"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release SIGNED Tracing|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""/>
 				</FileConfiguration>
 			</File>
 		</Filter>
@@ -849,10 +984,10 @@ echo ****************************************************************
 			RelativePath="binaries\npfnt.sys">
 		</File>
 		<File
-			RelativePath="Packet2k.dll">
+			RelativePath="binaries\Packet2k.dll">
 		</File>
 		<File
-			RelativePath="binaries\Packet2k.dll">
+			RelativePath="Packet2k.dll">
 		</File>
 		<File
 			RelativePath="binaries\Packetnt.dll">
@@ -861,6 +996,12 @@ echo ****************************************************************
 			RelativePath=".\postbuild_release.bat">
 			<FileConfiguration
 				Name="Release SIGNED|Win32"
+				ExcludedFromBuild="TRUE">
+				<Tool
+					Name="VCCustomBuildTool"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release SIGNED Tracing|Win32"
 				ExcludedFromBuild="TRUE">
 				<Tool
 					Name="VCCustomBuildTool"/>
