@@ -812,17 +812,17 @@ PAirpcapHandle PacketGetAirPcapHandle(LPADAPTER AdapterObject)
 //---------------------------------------------------------------------------
 
 // This public function enables winpcap oem
-BOOLEAN PacketStartOem(PCHAR errorString, UINT errorStringLength)
+BOOLEAN PacketStartOemEx(PCHAR errorString, UINT errorStringLength, ULONG flags)
 {
 	CHAR internalErrorString[PACKET_ERRSTR_SIZE];
 	
-	TRACE_ENTER("PacketStartOem");
+	TRACE_ENTER("PacketStartOemEx");
 
 	
-	if (WoemEnterDll(::g_DllHandle, internalErrorString) == TRUE)
+	if (WoemEnterDll(g_DllHandle, internalErrorString, flags) == TRUE)
 	{
 		g_OemActive = TRUE;
-		TRACE_EXIT("PacketStartOem");
+		TRACE_EXIT("PacketStartOemEx");
 		return TRUE;
 	}
 	else
@@ -831,10 +831,23 @@ BOOLEAN PacketStartOem(PCHAR errorString, UINT errorStringLength)
 
 		strncpy(errorString, internalErrorString, errorStringLength - 1);
 
-		TRACE_EXIT("PacketStartOem");
+		TRACE_EXIT("PacketStartOemEx");
 		return FALSE;
 	}
 }
+
+BOOLEAN PacketStartOem(PCHAR errorString, UINT errorStringLength)
+{
+	BOOLEAN result;
+	TRACE_ENTER("PacketStartOem");
+	
+	result = PacketStartOemEx(errorString, errorStringLength, 0);
+
+	TRACE_EXIT("PacketStartOem");
+
+	return result;
+}
+
 
 //---------------------------------------------------------------------------
 // FUNCTIONS
@@ -865,7 +878,10 @@ __inline BOOL WoemInitialize(HINSTANCE hDllHandle)
 	// NOTE: this  function changes the value of g_StillInit!!
 	// we cannot do it here because we need to change this value
 	// while holding the global lock!
-	returnValue = WoemEnterDll(hDllHandle, errorString);
+	//
+	// Also, we reach this point if we are using WinPcap Professional from within TNT.
+	// Within TNT we initialize OEM without any flags
+	returnValue = WoemEnterDll(hDllHandle, errorString, 0);
 
 	TRACE_EXIT("WoemInitialize");
 

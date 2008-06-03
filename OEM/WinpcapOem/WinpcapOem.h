@@ -31,7 +31,7 @@ HRESULT HrUninstallNetMonProtocol();
 ////////////////////////////////////////////////////////////////////
 BOOL LoadPacketDll(char *PacketDllFileName, char *errorString);
 void DeleteDll(char *DllFileName);
-BOOL WoemEnterDll(HINSTANCE DllHandle, char *WoemErrorString);
+BOOL WoemEnterDll(HINSTANCE DllHandle, char *WoemErrorString, ULONG flags);
 BOOL WoemLeaveDll();
 #ifdef STATIC_LIB
 void RegisterPacketUnloadHandler(void* Handler);

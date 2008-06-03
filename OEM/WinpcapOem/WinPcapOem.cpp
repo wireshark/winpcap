@@ -13,12 +13,15 @@
 HANDLE g_hGlobalMutex = NULL;
 HANDLE g_hGlobalSemaphore = NULL;
 char g_GlobalSemaphoreName[MAX_OBJNAME_LEN];
-char g_DllFullPath[MAX_PATH + 16];
+char g_DllFullPathNm[MAX_PATH + 16];
+char g_DllFullPathNoNm[MAX_PATH + 16];
+char *g_DllFullPath;
 char g_DriverFullPath[MAX_PATH + 16];
 HINSTANCE g_DllHandle = NULL;
 char g_LastWoemError[PACKET_ERRSTR_SIZE];
 volatile BOOL g_InitError = FALSE;
 BOOL g_IsProcAuthorized = FALSE;
+BOOL g_DisableNetMon = FALSE;
 
 CRITICAL_SECTION g_CritSectionProtectingWoemEnterDll;
 
@@ -111,21 +114,58 @@ PCHAR getObjectName(PCHAR systemObjectName, UINT strlen)
 
 static BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString);
 
+#define WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR(_msg) do{strncpy(WoemErrorString, _msg, PACKET_ERRSTR_SIZE - 1); TRACE_MESSAGE(_msg);}while(0)
 
-BOOL WoemEnterDll(HINSTANCE DllHandle, char *WoemErrorString)
+BOOL WoemEnterDll(HINSTANCE DllHandle, char *WoemErrorString, ULONG flags)
 {
 	BOOL returnValue = TRUE;
 
 	TRACE_ENTER("WoemEnterDll");
 	
-	EnterCriticalSection(&::g_CritSectionProtectingWoemEnterDll);
-
-	if (g_StillToInit)
+	if ((flags & (~PACKET_START_OEM_NO_NETMON)) != 0)
 	{
-		returnValue = WoemEnterDllInternal(DllHandle, WoemErrorString);
-		if (returnValue == TRUE)
+		WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unsupported flags passed as parameter.");
+		returnValue = FALSE;
+	}
+	else
+	{
+		EnterCriticalSection(&g_CritSectionProtectingWoemEnterDll);
+
+		if (g_StillToInit)
 		{
-			g_StillToInit = FALSE;
+			if (flags & PACKET_START_OEM_NO_NETMON)
+			{
+				g_DisableNetMon = TRUE;
+			}
+			else
+			{
+				g_DisableNetMon = FALSE;
+			}
+
+			returnValue = WoemEnterDllInternal(DllHandle, WoemErrorString);
+			if (returnValue == TRUE)
+			{
+				g_StillToInit = FALSE;
+			}
+		}
+		else
+		{
+			if (flags & PACKET_START_OEM_NO_NETMON)
+			{
+				if (g_DisableNetMon == FALSE)
+				{
+					WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Already started WinPcap Professional with support for NetMon. Cannot restart it without NetMon support.");
+					returnValue = FALSE;
+				}
+			}
+			else
+			{
+				if (g_DisableNetMon == TRUE)
+				{
+					WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Already started WinPcap Professional without support for NetMon. Cannot restart it with NetMon support.");
+					returnValue = TRUE;
+				}
+			}
 		}
 	}
 
@@ -136,7 +176,6 @@ BOOL WoemEnterDll(HINSTANCE DllHandle, char *WoemErrorString)
 	return returnValue;
 }
 
-#define WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR(_msg) do{strncpy(WoemErrorString, _msg, PACKET_ERRSTR_SIZE - 1); TRACE_MESSAGE(_msg);}while(0)
 
 ////////////////////////////////////////////////////////////////////
 // Function called when a process loads the dll.
@@ -167,11 +206,11 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 #endif 
 	BOOL is64BitOs = FALSE;
 	BOOL bLoadDriverResult;
+	BOOL bUseNetMonPacket;
 
 	TRACE_ENTER("WoemEnterDllInternal");
 
 	WoemErrorString[PACKET_ERRSTR_SIZE - 1] = '\0';
-
 
 #ifdef TNT_BUILD
 
@@ -219,6 +258,54 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		return FALSE;
 	}
 #endif
+
+	//
+	// Get the OS we're running on
+	//
+	ZeroMemory(&osVer, sizeof(OSVERSIONINFO));
+	osVer.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+		
+	if (GetVersionEx(&osVer) == 0) 
+	{
+		WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to determine OS version");
+	
+		TRACE_EXIT("WoemEnterDllInternal");
+		return FALSE;
+	}
+		
+	//
+	// Get the OS architecture
+	//
+	bufSize = sizeof(osArchitecture);
+	if (RegOpenKey(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment", &environmentKey) != ERROR_SUCCESS
+		|| RegQueryValueEx(environmentKey, "PROCESSOR_ARCHITECTURE",	NULL,&keyType,(LPBYTE)&osArchitecture,&bufSize) != ERROR_SUCCESS
+		|| keyType != REG_SZ)
+	{
+		WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to determine OS architecture");
+	
+		if (environmentKey != NULL)
+			RegCloseKey(environmentKey);
+
+		TRACE_EXIT("WoemEnterDllInternal");
+		return FALSE;
+	}
+
+	if (stricmp("x86", osArchitecture) == 0)
+	{
+		is64BitOs = FALSE;
+	}
+	else 
+	if (stricmp("AMD64", osArchitecture) == 0)
+	{
+		is64BitOs = TRUE;
+	}
+	else
+	{
+		WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unsupported Operating System architecture (only x86 and AMD64 are supported)");
+	
+		TRACE_EXIT("WoemEnterDllInternal");
+		return FALSE;
+	}
 
 	if(g_hGlobalMutex)
 	{
@@ -361,129 +448,36 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		//
 		// IF WE ARE HERE, THE DLL IS BEING LOADED FOR THE FIRST TIME.
 		//
-		
-		//
-		// Get the OS we're running on
-		//
-		ZeroMemory(&osVer, sizeof(OSVERSIONINFO));
-		osVer.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-		
-		if (GetVersionEx(&osVer) == 0) 
-		{
-			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to determine OS version");
-	
-			ReleaseMutex(g_hGlobalMutex);
-			
-			if(g_hGlobalMutex != 0)
-			{
-				CloseHandle(g_hGlobalMutex);
-				g_hGlobalMutex = NULL;
 
-			}
-			if (g_hGlobalSemaphore!=0)
-			{
-				CloseHandle(g_hGlobalSemaphore);
-				g_hGlobalSemaphore = NULL;
-			}
-			
-			TRACE_EXIT("WoemEnterDllInternal");
-			return FALSE;
-		}
-		
-		//
-		// Get the OS architecture
-		//
-		bufSize = sizeof(osArchitecture);
-		if (RegOpenKey(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment", &environmentKey) != ERROR_SUCCESS
-			|| RegQueryValueEx(environmentKey, "PROCESSOR_ARCHITECTURE",	NULL,&keyType,(LPBYTE)&osArchitecture,&bufSize) != ERROR_SUCCESS
-			|| keyType != REG_SZ)
+		if (g_DisableNetMon == TRUE)
 		{
-			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to determine OS architecture");
-	
-			if (environmentKey != NULL)
-				RegCloseKey(environmentKey);
-
-			ReleaseMutex(g_hGlobalMutex);
-			
-			if(g_hGlobalMutex != 0)
-			{
-				CloseHandle(g_hGlobalMutex);
-				g_hGlobalMutex = NULL;
-
-			}
-			if (g_hGlobalSemaphore!=0)
-			{
-				CloseHandle(g_hGlobalSemaphore);
-				g_hGlobalSemaphore = NULL;
-			}
-			
-			TRACE_EXIT("WoemEnterDllInternal");
-			return FALSE;
-		}
-
-		//
-		// check that we are running on x86 (the only architecture that we support at the moment)
-		//
-		if (stricmp("x86", osArchitecture) == 0)
-		{
-			is64BitOs = FALSE;
-		}
-		else 
-		if (stricmp("AMD64", osArchitecture) == 0)
-		{
-			is64BitOs = TRUE;
+			bUseNetMonPacket = FALSE;
 		}
 		else
 		{
-			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unsupported Operating System architecture (only x86 and AMD64 are supported)");
-	
-			ReleaseMutex(g_hGlobalMutex);
-			
-			if(g_hGlobalMutex != 0)
+			if(osVer.dwMajorVersion == 5)
 			{
-				CloseHandle(g_hGlobalMutex);
-				g_hGlobalMutex = NULL;
+				//
+				// Windows 2000, XP, 2003
+				//
+				if (is64BitOs)
+				{
+					bUseNetMonPacket = FALSE;
+				}
+				else
+				{
+					bUseNetMonPacket = TRUE;
+				}
+			}
+			else
+			{
+				//
+				// all the other OSes, including NT4 and Vista
+				//
+				bUseNetMonPacket = FALSE;
+			}
 
-			}
-			if (g_hGlobalSemaphore!=0)
-			{
-				CloseHandle(g_hGlobalSemaphore);
-				g_hGlobalSemaphore = NULL;
-			}
-			
-			TRACE_EXIT("WoemEnterDllInternal");
-			return FALSE;
 		}
-
-		
-
-//  
-//	Old registry based WinPcap names
-//
-//		//
-//		// Create the WinPcap global registry key
-//		//
-//		if(!WoemCreateNameRegistryEntries())
-//		{
-//			WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to create registry entries. Administrator provileges are required for this operation");
-//
-//			ReleaseMutex(g_hGlobalMutex);
-//			
-//			if(g_hGlobalMutex!=0)
-//			{
-//				CloseHandle(g_hGlobalMutex);
-//				g_hGlobalMutex = NULL;
-//
-//			}
-//			if (g_hGlobalSemaphore!=0)
-//			{
-//				CloseHandle(g_hGlobalSemaphore);
-//				g_hGlobalSemaphore = NULL;
-//			}
-//			
-//			TRACE_EXIT("WoemEnterDllInternal");
-//			return FALSE;
-//		}
 
 		if(!WoemCreateBinaryNames())
 		{
@@ -505,6 +499,15 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			
 			TRACE_EXIT("WoemEnterDllInternal");
 			return FALSE;
+		}
+
+		if (bUseNetMonPacket)
+		{
+			g_DllFullPath = g_DllFullPathNm;
+		}
+		else
+		{
+			g_DllFullPath = g_DllFullPathNoNm;
 		}
 		
 		if(check_if_service_is_running(NPF_DRIVER_NAME) == 0)
@@ -579,30 +582,38 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		}
 		else if(osVer.dwMajorVersion == 5)
 		{
+			BOOL bExtractDllResult;
+
 			//
 			// Windows 2000, XP, 2003
 			//
 			
-			//
-			// Install Netmon
-			//
-			if(check_if_service_is_present("nm") != 0)
+			if (g_DisableNetMon == FALSE)
 			{
-				hr = HrInstallNetMonProtocol();
-				if (hr != S_OK)
+				//
+				// Install Netmon
+				//
+				if(check_if_service_is_present("nm") != 0)
 				{
-					TRACE_MESSAGE("Warning: unable to load the netmon driver, ndiswan captures will not be available");
+					hr = HrInstallNetMonProtocol();
+					if (hr != S_OK)
+					{
+						TRACE_MESSAGE("Warning: unable to load the netmon driver, ndiswan captures will not be available");
+					}
+				}
+				else
+				{
+					// printf("netmon already here!!!\n");
 				}
 			}
-			else
-			{
-				// printf("netmon already here!!!\n");
-			}
-			
+
 			//
-			// Extract packet.dll to disk
+			// Extract packet.dll to disk, both ones
 			//
-			if(!WoemSaveResourceToDisk(g_DllHandle, IDP_DLL2K, g_DllFullPath, FALSE))
+			bExtractDllResult = WoemSaveResourceToDisk(g_DllHandle, IDP_DLL2K, g_DllFullPathNm, FALSE);
+			bExtractDllResult &=WoemSaveResourceToDisk(g_DllHandle, IDP_DLLVISTA, g_DllFullPathNoNm, FALSE);
+
+			if (!bExtractDllResult)
 			{
 				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the WinPcap Professional files. Administrative privileges are required for this operation.");
 
@@ -713,7 +724,8 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			{
 				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("Unable to copy the WinPcap Professional files. Administrative privileges are required for this operation.");
 
-				_unlink(g_DllFullPath);
+				_unlink(g_DllFullPathNm);
+				_unlink(g_DllFullPathNoNm);
 
 				ReleaseMutex(g_hGlobalMutex);
 				
@@ -747,7 +759,8 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			{
 				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("unable to create the packet driver service");
 
-				_unlink(g_DllFullPath);
+				_unlink(g_DllFullPathNm);
+				_unlink(g_DllFullPathNoNm);
 				_unlink(g_DriverFullPath);
 
 				ReleaseMutex(g_hGlobalMutex);
@@ -775,7 +788,8 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("unable to start the packet driver service");
 
 				delete_service(NPF_DRIVER_NAME);
-				_unlink(g_DllFullPath);
+				_unlink(g_DllFullPathNm);
+				_unlink(g_DllFullPathNoNm);
 				_unlink(g_DriverFullPath);
 
 				ReleaseMutex(g_hGlobalMutex);
@@ -849,10 +863,42 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	}
 	else
 	{
+		if (g_DisableNetMon == TRUE)
+		{
+			bUseNetMonPacket = FALSE;
+		}
+		else
+		{
+			if(osVer.dwMajorVersion == 5)
+			{
+				//
+				// Windows 2000, XP, 2003
+				//
+				if (is64BitOs)
+				{
+					bUseNetMonPacket = FALSE;
+				}
+				else
+				{
+					bUseNetMonPacket = TRUE;
+				}
+			}
+			else
+			{
+				//
+				// all the other OSes, including NT4 and Vista
+				//
+				bUseNetMonPacket = FALSE;
+			}
+
+		}
+
 		if(!WoemCreateBinaryNames())
 		{			
 			delete_service(NPF_DRIVER_NAME);
-			_unlink(g_DllFullPath);
+			_unlink(g_DllFullPathNm);
+			_unlink(g_DllFullPathNoNm);
+
 			WoemDeleteDriverBinary(g_DriverFullPath, is64BitOs);
 			
 			ReleaseMutex(g_hGlobalMutex);
@@ -872,6 +918,15 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			TRACE_EXIT("WoemEnterDllInternal");
 			return FALSE;
 		}
+
+		if (bUseNetMonPacket)
+		{
+			g_DllFullPath = g_DllFullPathNm;
+		}
+		else
+		{
+			g_DllFullPath = g_DllFullPathNoNm;
+		}
 	}
 		
 	//
@@ -880,7 +935,8 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	if(!LoadPacketDll(g_DllFullPath, WoemErrorString))
 	{
 		delete_service(NPF_DRIVER_NAME);
-		_unlink(g_DllFullPath);
+		_unlink(g_DllFullPathNm);
+		_unlink(g_DllFullPathNoNm);
 		WoemDeleteDriverBinary(g_DriverFullPath, is64BitOs);
 		
 		ReleaseMutex(g_hGlobalMutex);
@@ -911,7 +967,8 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	//
 	// Schedule the deletion of the dll. It will go away at the next reboot
 	//
-	DeleteDll(g_DllFullPath);	
+	DeleteDll(g_DllFullPathNoNm);	
+	DeleteDll(g_DllFullPathNm);	
 	
 	//
 	// Done. We can release the MUTEX
@@ -1355,8 +1412,14 @@ BOOL WoemCreateBinaryNames()
 	// and load the components
 	//
 
-	_snprintf(g_DllFullPath, 
-		sizeof(g_DllFullPath) - 1, 
+	_snprintf(g_DllFullPathNm, 
+		sizeof(g_DllFullPathNm) - 1, 
+		"%s\\%swoem_nm.tmp", 
+		SysDir, 
+		NPF_DRIVER_NAME);
+
+	_snprintf(g_DllFullPathNoNm, 
+		sizeof(g_DllFullPathNoNm) - 1, 
 		"%s\\%swoem.tmp", 
 		SysDir, 
 		NPF_DRIVER_NAME);

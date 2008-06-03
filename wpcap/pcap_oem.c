@@ -17,7 +17,7 @@
 */
 int pcap_start_oem(char* err_str, int flags)
 {
-	if(PacketStartOem(err_str, PCAP_ERRBUF_SIZE) == FALSE)
+	if(PacketStartOemEx(err_str, PCAP_ERRBUF_SIZE, (ULONG)flags) == FALSE)
 	{
 		return -1;
 	}

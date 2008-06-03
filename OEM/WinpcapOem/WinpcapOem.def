@@ -33,4 +33,5 @@ EXPORTS
 		PacketSetLoopbackBehavior
 		PacketGetAirPcapHandle
 		PacketStartOem
+		PacketStartOemEx
 		
