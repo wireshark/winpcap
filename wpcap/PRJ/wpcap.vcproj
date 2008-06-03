@@ -50,6 +50,7 @@
 				ModuleDefinitionFile=".\wpcap.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Release_REMOTE_TNT/wpcap.pdb"
+				SetChecksum="TRUE"
 				ImportLibrary=".\Release_REMOTE_TNT/wpcap.lib"
 				TargetMachine="1"/>
 			<Tool
@@ -256,6 +257,7 @@
 				ModuleDefinitionFile=".\wpcap.def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Release_REMOTE/wpcap.pdb"
+				SetChecksum="TRUE"
 				ImportLibrary=".\Release_REMOTE/wpcap.lib"
 				TargetMachine="1"/>
 			<Tool
