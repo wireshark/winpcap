@@ -114,7 +114,7 @@ static __inline void OutputDebugMessageNewLine(char *_x, ...)
 {
 #ifdef _DEBUG_TO_FILE
 	FILE *f;
-	int loops;
+	int loops = 0;
 #endif
 
 	va_list Marker;
