@@ -363,7 +363,14 @@ BOOLEAN PacketIsDumpEnded(LPADAPTER AdapterObject, BOOLEAN sync);
 BOOL PacketStopDriver();
 VOID PacketCloseAdapter(LPADAPTER lpAdapter);
 BOOLEAN PacketStartOem(PCHAR errorString, UINT errorStringLength);
+BOOLEAN PacketStartOemEx(PCHAR errorString, UINT errorStringLength, ULONG flags);
 PAirpcapHandle PacketGetAirPcapHandle(LPADAPTER AdapterObject);
+
+//
+// Used by PacketStartOemEx
+//
+#define PACKET_START_OEM_NO_NETMON	0x00000001
+
 #ifdef __cplusplus
 }
 #endif 
