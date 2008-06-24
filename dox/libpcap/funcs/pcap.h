@@ -785,7 +785,8 @@ is forced to wait the arrival of several packets before copying the data to the 
 a low number of system calls, i.e. low processor usage, and is a good setting for applications like 
 packet-sniffers and protocol analyzers. Vice versa, in presence of a small value for this variable, 
 the kernel will copy the packets as soon as the application is ready to receive them. This is useful 
-for real time applications that need the best responsiveness from the kernel.
+for real time applications that need the best responsiveness from the kernel. pcap_open_live() sets a
+default mintocopy value of 16000 bytes.
 
 \sa pcap_open_live(), pcap_loop(), pcap_dispatch()
 */
@@ -871,7 +872,7 @@ u_int pcap_sendqueue_transmit(pcap_t *p, pcap_send_queue* queue, int sync);
 
 /*!	\brief Create a list of network devices that can be opened with pcap_open().
 	
-	This function is a superset of the old 'pcap_findalldevs()', which is obsolete, and which
+	This function is a superset of the old 'pcap_findalldevs()', which
 	allows listing only the devices present on the local machine.
 	Vice versa, pcap_findalldevs_ex() allows listing the devices present on a remote 
 	machine as well. Additionally, it can list all the pcap files available into a given folder.
