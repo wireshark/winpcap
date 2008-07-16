@@ -755,6 +755,7 @@ static int TcRead(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 		struct pcap_pkthdr hdr;
 		TC_PACKET_HEADER tcHeader;
 		PVOID data;
+		ULONG filterResult;
 
 		/*
 		 * Has "pcap_breakloop()" been called?
@@ -801,10 +802,21 @@ static int TcRead(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 		/* No underlaying filtering system. We need to filter on our own */
 		if (p->fcode.bf_insns) 
 		{
-			if (bpf_filter(p->fcode.bf_insns, data, tcHeader.Length, tcHeader.CapturedLength) == 0) 
+			filterResult = bpf_filter(p->fcode.bf_insns, data, tcHeader.Length, tcHeader.CapturedLength);
+			
+			if (filterResult == 0)
 			{
 				continue;
 			}
+			
+			if (filterResult > tcHeader.CapturedLength)
+			{
+				filterResult = tcHeader.CapturedLength;
+			}
+		}
+		else
+		{
+			filterResult = tcHeader.CapturedLength;
 		}
 		
 		p->TcAcceptedCount ++;
@@ -814,7 +826,7 @@ static int TcRead(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 
 		if (p->linktype == DLT_EN10MB)
 		{
-			hdr.caplen = tcHeader.CapturedLength;
+			hdr.caplen = filterResult;
 			hdr.len = tcHeader.Length;
 			(*callback)(user, &hdr, data);
 		}
@@ -834,10 +846,10 @@ static int TcRead(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 				pPpiHeader->Dot3Field.Flags = 0;
 			}
 
-			if (tcHeader.CapturedLength <= MAX_TC_PACKET_SIZE)
+			if (filterResult <= MAX_TC_PACKET_SIZE)
 			{
-				memcpy(data2, data, tcHeader.CapturedLength);
-				hdr.caplen = sizeof(PPI_HEADER) + tcHeader.CapturedLength;
+				memcpy(data2, data, filterResult);
+				hdr.caplen = sizeof(PPI_HEADER) + filterResult;
 				hdr.len = sizeof(PPI_HEADER) + tcHeader.Length;
 			}
 			else
