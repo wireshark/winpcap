@@ -92,7 +92,7 @@ mkdir driver\bin\NT4\i386 2> nul
 mkdir driver\bin\NT4\i386\free 2> nul
 mkdir driver\bin\NT4\i386\checked 2> nul
 
-set TARGETPATH=bin\NT4
+set TARGETPREFIX=NT4\
 set NPF_C_DEFINES=-DNDIS30 -D__NPF_NT4__
 
 rem ** enable the following line to enable the TME extensions **
@@ -101,6 +101,8 @@ rem set NPF_C_DEFINES=%NPF_C_DEFINES% -DHAVE_BUGGY_TME_SUPPORT
 
 set NPF_JIT_FILES=jitter.c
 
+set TARGETSUFFIX=\NT4
+
 if NOT "%NPF_COMPILED%" == "1" (
 		set Include=%BASEDIR%\src\network\inc;%BASEDIR%\inc;%Include%
 		set NPF_COMPILED=1
@@ -108,7 +110,7 @@ if NOT "%NPF_COMPILED%" == "1" (
 
 build -cefw
 
-set TARGETPATH=
+set TARGETSUFFIX=
 set NPF_C_DEFINES=
 set NPF_TME_FILES=
 set NPF_JIT_FILES=
