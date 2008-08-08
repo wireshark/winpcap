@@ -434,16 +434,16 @@ MainInstallationProcedure:
 ;
 
 ;Common Files
-    File "Distribution\2000\rpcapd.exe"
-    File "Distribution\2000\WinPcapInstall.dll"
+    File "Distribution\X86\rpcapd.exe"
+    File "Distribution\X86\WinPcapInstall.dll"
 
 ;Move to the system folder, whatever system we are
     SetOutPath "$SYSDIR"
 
 
 ;Copy wpcap and the pthreads
-    File "Distribution\wpcap.dll"
-    File "Distribution\pthreadVC.dll"
+    File "Distribution\X86\wpcap.dll"
+    File "Distribution\X86\pthreadVC.dll"
 
 ;Now jump to the copy functions related to this OS
 ;    StrCmp $WINPCAP_TARGET_OS "95" CopyFiles9x
@@ -468,8 +468,6 @@ CopyFilesNT5:
 	
 NoNetMonInstallation:
 
-    File "Distribution\2000\wanpacket.dll"
-
 ;
 ; This is a workaround to the problem of not having netmon on some xp installations
 ; NOTE: we keep installing wanpacket.dll even if the vista version of packet.dll
@@ -479,7 +477,7 @@ NoNetMonInstallation:
 StrCmp $INSTALL_VISTA_PACKET_DLL_ON_NT5 "true" CopyVistaPacketDll CopyXpPacketDll
 
 CopyXpPacketDll:
-    File "Distribution\2000\packet.dll"
+    File "Distribution\x86\packet.dll"
     Goto DriverInstall
 
 CopyVistaPacketDll:
@@ -495,7 +493,7 @@ CopyX86DriverLabel:
     goto CopiedNT5Files
     
 CopyAMD64DriverLabel:
-	Call CopyAMD64Driver
+	Call Copyx64Files
     goto CopiedNT5Files
 
 CopiedNT5Files:    
@@ -508,7 +506,7 @@ CopiedNT5Files:
     Goto EndCopy
 
 CopyFilesNT4:
-    File 'Distribution\NT\packet.dll'
+    File 'Distribution\NT4\packet.dll'
     Call CopyNT4Driver
 
 ;Run install commands
@@ -517,11 +515,6 @@ CopyFilesNT4:
     Call InstallRpcapdService
 
     Goto EndCopy
-
-;CopyFiles9x:
-;    File "Distribution\9x\packet.dll"
-;    File "Distribution\9x\npf.vxd"
-;    Goto EndCopy
 
 CopyFilesVista:
     File "Distribution\Vista_x86\packet.dll"
@@ -534,7 +527,7 @@ CopyX86DriverVistaLabel:
     goto CopiedVistaFiles
     
 CopyAMD64DriverVistaLabel:	
-    Call CopyAMD64Driver
+    Call Copyx64Files
     goto CopiedVistaFiles
 
 CopiedVistaFiles:    
@@ -638,7 +631,7 @@ Section "Uninstall" MainUnistall
     SetShellVarContext all
 
 	SetOutPath "$INSTDIR"
-	File "distribution\2000\WinPcapInstall.dll"
+	File "distribution\x86\WinPcapInstall.dll"
 
 ;Move to the system folder, whatever system we are
     SetOutPath "$SYSDIR"
@@ -668,7 +661,6 @@ RmFilesVista:
 ;Delete files
 ; The rebootok is used to delete the files on reboot if they are in use.
 ;NOTE: this file does not exist on Vista and NT4, but NSIS ignores any file that doesn't exist :-))
-    Delete /REBOOTOK "$SYSDIR\wanpacket.dll"
 
 	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" RemoveX86DriverLabel
 	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" RemoveAMD64DriverLabel
@@ -678,7 +670,7 @@ RemoveX86DriverLabel:
 	Goto EndRm
 
 RemoveAMD64DriverLabel:
-	Call un.RemoveAMD64Driver
+	Call un.Removex64Files
 	Goto EndRm
 
 ;RmFiles9x:
@@ -727,7 +719,7 @@ SectionEnd
   VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${WINPCAP_PROJ_VERSION_DOTTED}"
 
 
-Function CopyAMD64Driver
+Function Copyx64Files
 	
 	push $0
 	push $1
@@ -745,7 +737,9 @@ Function CopyAMD64Driver
 	push $R0
 	push $OUTDIR
 	SetOutPath $SYSDIR
-    File /oname=drivers\npf.sys Distribution\x86-64\npf.sys
+    File /oname=drivers\npf.sys Distribution\x64\npf.sys
+    File /oname=wpcap.dll Distribution\x64\wpcap.dll
+    File /oname=packet.dll Distribution\x64\packet.dll
 	pop $R0
 	SetOutPath $R0
 	pop $R0
@@ -1008,7 +1002,7 @@ Function CopyX86Driver
 	push $R0
 	push $OUTDIR
 	SetOutPath $SYSDIR
-    File /oname=drivers\npf.sys Distribution\2000\npf.sys
+    File /oname=drivers\npf.sys Distribution\x86\npf.sys
 	pop $R0
 	SetOutPath $R0
 	pop $R0
@@ -1020,14 +1014,14 @@ Function CopyNT4Driver
 	push $R0
 	push $OUTDIR
 	SetOutPath $SYSDIR
-    File /oname=drivers\npf.sys Distribution\NT\npf.sys
+    File /oname=drivers\npf.sys Distribution\NT4\npf.sys
 	pop $R0
 	SetOutPath $R0
 	pop $R0
 
 FunctionEnd
 
-Function un.RemoveAMD64Driver
+Function un.Removex64Files
 	
 	push $0
 	push $1
@@ -1043,6 +1037,8 @@ Function un.RemoveAMD64Driver
 	StrCmp $BOOL_RET 0 ErrorCannotDisableFsRedirector
     
     Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
+    Delete /REBOOTOK "$SYSDIR\packet.dll"
+    Delete /REBOOTOK "$SYSDIR\wpcap.dll"
 
 	push $0
 	push $1
