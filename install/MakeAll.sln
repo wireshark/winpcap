@@ -15,6 +15,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rpcapd", "..\wpcap\libpcap\
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5} = {20B438DA-CBEC-4AFF-B11C-67B301D14AD5}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinPcap NTx Driver", "..\packetNtx\driver\Driver.vcproj", "{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug No AirPcap|Win32 = Debug No AirPcap|Win32
@@ -188,6 +190,41 @@ Global
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Release|Win32.ActiveCfg = Release|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Release|Win32.Build.0 = Release|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Release|x64.ActiveCfg = Release|Win32
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug No AirPcap|Win32.ActiveCfg = Debug|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug No AirPcap|x64.ActiveCfg = Debug|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug No AirPcap|x64.Build.0 = Debug|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug No NetMon|Win32.ActiveCfg = Debug|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug No NetMon|x64.ActiveCfg = Debug|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug No NetMon|x64.Build.0 = Debug|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug NT4|Win32.ActiveCfg = Debug|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug NT4|x64.ActiveCfg = Debug|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug NT4|x64.Build.0 = Debug|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug|Win32.Build.0 = Debug|Win32
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug|x64.ActiveCfg = Debug|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug|x64.Build.0 = Debug|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release LOG_TO_FILE|Win32.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release LOG_TO_FILE|x64.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release LOG_TO_FILE|x64.Build.0 = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No AirPcap|Win32.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No AirPcap|x64.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No AirPcap|x64.Build.0 = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No NetMon - LOG_TO_FILE|Win32.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No NetMon - LOG_TO_FILE|x64.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No NetMon - LOG_TO_FILE|x64.Build.0 = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No NetMon|Win32.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No NetMon|x64.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No NetMon|x64.Build.0 = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release NT4 LOG_TO_FILE|Win32.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release NT4 LOG_TO_FILE|x64.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release NT4 LOG_TO_FILE|x64.Build.0 = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release NT4|Win32.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release NT4|x64.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release NT4|x64.Build.0 = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release|Win32.ActiveCfg = Release|Win32
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release|Win32.Build.0 = Release|Win32
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release|x64.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
