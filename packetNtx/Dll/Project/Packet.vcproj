@@ -1124,7 +1124,7 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release No NetMon - LOG_TO_FILE|Win32"
+			Name="Release No NetMon LOG_TO_FILE|Win32"
 			OutputDirectory="$(ProjectDir)\$(ConfigurationName)\x86"
 			IntermediateDirectory="$(ProjectDir)\$(ConfigurationName)\x86"
 			ConfigurationType="2"
@@ -1203,7 +1203,7 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release No NetMon - LOG_TO_FILE|x64"
+			Name="Release No NetMon LOG_TO_FILE|x64"
 			OutputDirectory="$(ProjectDir)\$(ConfigurationName)\x64"
 			IntermediateDirectory="$(ProjectDir)\$(ConfigurationName)\x64"
 			ConfigurationType="2"
@@ -1513,7 +1513,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release No NetMon - LOG_TO_FILE|Win32"
+					Name="Release No NetMon LOG_TO_FILE|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1521,7 +1521,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release No NetMon - LOG_TO_FILE|x64"
+					Name="Release No NetMon LOG_TO_FILE|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
