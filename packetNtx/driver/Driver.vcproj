@@ -4,11 +4,15 @@
 	Version="8.00"
 	Name="WinPcap NTx Driver"
 	ProjectGUID="{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}"
+	RootNamespace="WinPcap NTx Driver"
 	Keyword="MakeFileProj"
 	>
 	<Platforms>
 		<Platform
 			Name="Win32"
+		/>
+		<Platform
+			Name="x64"
 		/>
 	</Platforms>
 	<ToolFiles>
@@ -23,8 +27,8 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine=""
-				ReBuildCommandLine=""
+				BuildCommandLine="cd..&#x0D;&#x0A;CompileDriverNew.bat x86 checked"
+				ReBuildCommandLine="cd..&#x0D;&#x0A;CompileDriverNew.bat x86 checked"
 				CleanCommandLine=""
 				Output=""
 				PreprocessorDefinitions=""
@@ -44,8 +48,50 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine=""
-				ReBuildCommandLine=""
+				BuildCommandLine="cd..&#x0D;&#x0A;CompileDriverNew.bat x86 free&#x0D;&#x0A;"
+				ReBuildCommandLine="cd..&#x0D;&#x0A;CompileDriverNew.bat x86 free&#x0D;&#x0A;"
+				CleanCommandLine=""
+				Output=""
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="0"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd..&#x0D;&#x0A;CompileDriverNew.bat AMD64 checked"
+				ReBuildCommandLine="cd..&#x0D;&#x0A;CompileDriverNew.bat AMD64 checked"
+				CleanCommandLine=""
+				Output=""
+				PreprocessorDefinitions=""
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="0"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd..&#x0D;&#x0A;CompileDriverNew.bat AMD64 free&#x0D;&#x0A;"
+				ReBuildCommandLine="cd..&#x0D;&#x0A;CompileDriverNew.bat AMD64 free&#x0D;&#x0A;"
 				CleanCommandLine=""
 				Output=""
 				PreprocessorDefinitions=""
@@ -206,7 +252,7 @@
 			Name="Build Scripts"
 			>
 			<File
-				RelativePath="..\CompileDriver.bat"
+				RelativePath="..\CompileDriverNew.bat"
 				>
 			</File>
 			<File
