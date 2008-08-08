@@ -42,6 +42,10 @@
 #ifndef __PACKET_INCLUDE______
 #define __PACKET_INCLUDE______
 
+#if !defined(NDIS30) && !defined(NDIS50)
+#error NDIS30 or NDIS50 should be defined
+#endif
+
 #ifdef _X86_
 #define NTKERNEL	///< Forces the compilation of the jitter with kernel calls 
 #include "jitter.h"
