@@ -638,7 +638,7 @@ VOID NPF_Unload(IN PDRIVER_OBJECT DriverObject)
 
 		TRACE_MESSAGE4(PACKET_DEBUG_LOUD,"Deleting Adapter %ws, Protocol Handle=%p, Device Obj=%p (%p)",
 			DeviceExtension->AdapterName.Buffer,
-			NdisProtocolHandle,
+			g_NdisProtocolHandle,
 			DeviceObject,
 			OldDeviceObject);
 
