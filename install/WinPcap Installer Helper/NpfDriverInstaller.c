@@ -31,6 +31,7 @@
  *
  */
 
+#define _CRT_SECURE_NO_WARNINGS
 
 #include <windows.h>
 #include <stdio.h>
@@ -586,8 +587,7 @@ void DisplayErrorText(DWORD dwLastError,FILE* output)
     //  text to be acquired from the system 
     //  or from the supplied module handle.
     //
-
-    if(dwBufferLength = FormatMessageA(
+	dwBufferLength = FormatMessageA(
         dwFormatFlags,
         hModule, // module to get message from (NULL == system)
         dwLastError,
@@ -595,7 +595,8 @@ void DisplayErrorText(DWORD dwLastError,FILE* output)
         (LPSTR) &MessageBuffer,
         0,
         NULL
-        ))
+        );
+    if(dwBufferLength)
     {
 		fprintf(output,"%s",MessageBuffer);
 /*        DWORD dwBytesWritten;

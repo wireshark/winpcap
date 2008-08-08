@@ -31,6 +31,8 @@
  *
  */
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <windows.h>
 #include <stdio.h>
 #include <conio.h>
@@ -126,7 +128,7 @@ int delete_service(FILE* log,LPCTSTR ServiceName)
 	SC_HANDLE ServiceHandle;
 	SERVICE_STATUS ServiceStatus;
 
-	DWORD ReturnValue;
+	int ReturnValue;
 
 	SCM_Handle=OpenSCManager(NULL,  /*local machine  */
 		NULL,						/*active database*/
@@ -223,7 +225,7 @@ int stop_service(FILE* log,LPCTSTR ServiceName)
 	SC_HANDLE SCM_Handle;
 	SC_HANDLE ServiceHandle;
 	SERVICE_STATUS ServiceStatus;
-	DWORD ReturnValue;
+	int ReturnValue;
 
 	SCM_Handle=OpenSCManager(NULL,  /*local machine  */
 		NULL,						/*active database*/
@@ -303,7 +305,7 @@ int start_service(FILE* log,LPCTSTR ServiceName)
 {
 	SC_HANDLE SCM_Handle;
 	SC_HANDLE ServiceHandle;
-	DWORD ReturnValue;
+	int ReturnValue;
 
 	SCM_Handle=OpenSCManager(NULL,  /*local machine  */
 		NULL,						/*active database*/
@@ -379,7 +381,7 @@ int create_service(FILE* log,LPCTSTR ServiceName,LPCTSTR ServiceDescriptionShort
 {
 	SC_HANDLE SCM_Handle;
 	SC_HANDLE ServiceHandle;
-	DWORD ReturnValue;
+	int ReturnValue;
 	SERVICE_DESCRIPTION ServiceDescription;
 	HMODULE hModule;
 	MyChangeServiceConfig2 fMyChangeServiceConfig2;
@@ -515,8 +517,7 @@ void DisplayErrorText(DWORD dwLastError,FILE* output)
     //  text to be acquired from the system 
     //  or from the supplied module handle.
     //
-
-    if(dwBufferLength = FormatMessageA(
+	dwBufferLength = FormatMessageA(
         dwFormatFlags,
         hModule, // module to get message from (NULL == system)
         dwLastError,
@@ -524,7 +525,9 @@ void DisplayErrorText(DWORD dwLastError,FILE* output)
         (LPSTR) &MessageBuffer,
         0,
         NULL
-        ))
+        );
+
+    if(dwBufferLength)
     {
 		fprintf(output,"%s",MessageBuffer);
 /*        DWORD dwBytesWritten;
@@ -557,7 +560,7 @@ int change_start_type_service(FILE* log,LPCTSTR ServiceName, DWORD StartType)
 {
 	SC_HANDLE SCM_Handle;
 	SC_HANDLE ServiceHandle;
-	DWORD ReturnValue;
+	int ReturnValue;
 
 	SCM_Handle=OpenSCManager(NULL,  /*local machine  */
 		NULL,						/*active database*/

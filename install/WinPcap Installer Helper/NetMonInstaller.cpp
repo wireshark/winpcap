@@ -38,6 +38,9 @@
 //
 //----------------------------------------------------------------------------
 
+#define _CRT_SECURE_NO_WARNINGS
+
+
 #define _WIN32_DCOM
 
 #include <windows.h>
@@ -456,7 +459,6 @@ HRESULT HrReleaseINetCfg(BOOL fHasWriteLock, INetCfg* pnc)
 extern "C" int WINAPI manage_netmon(LPCTSTR LogFileName, char operation)
 {
     HRESULT hr=S_OK;
-    enum NetClass nc=NC_Unknown;
 
 	FILE *log;
 	int ReturnValue;
