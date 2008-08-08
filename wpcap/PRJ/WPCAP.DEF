@@ -1,7 +1,5 @@
 LIBRARY wpcap.dll
 
-DESCRIPTION 'Win32 Packet Capture Library'
-
 EXPORTS
 		pcap_lookupdev
 		pcap_lookupnet
