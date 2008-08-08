@@ -45,9 +45,11 @@
 #ifdef __MINGW32__
 #include <ddk/ntddndis.h>
 #else
+#pragma warning( push )
+#pragma warning( disable : 4201 )
 #include <ntddndis.h>
+#pragma warning( pop )
 #endif //__MINGW32__
-
 
 //
 // Internal functions

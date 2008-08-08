@@ -1,3 +1,8 @@
+//
+// this should be removed in the long term.  GV 20080807
+//
+#define _CRT_SECURE_NO_WARNINGS
+
 #include "NpfImExt.h"
 #include <windows.h>
 
