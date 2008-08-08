@@ -1,6 +1,6 @@
 TARGETNAME=npf
 
-TARGETPATH=$(TARGETPATH)
+TARGETPATH=bin$(TARGETSUFFIX)
 
 TARGETTYPE=DRIVER
 
@@ -17,4 +17,6 @@ SOURCES=packet.c			\
 	dump.c					\
 	win_bpf_filter.c		\
 	NPF.rc					\
-	$(NPF_TME_FILES) $(NPF_JIT_FILES)
+	$(NPF_TME_FILES)
+
+I386_SOURCES = jitter.c
