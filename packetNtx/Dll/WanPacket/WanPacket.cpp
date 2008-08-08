@@ -223,7 +223,7 @@ BOOLEAN WanPacketTestAdapter()
 
 	if ( g_hModule == NULL)
 	{
-		g_hModule = LoadLibrary("npp\\ndisnpp.dll");
+		g_hModule = LoadLibraryA("npp\\ndisnpp.dll");
 	}
 
 	if ( g_hModule == NULL)
@@ -342,7 +342,7 @@ PWAN_ADAPTER WanPacketOpenAdapter()
 
 	if ( g_hModule == NULL)
 	{
-		g_hModule = LoadLibrary("npp\\ndisnpp.dll");
+		g_hModule = LoadLibraryA("npp\\ndisnpp.dll");
 	}
 
 	if ( g_hModule == NULL)
@@ -494,11 +494,11 @@ error:
 BOOLEAN WanPacketCloseAdapter(PWAN_ADAPTER pWanAdapter)
 {
 	if (pWanAdapter->pIRTC->Stop() != NMERR_SUCCESS)
-		OutputDebugString("WanPacketCloseAdapter: Severe error, IRTC::Stop failed\n");
+		OutputDebugStringA("WanPacketCloseAdapter: Severe error, IRTC::Stop failed\n");
 	if (pWanAdapter->pIRTC->Disconnect() != NMERR_SUCCESS)
-		OutputDebugString("WanPacketCloseAdapter: Severe error, IRTC::Disconnect failed\n");
+		OutputDebugStringA("WanPacketCloseAdapter: Severe error, IRTC::Disconnect failed\n");
 	if (pWanAdapter->pIRTC->Release() != NMERR_SUCCESS)
-		OutputDebugString("WanPacketCloseAdapter: Severe error, IRTC::Release failed\n");
+		OutputDebugStringA("WanPacketCloseAdapter: Severe error, IRTC::Release failed\n");
 	Sleep(0); //Just a stupid hack to make all the stuff work. I don't why it's necessary.
 
 
