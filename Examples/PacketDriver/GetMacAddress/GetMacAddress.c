@@ -133,12 +133,12 @@ int main()
 	if(Status)
 	{
 		printf("The MAC address of the adapter is %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n",
-			(PCHAR)(OidData->Data)[0],
-			(PCHAR)(OidData->Data)[1],
-			(PCHAR)(OidData->Data)[2],
-			(PCHAR)(OidData->Data)[3],
-			(PCHAR)(OidData->Data)[4],
-			(PCHAR)(OidData->Data)[5]);
+			(OidData->Data)[0],
+			(OidData->Data)[1],
+			(OidData->Data)[2],
+			(OidData->Data)[3],
+			(OidData->Data)[4],
+			(OidData->Data)[5]);
 	}
 	else
 	{
