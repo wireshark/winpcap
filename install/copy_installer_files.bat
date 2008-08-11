@@ -1,50 +1,70 @@
 @echo off
 mkdir installer\distribution		 2>nul >nul
-mkdir installer\distribution\2000	 2>nul >nul
-mkdir installer\distribution\NT		 2>nul >nul
+mkdir installer\distribution\x86	 2>nul >nul
+mkdir installer\distribution\NT4	 2>nul >nul
 
-rem We do no longer support Win9x
-rem mkdir installer\distribution\9x		 2>nul >nul
-
-mkdir installer\distribution\x86-64	 2>nul >nul
+mkdir installer\distribution\x64	 2>nul >nul
 mkdir installer\distribution\Vista_x86	 2>nul >nul
+mkdir installer\distribution\Vista_x64	 2>nul >nul
 
-xcopy /v /Y ..\packetNtx\driver\bin\2k\i386\npf.sys installer\distribution\2000\ >nul
-xcopy /v /Y  ..\packetNtx\driver\bin\2k\i386\npf.pdb installer\distribution\2000\ >nul
+rem
+rem  Driver
+rem 
+xcopy /v /Y ..\packetNtx\driver\bin\i386\npf.sys installer\distribution\x86\ >nul
+xcopy /v /Y  ..\packetNtx\driver\bin\i386\npf.pdb installer\distribution\x86\ >nul
 
-xcopy /v /Y  ..\packetNtx\driver\bin\NT4\i386\free\npf.sys installer\distribution\NT\ >nul
+xcopy /v /Y  ..\packetNtx\driver\bin\NT4\i386\free\npf.sys installer\distribution\NT4\ >nul
 
-xcopy /v /Y  ..\packetNtx\driver\bin\xp\amd64\npf.sys installer\distribution\x86-64\ >nul
-xcopy /v /Y  ..\packetNtx\driver\bin\xp\amd64\npf.pdb installer\distribution\x86-64\ >nul
+xcopy /v /Y  ..\packetNtx\driver\bin\amd64\npf.sys installer\distribution\x64\ >nul
+xcopy /v /Y  ..\packetNtx\driver\bin\amd64\npf.pdb installer\distribution\x64\ >nul
 
-xcopy /v /Y  ..\packetNtx\Dll\Project\Release\Packet.dll installer\distribution\2000\ >nul
-xcopy /v /Y  ..\packetNtx\Dll\Project\Release_Vista\Packet.dll installer\distribution\Vista_x86\ >nul
-xcopy /v /Y  ..\packetNtx\Dll\Project\NT4_Release\Packet.dll installer\distribution\NT\ >nul
-xcopy /v /Y  ..\packetNtx\Dll\WanPacket\Release\WanPacket.dll installer\distribution\2000\ >nul
+rem 
+rem Packet DLL
+rem
 
-xcopy /v /Y  ..\packetNtx\Dll\Project\Release\Packet.pdb installer\distribution\2000\ >nul
-xcopy /v /Y  ..\packetNtx\Dll\Project\Release_Vista\Packet.pdb installer\distribution\Vista_x86\ >nul
-xcopy /v /Y  ..\packetNtx\Dll\Project\NT4_Release\Packet.pdb installer\distribution\NT\ >nul
-xcopy /v /Y  ..\packetNtx\Dll\WanPacket\Release\WanPacket.pdb installer\distribution\2000\ >nul
+rem 
+rem Windows 2000, XP, 2003 (x86 and x64)
+rem
+xcopy /v /Y  ..\packetntx\dll\project\Release\x86\Packet.dll installer\distribution\x86\ >nul
+xcopy /v /Y  ..\packetntx\dll\project\Release\x86\Packet.pdb installer\distribution\x86\ >nul
+xcopy /v /Y  ..\packetntx\dll\project\Release\x64\Packet.dll installer\distribution\x64\ >nul
+xcopy /v /Y  ..\packetntx\dll\project\Release\x64\Packet.pdb installer\distribution\x64\ >nul
 
-rem We do no longer support Win9x
-rem echo REMEMBER TO COPY npf.vxd
-rem pause
-rem copy ..\packet9x\DLL\Project\Release\Packet.dll installer\distribution\9x\
+rem
+rem windows NT4 (x86)
+rem
+xcopy /v /Y  "..\packetntx\dll\project\Release NT4\x86\Packet.dll" installer\distribution\NT4\ >nul
+xcopy /v /Y  "..\packetntx\dll\project\Release NT4\x86\Packet.pdb" installer\distribution\NT4\ >nul
 
-xcopy /v /Y  ..\wpcap\PRJ\Release_REMOTE\wpcap.dll installer\distribution\ >nul
-xcopy /v /Y  ..\wpcap\PRJ\Release_REMOTE\rpcapd.exe installer\distribution\2000\ >nul
-xcopy /v /Y  ..\wpcap\PRJ\Release_REMOTE\wpcap.pdb installer\distribution\ >nul
-xcopy /v /Y  ..\wpcap\PRJ\Release_REMOTE\rpcapd.pdb installer\distribution\2000\ >nul
+rem
+rem Windows Vista (x86 and x64)
+rem
+xcopy /v /Y  "..\packetntx\dll\project\Release No NetMon\x86\Packet.dll" installer\distribution\Vista_x86\ >nul
+xcopy /v /Y  "..\packetntx\dll\project\Release No NetMon\x64\Packet.dll" installer\distribution\Vista_x64\ >nul
+xcopy /v /Y  "..\packetntx\dll\project\Release No NetMon\x86\Packet.pdb" installer\distribution\Vista_x86\ >nul
+xcopy /v /Y  "..\packetntx\dll\project\Release No NetMon\x64\Packet.pdb" installer\distribution\Vista_x64\ >nul
 
+rem
+rem Wpcap.dll (x86 and x64)
+rem
+xcopy /v /Y  ..\wpcap\prj\Release\x86\wpcap.dll installer\distribution\x86\ >nul
+xcopy /v /Y  ..\wpcap\prj\Release\x86\wpcap.pdb installer\distribution\x86\ >nul
+xcopy /v /Y  ..\wpcap\prj\Release\x64\wpcap.dll installer\distribution\x64\ >nul
+xcopy /v /Y  ..\wpcap\prj\Release\x64\wpcap.pdb installer\distribution\x64\ >nul
 
-rem copy daemon_mgm\Release\daemon_mgm.exe installer\distribution\2000\
-rem copy NetMonInstaller\objfre_w2k_x86\i386\NetMonInstaller.exe installer\distribution\2000\
-rem copy npf_mgm\Release\npf_mgm.exe installer\distribution\2000\
+rem 
+rem rpcapd (x86 only)
+rem
+xcopy /v /Y  ..\wpcap\libpcap\rpcapd\Release\x86\rpcapd.exe installer\distribution\x86\ >nul
+xcopy /v /Y  ..\wpcap\libpcap\rpcapd\Release\x86\rpcapd.pdb installer\distribution\x86\ >nul
 
-xcopy /v /Y  "WinPcap Installer Helper\Release\WinPcapInstall.dll" installer\distribution\2000\ >nul
+rem 
+rem installer helper (x86 as the installer is 32 bit)
+rem
+xcopy /v /Y  ".\WinPcap Installer Helper\Release\x86\WinPcapInstall.dll" installer\distribution\x86\ >nul
+xcopy /v /Y  ".\WinPcap Installer Helper\Release\x86\WinPcapInstall.pdb" installer\distribution\x86\ >nul
 
-xcopy /v /Y  ..\wpcap\libpcap\rpcapd\win32-pthreads\pthreadVC.dll installer\distribution\ >nul
+xcopy /v /Y  ..\wpcap\libpcap\rpcapd\win32-pthreads\pthreadVC.dll installer\distribution\x86\ >nul
 rem this nasty hack is needed to fix some time zone issues with the CVS...
-touch installer\distribution\pthreadVC.dll >nul
+touch installer\distribution\x86\pthreadVC.dll >nul
 
