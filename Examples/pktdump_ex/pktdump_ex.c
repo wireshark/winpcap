@@ -44,7 +44,7 @@
 
 #define LINE_LEN 16
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {	
 pcap_if_t *alldevs, *d;
 pcap_t *fp;

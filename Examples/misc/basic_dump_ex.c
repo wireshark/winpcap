@@ -1,7 +1,7 @@
 #include "pcap.h"
 
 
-main()
+int main()
 {
 pcap_if_t *alldevs;
 pcap_if_t *d;

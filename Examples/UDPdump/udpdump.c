@@ -68,7 +68,7 @@ typedef struct udp_header{
 void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data);
 
 
-main()
+int main()
 {
 pcap_if_t *alldevs;
 pcap_if_t *d;
