@@ -31,7 +31,7 @@ set WPDPACKDESTDIR=
 set WINPCAPSOURCEDIR=
 
 echo ********************************************************************
-echo *									*
+echo *                                                                  *
 echo * Now you can build the examples from the developers' pack folder! *
-echo *									*
+echo *                                                                  *
 echo ********************************************************************
