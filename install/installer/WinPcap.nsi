@@ -49,7 +49,7 @@
   !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2008 CACE Technologies, Inc."
   !define WINPCAP_PRODUCT_NAME "WinPcap 4.1 BUILD 1318"
   !define WINPCAP_COMPANY_NAME "CACE Technologies, Inc."
-  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_BUILD_1318.exe"
+  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_BUILD_1318__2.exe"
 
 ; letter 'r'
   !define REINSTALL_FLAG "114"  
@@ -446,9 +446,6 @@ MainInstallationProcedure:
     File "Distribution\X86\pthreadVC.dll"
 
 ;Now jump to the copy functions related to this OS
-;    StrCmp $WINPCAP_TARGET_OS "95" CopyFiles9x
-;    StrCmp $WINPCAP_TARGET_OS "98" CopyFiles9x
-;    StrCmp $WINPCAP_TARGET_OS "ME" CopyFiles9x
     StrCmp $WINPCAP_TARGET_OS "NT" CopyFilesNT4
     StrCmp $WINPCAP_TARGET_OS "2000" CopyFilesNT5
     StrCmp $WINPCAP_TARGET_OS "XP" CopyFilesNT5
@@ -458,16 +455,9 @@ MainInstallationProcedure:
 	
 
 CopyFilesNT5:
-
-; The NetMon component is not available on x64 and on vista!
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" NoNetMonInstallation
-    StrCmp $WINPCAP_TARGET_OS "vista" NoNetMonInstallation
-    
 ;	This sets INSTALL_VISTA_PACKET_DLL_ON_NT5 if needed
     Call InstallNetMon
 	
-NoNetMonInstallation:
-
 ;
 ; This is a workaround to the problem of not having netmon on some xp installations
 ; NOTE: we keep installing wanpacket.dll even if the vista version of packet.dll
@@ -485,16 +475,32 @@ CopyVistaPacketDll:
     Goto DriverInstall
 	
 DriverInstall:	
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" CopyX86DriverLabel
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" CopyAMD64DriverLabel
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86"  CopyX86DriverLabel
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" CopyAMD64DriverAndDllsLabel
 	
 CopyX86DriverLabel:	
-	Call CopyX86Driver
+	File /oname=drivers\npf.sys Distribution\x86\npf.sys
     goto CopiedNT5Files
     
-CopyAMD64DriverLabel:
-	Call Copyx64Files
-    goto CopiedNT5Files
+CopyAMD64DriverAndDllsLabel:
+	Call DisableFsRedirector ;;ignore the error for the moment
+	
+    SetOutPath "$SYSDIR"
+	File /oname=drivers\npf.sys Distribution\x64\npf.sys
+	File Distribution\x64\wpcap.dll
+	StrCmp $INSTALL_VISTA_PACKET_DLL_ON_NT5 "true" Copyx64VistaPacketDll Copyx64XpPacketDll
+
+Copyx64VistaPacketDll:
+	File Distribution\Vista_x64\packet.dll
+	Goto EndNT5x64Copy
+
+Copyx64XpPacketDll:
+	File Distribution\x64\packet.dll
+	Goto EndNT5x64Copy
+
+EndNT5x64Copy:
+
+	Call EnableFsRedirector
 
 CopiedNT5Files:    
   
@@ -507,7 +513,7 @@ CopiedNT5Files:
 
 CopyFilesNT4:
     File 'Distribution\NT4\packet.dll'
-    Call CopyNT4Driver
+	File /oname=drivers\npf.sys Distribution\nt4\npf.sys
 
 ;Run install commands
 
@@ -518,27 +524,32 @@ CopyFilesNT4:
 
 CopyFilesVista:
     File "Distribution\Vista_x86\packet.dll"
-
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" CopyX86DriverVistaLabel
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" CopyAMD64DriverVistaLabel
 	
-CopyX86DriverVistaLabel:	
-    Call CopyX86Driver
-    goto CopiedVistaFiles
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86"  CopyX86NT6DriverLabel
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" CopyAMD64NT6DriverAndDllsLabel
+	
+CopyX86NT6DriverLabel:	
+	File /oname=drivers\npf.sys Distribution\x86\npf.sys
+    goto CopiedNT6Files
     
-CopyAMD64DriverVistaLabel:	
-    Call Copyx64Files
-    goto CopiedVistaFiles
+CopyAMD64NT6DriverAndDllsLabel:
+	Call DisableFsRedirector ;;ignore the error for the moment
+	
+    SetOutPath "$SYSDIR"
+	File /oname=drivers\npf.sys Distribution\x64\npf.sys
+	File Distribution\x64\wpcap.dll
+	File Distribution\Vista_x64\packet.dll
 
-CopiedVistaFiles:    
+	Call EnableFsRedirector
+
+CopiedNT6Files:    
   
 ;Run install commands
 
-    Call InstallNpfService
+	Call InstallNpfService
     Call InstallRpcapdService
 
     Goto EndCopy
-
 EndCopy:
 
 ;
@@ -717,71 +728,6 @@ SectionEnd
   VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "${WINPCAP_LEGAL_COPYRIGHT}"
   VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "${WINPCAP_PRODUCT_NAME} installer"
   VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${WINPCAP_PROJ_VERSION_DOTTED}"
-
-
-Function Copyx64Files
-	
-	push $0
-	push $1
-	
-	System::Call 'kernel32::Wow64DisableWow64FsRedirection(*i .r1).r0'
-	
-	StrCpy $BOOL_RET $0
-	StrCpy $WOW_FS_REDIR_OLD_VAL $1
-	pop $1
-	pop $0
-	
-	StrCmp $BOOL_RET "error" ErrorCannotLoadDll
-	StrCmp $BOOL_RET 0 ErrorCannotDisableFsRedirector
-    
-	push $R0
-	push $OUTDIR
-	SetOutPath $SYSDIR
-    File /oname=drivers\npf.sys Distribution\x64\npf.sys
-    File /oname=wpcap.dll Distribution\x64\wpcap.dll
-    File /oname=packet.dll Distribution\x64\packet.dll
-	pop $R0
-	SetOutPath $R0
-	pop $R0
-
-	push $0
-	push $1
-	
-	StrCpy $1 $WOW_FS_REDIR_OLD_VAL
-	System::Call 'kernel32::Wow64RevertWow64FsRedirection(*i .r1).r0'
-	StrCpy $BOOL_RET $0
-	pop $1
-	pop $0
-
-
-	StrCmp $BOOL_RET "error" ErrorCannotLoadDll2
-	StrCmp $BOOL_RET 0 ErrorCannotRevertFsRedirector
-	
-	goto End
-
-	ErrorCannotLoadDll:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installer will now continue anyway."
-		SetErrors
-		goto End
-		
-	ErrorCannotDisableFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installer will now continue anyway."
-		SetErrors
-		goto End
-
-	ErrorCannotLoadDll2:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installer will now continue anyway."
-		SetErrors
-		goto End
-		
-	ErrorCannotRevertFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installer will now continue anyway."
-		SetErrors
-		goto End
-		
-End:
-
-FunctionEnd
 
 Function InstallNpfService
 	
@@ -996,31 +942,6 @@ End:
 
 FunctionEnd
 
-
-Function CopyX86Driver
-	
-	push $R0
-	push $OUTDIR
-	SetOutPath $SYSDIR
-    File /oname=drivers\npf.sys Distribution\x86\npf.sys
-	pop $R0
-	SetOutPath $R0
-	pop $R0
-
-FunctionEnd
-
-Function CopyNT4Driver
-	
-	push $R0
-	push $OUTDIR
-	SetOutPath $SYSDIR
-    File /oname=drivers\npf.sys Distribution\NT4\npf.sys
-	pop $R0
-	SetOutPath $R0
-	pop $R0
-
-FunctionEnd
-
 Function un.Removex64Files
 	
 	push $0
@@ -1084,6 +1005,77 @@ Function un.RemoveX86Driver
     Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
 
 FunctionEnd
+
+Function DisableFsRedirector
+	
+	push $0
+	push $1
+	
+	System::Call 'kernel32::Wow64DisableWow64FsRedirection(*i .r1).r0'
+	
+	StrCpy $BOOL_RET $0
+	StrCpy $WOW_FS_REDIR_OLD_VAL $1
+	pop $1
+	pop $0
+	
+	;
+	; success
+	;
+	goto End
+	
+	StrCmp $BOOL_RET "error" ErrorCannotLoadDll
+	StrCmp $BOOL_RET 0 ErrorCannotDisableFsRedirector
+    
+	ErrorCannotLoadDll:
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installer will now continue anyway."
+		SetErrors
+		goto End
+		
+	ErrorCannotDisableFsRedirector:
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installer will now continue anyway."
+		SetErrors
+		goto End
+
+
+End:
+
+FunctionEnd
+
+Function EnableFsRedirector
+
+	push $0
+	push $1
+	
+	StrCpy $1 $WOW_FS_REDIR_OLD_VAL
+	System::Call 'kernel32::Wow64RevertWow64FsRedirection(*i .r1).r0'
+	StrCpy $BOOL_RET $0
+	pop $1
+	pop $0
+
+
+	StrCmp $BOOL_RET "error" ErrorCannotLoadDll2
+	StrCmp $BOOL_RET 0 ErrorCannotRevertFsRedirector
+	
+	;
+	; success
+	;
+	goto End
+
+	ErrorCannotLoadDll2:
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installer will now continue anyway."
+		SetErrors
+		goto End
+		
+	ErrorCannotRevertFsRedirector:
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installer will now continue anyway."
+		SetErrors
+		goto End
+		
+End:
+
+FunctionEnd
+
+
 
 ;--------------------------------
 ;--------------------------------
