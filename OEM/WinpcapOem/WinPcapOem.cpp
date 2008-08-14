@@ -290,12 +290,12 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		return FALSE;
 	}
 
-	if (stricmp("x86", osArchitecture) == 0)
+	if (_stricmp("x86", osArchitecture) == 0)
 	{
 		is64BitOs = FALSE;
 	}
 	else 
-	if (stricmp("AMD64", osArchitecture) == 0)
+	if (_stricmp("AMD64", osArchitecture) == 0)
 	{
 		is64BitOs = TRUE;
 	}

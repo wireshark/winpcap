@@ -11,10 +11,13 @@ BOOL WoemSaveResourceToDisk(HINSTANCE hInst, int ResID, char* FileName, BOOL bDi
 {
 	DWORD dwLastError = ERROR_SUCCESS;
 	HANDLE hFile = INVALID_HANDLE_VALUE;
+
+#ifdef _X86_	
 	PVOID OldFsRedirectorValue = NULL;
 	HMODULE hKernel32Dll = NULL;
 	Wow64DisableWow64FsRedirectionHandler DisableFsRedirector = NULL;
 	Wow64RevertWow64FsRedirectionHandler RevertFsRedirector = NULL;
+#endif
 	CHAR ResName[100];
 
 #ifdef STATIC_LIB
@@ -29,6 +32,7 @@ BOOL WoemSaveResourceToDisk(HINSTANCE hInst, int ResID, char* FileName, BOOL bDi
 
 	do
 	{
+#ifdef _X86_
 		if (bDisableFsRedirector)
 		{
 			//
@@ -65,6 +69,8 @@ BOOL WoemSaveResourceToDisk(HINSTANCE hInst, int ResID, char* FileName, BOOL bDi
 				break;
 			}
 		}
+
+#endif // _X86_
 
 		// 
 		// Find the resource
@@ -116,9 +122,7 @@ BOOL WoemSaveResourceToDisk(HINSTANCE hInst, int ResID, char* FileName, BOOL bDi
 			TRACE_MESSAGE("Cannot open file %8.8x", dwLastError);
 		}
 
-		//
-		// Save the resource to disk
-		//
+#ifdef _X86_
 		if (bDisableFsRedirector)
 		{
 			if (RevertFsRedirector(OldFsRedirectorValue) == FALSE)
@@ -127,12 +131,16 @@ BOOL WoemSaveResourceToDisk(HINSTANCE hInst, int ResID, char* FileName, BOOL bDi
 				break;
 			}
 		}
+#endif //_X86_
 
 		if (hFile == INVALID_HANDLE_VALUE)
 		{
 			break;
 		}
 	
+		//
+		// Save the resource to disk
+		//
 		DWORD writtenBytes = 0;
 		do
 		{
@@ -150,7 +158,9 @@ BOOL WoemSaveResourceToDisk(HINSTANCE hInst, int ResID, char* FileName, BOOL bDi
 		
 	}while(FALSE);
 
+#ifdef _X86_
 	if (hKernel32Dll != NULL) FreeLibrary(hKernel32Dll);
+#endif //_X86_
 
 	if (hFile != INVALID_HANDLE_VALUE) CloseHandle(hFile);
 
