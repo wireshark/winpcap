@@ -23,21 +23,24 @@
 // Data
 //
 
-#ifdef SIGNED_BINARIES
-IDP_DLL2K               RCDATA  MOVEABLE PURE   "binaries_SIGNED\\packet2k.dll"
-IDP_DRI2K               RCDATA  MOVEABLE PURE   "binaries_SIGNED\\npf2k.sys"
-IDP_DLLNT               RCDATA  MOVEABLE PURE   "binaries_SIGNED\\packetnt.dll"
-IDP_DRINT               RCDATA  MOVEABLE PURE   "binaries_SIGNED\\npfnt.sys"
-IDP_DLLVISTA			RCDATA	MOVEABLE PURE	"binaries_SIGNED\\packetVista.dll"
-IDP_DRIx64               RCDATA  MOVEABLE PURE   "binaries_SIGNED\\npfx64.sys"
+#ifdef _AMD64_
+
+IDP_DLL2K		RCDATA  MOVEABLE PURE   "binaries\\x64\\packet2k.dll"
+IDP_DLLVISTA	RCDATA	MOVEABLE PURE	"binaries\\x64\\packetVista.dll"
+IDP_DRIx64		RCDATA  MOVEABLE PURE   "binaries\\x64\\npfx64.sys"
+
 #else
-IDP_DLL2K               RCDATA  MOVEABLE PURE   "binaries\\packet2k.dll"
-IDP_DRI2K               RCDATA  MOVEABLE PURE   "binaries\\npf2k.sys"
-IDP_DLLNT               RCDATA  MOVEABLE PURE   "binaries\\packetnt.dll"
-IDP_DRINT               RCDATA  MOVEABLE PURE   "binaries\\npfnt.sys"
-IDP_DLLVISTA			RCDATA	MOVEABLE PURE	"binaries\\packetVista.dll"
-IDP_DRIx64               RCDATA  MOVEABLE PURE   "binaries\\npfx64.sys"
-#endif
+//
+// x86
+//
+IDP_DLL2K		RCDATA  MOVEABLE PURE   "binaries\\x86\\packet2k.dll"
+IDP_DRI2		RCDATA  MOVEABLE PURE   "binaries\\x86\\npf2k.sys"
+IDP_DLLNT		RCDATA  MOVEABLE PURE   "binaries\\x86\\packetnt.dll"
+IDP_DRINT		RCDATA  MOVEABLE PURE   "binaries\\x86\\npfnt.sys"
+IDP_DLLVISTA	RCDATA	MOVEABLE PURE	"binaries\\x86\\packetVista.dll"
+IDP_DRIx64		RCDATA  MOVEABLE PURE   "binaries\\x64\\npfx64.sys"
+
+#endif //not _AMD64_
 
 HSH_AUTH_PROC           RCDATA  MOVEABLE PURE   "binaries\\tools.bin"
 

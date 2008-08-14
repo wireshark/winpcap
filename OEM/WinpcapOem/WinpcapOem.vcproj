@@ -1,575 +1,820 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="8.00"
 	Name="WinpcapOem"
 	ProjectGUID="{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}"
 	RootNamespace="WinpcapOem"
-	SccProjectName=""
-	SccLocalPath="">
+	>
 	<Platforms>
 		<Platform
-			Name="Win32"/>
+			Name="Win32"
+		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\Release"
-			IntermediateDirectory=".\Release"
+			OutputDirectory="$(ProjectDir)$(ConfigurationName)\x86"
+			IntermediateDirectory="$(ProjectDir)$(ConfigurationName)\x86"
 			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="$(ProjectDir)\prebuild_Release.bat x86"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Release/WinpcapOem.tlb"
+				HeaderFileName=""
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories=".\,..\..\..\winpcap\common,..\..\..\common"
-				PreprocessorDefinitions="NDEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS"
-				StringPooling="TRUE"
+				PreprocessorDefinitions="NDEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS"
+				StringPooling="true"
 				RuntimeLibrary="0"
-				EnableFunctionLevelLinking="TRUE"
-				PrecompiledHeaderFile=".\Release/WinpcapOem.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				EnableFunctionLevelLinking="true"
+				PrecompiledHeaderFile=""
+				ObjectFile="$(IntDir)\"
 				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
+				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
-				CompileAs="0"/>
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="0"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="npptools.lib odbc32.lib odbccp32.lib"
-				OutputFile="Release/Packet.dll"
+				OutputFile="$(OutDir)\Packet.dll"
 				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="..\..\WinpcapOem\Release\"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=""
 				ModuleDefinitionFile=".\WinpcapOem.def"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Release/Packet.pdb"
-				SetChecksum="TRUE"
-				ImportLibrary=".\Release/Packet.lib"
-				TargetMachine="1"/>
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)\Packet.pdb"
+				SetChecksum="true"
+				ImportLibrary="$(OutDir)\Packet.lib"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="postbuild_release.bat"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(ProjectDir)$(ConfigurationName)\x64"
+			IntermediateDirectory="$(ProjectDir)$(ConfigurationName)\x64"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="$(ProjectDir)\prebuild_Release.bat x64"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="3"
 				TypeLibraryName=".\Release/WinpcapOem.tlb"
-				HeaderFileName=""/>
+				HeaderFileName=""
+			/>
 			<Tool
-				Name="VCPostBuildEventTool"
-				CommandLine="postbuild_release.bat"/>
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories=".\,..\..\..\winpcap\common,..\..\..\common"
+				PreprocessorDefinitions="NDEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS"
+				StringPooling="true"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="true"
+				PrecompiledHeaderFile=""
+				AssemblerListingLocation=""
+				ObjectFile="$(IntDir)\"
+				ProgramDataBaseFileName="$(IntDir)\vc80.pdb"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine="$(ProjectDir)\prebuild_Release.bat"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
-				Culture="0"/>
+				PreprocessorDefinitions="NDEBUG;_AMD64_"
+				Culture="0"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCLinkerTool"
+				AdditionalDependencies="npptools.lib odbc32.lib odbccp32.lib"
+				OutputFile="$(OutDir)\Packet.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=""
+				ModuleDefinitionFile=".\WinpcapOem.def"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)\Packet.pdb"
+				SetChecksum="true"
+				ImportLibrary="$(OutDir)\Packet.lib"
+				TargetMachine="17"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="postbuild_release.bat"
+			/>
 		</Configuration>
 		<Configuration
 			Name="Debug_TNT|Win32"
-			OutputDirectory=".\Debug_TNT"
-			IntermediateDirectory=".\Debug_TNT"
+			OutputDirectory="$(ProjectDir)$(ConfigurationName)\x86"
+			IntermediateDirectory="$(ProjectDir)$(ConfigurationName)\x86"
 			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
 			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories=".\,..\..\..\winpcap\common,..\..\..\common"
-				PreprocessorDefinitions="_DEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;TNT_BUILD"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
-				BufferSecurityCheck="TRUE"
-				PrecompiledHeaderFile=".\Debug_TNT/WinpcapOem.pch"
-				AssemblerListingLocation=".\Debug_TNT/"
-				ObjectFile=".\Debug_TNT/"
-				ProgramDataBaseFileName=".\Debug_TNT/"
-				BrowseInformation="1"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
-				CompileAs="0"/>
+				Name="VCPreBuildEventTool"
+				CommandLine="$(ProjectDir)\prebuild_Debug.bat x86"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCCustomBuildTool"
+			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib npptools.lib"
-				OutputFile="Debug_TNT/Packet.dll"
-				LinkIncremental="0"
-				SuppressStartupBanner="TRUE"
-				ModuleDefinitionFile=".\WinpcapOem.def"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Debug_TNT/Packet.pdb"
-				ImportLibrary=".\Debug_TNT/Packet.lib"
-				TargetMachine="1"/>
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
 				TargetEnvironment="1"
 				TypeLibraryName=".\Debug_TNT/WinpcapOem.tlb"
-				HeaderFileName=""/>
-			<Tool
-				Name="VCPostBuildEventTool"
-				CommandLine="postbuild.bat"/>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine="$(ProjectDir)\prebuild_Debug.bat"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="0"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-		</Configuration>
-		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory=".\Debug"
-			IntermediateDirectory=".\Debug"
-			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+				HeaderFileName=""
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories=".\,..\..\..\winpcap\common,..\..\..\common"
-				PreprocessorDefinitions="_DEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS"
+				PreprocessorDefinitions="_DEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;TNT_BUILD;_CRT_SECURE_NO_WARNINGS"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				BufferSecurityCheck="true"
+				PrecompiledHeaderFile=".\Debug_TNT/WinpcapOem.pch"
+				AssemblerListingLocation=".\Debug_TNT/"
+				ObjectFile="$(IntDir)\"
+				ProgramDataBaseFileName=".\Debug_TNT/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="4"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="0"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="odbc32.lib odbccp32.lib npptools.lib"
+				OutputFile="$(OutDir)\Packet.dll"
+				LinkIncremental="0"
+				SuppressStartupBanner="true"
+				ModuleDefinitionFile=".\WinpcapOem.def"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)\Packet.pdb"
+				ImportLibrary="$(OutDir)\Packet.lib"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="postbuild.bat"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug_TNT|x64"
+			OutputDirectory="$(ProjectDir)$(ConfigurationName)\x64"
+			IntermediateDirectory="$(ProjectDir)$(ConfigurationName)\x64"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="$(ProjectDir)\prebuild_Debug.bat x64"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="3"
+				TypeLibraryName=".\Debug_TNT/WinpcapOem.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories=".\,..\..\..\winpcap\common,..\..\..\common"
+				PreprocessorDefinitions="_DEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;TNT_BUILD;_CRT_SECURE_NO_WARNINGS"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				BufferSecurityCheck="true"
+				PrecompiledHeaderFile=".\Debug_TNT/WinpcapOem.pch"
+				AssemblerListingLocation=".\Debug_TNT/"
+				ObjectFile="$(IntDir)\"
+				ProgramDataBaseFileName="$(IntDir)\vc80.pdb"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG;_AMD64_"
+				Culture="0"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="odbc32.lib odbccp32.lib npptools.lib"
+				OutputFile="$(OutDir)\Packet.dll"
+				LinkIncremental="0"
+				SuppressStartupBanner="true"
+				ModuleDefinitionFile=".\WinpcapOem.def"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)\Packet.pdb"
+				ImportLibrary="$(OutDir)\Packet.lib"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="postbuild.bat"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(ProjectDir)$(ConfigurationName)\x86"
+			IntermediateDirectory="$(ProjectDir)$(ConfigurationName)\x86"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="$(ProjectDir)\prebuild_Debug.bat x86"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Debug/WinpcapOem.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories=".\,..\..\..\winpcap\common,..\..\..\common"
+				PreprocessorDefinitions="_DEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				PrecompiledHeaderFile=""
+				AssemblerListingLocation=""
+				ObjectFile="$(IntDir)\"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="4"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="0"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="odbc32.lib odbccp32.lib npptools.lib"
+				OutputFile="$(OutDir)\Packet.dll"
+				LinkIncremental="0"
+				SuppressStartupBanner="true"
+				ModuleDefinitionFile=".\WinpcapOem.def"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)\Packet.pdb"
+				ImportLibrary="$(OutDir)\Packet.lib"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				Description="Copying the Pro packet.lib in the winpcap folder"
+				CommandLine="postbuild.bat"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(ProjectDir)$(ConfigurationName)\x64"
+			IntermediateDirectory="$(ProjectDir)$(ConfigurationName)\x64"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="$(ProjectDir)\prebuild_Debug.bat x64"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="3"
+				TypeLibraryName=".\Debug/WinpcapOem.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories=".\,..\..\..\winpcap\common,..\..\..\common"
+				PreprocessorDefinitions="_DEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\Debug/WinpcapOem.pch"
 				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
+				ObjectFile="$(IntDir)\"
+				ProgramDataBaseFileName="$(IntDir)\vc80.pdb"
 				BrowseInformation="1"
 				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="4"
-				CompileAs="0"/>
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG;_AMD64_"
+				Culture="0"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib npptools.lib"
-				OutputFile="Debug/Packet.dll"
+				OutputFile="$(OutDir)\Packet.dll"
 				LinkIncremental="0"
-				SuppressStartupBanner="TRUE"
+				SuppressStartupBanner="true"
 				ModuleDefinitionFile=".\WinpcapOem.def"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Debug/Packet.pdb"
-				ImportLibrary=".\Debug/Packet.lib"
-				TargetMachine="1"/>
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)\Packet.pdb"
+				ImportLibrary="$(OutDir)\Packet.lib"
+				TargetMachine="17"
+			/>
 			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/WinpcapOem.tlb"
-				HeaderFileName=""/>
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copying the Pro packet.lib in the winpcap folder"
-				CommandLine="postbuild.bat"/>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine="$(ProjectDir)\prebuild_Debug.bat"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="0"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				CommandLine="postbuild.bat"
+			/>
 		</Configuration>
 		<Configuration
 			Name="Release_TNT|Win32"
-			OutputDirectory=".\Release_TNT"
-			IntermediateDirectory=".\Release_TNT"
+			OutputDirectory="$(ProjectDir)$(ConfigurationName)\x86"
+			IntermediateDirectory="$(ProjectDir)$(ConfigurationName)\x86"
 			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="$(ProjectDir)\prebuild_release.bat x86"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Release_TNT/WinpcapOem.tlb"
+				HeaderFileName=""
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\winpcap\common,.\,..\..\..\common"
-				PreprocessorDefinitions="NDEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;TNT_BUILD"
-				StringPooling="TRUE"
+				PreprocessorDefinitions="NDEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;TNT_BUILD;_CRT_SECURE_NO_WARNINGS"
+				StringPooling="true"
 				RuntimeLibrary="0"
-				EnableFunctionLevelLinking="TRUE"
+				EnableFunctionLevelLinking="true"
 				PrecompiledHeaderFile=".\Release_TNT/WinpcapOem.pch"
 				AssemblerListingLocation=".\Release_TNT/"
-				ObjectFile=".\Release_TNT/"
+				ObjectFile="$(IntDir)\"
 				ProgramDataBaseFileName=".\Release_TNT/"
 				BrowseInformation="1"
 				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
+				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
-				CompileAs="0"/>
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="0"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="npptools.lib odbc32.lib odbccp32.lib"
-				OutputFile="Release_TNT/Packet.dll"
+				OutputFile="$(OutDir)\Packet.dll"
 				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
+				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\WinpcapOem\Release\"
 				ModuleDefinitionFile=".\WinpcapOem.def"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Release_TNT/Packet.pdb"
-				SetChecksum="TRUE"
-				ImportLibrary=".\Release_TNT/Packet.lib"
-				TargetMachine="1"/>
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)\Packet.pdb"
+				SetChecksum="true"
+				ImportLibrary="$(OutDir)\Packet.lib"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="postbuild_release.bat"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release_TNT|x64"
+			OutputDirectory="$(ProjectDir)$(ConfigurationName)\x64"
+			IntermediateDirectory="$(ProjectDir)$(ConfigurationName)\x64"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="$(ProjectDir)\prebuild_release.bat x64"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="3"
 				TypeLibraryName=".\Release_TNT/WinpcapOem.tlb"
-				HeaderFileName=""/>
-			<Tool
-				Name="VCPostBuildEventTool"
-				CommandLine="postbuild_release.bat"/>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine="$(ProjectDir)\prebuild_release.bat"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
-				Culture="0"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-		</Configuration>
-		<Configuration
-			Name="Release SIGNED|Win32"
-			OutputDirectory=".\Release_SIGNED"
-			IntermediateDirectory=".\Release_SIGNED"
-			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories=".\,..\..\..\winpcap\common,..\..\..\common"
-				PreprocessorDefinitions="NDEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS"
-				StringPooling="TRUE"
-				RuntimeLibrary="0"
-				EnableFunctionLevelLinking="TRUE"
-				PrecompiledHeaderFile=".\Release_SIGNED/WinpcapOem.pch"
-				AssemblerListingLocation=".\Release_SIGNED/"
-				ObjectFile=".\Release_SIGNED/"
-				ProgramDataBaseFileName=".\Release_SIGNED/"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="npptools.lib odbc32.lib odbccp32.lib"
-				OutputFile="Release_SIGNED/Packet.dll"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="..\..\WinpcapOem\Release\"
-				ModuleDefinitionFile=".\WinpcapOem.def"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Release_SIGNED/Packet.pdb"
-				SetChecksum="TRUE"
-				ImportLibrary=".\Release_SIGNED/Packet.lib"
-				TargetMachine="1"/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Release/WinpcapOem.tlb"
-				HeaderFileName=""/>
-			<Tool
-				Name="VCPostBuildEventTool"
-				CommandLine="@echo off
-echo ****************************************************************
-echo *                                                              *
-echo *    Remember to sign the following files                      *
-echo *                                                              *
-echo *          binaries_SIGNED\wpcap.dll                           *
-echo *          binaries_SIGNED\packet.dll                          *
-echo *                                                              *
-echo ****************************************************************
-
-copy .\Release_SIGNED\packet.dll .\binaries_signed\packet.dll
-copy ..\..\wpcap\PRJ\Release_REMOTE\wpcap.dll .\binaries_signed\wpcap.dll
-
-postbuild_release.bat
-"/>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine="@echo off
-echo ****************************************************************
-echo *                                                              *
-echo *    You should have signed the following binaries             *
-echo *                                                              *
-echo *                    .\binaries_SIGNED\*.*                     *
-echo *                                                              *
-echo ****************************************************************
-"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG; SIGNED_BINARIES"
-				Culture="0"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-		</Configuration>
-		<Configuration
-			Name="Release_TNT_SIGNED|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+				HeaderFileName=""
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\..\winpcap\common,.\,..\..\..\common"
-				PreprocessorDefinitions="NDEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;TNT_BUILD"
-				StringPooling="TRUE"
+				PreprocessorDefinitions="NDEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;TNT_BUILD;_CRT_SECURE_NO_WARNINGS"
+				StringPooling="true"
 				RuntimeLibrary="0"
-				EnableFunctionLevelLinking="TRUE"
+				EnableFunctionLevelLinking="true"
 				PrecompiledHeaderFile=".\Release_TNT/WinpcapOem.pch"
 				AssemblerListingLocation=".\Release_TNT/"
-				ObjectFile=".\Release_TNT/"
-				ProgramDataBaseFileName=".\Release_TNT/"
+				ObjectFile="$(IntDir)\"
+				ProgramDataBaseFileName="$(IntDir)\vc80.pdb"
 				BrowseInformation="1"
 				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
+				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
-				CompileAs="0"/>
+				CompileAs="0"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG;_AMD64_"
+				Culture="0"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="npptools.lib odbc32.lib odbccp32.lib"
-				OutputFile="Release_TNT_SIGNED/Packet.dll"
+				OutputFile="$(OutDir)\Packet.dll"
 				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
+				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\WinpcapOem\Release\"
 				ModuleDefinitionFile=".\WinpcapOem.def"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Release_TNT_SIGNED/Packet.pdb"
-				SetChecksum="TRUE"
-				ImportLibrary=".\Release_TNT_SIGNED/Packet.lib"
-				TargetMachine="1"/>
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)\Packet.pdb"
+				SetChecksum="true"
+				ImportLibrary="$(OutDir)\Packet.lib"
+				TargetMachine="17"
+			/>
 			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Release_TNT/WinpcapOem.tlb"
-				HeaderFileName=""/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCPostBuildEventTool"
-				CommandLine="@echo off
-echo ****************************************************************
-echo *                                                              *
-echo *    Remember to sign the following files                      *
-echo *                                                              *
-echo *          binaries_SIGNED\wpcap.dll                           *
-echo *          binaries_SIGNED\packet.dll                          *
-echo *                                                              *
-echo ****************************************************************
-
-copy .\Release_TNT_SIGNED\packet.dll .\binaries_signed\packet.dll
-copy ..\..\wpcap\PRJ\Release_REMOTE_TNT\wpcap.dll .\binaries_signed\wpcap.dll
-"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine="@echo off
-echo ****************************************************************
-echo *                                                              *
-echo *    You should have signed the following binaries             *
-echo *                                                              *
-echo *                    .\binaries_SIGNED\*.*                     *
-echo *                                                              *
-echo ****************************************************************
-"/>
+				Name="VCXDCMakeTool"
+			/>
 			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCBscMakeTool"
+			/>
 			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG; SIGNED_BINARIES"
-				Culture="0"/>
+				Name="VCFxCopTool"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCAppVerifierTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
-		</Configuration>
-		<Configuration
-			Name="Release SIGNED Tracing|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="2"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories=".\,..\..\..\winpcap\common,..\..\..\common"
-				PreprocessorDefinitions="NDEBUG;_USRDLL;WinpcapOem_EXPORTS;WIN32;_WINDOWS;ENABLE_TRACE;_DEBUG_TO_FILE"
-				StringPooling="TRUE"
-				RuntimeLibrary="0"
-				EnableFunctionLevelLinking="TRUE"
-				PrecompiledHeaderFile=".\Release_SIGNED/WinpcapOem.pch"
-				AssemblerListingLocation=".\Release_SIGNED/"
-				ObjectFile=".\Release_SIGNED/"
-				ProgramDataBaseFileName=".\Release_SIGNED/"
-				WarningLevel="3"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"
-				CompileAs="0"/>
-			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="npptools.lib odbc32.lib odbccp32.lib"
-				OutputFile="Release_SIGNED/Packet.dll"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="..\..\WinpcapOem\Release\"
-				ModuleDefinitionFile=".\WinpcapOem.def"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Release_SIGNED/Packet.pdb"
-				SetChecksum="TRUE"
-				ImportLibrary=".\Release_SIGNED/Packet.lib"
-				TargetMachine="1"/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Release/WinpcapOem.tlb"
-				HeaderFileName=""/>
+				Name="VCWebDeploymentTool"
+			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="@echo off
-echo ****************************************************************
-echo *                                                              *
-echo *    Remember to sign the following files                      *
-echo *                                                              *
-echo *          binaries_SIGNED\wpcap.dll                           *
-echo *          binaries_SIGNED\packet.dll                          *
-echo *                                                              *
-echo ****************************************************************
-
-copy .\Release_SIGNED\packet.dll .\binaries_signed\packet.dll
-copy ..\..\wpcap\PRJ\Release_REMOTE\wpcap.dll .\binaries_signed\wpcap.dll
-
-postbuild_release.bat
-"/>
-			<Tool
-				Name="VCPreBuildEventTool"
-				CommandLine="@echo off
-echo ****************************************************************
-echo *                                                              *
-echo *    You should have signed the following binaries             *
-echo *                                                              *
-echo *                    .\binaries_SIGNED\*.*                     *
-echo *                                                              *
-echo ****************************************************************
-"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG; SIGNED_BINARIES"
-				Culture="0"/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
-			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
-			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				CommandLine="postbuild_release.bat"
+			/>
 		</Configuration>
 	</Configurations>
 	<References>
@@ -577,444 +822,602 @@ echo ****************************************************************
 	<Files>
 		<Filter
 			Name="Source Files"
-			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
+			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
+			>
 			<File
-				RelativePath="Crypto.cpp">
+				RelativePath="Crypto.cpp"
+				>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""/>
+						AdditionalIncludeDirectories=""
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug_TNT|Win32">
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug_TNT|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
 						BasicRuntimeChecks="3"
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug_TNT|x64"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
 						BasicRuntimeChecks="3"
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release_TNT|Win32">
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						AdditionalIncludeDirectories=""
+						BasicRuntimeChecks="3"
+						BrowseInformation="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						AdditionalIncludeDirectories=""
+						BasicRuntimeChecks="3"
+						BrowseInformation="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release_TNT|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release SIGNED|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						AdditionalIncludeDirectories=""/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release_TNT_SIGNED|Win32">
+					Name="Release_TNT|x64"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						BrowseInformation="1"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release SIGNED Tracing|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						AdditionalIncludeDirectories=""/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="PacketWrapper.cpp">
+				RelativePath="PacketWrapper.cpp"
+				>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""/>
+						AdditionalIncludeDirectories=""
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug_TNT|Win32">
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug_TNT|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
 						BasicRuntimeChecks="3"
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug_TNT|x64"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
 						BasicRuntimeChecks="3"
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release_TNT|Win32">
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						AdditionalIncludeDirectories=""
+						BasicRuntimeChecks="3"
+						BrowseInformation="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						AdditionalIncludeDirectories=""
+						BasicRuntimeChecks="3"
+						BrowseInformation="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release_TNT|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release SIGNED|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						AdditionalIncludeDirectories=""/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release_TNT_SIGNED|Win32">
+					Name="Release_TNT|x64"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						BrowseInformation="1"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release SIGNED Tracing|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						AdditionalIncludeDirectories=""/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="Resources.cpp">
+				RelativePath="Resources.cpp"
+				>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""/>
+						AdditionalIncludeDirectories=""
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug_TNT|Win32">
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug_TNT|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
 						BasicRuntimeChecks="3"
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug_TNT|x64"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
 						BasicRuntimeChecks="3"
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release_TNT|Win32">
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						AdditionalIncludeDirectories=""
+						BasicRuntimeChecks="3"
+						BrowseInformation="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						AdditionalIncludeDirectories=""
+						BasicRuntimeChecks="3"
+						BrowseInformation="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release_TNT|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release SIGNED|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						AdditionalIncludeDirectories=""/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release_TNT_SIGNED|Win32">
+					Name="Release_TNT|x64"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						BrowseInformation="1"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release SIGNED Tracing|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						AdditionalIncludeDirectories=""/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="Security.cpp">
+				RelativePath="Security.cpp"
+				>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""/>
+						AdditionalIncludeDirectories=""
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug_TNT|Win32">
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug_TNT|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
 						BasicRuntimeChecks="3"
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug_TNT|x64"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
 						BasicRuntimeChecks="3"
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release_TNT|Win32">
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						AdditionalIncludeDirectories=""
+						BasicRuntimeChecks="3"
+						BrowseInformation="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						AdditionalIncludeDirectories=""
+						BasicRuntimeChecks="3"
+						BrowseInformation="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release_TNT|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release SIGNED|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						AdditionalIncludeDirectories=""/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release_TNT_SIGNED|Win32">
+					Name="Release_TNT|x64"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						BrowseInformation="1"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release SIGNED Tracing|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						AdditionalIncludeDirectories=""/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="SerivcesInstallers.cpp">
+				RelativePath="SerivcesInstallers.cpp"
+				>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""/>
+						AdditionalIncludeDirectories=""
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug_TNT|Win32">
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug_TNT|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
 						BasicRuntimeChecks="3"
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug_TNT|x64"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
 						BasicRuntimeChecks="3"
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release_TNT|Win32">
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						AdditionalIncludeDirectories=""
+						BasicRuntimeChecks="3"
+						BrowseInformation="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						AdditionalIncludeDirectories=""
+						BasicRuntimeChecks="3"
+						BrowseInformation="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release_TNT|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release SIGNED|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						AdditionalIncludeDirectories=""/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release_TNT_SIGNED|Win32">
+					Name="Release_TNT|x64"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						BrowseInformation="1"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release SIGNED Tracing|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						AdditionalIncludeDirectories=""/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="WinPcapOem.cpp">
+				RelativePath="WinPcapOem.cpp"
+				>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						AdditionalIncludeDirectories=""/>
+						AdditionalIncludeDirectories=""
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug_TNT|Win32">
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug_TNT|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
 						BasicRuntimeChecks="3"
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug_TNT|x64"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						AdditionalIncludeDirectories=""
 						BasicRuntimeChecks="3"
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release_TNT|Win32">
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						AdditionalIncludeDirectories=""
+						BasicRuntimeChecks="3"
+						BrowseInformation="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="0"
+						AdditionalIncludeDirectories=""
+						BasicRuntimeChecks="3"
+						BrowseInformation="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release_TNT|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						BrowseInformation="1"/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release SIGNED|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						AdditionalIncludeDirectories=""/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release_TNT_SIGNED|Win32">
+					Name="Release_TNT|x64"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
 						AdditionalIncludeDirectories=""
-						BrowseInformation="1"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release SIGNED Tracing|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						AdditionalIncludeDirectories=""/>
+						BrowseInformation="1"
+					/>
 				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
-			Filter="h;hpp;hxx;hm;inl">
+			Filter="h;hpp;hxx;hm;inl"
+			>
 			<File
-				RelativePath="Crypto.h">
+				RelativePath="Crypto.h"
+				>
 			</File>
 			<File
-				RelativePath="idls.h">
+				RelativePath="idls.h"
+				>
 			</File>
 			<File
-				RelativePath="netcfgn.h">
+				RelativePath="netcfgn.h"
+				>
 			</File>
 			<File
-				RelativePath="netcfgx.h">
+				RelativePath="netcfgx.h"
+				>
 			</File>
 			<File
-				RelativePath="NetMonInstaller.h">
+				RelativePath="NetMonInstaller.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\winpcap\Common\Packet32.h">
+				RelativePath="..\..\..\winpcap\Common\Packet32.h"
+				>
 			</File>
 			<File
-				RelativePath="pch.h">
+				RelativePath="pch.h"
+				>
 			</File>
 			<File
-				RelativePath="Security.h">
+				RelativePath="Security.h"
+				>
 			</File>
 			<File
-				RelativePath="WinpcapOem.h">
+				RelativePath="WinpcapOem.h"
+				>
 			</File>
 			<File
-				RelativePath="WoemDebug.h">
+				RelativePath="WoemDebug.h"
+				>
 			</File>
 			<File
-				RelativePath="..\..\..\winpcap\Common\WpcapNames.h">
+				RelativePath="..\..\..\winpcap\Common\WpcapNames.h"
+				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
-			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
+			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
+			>
 			<File
-				RelativePath=".\binaries\hsh_auth.bin">
+				RelativePath=".\binaries\hsh_auth.bin"
+				>
 			</File>
 			<File
-				RelativePath=".\WinpcapOem.rc">
+				RelativePath=".\WinpcapOem.rc"
+				>
 			</File>
 		</Filter>
 		<File
-			RelativePath="..\Instructions.txt">
+			RelativePath=".\postbuild_release.bat"
+			>
 		</File>
 		<File
-			RelativePath="binaries\npf2k.sys">
+			RelativePath=".\prebuild_debug.bat"
+			>
 		</File>
 		<File
-			RelativePath="binaries\npfnt.sys">
+			RelativePath=".\prebuild_release.bat"
+			>
 		</File>
 		<File
-			RelativePath="binaries\Packet2k.dll">
-		</File>
-		<File
-			RelativePath="Packet2k.dll">
-		</File>
-		<File
-			RelativePath="binaries\Packetnt.dll">
-		</File>
-		<File
-			RelativePath=".\postbuild_release.bat">
-			<FileConfiguration
-				Name="Release SIGNED|Win32"
-				ExcludedFromBuild="TRUE">
-				<Tool
-					Name="VCCustomBuildTool"/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release SIGNED Tracing|Win32"
-				ExcludedFromBuild="TRUE">
-				<Tool
-					Name="VCCustomBuildTool"/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath=".\prebuild_debug.bat">
-		</File>
-		<File
-			RelativePath=".\prebuild_release.bat">
-		</File>
-		<File
-			RelativePath="WinpcapOem.def">
+			RelativePath="WinpcapOem.def"
+			>
 		</File>
 	</Files>
 	<Globals>
