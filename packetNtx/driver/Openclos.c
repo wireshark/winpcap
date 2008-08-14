@@ -284,6 +284,7 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	KeInitializeSpinLock(&Open->RequestSpinLock);
 	InitializeListHead(&Open->RequestList);
 
+#ifdef HAVE_BUGGY_TME_SUPPORT
 	// Initializes the extended memory of the NPF machine
 	Open->mem_ex.buffer = ExAllocatePoolWithTag(NonPagedPool, DEFAULT_MEM_EX_SIZE, '2OWA');
 	if((Open->mem_ex.buffer) == NULL)
@@ -299,6 +300,8 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 
 	Open->mem_ex.size = DEFAULT_MEM_EX_SIZE;
 	RtlZeroMemory(Open->mem_ex.buffer, DEFAULT_MEM_EX_SIZE);
+#endif //HAVE_BUGGY_TME_SUPPORT
+
 
 	//
 	// Initialize the open instance
@@ -313,7 +316,9 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	Open->TimeOut.QuadPart = (LONGLONG)1;
 	Open->DumpFileName.Buffer = NULL;
 	Open->DumpFileHandle = NULL;
+#ifdef HAVE_BUGGY_TME_SUPPORT
 	Open->tme.active = TME_NONE_ACTIVE;
+#endif // HAVE_BUGGY_TME_SUPPORT
 	Open->DumpLimitReached = FALSE;
 	Open->MaxFrameSize = 0;
 	Open->WriterSN=0;
@@ -461,12 +466,14 @@ NPF_CloseOpenInstance(POPEN_INSTANCE pOpen)
 
         NdisFreePacketPool(pOpen->PacketPool);
 
+#ifdef HAVE_BUGGY_TME_SUPPORT
 		//
 		// free mem_ex
 		//
 		pOpen->mem_ex.size = 0;
 		if(pOpen->mem_ex.buffer != NULL)
 			ExFreePool(pOpen->mem_ex.buffer);
+#endif //HAVE_BUGGY_TME_SUPPORT
 
 		//
 		// Free the filter if it's present

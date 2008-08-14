@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
- * Copyright (c) 2005 - 2006 CACE Technologies, Davis (California)
+ * Copyright (c) 2005 - 2007 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -413,12 +413,19 @@ typedef struct _OPEN_INSTANCE
 											///< packets.
 	BOOLEAN				DumpLimitReached;	///< TRUE if the maximum dimension of the dump file (MaxDumpBytes or MaxDumpPacks) is 
 											///< reached.
+#ifdef HAVE_BUGGY_TME_SUPPORT
 	MEM_TYPE			mem_ex;				///< Memory used by the TME virtual co-processor
 	TME_CORE			tme;				///< Data structure containing the virtualization of the TME co-processor
+#endif //HAVE_BUGGY_TME_SUPPORT
+
 	NDIS_SPIN_LOCK		MachineLock;		///< SpinLock that protects the BPF filter and the TME engine, if in use.
 	UINT				MaxFrameSize;		///< Maximum frame size that the underlying MAC acceptes. Used to perform a check on the 
 											///< size of the frames sent with NPF_Write() or NPF_BufferedWrite().
-	CpuPrivateData		CpuData[32];		///< Pool of kernel buffer structures, one for each CPU.
+	//
+	// KAFFINITY is used as a bit mask for the affinity in the system. So on every supported OS is big enough for all the CPUs on the system (32 bits on x86, 64 on x64?).
+	// We use its size to compute the max number of CPUs.
+	//
+	CpuPrivateData		CpuData[sizeof(KAFFINITY) * 8];		///< Pool of kernel buffer structures, one for each CPU.
 	ULONG				ReaderSN;			///< Sequence number of the next packet to be read from the pool of kernel buffers.
 	ULONG				WriterSN;			///< Sequence number of the next packet to be written in the pool of kernel buffers.
 											///< These two sequence numbers are unique for each capture instance.
