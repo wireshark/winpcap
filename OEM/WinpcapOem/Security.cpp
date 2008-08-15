@@ -184,7 +184,7 @@ INT IsCredentialValid(LPBYTE credential, DWORD credentialLength)
 BOOL GetFileDump(LPCSTR lpFilename, LPBYTE dump, INT *pMaxDumpLen) 
 {
 	FILE * fileHandle;
-	INT byteRead;
+	size_t byteRead;
 	BOOL fileError;
 
 	TRACE_ENTER("GetFileDump");
@@ -214,7 +214,7 @@ BOOL GetFileDump(LPCSTR lpFilename, LPBYTE dump, INT *pMaxDumpLen)
 
 	do
 	{
-		INT localBytesRead = fread(dump + byteRead, 1, *pMaxDumpLen - byteRead, fileHandle);
+		size_t localBytesRead = fread(dump + byteRead, 1, *pMaxDumpLen - byteRead, fileHandle);
 		byteRead += localBytesRead;
 
 		if (localBytesRead == 0)
@@ -243,7 +243,7 @@ BOOL GetFileDump(LPCSTR lpFilename, LPBYTE dump, INT *pMaxDumpLen)
 		return FALSE;
 	}
 
-	*pMaxDumpLen = byteRead;
+	*pMaxDumpLen = (INT)byteRead;
 
 	TRACE_EXIT("GetFileDump");
 
