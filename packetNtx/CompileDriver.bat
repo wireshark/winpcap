@@ -20,7 +20,7 @@ echo ******************************************************
 mkdir .\driver\bin 2> nul
 mkdir .\driver\bin\2k 2> nul
 
-copy driver\NPF_NT5.RC ..\..\winpcap\packetntx\driver\NPF.RC
+copy driver\NPF.RC ..\..\winpcap\packetntx\driver\NPF.RC
 
 set TARGETPATH=..\..\..\winpcap_oem\PacketNtx\driver\bin\2k
 set NPF_C_DEFINES=-DNDIS50 -DWPCAP_OEM
@@ -52,7 +52,7 @@ echo *******************************************************
 mkdir driver\bin 2> nul
 mkdir driver\bin\xp 2> nul
 
-copy driver\NPF_NT5_x64.RC ..\..\winpcap\packetntx\driver\NPF.RC
+copy driver\NPF.RC ..\..\winpcap\packetntx\driver\NPF.RC
 
 set TARGETPATH=..\..\..\winpcap_oem\PacketNtx\driver\bin\xp
 set NPF_C_DEFINES=-DNDIS50 -DWPCAP_OEM
@@ -103,7 +103,7 @@ mkdir .\driver\bin\NT4\i386 2> nul
 mkdir .\driver\bin\NT4\i386\free 2> nul
 mkdir .\driver\bin\NT4\i386\checked 2> nul
 
-copy driver\NPF_NT4.RC ..\..\winpcap\packetntx\driver\NPF.RC
+copy driver\NPF.RC ..\..\winpcap\packetntx\driver\NPF.RC
 
 set TARGETPATH=..\..\..\winpcap_oem\PacketNtx\driver\bin\NT4
 
