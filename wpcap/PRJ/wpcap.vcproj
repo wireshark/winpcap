@@ -662,7 +662,7 @@
 				OutputFile="$(OutDir)/wpcap.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\OEM\WinPcapOem\Debug\x86"
+				AdditionalLibraryDirectories="..\..\OEM\WinPcapOem\Release\x86"
 				IgnoreDefaultLibraryNames=""
 				ModuleDefinitionFile=".\wpcap.def"
 				GenerateDebugInformation="true"
