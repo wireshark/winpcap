@@ -9,6 +9,8 @@ Global
 		Debug_TNT|x64 = Debug_TNT|x64
 		Debug|Win32 = Debug|Win32
 		Debug|x64 = Debug|x64
+		Release STEP 1|Win32 = Release STEP 1|Win32
+		Release STEP 1|x64 = Release STEP 1|x64
 		Release_TNT|Win32 = Release_TNT|Win32
 		Release_TNT|x64 = Release_TNT|x64
 		Release|Win32 = Release|Win32
@@ -23,6 +25,10 @@ Global
 		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Debug|Win32.Build.0 = Debug|Win32
 		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Debug|x64.ActiveCfg = Debug|x64
 		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Debug|x64.Build.0 = Debug|x64
+		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Release STEP 1|Win32.ActiveCfg = Release|Win32
+		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Release STEP 1|Win32.Build.0 = Release|Win32
+		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Release STEP 1|x64.ActiveCfg = Release|x64
+		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Release STEP 1|x64.Build.0 = Release|x64
 		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Release_TNT|Win32.ActiveCfg = Release_TNT|Win32
 		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Release_TNT|Win32.Build.0 = Release_TNT|Win32
 		{E491DDDD-D07C-49E8-BA60-0EEA963E2E8D}.Release_TNT|x64.ActiveCfg = Release_TNT|x64
