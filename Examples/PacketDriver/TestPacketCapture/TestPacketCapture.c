@@ -37,7 +37,7 @@
 
 
 #include "..\..\..\Include\packet32.h"
-#include "..\..\..\Include\ntddndis.h"
+#include <ntddndis.h>
 
 #define Max_Num_Adapter 10
 
