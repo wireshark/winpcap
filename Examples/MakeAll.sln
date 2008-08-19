@@ -35,6 +35,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestPacketCapture", "Packet
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestPacketSend", "PacketDriver\TestPacketSend\TestPacketSend.vcproj", "{1E3BED58-2F2C-463A-B9FD-9A55235C6840}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pcap_fopen", "pcap_fopen\pcap_fopen.vcproj", "{DD317CB5-6337-498F-A560-553B5558E133}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -179,6 +181,14 @@ Global
 		{1E3BED58-2F2C-463A-B9FD-9A55235C6840}.Release|Win32.Build.0 = Release|Win32
 		{1E3BED58-2F2C-463A-B9FD-9A55235C6840}.Release|x64.ActiveCfg = Release|x64
 		{1E3BED58-2F2C-463A-B9FD-9A55235C6840}.Release|x64.Build.0 = Release|x64
+		{DD317CB5-6337-498F-A560-553B5558E133}.Debug|Win32.ActiveCfg = Debug|Win32
+		{DD317CB5-6337-498F-A560-553B5558E133}.Debug|Win32.Build.0 = Debug|Win32
+		{DD317CB5-6337-498F-A560-553B5558E133}.Debug|x64.ActiveCfg = Debug|x64
+		{DD317CB5-6337-498F-A560-553B5558E133}.Debug|x64.Build.0 = Debug|x64
+		{DD317CB5-6337-498F-A560-553B5558E133}.Release|Win32.ActiveCfg = Release|Win32
+		{DD317CB5-6337-498F-A560-553B5558E133}.Release|Win32.Build.0 = Release|Win32
+		{DD317CB5-6337-498F-A560-553B5558E133}.Release|x64.ActiveCfg = Release|x64
+		{DD317CB5-6337-498F-A560-553B5558E133}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
