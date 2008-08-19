@@ -3,7 +3,7 @@
 
 #define LINE_LEN 16
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 pcap_t *fp;
 char errbuf[PCAP_ERRBUF_SIZE];

@@ -38,7 +38,7 @@
 #include <pcap.h>
 
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {	
 pcap_if_t *alldevs, *d;
 pcap_t *fp;

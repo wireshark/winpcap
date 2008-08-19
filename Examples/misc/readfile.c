@@ -5,7 +5,7 @@
 
 void dispatcher_handler(u_char *, const struct pcap_pkthdr *, const u_char *);
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 pcap_t *fp;
 char errbuf[PCAP_ERRBUF_SIZE];
