@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 		100					// size
 		) != 0)
 	{
-		fprintf(stderr,"\nError sending the packet: \n", pcap_geterr(fp));
+		fprintf(stderr,"\nError sending the packet: %s\n", pcap_geterr(fp));
 		return 3;
 	}
 
