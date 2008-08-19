@@ -15,13 +15,12 @@ steps:</p>
 <ul>
   <li>Include the file <i>pcap.h</i> at the beginning of every source file that
     uses the functions exported by library.</li>
-  <li>If your program uses Win32 specific functions of WinPcap, remember to include <code>WPCAP</code>
-    among the preprocessor definitions.</li>
   <li>If your program uses the remote extensions (<code>pcap_findalldevs_ex()</code> is among the remote extensions), 
 	remember to add <code>HAVE_REMOTE</code> among your preprocessor definitions.<li>Set the options of the linker to include the <i>wpcap.lib</i> library
-    file. <i>wpcap.lib</i> can
-    be found in the \lib folder of the WinPcap Professional developer's pack.
-  <li>Set the options of the linker to include the winsock library file (for
+    file specific for your target (x86 or x64). <i>wpcap.lib</i> for x86 can
+    be found in the \lib\x86 folder of the WinPcap Professional developer's 
+	pack, <i>wpcap.lib</i> for x64 can
+    be found in the \lib\x64 folder.<li>Set the options of the linker to include the winsock library file (for
     example <i>wsock32.lib</i>). This file is distributed with the C compiler
     and contains the socket functions for Windows. It is needed by some <code>libpcap</code>
     functions.</li>
@@ -37,13 +36,17 @@ steps:</p>
 &nbsp;&nbsp;&nbsp; exit(1);<br>
 		}</div>
 	&nbsp;<li>Place the WinPcap Professional DLLs available in the \bin folder of the 
-	developer's pack into the working directory of your application.<br>
+	developer's pack into the working directory of your application. The DLLs 
+	for x86 are available in the \bin\x86 folder, the ones for x64 are available 
+	in the \lib\x64 folder.<br>
 	<b>IMPORTANT NOTE:</b> in order to avoid conflicts with any existing 
 	installation of WinPcap, you should avoid putting the WinPcap Professional DLLs in 
 	the system folder (usually c:\windows\system32) or generally in a folder on 
 	your PATH.</li>
 </ul>
-<p><b>Remember that</b>:</p>
+<p><b>How to properly set Microsoft Visual Studio<br>
+<br>
+</b><i>Visual Studio 6</i></p>
 <ul>
   <li>To add a preprocessor definition, you must select <em>Settings</em> from the <em>Project</em> menu, then select <em>C/C++</em>
     from the tab control, and under the category <i>General</i>, you must add
@@ -62,10 +65,34 @@ steps:</p>
     from the tab control, <em>Include files</em> from the <em>Show directories
     for</em>  combobox, and the add the path in the <em>Directories</em> box.</li>
 </ul>
+<p><i>Visual Studio 2005 (needed to compile x64 applications)</i></p>
+<ul>
+  <li>To add a preprocessor definition, you must select <em>Properties</em> from the <em>Project</em> menu, then select <em>C/C++</em>
+    from the list control on the left, and under the category <i>Preprocessor</i>, you must add
+    the definition under the <i>Preprocessor Definitions</i> text box.
+  <li>To add a new library to the project, you must
+    select <em>Properties</em> from the <em>Project</em> menu, then select <em>Linker</em>
+    from the list control on the left, and under the category <i>Input</i> add the name of the new library in the
+	<em>Additional Dependencies</em> text box.<li>To add a new path where Microsoft Visual 
+	Studio will look for the libraries,
+    you must select <em>Options</em> from the <em>Tools</em> menu, then <em>
+	Project and Solutions</em> from the list control on the left, <em>VC++ 
+	Directories</em>, then choose <i>Library</i> <i>Files</i> in the <em>Show directories
+    for</em>  combobox, and the add the path in the box below.
+  <li>To add a new path where Microsoft Visual 
+	Studio will look for the include files,
+    you must select <em>Options</em> from the <em>Tools</em> menu, then <em>
+	Project and Solutions</em> from the list control on the left, <em>VC++ 
+	Directories</em>, then choose <i>Include</i> <i>Files</i> in the <em>Show directories
+    for</em>  combobox, and the add the path in the box below.
+  </ul>
+<p>&nbsp;</p>
 <h2>Deploying WinPcap Professional in your application installation</h2>
 <p>Installing WinPcap Professional with your application is extremely easy: you should 
 just copy the DLLs available in the \bin folder of the developer's pack (i.e. 
-packet.dll and wpcap.dll) into the working directory of your application. </p>
+packet.dll and wpcap.dll) into the working directory of your application. Be 
+sure to copy the DLLs matching the architecture of your application, x86 or&nbsp; 
+x64.</p>
 <p><b>IMPORTANT NOTE: </b>in order to avoid conflicts with any existing installation of 
 WinPcap, you should avoid putting the WinPcap Professional DLLs in the system folder 
 (usually c:\windows\system32) or generally in a folder on your PATH.</p>
