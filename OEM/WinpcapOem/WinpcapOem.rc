@@ -34,7 +34,7 @@ IDP_DRIx64		RCDATA  MOVEABLE PURE   "binaries\\x64\\npfx64.sys"
 // x86
 //
 IDP_DLL2K		RCDATA  MOVEABLE PURE   "binaries\\x86\\packet2k.dll"
-IDP_DRI2		RCDATA  MOVEABLE PURE   "binaries\\x86\\npf2k.sys"
+IDP_DRI2K		RCDATA  MOVEABLE PURE   "binaries\\x86\\npf2k.sys"
 IDP_DLLNT		RCDATA  MOVEABLE PURE   "binaries\\x86\\packetnt.dll"
 IDP_DRINT		RCDATA  MOVEABLE PURE   "binaries\\x86\\npfnt.sys"
 IDP_DLLVISTA	RCDATA	MOVEABLE PURE	"binaries\\x86\\packetVista.dll"
