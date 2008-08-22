@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040WOEM.txt,v 1.14 2007/11/07 22:10:27 gianlucav Exp $
+$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040WOEM.txt,v 1.15 2008/08/18 22:37:43 gianlucav Exp $
 
 WINPCAP PRO RELEASE PROCEDURE
 =============================
@@ -69,16 +69,16 @@ How to compile WinPcap PRO (NOT for the Toolkit)
 	"build_scanner_parser.bat"	
 
 14. Check that the version of libpcap in
-      %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 865
+      %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 869
       "static const char pcap_version_string[] = "libpcap version 0.9[.x]";"
     makes sense (??? WHAT DOES IT MEAN???)
 
 15. Check that the version of wpcap in  
-      %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 875
+      %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 878
         "static const char wpcap_version_string[] = "3.1";"
     is correct. 
     
-16. Zip the contents of the six folders 
+16. Zip the contents of the 5 folders 
 	  %BUILD_TREE%\winpcap_oem
 	  %BUILD_TREE%\winpcap
 	  %BUILD_TREE%\libpcap_<libpcap_version>
@@ -90,8 +90,8 @@ How to compile WinPcap PRO (NOT for the Toolkit)
 
 17. Open a Win 2000 DDK Free build environment. Go into 
 	  %BUILD_TREE%\winpcap_oem\packetntx. 
-	Execute "compileDriver.bat". Prefast 1.5.2402 should issue 8 warnings 
-	(20071107). 
+	Execute "compileDriver.bat". Prefast 8.0.86081 should issue 21 warnings 
+	(20080821). 
 	Close the build environment.
 
 18. Open the WinNT4 DDK Release build environment. Go into 
@@ -129,18 +129,21 @@ How to compile WinPcap PRO (NOT for the Toolkit)
 		   signtool sign /v /ac MSCV-VSClass3.cer /s my /n "CACE Technologies, Inc."
 		   /t http://timestamp.verisign.com/scripts/timestamp.dll <binary_name>
 		   
-25. Go back to Vistual studio 2005. Choose the "Release STEP2" configuration, and then
+25. Go back to Visual studio 2005. Choose the "Release STEP2|Win32" configuration, and then
      use Build->Rebuild solution. 
      IT IS IMPERATIVE THAT YOU CHOOSE "REBUILD" SO THAT THE SIGNED BINARIES ARE USED.
 
-26. Sign the following binaries 
+26. Choose the "Release STEP2|x64" configuration, and then use Build->Rebuild solution. 
+     IT IS IMPERATIVE THAT YOU CHOOSE "REBUILD" SO THAT THE SIGNED BINARIES ARE USED.
+
+27. Sign the following binaries 
 		%BUILD_TREE%\winpcap_oem\wpcap\PRJ\Release REMOTE\x86\wpcap.dll
 		%BUILD_TREE%\winpcap_oem\wpcap\PRJ\Release REMOTE\x64\wpcap.dll
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release\x86\packet.dll
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release\x64\packet.dll
 		with the company certificate + cross certificate
 
-27. The build is complete.
+28. The build is complete.
 
 How to create the developer's pack for WinPcap PRO (NOT for the Toolkit)
 ------------------------------------------------------------------------
