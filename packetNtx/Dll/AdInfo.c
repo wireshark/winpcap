@@ -70,6 +70,10 @@
 
 static BOOLEAN PacketAddFakeNdisWanAdapter();
 
+#ifdef HAVE_IPHELPER_API
+static BOOLEAN IsIPv4Enabled(LPCSTR AdapterNameA);
+#endif
+
 PADAPTER_INFO g_AdaptersInfoList = NULL;	///< Head of the adapter information list. This list is populated when packet.dll is linked by the application.
 HANDLE g_AdaptersInfoMutex = NULL;		///< Mutex that protects the adapter information list. NOTE: every API that takes an ADAPTER_INFO as parameter assumes that it has been called with the mutex acquired.
 
@@ -206,6 +210,15 @@ static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* 
 	
 	TRACE_ENTER("PacketGetAddressesFromRegistry");
 	
+#ifdef HAVE_IPHELPER_API
+	if (IsIPv4Enabled(AdapterNameA) == FALSE)
+	{
+		*NEntries = 0;
+		TRACE_EXIT("PacketGetAddressesFromRegistry");
+		return TRUE;
+	}
+#endif
+
 	StringCchPrintfW(AdapterNameW, ADAPTER_NAME_LENGTH, L"%S", AdapterNameA);
 
 	IfNameW = wcsrchr(AdapterNameW, L'\\');
@@ -440,6 +453,85 @@ fail:
 }
 
 #ifdef HAVE_IPHELPER_API
+
+static BOOLEAN IsIPv4Enabled(LPCSTR AdapterNameA)
+{
+	ULONG BufLen;
+	PIP_ADAPTER_ADDRESSES AdBuffer, TmpAddr;
+	PCHAR OrName;
+	PIP_ADAPTER_UNICAST_ADDRESS UnicastAddr;
+	BOOLEAN IPv4Enabled = FALSE;
+	CHAR	npfDeviceNamesPrefix[MAX_WINPCAP_KEY_CHARS] = NPF_DRIVER_COMPLETE_DEVICE_PREFIX;
+
+	TRACE_ENTER("IsIPv4Enabled");
+
+	if(g_GetAdaptersAddressesPointer == NULL)	
+	{
+		TRACE_PRINT("GetAdaptersAddressesPointer not available on the system, simply returning success...");
+
+		TRACE_EXIT("IsIPv4Enabled");
+		return TRUE;	// GetAdaptersAddresses() not present on this system,
+	}											// return immediately.
+
+ 	if(g_GetAdaptersAddressesPointer(AF_UNSPEC, GAA_FLAG_SKIP_ANYCAST| GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_FRIENDLY_NAME, NULL, NULL, &BufLen) != ERROR_BUFFER_OVERFLOW)
+	{
+		TRACE_PRINT("IsIPv4Enabled: GetAdaptersAddresses Failed while retrieving the needed buffer size");
+
+		TRACE_EXIT("IsIPv4Enabled");
+		return FALSE;
+	}
+
+	TRACE_PRINT("IsIPv4Enabled, retrieved needed storage for the call");
+
+	AdBuffer = GlobalAllocPtr(GMEM_MOVEABLE, BufLen);
+	if (AdBuffer == NULL) 
+	{
+		TRACE_PRINT("IsIPv4Enabled: GlobalAlloc Failed");
+		TRACE_EXIT("IsIPv4Enabled");
+		return FALSE;
+	}
+
+ 	if(g_GetAdaptersAddressesPointer(AF_UNSPEC,  GAA_FLAG_SKIP_ANYCAST| GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_FRIENDLY_NAME, NULL, AdBuffer, &BufLen) != ERROR_SUCCESS)
+	{
+		TRACE_PRINT("IsIPv4Enabled: GetAdaptersAddresses Failed while retrieving the addresses");
+		GlobalFreePtr(AdBuffer);
+		TRACE_EXIT("IsIPv4Enabled");
+		return FALSE;
+	}
+
+	TRACE_PRINT("IsIPv4Enabled, retrieved addresses, scanning the list");
+
+	//
+	// Scan the list of adddresses obtained from the IP helper API
+	//
+	for(TmpAddr = AdBuffer; TmpAddr != NULL; TmpAddr = TmpAddr->Next)
+	{
+		OrName = (LPSTR)AdapterNameA + strlen(npfDeviceNamesPrefix);
+
+		TRACE_PRINT("IsIPv4Enabled, external loop");
+		if(strcmp(TmpAddr->AdapterName, OrName) == 0)
+		{
+			// Found a corresponding adapter, scan its address list
+			for(UnicastAddr = TmpAddr->FirstUnicastAddress; UnicastAddr != NULL; UnicastAddr = UnicastAddr->Next)
+			{
+					TRACE_PRINT("IsIPv4Enabled, internal loop");
+					if(UnicastAddr->Address.lpSockaddr->sa_family == AF_INET)
+					{
+						IPv4Enabled = TRUE;
+						break;
+					}
+			}
+		}
+	}
+
+	TRACE_PRINT("IsIPv4Enabled, finished parsing the addresses");
+
+	GlobalFreePtr(AdBuffer);
+
+	TRACE_EXIT("IsIPv4Enabled");
+	return IPv4Enabled;
+}
+
 /*!
   \brief Adds the IPv6 addresses of an adapter to the ADAPTER_INFO structure that describes it.
   \param AdInfo Pointer to the ADAPTER_INFO structure that keeps the information about the adapter.
