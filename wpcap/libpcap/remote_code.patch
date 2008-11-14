@@ -727,7 +727,7 @@ diff -urb libpcap_clean/pcap.c libpcap/pcap.c
  	if (p->sf.rfile != NULL) {
  		int status;
  
-@@ -750,6 +798,11 @@
+@@ -781,12 +829,19 @@
  int
  pcap_fileno(pcap_t *p)
  {
@@ -739,6 +739,14 @@ diff -urb libpcap_clean/pcap.c libpcap/pcap.c
  #ifndef WIN32
  	return (p->fd);
  #else
++#ifdef _M_IX86
+ 	if (p->adapter != NULL)
+ 		return ((int)(DWORD)p->adapter->hFile);
+ 	else
++#endif /*_M_IX86_ */
+ 		return (-1);
+ #endif
+ }
 diff -urb libpcap_clean/savefile.c libpcap/savefile.c
 --- libpcap_clean/savefile.c	2008-04-08 12:13:03.062500000 -0700
 +++ libpcap/savefile.c	2008-04-11 15:46:49.140625000 -0700
