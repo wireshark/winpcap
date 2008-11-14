@@ -110,14 +110,14 @@
 
   This IOCTL is used to perform an OID set operation on the NIC driver. 
 */
-#define	 BIOCSETOID 2147483648
+#define	 BIOCSETOID 0x80000000
 
 /*!
   \brief IOCTL code: get an OID value
 
   This IOCTL is used to perform an OID get operation on the NIC driver. 
 */
-#define	 BIOCQUERYOID 2147483652
+#define	 BIOCQUERYOID 0x80000004
 
 /*!
   \brief IOCTL code: set the name of a the file used by kernel dump mode
