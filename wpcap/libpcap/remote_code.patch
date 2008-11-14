@@ -364,11 +364,10 @@ diff -urb libpcap_clean/pcap-bpf.c libpcap/pcap-bpf.c
 diff -urb libpcap_clean/pcap-int.h libpcap/pcap-int.h
 --- libpcap_clean/pcap-int.h	2008-04-08 12:13:00.046875000 -0700
 +++ libpcap/pcap-int.h	2008-04-25 09:55:24.734375000 -0700
-@@ -150,6 +150,37 @@
+@@ -152,6 +153,36 @@
  				 * Same as in linux above, introduce
  				 * generally? */
  #endif /* HAVE_DAG_API */
-+
 +#ifdef HAVE_REMOTE
 +/*!
 +	There is really a mess with previous variables, and it seems to me that they are not used
@@ -399,9 +398,9 @@ diff -urb libpcap_clean/pcap-int.h libpcap/pcap-int.h
 +*/
 +	unsigned int TotCapt;
 +#endif /* HAVE_REMOTE */
- };
- 
- /*
+ #ifdef HAVE_ZEROCOPY_BPF
+        /*
+         * Zero-copy read buffer -- for zero-copy BPF.  'buffer' above will
 @@ -282,6 +313,19 @@
  	u_int *dlt_list;
  
