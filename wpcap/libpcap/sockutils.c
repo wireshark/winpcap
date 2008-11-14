@@ -359,7 +359,7 @@ SOCKET sock;
 	{
 	struct addrinfo *tempaddrinfo;
 	char *errbufptr;
-	int bufspaceleft;
+	size_t bufspaceleft;
 
 		tempaddrinfo= addrinfo;
 		errbufptr= errbuf;
@@ -375,7 +375,7 @@ SOCKET sock;
 			
 			if (connect(sock, tempaddrinfo->ai_addr, tempaddrinfo->ai_addrlen) == -1)
 			{
-			int msglen;
+			size_t msglen;
 			char TmpBuffer[100];
 			char SocketErrorMessage[SOCK_ERRBUF_SIZE];
 

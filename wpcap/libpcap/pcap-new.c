@@ -185,7 +185,7 @@ pcap_if_t *dev;		// Previous device into the pcap_if_t chain
 
 	if (type == PCAP_SRC_FILE)
 	{
-	int stringlen;
+	size_t stringlen;
 #ifdef WIN32
 	WIN32_FIND_DATA filedata; 
 	HANDLE filehandle; 
@@ -436,7 +436,7 @@ pcap_if_t *dev;		// Previous device into the pcap_if_t chain
 	{
 	struct rpcap_findalldevs_if findalldevs_if;
 	char tmpstring2[PCAP_BUF_SIZE + 1];		// Needed to convert names and descriptions from 'old' syntax to the 'new' one
-	int stringlen;
+	size_t stringlen;
 
 		tmpstring2[PCAP_BUF_SIZE]= 0;
 
@@ -1196,7 +1196,7 @@ void pcap_remoteact_cleanup()
 int pcap_remoteact_list(char *hostlist, char sep, int size, char *errbuf)
 {
 struct activehosts *temp;	// temp var needed to scan the host list chain
-int len;
+size_t len;
 char hoststr[RPCAP_HOSTLIST_SIZE + 1];
 
 	temp= activeHosts;
@@ -1220,7 +1220,7 @@ char hoststr[RPCAP_HOSTLIST_SIZE + 1];
 
 		len= len + strlen(hoststr) + 1 /* the separator */;
 
-		if (len >= size)
+		if ((size < 0) || (len >= (size_t)size))
 		{
 			snprintf(errbuf, PCAP_ERRBUF_SIZE, "The string you provided is not able to keep "
 				"the hostnames for all the active connections");

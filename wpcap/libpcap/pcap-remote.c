@@ -1447,7 +1447,7 @@ int RetVal= 0;
 	char peerctrlport[128];
 	char *newfilter;
 	const int newstringsize= 1024;
-	int currentfiltersize;
+	size_t currentfiltersize;
 
 		// Get the name/port of the other peer
 		saddrlen = sizeof(struct sockaddr_storage);
