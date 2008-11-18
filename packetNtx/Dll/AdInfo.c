@@ -174,8 +174,8 @@ static BOOLEAN PacketGetLinkLayerFromRegistry(LPADAPTER AdapterObject, NetType *
 /*!
   \brief Scan the registry to retrieve the IP addresses of an adapter.
   \param AdapterName String that contains the name of the adapter.
-  \param buffer A user allocated array of npf_if_addr that will be filled by the function.
-  \param NEntries Size of the array (in npf_if_addr).
+  \param ppItems a caller allocated pointer to a pointer to address item, the function
+    will set the pointer to the addresses retrieved from the registry
   \return If the function succeeds, the return value is nonzero.
 
   This function grabs from the registry information like the IP addresses, the netmasks 
@@ -184,7 +184,7 @@ static BOOLEAN PacketGetLinkLayerFromRegistry(LPADAPTER AdapterObject, NetType *
   is full, the reaming addresses are dropeed, therefore set its dimension to sizeof(npf_if_addr)
   if you want only the first address.
 */
-static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* buffer, PLONG NEntries)
+static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, PNPF_IF_ADDRESS_ITEM *ppItems)
 {
 	WCHAR	*IfNameW;
 	WCHAR	AdapterNameW[ADAPTER_NAME_LENGTH];
@@ -201,6 +201,9 @@ static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* 
 	struct	sockaddr_in *TmpAddr, *TmpBroad;
 	LONG	naddrs,nmasks,StringPos;
 	DWORD	ZeroBroadcast;
+	PNPF_IF_ADDRESS_ITEM pHead = NULL;
+	PNPF_IF_ADDRESS_ITEM pTail = NULL;
+	PNPF_IF_ADDRESS_ITEM pItem;
 //  
 //	Old registry based WinPcap names
 //
@@ -213,7 +216,7 @@ static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* 
 #ifdef HAVE_IPHELPER_API
 	if (IsIPv4Enabled(AdapterNameA) == FALSE)
 	{
-		*NEntries = 0;
+		*ppItems = NULL;
 		TRACE_EXIT("PacketGetAddressesFromRegistry");
 		return TRUE;
 	}
@@ -293,8 +296,9 @@ static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* 
 	
 	
 	/* Retrieve the adrresses */
-	if(DHCPEnabled){
-		
+	if(DHCPEnabled)
+	{
+		naddrs = 0;
 		BufLen = sizeof String;
 		// Open the key with the addresses
 		status = RegQueryValueEx(TcpIpKey,TEXT("DhcpIPAddress"),NULL,&RegType,(LPBYTE)String,&BufLen);
@@ -306,13 +310,24 @@ static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* 
 
 		// scan the key to obtain the addresses
 		StringPos = 0;
-		for(naddrs = 0;naddrs <* NEntries;naddrs++){
-			TmpAddr = (struct sockaddr_in *) &(buffer[naddrs].IPAddress);
+		do
+		{
+			pItem = (PNPF_IF_ADDRESS_ITEM)GlobalAllocPtr(GPTR, sizeof(NPF_IF_ADDRESS_ITEM));
+			if (pItem == NULL)
+			{
+				goto fail;
+			}
 			
-			if((TmpAddr->sin_addr.S_un.S_addr = inet_addrU(String + StringPos))!= -1){
+			pItem->Next = NULL;
+
+			TmpAddr = (struct sockaddr_in *) &pItem->Addr.IPAddress;
+			TmpAddr->sin_addr.S_un.S_addr = inet_addrU(String + StringPos);
+			
+			if(TmpAddr->sin_addr.S_un.S_addr != -1)
+			{
 				TmpAddr->sin_family = AF_INET;
 				
-				TmpBroad = (struct sockaddr_in *) &(buffer[naddrs].Broadcast);
+				TmpBroad = (struct sockaddr_in *) &pItem->Addr.Broadcast;
 				TmpBroad->sin_family = AF_INET;
 				if(ZeroBroadcast==0)
 					TmpBroad->sin_addr.S_un.S_addr = 0xffffffff; // 255.255.255.255
@@ -320,13 +335,31 @@ static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* 
 					TmpBroad->sin_addr.S_un.S_addr = 0; // 0.0.0.0
 
 				while(*(String + StringPos) != 0)StringPos++;
+			
 				StringPos++;
 				
+				if (pHead == NULL)
+				{
+					pHead = pItem;
+				}
+				else
+				{
+					pTail->Next = pItem;
+				}
+
+				pTail = pItem;
+				naddrs++;
+
 				if(*(String + StringPos) == 0 || (StringPos * sizeof (WCHAR)) >= BufLen)
 					break;				
 			}
-			else break;
-		}		
+			else
+			{
+				GlobalFreePtr(pItem);
+				pItem = NULL;
+				break;
+			}
+		}while(TRUE);		
 		
 		BufLen = sizeof String;
 		// Open the key with the netmasks
@@ -339,8 +372,18 @@ static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* 
 		
 		// scan the key to obtain the masks
 		StringPos = 0;
-		for(nmasks = 0;nmasks < *NEntries;nmasks++){
-			TmpAddr = (struct sockaddr_in *) &(buffer[nmasks].SubnetMask);
+		nmasks = 0;
+		pItem = pHead;
+		do
+		{
+			if (pItem == NULL)
+			{
+				//
+				// there's an error
+				//
+				goto fail;
+			}
+			TmpAddr = (struct sockaddr_in *) &pItem->Addr.SubnetMask;
 			
 			if((TmpAddr->sin_addr.S_un.S_addr = inet_addrU(String + StringPos))!= -1){
 				TmpAddr->sin_family = AF_INET;
@@ -348,11 +391,15 @@ static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* 
 				while(*(String + StringPos) != 0)StringPos++;
 				StringPos++;
 								
+				pItem = pItem->Next;
+				nmasks++;
 				if(*(String + StringPos) == 0 || (StringPos * sizeof (WCHAR)) >= BufLen)
 					break;
+
+
 			}
 			else break;
-		}		
+		}while(TRUE);		
 		
 		// The number of masks MUST be equal to the number of adresses
 		if(nmasks != naddrs){
@@ -364,6 +411,7 @@ static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* 
 	}
 	else{
 		
+		naddrs = 0;
 		BufLen = sizeof String;
 		// Open the key with the addresses
 		status = RegQueryValueEx(TcpIpKey,TEXT("IPAddress"),NULL,&RegType,(LPBYTE)String,&BufLen);
@@ -375,13 +423,22 @@ static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* 
 		
 		// scan the key to obtain the addresses
 		StringPos = 0;
-		for(naddrs = 0;naddrs < *NEntries;naddrs++){
-			TmpAddr = (struct sockaddr_in *) &(buffer[naddrs].IPAddress);
+		do
+		{
+			pItem = (PNPF_IF_ADDRESS_ITEM)GlobalAllocPtr(GPTR, sizeof(NPF_IF_ADDRESS_ITEM));
+			if (pItem == NULL)
+			{
+				goto fail;
+			}
+			
+			pItem->Next = NULL;
+
+			TmpAddr = (struct sockaddr_in *) &pItem->Addr.IPAddress;
 			
 			if((TmpAddr->sin_addr.S_un.S_addr = inet_addrU(String + StringPos))!= -1){
 				TmpAddr->sin_family = AF_INET;
 
-				TmpBroad = (struct sockaddr_in *) &(buffer[naddrs].Broadcast);
+				TmpBroad = (struct sockaddr_in *) &pItem->Addr.Broadcast;
 				TmpBroad->sin_family = AF_INET;
 				if(ZeroBroadcast==0)
 					TmpBroad->sin_addr.S_un.S_addr = 0xffffffff; // 255.255.255.255
@@ -390,12 +447,29 @@ static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* 
 				
 				while(*(String + StringPos) != 0)StringPos++;
 				StringPos++;
+
+				if (pHead == NULL)
+				{
+					pHead = pItem;
+				}
+				else
+				{
+					pTail->Next = pItem;
+				}
+
+				pTail = pItem;
+				naddrs++;
 				
 				if(*(String + StringPos) == 0 || (StringPos * sizeof (WCHAR)) >= BufLen)
 					break;
 			}
-			else break;
-		}		
+			else
+			{
+				GlobalFreePtr(pItem);
+				pItem = NULL;
+				break;
+			}
+		}while(TRUE);		
 		
 		BufLen = sizeof String;
 		// Open the key with the netmasks
@@ -408,8 +482,20 @@ static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* 
 		
 		// scan the key to obtain the masks
 		StringPos = 0;
-		for(nmasks = 0;nmasks <* NEntries;nmasks++){
-			TmpAddr = (struct sockaddr_in *) &(buffer[nmasks].SubnetMask);
+		nmasks = 0;
+		pItem = pHead;
+
+		do
+		{
+			if (pItem == NULL)
+			{
+				//
+				// there's an error
+				//
+				goto fail;
+			}
+
+			TmpAddr = (struct sockaddr_in *) &pItem->Addr.SubnetMask;
 			
 			if((TmpAddr->sin_addr.S_un.S_addr = inet_addrU(String + StringPos))!= -1){
 				TmpAddr->sin_family = AF_INET;
@@ -417,11 +503,14 @@ static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* 
 				while(*(String + StringPos) != 0)StringPos++;
 				StringPos++;
 				
+				pItem = pItem->Next;
+				nmasks++;
+
 				if(*(String + StringPos) == 0 || (StringPos * sizeof (WCHAR)) >= BufLen)
 					break;
 			}
 			else break;
-		}		
+		}while(TRUE);		
 		
 		// The number of masks MUST be equal to the number of adresses
 		if(nmasks != naddrs){
@@ -432,8 +521,6 @@ static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* 
 				
 	}
 	
-	*NEntries = naddrs + 1;
-
 	RegCloseKey(TcpIpKey);
 	RegCloseKey(UnderTcpKey);
 	
@@ -443,9 +530,19 @@ static BOOLEAN PacketGetAddressesFromRegistry(LPCSTR AdapterNameA, npf_if_addr* 
 	
 	TRACE_PRINT("Successfully retrieved the addresses from the registry.");
 	TRACE_EXIT("PacketGetAddressesFromRegistry");
+
+	*ppItems = pHead;
+
 	return TRUE;
 	
 fail:
+
+	while(pHead != NULL)
+	{
+		pItem = pHead->Next;
+		GlobalFreePtr(pHead);
+		pHead = pItem;
+	}
 
 	TRACE_PRINT("Failed retrieving the addresses from the registry.");
 	TRACE_EXIT("PacketGetAddressesFromRegistry");
@@ -625,19 +722,37 @@ static BOOLEAN PacketAddIP6Addresses(PADAPTER_INFO AdInfo)
 					Addr = (struct sockaddr_storage *)UnicastAddr->Address.lpSockaddr;
 					if(Addr->ss_family == AF_INET6)
 					{
-						// Be sure not to overflow the addresses buffer of this adapter
-						if(AdInfo->NNetworkAddresses >= MAX_NETWORK_ADDRESSES)
+						PNPF_IF_ADDRESS_ITEM pItem, pCursor;
+						
+						pItem = GlobalAllocPtr(GPTR, sizeof(NPF_IF_ADDRESS_ITEM));
+						
+						if (pItem == NULL)
 						{
 							GlobalFreePtr(AdBuffer);
-							TRACE_PRINT("The space in AdInfo->NNetworkAddresses is not large enough, failing");
+							TRACE_PRINT("failed to allocate memory for a new entry, failing");
 							TRACE_EXIT("PacketAddIP6Addresses");
 							return FALSE;
 						}
 
-						memcpy(&(AdInfo->NetworkAddresses[AdInfo->NNetworkAddresses].IPAddress), Addr, AddrLen);
-						memset(&(AdInfo->NetworkAddresses[AdInfo->NNetworkAddresses].SubnetMask), 0, sizeof(struct sockaddr_storage));
-						memset(&(AdInfo->NetworkAddresses[AdInfo->NNetworkAddresses].Broadcast), 0, sizeof(struct sockaddr_storage));
-						AdInfo->NNetworkAddresses ++;
+						memcpy(&pItem->Addr.IPAddress, Addr, AddrLen);
+						memset(&pItem->Addr.SubnetMask, 0, sizeof(struct sockaddr_storage));
+						memset(&pItem->Addr.Broadcast, 0, sizeof(struct sockaddr_storage));
+						pItem->Next = NULL;
+
+						if (AdInfo->pNetworkAddresses == NULL)
+						{
+							AdInfo->pNetworkAddresses = pItem;
+						}
+						else
+						{
+							pCursor = AdInfo->pNetworkAddresses;
+							while(pCursor->Next != NULL)
+							{
+								pCursor = pCursor->Next;
+							}
+
+							pCursor->Next = pItem;
+						}
 					}
 			}
 		}
@@ -794,34 +909,51 @@ static BOOLEAN PacketAddAdapterIPH(PIP_ADAPTER_INFO IphAd)
 		
 	}
 
-	TmpAdInfo->NetworkAddresses = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, MAX_NETWORK_ADDRESSES * sizeof(npf_if_addr));
-	if (TmpAdInfo->NetworkAddresses == NULL) {
-		TRACE_PRINT("PacketAddAdapterIPH: GlobalAlloc Failed allocating the memory for the IP addresses in AdInfo.");
-		GlobalFreePtr(TmpAdInfo);
-		TRACE_EXIT("PacketAddAdapterIPH");
-		return FALSE;
-	}
+	TmpAdInfo->pNetworkAddresses = NULL;
 	
 	TRACE_PRINT1("Adding the IPv4 addresses to the adapter %s...", TName);
 	// Scan the addresses, convert them to addrinfo structures and put each of them in the list
 	for(TmpAddrStr = &IphAd->IpAddressList, i = 0; TmpAddrStr != NULL; TmpAddrStr = TmpAddrStr->Next)
 	{
-		TmpAddr = (struct sockaddr_in *)&(TmpAdInfo->NetworkAddresses[i].IPAddress);
-		if((TmpAddr->sin_addr.S_un.S_addr = inet_addr(TmpAddrStr->IpAddress.String))!= INADDR_NONE)
+		PNPF_IF_ADDRESS_ITEM pItem, pCursor;
+		
+		if (inet_addr(TmpAddrStr->IpAddress.String)!= INADDR_NONE)
 		{
+			pItem = (PNPF_IF_ADDRESS_ITEM)GlobalAllocPtr(GPTR, sizeof(NPF_IF_ADDRESS_ITEM));
+			if (pItem == NULL)
+			{
+				TRACE_PRINT("Cannot allocate memory for an IPv4 address, skipping it");
+				continue;
+			}
+		
+			TmpAddr = (struct sockaddr_in *)&(pItem->Addr.IPAddress);
+			TmpAddr->sin_addr.S_un.S_addr = inet_addr(TmpAddrStr->IpAddress.String);
 			TmpAddr->sin_family = AF_INET;
-			TmpAddr = (struct sockaddr_in *)&(TmpAdInfo->NetworkAddresses[i].SubnetMask);
+			TmpAddr = (struct sockaddr_in *)&(pItem->Addr.SubnetMask);
 			TmpAddr->sin_addr.S_un.S_addr = inet_addr(TmpAddrStr->IpMask.String);
 			TmpAddr->sin_family = AF_INET;
-			TmpAddr = (struct sockaddr_in *)&(TmpAdInfo->NetworkAddresses[i].Broadcast);
+			TmpAddr = (struct sockaddr_in *)&(pItem->Addr.Broadcast);
 			TmpAddr->sin_addr.S_un.S_addr = 0xffffffff; // Consider 255.255.255.255 as broadcast address since IP Helper API doesn't provide information about it
 			TmpAddr->sin_family = AF_INET;
-			i++;
+
+			pItem->Next = NULL;
+
+			if (TmpAdInfo->pNetworkAddresses == NULL)
+			{
+				TmpAdInfo->pNetworkAddresses = pItem;
+			}
+			else
+			{
+				pCursor = TmpAdInfo->pNetworkAddresses;
+				while(pCursor->Next != NULL)
+				{
+					pCursor = pCursor->Next;
+				}
+				pCursor->Next = pItem;
+			}
+
 		}
 	}
-	
-	TmpAdInfo->NNetworkAddresses = i;
-	
 	
 	TRACE_PRINT1("Adding the IPv6 addresses to the adapter %s...", TName);
 	// Now Add IPv6 Addresses
@@ -1008,6 +1140,8 @@ static BOOLEAN PacketAddAdapterNPF(PCHAR AdName, UINT flags)
 
 	if(flags != INFO_FLAG_DONT_EXPORT)
 	{
+		PNPF_IF_ADDRESS_ITEM pAddressesFromRegistry;
+
 		// Retrieve the adapter description querying the NIC driver
 		OidData->Oid = OID_GEN_VENDOR_DESCRIPTION;
 		OidData->Length = 256;
@@ -1072,35 +1206,34 @@ static BOOLEAN PacketAddAdapterNPF(PCHAR AdName, UINT flags)
 		}
 		
 		// Retrieve IP addresses
-		TmpAdInfo->NetworkAddresses = GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, MAX_NETWORK_ADDRESSES * sizeof(npf_if_addr));
-		if (TmpAdInfo->NetworkAddresses == NULL) {
-			TRACE_PRINT("AddAdapter: GlobalAlloc Failed to allocate the buffer for the IP addresses in the AdInfo structure. Returning.");
-			PacketCloseAdapter(adapter);
-			GlobalFreePtr(OidData);
-			GlobalFreePtr(TmpAdInfo);
-			ReleaseMutex(g_AdaptersInfoMutex);
-			TRACE_EXIT("AddAdapter");
-			return FALSE;
-		}
+		TmpAdInfo->pNetworkAddresses = NULL;
 		
-		TmpAdInfo->NNetworkAddresses = MAX_NETWORK_ADDRESSES;
-		if(!PacketGetAddressesFromRegistry(TmpAdInfo->Name, TmpAdInfo->NetworkAddresses, (long*)&TmpAdInfo->NNetworkAddresses))
+		if(!PacketGetAddressesFromRegistry(TmpAdInfo->Name, &pAddressesFromRegistry))
 		{
 #ifdef HAVE_IPHELPER_API
 			// Try to see if the interface has some IPv6 addresses
-			TmpAdInfo->NNetworkAddresses = 0; // We have no addresses because PacketGetAddressesFromRegistry() failed
-			
 			if(!PacketAddIP6Addresses(TmpAdInfo))
 			{
-#endif // HAVE_IPHELPER_API
-				GlobalFreePtr(TmpAdInfo->NetworkAddresses);
-				TmpAdInfo->NetworkAddresses = NULL;
-				TmpAdInfo->NNetworkAddresses = 0;
-#ifdef HAVE_IPHELPER_API
+				TRACE_PRINT("No IPv6 addresses added with IPHelper API");
 			}
 #endif // HAVE_IPHELPER_API
 		}
-		
+		else
+		{
+			PNPF_IF_ADDRESS_ITEM pCursor;
+
+			if (TmpAdInfo->pNetworkAddresses == NULL)
+			{
+				TmpAdInfo->pNetworkAddresses = pAddressesFromRegistry;
+			}
+			else
+			{
+				pCursor = TmpAdInfo->pNetworkAddresses;
+				while(pCursor->Next != NULL) pCursor = pCursor->Next;
+
+				pCursor->Next = pAddressesFromRegistry;
+			}
+		}
 #ifdef HAVE_IPHELPER_API
 		// Now Add IPv6 Addresses
 		PacketAddIP6Addresses(TmpAdInfo);
@@ -2007,8 +2140,21 @@ BOOLEAN PacketUpdateAdInfo(PCHAR AdapterName)
 				PrevAdInfo->Next = TAdInfo->Next;
 			}
 
-			if (TAdInfo->NetworkAddresses != NULL)
-				GlobalFreePtr(TAdInfo->NetworkAddresses);
+			if (TAdInfo->pNetworkAddresses != NULL)
+			{
+				PNPF_IF_ADDRESS_ITEM pItem, pNext;
+
+				pItem = TAdInfo->pNetworkAddresses;
+
+				while(pItem != NULL)
+				{
+					pNext = pItem->Next;
+
+					GlobalFreePtr(pItem);
+					pItem = pNext;
+				}
+			}
+			
 			GlobalFreePtr(TAdInfo);
 
 			break;
@@ -2085,7 +2231,7 @@ void PacketPopulateAdaptersInfoList()
 {
 	//this function should acquire the g_AdaptersInfoMutex, since it's NOT called with an ADAPTER_INFO as parameter
 	PADAPTER_INFO TAdInfo;
-	PVOID Mem1, Mem2;
+	PVOID Mem2;
 
 	TRACE_ENTER("PacketPopulateAdaptersInfoList");
 
@@ -2097,13 +2243,18 @@ void PacketPopulateAdaptersInfoList()
 		TAdInfo = g_AdaptersInfoList;
 		while(TAdInfo != NULL)
 		{
-			Mem1 = TAdInfo->NetworkAddresses;
+			PNPF_IF_ADDRESS_ITEM pItem, pCursor;
 			Mem2 = TAdInfo;
 			
+			pCursor = TAdInfo->pNetworkAddresses;
 			TAdInfo = TAdInfo->Next;
 			
-			if (Mem1 != NULL)
-				GlobalFreePtr(Mem1);
+			while(pCursor != NULL)
+			{
+				pItem = pCursor->Next;
+				GlobalFreePtr(pCursor);
+				pCursor = pItem;
+			}
 			GlobalFreePtr(Mem2);
 		}
 		
@@ -2238,8 +2389,7 @@ static BOOLEAN PacketAddFakeNdisWanAdapter()
 	TmpAdInfo->Flags = INFO_FLAG_NDISWAN_ADAPTER;
 	memset(TmpAdInfo->MacAddress,'0',6);
 	TmpAdInfo->MacAddressLen = 6;
-	TmpAdInfo->NetworkAddresses = NULL;
-	TmpAdInfo->NNetworkAddresses = 0;
+	TmpAdInfo->pNetworkAddresses = NULL;
 
 	TmpAdInfo->Next = g_AdaptersInfoList;
 	g_AdaptersInfoList = TmpAdInfo;

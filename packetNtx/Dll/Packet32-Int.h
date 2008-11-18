@@ -51,6 +51,36 @@
 #pragma warning( pop )
 #endif //__MINGW32__
 
+/*!
+  \brief Linked list item containing one of the IP addresses associated with an adapter.
+*/
+typedef struct _NPF_IF_ADDRESS_ITEM
+{
+	npf_if_addr Addr;			///< IP address
+	struct _NPF_IF_ADDRESS_ITEM *Next; ///< Pointer to the next item in the linked list.
+}
+	NPF_IF_ADDRESS_ITEM, *PNPF_IF_ADDRESS_ITEM;
+
+/*!
+  \brief Contains comprehensive information about a network adapter.
+
+  This structure is filled with all the accessory information that the user can need about an adapter installed
+  on his system.
+*/
+typedef struct _ADAPTER_INFO  
+{
+	struct _ADAPTER_INFO *Next;				///< Pointer to the next adapter in the list.
+	CHAR Name[ADAPTER_NAME_LENGTH + 1];		///< Name of the device representing the adapter.
+	CHAR Description[ADAPTER_DESC_LENGTH + 1];	///< Human understandable description of the adapter
+	UINT MacAddressLen;						///< Length of the link layer address.
+	UCHAR MacAddress[MAX_MAC_ADDR_LENGTH];	///< Link layer address.
+	NetType LinkLayer;						///< Physical characteristics of this adapter. This NetType structure contains the link type and the speed of the adapter.
+	PNPF_IF_ADDRESS_ITEM pNetworkAddresses;///< Pointer to a linked list of IP addresses, each of which specifies a network address of this adapter.
+	UINT Flags;								///< Adapter's flags. Tell if this adapter must be treated in a different way, using the Netmon API or the dagc API.
+}
+ADAPTER_INFO, *PADAPTER_INFO;
+
+
 //
 // Internal functions
 //

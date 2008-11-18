@@ -261,10 +261,19 @@ BOOL APIENTRY DllMain(HANDLE DllHandle,DWORD Reason,LPVOID lpReserved)
 		
 		while(g_AdaptersInfoList != NULL)
 		{
-			
+			PNPF_IF_ADDRESS_ITEM pCursor, pNext;
+
 			NewAdInfo = g_AdaptersInfoList->Next;
-			if (g_AdaptersInfoList->NetworkAddresses != NULL)
-				GlobalFreePtr(g_AdaptersInfoList->NetworkAddresses);
+
+			pCursor = g_AdaptersInfoList->pNetworkAddresses;
+
+			while(pCursor != NULL)
+			{
+				pNext = pCursor->Next;
+				GlobalFreePtr(pCursor);
+				pCursor = pNext;
+			}
+
 			GlobalFreePtr(g_AdaptersInfoList);
 			
 			g_AdaptersInfoList = NewAdInfo;
@@ -3766,11 +3775,30 @@ BOOLEAN PacketGetNetInfoEx(PCHAR AdapterName, npf_if_addr* buffer, PLONG NEntrie
 
 	if(TAdInfo != NULL)
 	{
+		LONG numEntries = 0, i;
+		PNPF_IF_ADDRESS_ITEM pCursor;
 		TRACE_PRINT("Adapter found.");
-		*NEntries = (TAdInfo->NNetworkAddresses < *NEntries)? TAdInfo->NNetworkAddresses: *NEntries;
-		//TODO what if nentries = 0?
-		if (*NEntries > 0)
-			memcpy(buffer, TAdInfo->NetworkAddresses, *NEntries * sizeof(npf_if_addr));
+
+		pCursor = TAdInfo->pNetworkAddresses;
+
+		while(pCursor != NULL)
+		{
+			numEntries ++;
+			pCursor = pCursor->Next;
+		}
+
+		if (numEntries < *NEntries)
+		{
+			*NEntries = numEntries;
+		}
+
+		pCursor = TAdInfo->pNetworkAddresses;
+		for (i = 0; (i < *NEntries) && (pCursor != NULL); i++)
+		{
+			buffer[i] = pCursor->Addr;
+			pCursor = pCursor->Next;
+		}
+
 		Res = TRUE;
 	}
 	else
