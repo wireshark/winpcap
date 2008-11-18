@@ -52,6 +52,7 @@ static void DisplayErrorText(DWORD dwLastError,FILE* output);
 #define RPCAPD_SERVICE_DESCRIPTION_SHORT "Remote Packet Capture Protocol v.0 (experimental)"
 #define RPCAPD_SERVICE_DESCRIPTION_LONG "Allows to capture traffic on this machine from a remote machine."
 #define RPCAPD_SERVICE_EXECUTABLE "\"%ProgramFiles%\\WinPcap\\rpcapd.exe\" -d -f \"%ProgramFiles%\\WinPcap\\rpcapd.ini\""
+#define RPCAPD_SERVICE_EXECUTABLE_WOW64 "\"%ProgramFiles(x86)%\\WinPcap\\rpcapd.exe\" -d -f \"%ProgramFiles(x86)%\\WinPcap\\rpcapd.ini\""
 
 
 typedef WINADVAPI BOOL  (WINAPI *MyChangeServiceConfig2)(
@@ -59,6 +60,27 @@ typedef WINADVAPI BOOL  (WINAPI *MyChangeServiceConfig2)(
   DWORD dwInfoLevel,   // information level
   LPVOID lpInfo        // new data
 );
+
+typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE hProcess,PBOOL Wow64Process);
+ 
+BOOL IsWow64()
+{
+    BOOL bIsWow64 = FALSE;
+	//
+	// NOTE: here GetModuleHandle cannot fail because kernel32 is ALWAYS in the address space of a process
+	//
+	LPFN_ISWOW64PROCESS fnIsWow64Process = (LPFN_ISWOW64PROCESS)GetProcAddress(GetModuleHandle("kernel32"),"IsWow64Process");
+ 
+    if (NULL != fnIsWow64Process)
+    {
+        if (!fnIsWow64Process(GetCurrentProcess(),&bIsWow64))
+        {
+            // handle error
+        }
+    }
+
+	return bIsWow64;
+}
 
 int WINAPI manage_rpcapd_service(LPCTSTR LogFileName, char operation)
 {
@@ -90,7 +112,7 @@ int WINAPI manage_rpcapd_service(LPCTSTR LogFileName, char operation)
 			RPCAPD_SERVICE_NAME,
 			RPCAPD_SERVICE_DESCRIPTION_SHORT,
 			RPCAPD_SERVICE_DESCRIPTION_LONG,
-			RPCAPD_SERVICE_EXECUTABLE);
+			IsWow64()? RPCAPD_SERVICE_EXECUTABLE_WOW64:RPCAPD_SERVICE_EXECUTABLE);
 		break;
 
 	case 'r':
@@ -101,7 +123,7 @@ int WINAPI manage_rpcapd_service(LPCTSTR LogFileName, char operation)
 			RPCAPD_SERVICE_NAME,
 			RPCAPD_SERVICE_DESCRIPTION_SHORT,
 			RPCAPD_SERVICE_DESCRIPTION_LONG,
-			RPCAPD_SERVICE_EXECUTABLE);
+			IsWow64()? RPCAPD_SERVICE_EXECUTABLE_WOW64:RPCAPD_SERVICE_EXECUTABLE);
 		break;
 
 	case 'a':
