@@ -214,25 +214,6 @@ typedef WAN_ADAPTER *PWAN_ADAPTER; ///< Describes an opened wan (dialup, VPN...)
 #define INFO_FLAG_DONT_EXPORT		8	///< Flag for ADAPTER_INFO: when this flag is set, the adapter will not be listed or openend by winpcap. This allows to prevent exporting broken network adapters, like for example FireWire ones.
 #define INFO_FLAG_AIRPCAP_CARD		16	///< Flag for ADAPTER_INFO: this is an airpcap card
 #define INFO_FLAG_NPFIM_DEVICE		32
-/*!
-  \brief Contains comprehensive information about a network adapter.
-
-  This structure is filled with all the accessory information that the user can need about an adapter installed
-  on his system.
-*/
-typedef struct _ADAPTER_INFO  
-{
-	struct _ADAPTER_INFO *Next;				///< Pointer to the next adapter in the list.
-	CHAR Name[ADAPTER_NAME_LENGTH + 1];		///< Name of the device representing the adapter.
-	CHAR Description[ADAPTER_DESC_LENGTH + 1];	///< Human understandable description of the adapter
-	UINT MacAddressLen;						///< Length of the link layer address.
-	UCHAR MacAddress[MAX_MAC_ADDR_LENGTH];	///< Link layer address.
-	NetType LinkLayer;						///< Physical characteristics of this adapter. This NetType structure contains the link type and the speed of the adapter.
-	INT NNetworkAddresses;					///< Number of network layer addresses of this adapter.
-	npf_if_addr *NetworkAddresses;			///< Pointer to an array of npf_if_addr, each of which specifies a network address of this adapter.
-	UINT Flags;								///< Adapter's flags. Tell if this adapter must be treated in a different way, using the Netmon API or the dagc API.
-}
-ADAPTER_INFO, *PADAPTER_INFO;
 
 /*!
   \brief Describes an opened network adapter.
