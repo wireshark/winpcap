@@ -1676,7 +1676,6 @@ static BOOLEAN PacketAddAdapterNpfIm(PNPF_IM_DEVICE pDevice)
 	PNPF_IM_ADDRESS pAddresses = NULL;
 	DWORD addressesSize = 0;
 	DWORD returnedBytes = 0;
-	npf_if_addr *pnpf_if_addresses = NULL;
 	DWORD numAddresses;
 	DWORD i;
 
@@ -1795,54 +1794,56 @@ static BOOLEAN PacketAddAdapterNpfIm(PNPF_IM_DEVICE pDevice)
 			break;
 		}
 
+		TmpAdInfo->pNetworkAddresses = NULL;
+
 		if (numAddresses > 0)
 		{
-			pnpf_if_addresses = (npf_if_addr*)GlobalAllocPtr(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(npf_if_addr) * numAddresses);
-
-			if (pnpf_if_addresses == NULL)
-			{
-				GlobalFreePtr(TmpAdInfo);
-				TRACE_PRINT("PacketAddAdapteNpfIm: GlobalAlloc failed");
-				bResult = FALSE;
-				break;
-			}
-		
+			PNPF_IF_ADDRESS_ITEM pItem, pLast = NULL;
+			
 			for (i = 0; i < numAddresses; i++)
 			{
 				DWORD ipAddr, netMask, broadCast;
 
-				CopyMemory(&(pnpf_if_addresses[i].IPAddress), &(pAddresses[i].IPAddress), sizeof(struct sockaddr_storage));
+				pItem = (PNPF_IF_ADDRESS_ITEM)GlobalAllocPtr(GPTR, sizeof(NPF_IF_ADDRESS_ITEM));
+				if (pItem == NULL) continue;
+
+				pItem->Next = NULL;
+
+				CopyMemory(&(pItem->Addr.IPAddress), &(pAddresses[i].IPAddress), sizeof(struct sockaddr_storage));
 
 				//
 				// generate the broadcast addr
 				switch(pAddresses[i].IPAddress.ss_family)
 				{
 				case AF_INET:
-					CopyMemory(&(pnpf_if_addresses[i].SubnetMask), &(pAddresses[i].SubnetMask), sizeof(struct sockaddr_storage));
-					CopyMemory(&(pnpf_if_addresses[i].Broadcast), &(pAddresses[i].SubnetMask), sizeof(struct sockaddr_storage));
-					ipAddr = ((struct sockaddr_in*)(&pnpf_if_addresses[i].IPAddress))->sin_addr.S_un.S_addr;
-					netMask = ((struct sockaddr_in*)(&pnpf_if_addresses[i].SubnetMask))->sin_addr.S_un.S_addr;
+					CopyMemory(&(pItem->Addr.SubnetMask), &(pAddresses[i].SubnetMask), sizeof(struct sockaddr_storage));
+					CopyMemory(&(pItem->Addr.Broadcast), &(pAddresses[i].SubnetMask), sizeof(struct sockaddr_storage));
+					ipAddr = ((struct sockaddr_in*)(&pItem->Addr.IPAddress))->sin_addr.S_un.S_addr;
+					netMask = ((struct sockaddr_in*)(&pItem->Addr.SubnetMask))->sin_addr.S_un.S_addr;
 					broadCast = ipAddr | (~netMask);
-					((struct sockaddr_in*)(&pnpf_if_addresses[i].Broadcast))->sin_addr.S_un.S_addr = broadCast;
+					((struct sockaddr_in*)(&pItem->Addr.Broadcast))->sin_addr.S_un.S_addr = broadCast;
 					break;
 
 				case AF_INET6:
 				default:
-					ZeroMemory(&(pnpf_if_addresses[i].SubnetMask), sizeof(struct sockaddr_storage));
-					ZeroMemory(&(pnpf_if_addresses[i].Broadcast),  sizeof(struct sockaddr_storage));
+					ZeroMemory(&(pItem->Addr.SubnetMask), sizeof(struct sockaddr_storage));
+					ZeroMemory(&(pItem->Addr.Broadcast),  sizeof(struct sockaddr_storage));
 					break;
 				}
+
+				if (TmpAdInfo->pNetworkAddresses == NULL)
+				{
+					TmpAdInfo->pNetworkAddresses = pItem;
+				}
+				else
+				{
+					pLast->Next = pItem;
+				}
+
+				pLast = pItem;
+
 			}
-
-			//
-			// put the ip addresses
-			//
-			TmpAdInfo->NetworkAddresses = pnpf_if_addresses;
-			TmpAdInfo->NNetworkAddresses = numAddresses;
-
 		}
-
-
 
 		// Copy the device name and description
 		StringCchCopyA(TmpAdInfo->Name, 
