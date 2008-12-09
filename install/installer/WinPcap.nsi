@@ -592,19 +592,9 @@ EndCopy:
 	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
 	"DisplayVersion" "${WINPCAP_PROJ_VERSION_DOTTED}"
 
-;this is a sort of hack: on windows 2000 for some strange reason it puts an ugly icon in the control panel
-;for this OS, since we don't have a winpcap icon, yet, we use the uninstall icon, better than nothing....
-
-    StrCmp $WINPCAP_TARGET_OS "2000" AddWinpcapIcon  
-    goto NoWinpcapIcon
-
-AddWinpcapIcon:
-
     WriteRegStr HKLM \
 	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
 	"DisplayIcon" "$INSTDIR\uninstall.exe"  
-
-NoWinpcapIcon:
 
     CreateDirectory "$SMPROGRAMS\WinPcap"
 
