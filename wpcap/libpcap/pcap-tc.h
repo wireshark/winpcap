@@ -32,7 +32,6 @@
 #ifndef __PCAP_TC_H__
 #define __PCAP_TC_H__
 
-#include <winsock2.h>
 /*
  * needed because gcc headers do not have C_ASSERT
  */
@@ -40,7 +39,7 @@
 #define C_ASSERT(a)
 #endif
 
-#include <tcapi.h>
+#include <TcApi.h>
 
 /*
  * functions used effectively by the pcap library

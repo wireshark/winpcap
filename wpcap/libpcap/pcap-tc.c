@@ -29,11 +29,19 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <pcap.h>
 #include <pcap-int.h>
 
 #include "pcap-tc.h"
+
+#include <malloc.h>
+#include <memory.h>
+#include <string.h>
+#include <errno.h>
 
 typedef TC_STATUS	(TC_CALLCONV *TcFcnQueryPortList)			(PTC_PORT *ppPorts, PULONG pLength);
 typedef TC_STATUS	(TC_CALLCONV *TcFcnFreePortList)			(TC_PORT *pPorts);
@@ -46,7 +54,7 @@ typedef PCHAR		(TC_CALLCONV *TcFcnPortGetDescription)		(TC_PORT port);
 typedef TC_STATUS	(TC_CALLCONV *TcFcnInstanceOpenByName)		(PCHAR name, PTC_INSTANCE pInstance);
 typedef TC_STATUS	(TC_CALLCONV *TcFcnInstanceClose)			(TC_INSTANCE instance);
 typedef TC_STATUS	(TC_CALLCONV *TcFcnInstanceSetFeature)		(TC_INSTANCE instance, ULONG feature, ULONG value);
-typedef TC_STATUS	(TC_CALLCONV *TcFcnInstanceQueryFeature)	(TC_INSTANCE instance, ULONG feature, ULONG pValue);
+typedef TC_STATUS	(TC_CALLCONV *TcFcnInstanceQueryFeature)	(TC_INSTANCE instance, ULONG feature, PULONG pValue);
 typedef TC_STATUS	(TC_CALLCONV *TcFcnInstanceReceivePackets)	(TC_INSTANCE instance, PTC_PACKETS_BUFFER pBuffer);
 typedef HANDLE		(TC_CALLCONV *TcFcnInstanceGetReceiveWaitHandle) (TC_INSTANCE instance);
 typedef TC_STATUS	(TC_CALLCONV *TcFcnInstanceTransmitPackets)	(TC_INSTANCE instance, TC_PACKETS_BUFFER pBuffer);
@@ -74,7 +82,9 @@ typedef enum LONG
 typedef struct _TC_FUNCTIONS
 {
 	TC_API_LOAD_STATUS			LoadStatus;
+#ifdef WIN32
 	HMODULE						hTcApiDllHandle;
+#endif
 	TcFcnQueryPortList			QueryPortList;
 	TcFcnFreePortList			FreePortList;
 	TcFcnStatusGetString		StatusGetString;
@@ -87,7 +97,9 @@ typedef struct _TC_FUNCTIONS
 	TcFcnInstanceSetFeature		InstanceSetFeature;
 	TcFcnInstanceQueryFeature	InstanceQueryFeature;
 	TcFcnInstanceReceivePackets	InstanceReceivePackets;
+#ifdef WIN32
 	TcFcnInstanceGetReceiveWaitHandle InstanceGetReceiveWaitHandle;
+#endif
 	TcFcnInstanceTransmitPackets InstanceTransmitPackets;
 	TcFcnInstanceQueryStatistics InstanceQueryStatistics;
 	
@@ -115,6 +127,7 @@ static int TcGetNonBlock(pcap_t *p, char *errbuf);
 static int TcSetNonBlock(pcap_t *p, int nonblock, char *errbuf);
 static int TcSetDatalink(pcap_t *p, int dlt);
 
+#ifdef WIN32
 TC_FUNCTIONS g_TcFunctions = 
 {
 	TC_API_UNLOADED, /* LoadStatus */
@@ -140,6 +153,34 @@ TC_FUNCTIONS g_TcFunctions =
 	NULL,  /* StatisticsUpdate */
 	NULL  /* StatisticsQueryValue */
 };
+#else
+TC_FUNCTIONS g_TcFunctions = 
+{
+	TC_API_LOADED, /* LoadStatus */
+	TcQueryPortList,
+	TcFreePortList,
+	TcStatusGetString,
+	TcPortGetName,
+	TcPortGetDescription,
+	TcInstanceOpenByName,
+	TcInstanceClose,
+	TcInstanceSetFeature,
+	TcInstanceQueryFeature,
+	TcInstanceReceivePackets,
+#ifdef WIN32
+	TcInstanceGetReceiveWaitHandle,
+#endif
+	TcInstanceTransmitPackets,
+	TcInstanceQueryStatistics,
+	TcPacketsBufferCreate,
+	TcPacketsBufferDestroy,
+	TcPacketsBufferQueryNextPacket,
+	TcPacketsBufferCommitNextPacket,
+	TcStatisticsDestroy,
+	TcStatisticsUpdate,
+	TcStatisticsQueryValue,
+};
+#endif
 
 #define MAX_TC_PACKET_SIZE	9500
 
@@ -196,6 +237,7 @@ typedef struct _PPI_HEADER
 	PPI_HEADER, *PPPI_HEADER;
 #pragma pack(pop)
 
+#ifdef WIN32
 /*
  * NOTE: this function should be called by the pcap functions that can theoretically
  *       deal with the Tc library for the first time, namely listing the adapters and
@@ -305,6 +347,13 @@ TC_API_LOAD_STATUS LoadTcFunctions()
 
 	return currentStatus;
 }
+#else
+// static linking
+TC_API_LOAD_STATUS LoadTcFunctions()
+{
+	return TC_API_LOADED;
+}
+#endif
 
 int
 TcFindAllDevs(pcap_if_t **alldevsp, char *errbuf)
@@ -600,9 +649,11 @@ TcActivate(pcap_t *p)
 	p->getnonblock_op = TcGetNonBlock;
 	p->setnonblock_op = TcSetNonBlock;
 	p->stats_op = TcStats;
+#ifdef WIN32
 	p->setbuff_op = TcSetBuff;
 	p->setmode_op = TcSetMode;
 	p->setmintocopy_op = TcSetMinToCopy;
+#endif
 	p->cleanup_op = TcCleanup;
 
 	return (0);
@@ -872,6 +923,7 @@ static int TcRead(pcap_t *p, int cnt, pcap_handler callback, u_char *user)
 	return (n);
 }
 
+#ifdef WIN32
 
 static int
 TcSetMinToCopy(pcap_t *p, int size)
@@ -915,6 +967,8 @@ TcSetBuff(pcap_t *p, int dim)
 	 */
 	return 0;
 }
+
+#endif
 
 static int
 TcStats(pcap_t *p, struct pcap_stat *ps)
@@ -1000,8 +1054,9 @@ TcSetFilter(pcap_t *p, struct bpf_program *fp)
 	return (0);
 }
 
+#ifdef WIN32
 HANDLE TcGetReceiveWaitHandle(pcap_t *p)
 {
 	return g_TcFunctions.InstanceGetReceiveWaitHandle(p->TcInstance);
 }
-
+#endif
