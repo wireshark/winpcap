@@ -30,6 +30,7 @@ CFLAGS = -I ../libpcap -I ../libpcap/bpf -I ../libpcap/lbl \
 	-DHAVE_SNPRINTF -DHAVE_VSNPRINTF \
 	-DSIZEOF_LONG_LONG=8 \
 	-DHAVE_REMOTE -DHAVE_AIRPCAP_API \
+	-DHAVE_TC_API \
 	-mno-cygwin -shared ${OPTFLAGS}
 LDFLAGS = -Wl,--out-implib,../lib/libwpcap.a
 LIBS = -L ../../${PACKET_DIR}/DLL/Project -lPacket -lws2_32
