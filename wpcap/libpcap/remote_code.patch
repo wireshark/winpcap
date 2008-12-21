@@ -14,7 +14,7 @@ diff -urb libpcap-1.0.0/configure libpcap-1.0.0_remote/configure
    --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
    --disable-largefile     omit support for large files
    --disable-protochain    disable \"protochain\" insn
-+  --enable-remote        disable remote capture capabilities
++  --disable-remote        disable remote capture capabilities
    --enable-ipv6           build IPv6-capable version [default=yes, if getaddrinfo available]
    --enable-optimizer-dbg  build optimizer debugging code
    --enable-yydebug        build parser debugging code
@@ -55,8 +55,8 @@ diff -urb libpcap-1.0.0/configure libpcap-1.0.0_remote/configure
  echo "${ECHO_T}$have_socklen_t" >&6; }
  
 +{ echo "$as_me:$LINENO: checking if --enable-remote option is specified" >&5
-+echo $ECHO_N "checking if --enable-remote option is specified... $ECHO_C" >&6; }
-+# Check whether --enable-remote was given.
++echo $ECHO_N "checking if --disable-remote option is specified... $ECHO_C" >&6; }
++# Check whether --disable-remote was given.
 +if test "${enable_remote+set}" = set; then
 +  enableval=$enable_remote;
 +fi
