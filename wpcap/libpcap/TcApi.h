@@ -20,15 +20,36 @@
  */
 
 /*
- * $cacever: turbocap2/api/TcApi.h,v 1.18
+ * $cacever: turbocap2/api/TcApi.h,v 1.12 2008/05/08 00:49:05 gianlucav Exp $ 
  */
 
 #ifndef __TC_API_HEADER__
 #define __TC_API_HEADER__
 
+#ifdef _WIN32
 #include <windows.h>
-
 #define TC_CALLCONV	__cdecl
+#else  //_WIN32
+#include <assert.h>
+#define _ASSERT(a) assert(a)
+#define C_ASSERT(expr) extern char __C_ASSERT__[(expr)?1:-1]
+#define TRUE 1
+#define FALSE 0
+typedef void VOID, *PVOID;
+typedef PVOID HANDLE;
+typedef char CHAR, *PCHAR;
+typedef unsigned char UCHAR, *PUCHAR;
+typedef unsigned char BYTE, *PBYTE;
+typedef unsigned short USHORT, *PUSHORT;
+typedef unsigned long ULONG, *PULONG;
+typedef unsigned long DWORD, *PDWORD;
+typedef unsigned long long ULONGLONG, *PULONGLONG;
+typedef long long LONGLONG, *PLONGLONG;
+typedef int BOOLEAN, *PBOOLEAN;
+typedef int BOOL, *PBOOL;
+#define TC_CALLCONV	//__cdecl
+#endif //_WIN32
+
 
 #ifndef __in__
 #define __in__
@@ -261,6 +282,10 @@ typedef TC_INSTANCE *PTC_INSTANCE;
 	In the latter case, the raw buffer is retrieved with \ref TcPacketsBufferGetBuffer, its effective length
 	(i.e. the number of bytes effectively used in the buffer) is obtained with \ref TcPacketsBufferGetEffectiveLength
 	(reception mode) and the maximum length with \ref TcPacketsBufferGetLength.
+	\note In the current version of the TurboCap API, it's not possible to access the raw buffer of a packets
+		buffer received from an aggregating instance, i.e. when capturing from a BAP or TcAP port.
+		A call to \ref TcPacketsBufferGetBuffer will return NULL, and \ref TcPacketsBufferGetLength and 
+		\ref TcPacketsBufferGetEffectiveLength will return 0.
 */
 typedef HANDLE TC_PACKETS_BUFFER;
 typedef TC_PACKETS_BUFFER *PTC_PACKETS_BUFFER;
@@ -879,6 +904,10 @@ typedef ULONG TC_STATUS;
 	<b>Scope</b>: instance
 	<br>
 	<b>Possible values</b>: 1-9999 ms
+
+	\note
+	Under a LINUX operating system, the biggest possible value for aggregating instances is 3 ms. If the user attempts to set a higher value
+	the read timeout will default to 3 ms. For physical instances the possible values are 1-9999 ms as under a WINDOWS operating system.
 */
 #define TC_INST_FT_READ_TIMEOUT	0x00000006	//R/W
 
@@ -1654,6 +1683,10 @@ TcInstanceQueryStatistics(
 	\param buffer Handle to the packets buffer.
 	\return A pointer to the underlying raw buffer. Use \ref TcPacketsBufferGetLength
 		to obtain the length of such buffer.
+	\note In the current version of the TurboCap API, it's not possible to access the raw buffer of a packets
+		buffer received from an aggregating instance, i.e. when capturing from a BAP or TcAP port.
+		In this case the return value is a NULL pointer.
+
 
 	<b>Thread safety</b>: this function is thread safe if called on different packets buffer handles (\ref TC_PACKETS_BUFFER). 
 		Calling this function on the same packets buffer from concurrent threads must be synchronized.
@@ -1679,6 +1712,9 @@ TcPacketsBufferGetBuffer(
 	\param buffer Handle to the packets buffer.
 	\return The effective length of the underlying raw buffer. Use \ref TcPacketsBufferGetLength
 		to obtain the total length of such buffer.
+	\note In the current version of the TurboCap API, it's not possible to access the raw buffer of a packets
+		buffer received from an aggregating instance, i.e. when capturing from a BAP or TcAP port.
+		In this case the return value is 0.
 
 	<b>Thread safety</b>: this function is thread safe if called on different packets buffer handles (\ref TC_PACKETS_BUFFER). 
 		Calling this function on the same packets buffer from concurrent threads must be synchronized.
@@ -1695,6 +1731,9 @@ TcPacketsBufferGetEffectiveLength(
 	\param buffer Handle to the packets buffer.
 	\return The total length of the underlying raw buffer. Use \ref TcPacketsBufferGetEffectiveLength
 		to obtain the effective length of such buffer i.e. the number of bytes that are actually in use.
+	\note In the current version of the TurboCap API, it's not possible to access the raw buffer of a packets
+		buffer received from an aggregating instance, i.e. when capturing from a BAP or TcAP port.
+		In this case the return value is 0.
 
 	<b>Thread safety</b>: this function is thread safe if called on different packets buffer handles (\ref TC_PACKETS_BUFFER). 
 		Calling this function on the same packets buffer from concurrent threads must be synchronized.
@@ -1773,6 +1812,9 @@ TcPacketsBufferDestroy(
 
 	\param buffer Handle to the packets buffer.
 
+	\note In the current version of the TurboCap API, it's not possible to reset the buffer index of a packets
+		buffer received from an aggregating instance, i.e. when capturing from a BAP or TcAP port.
+
 	<b>Thread safety</b>: this function is thread safe if called on different packets buffer handles (\ref TC_PACKETS_BUFFER). 
 		Calling this function on the same packets buffer from concurrent threads must be synchronized.
 */
@@ -1825,7 +1867,9 @@ TcPacketsBufferQueryNextPacket(
 	- \ref TC_ERROR_BUFFER_FULL if the free bytes in the internal buffer cannot hold the packet.
 	- \ref TC_INVALID_PACKET if the header passed as parameter is not consistent. 
 
-	\note The packet buffer passed as parameter (pData) can be freed after a call to this function. This function makes a internal copy of the packet data.
+	\note  
+		- The packet buffer passed as parameter (pData) can be freed after a call to this function. This function makes a internal copy of the packet data.
+		- It's not possible to add packets to a packets buffer received from an aggregating port (BAP or TcAP port).
 
 	<b>Thread safety</b>: this function is thread safe if called on different packets buffer handles (\ref TC_PACKETS_BUFFER). 
 		Calling this function on the same packets buffer from concurrent threads must be synchronized.
