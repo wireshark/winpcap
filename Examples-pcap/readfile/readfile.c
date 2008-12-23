@@ -5,7 +5,7 @@
 
 void dispatcher_handler(u_char *, const struct pcap_pkthdr *, const u_char *);
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	pcap_t *fp;
 	char errbuf[PCAP_ERRBUF_SIZE];
@@ -41,6 +41,11 @@ void dispatcher_handler(u_char *temp1,
 {
 	u_int i=0;
 	
+	/*
+	 * unused variable
+	 */
+	(VOID*)temp1;
+
 	/* print pkt timestamp and pkt len */
 	printf("%ld:%ld (%ld)\n", header->ts.tv_sec, header->ts.tv_usec, header->len);			
 	

@@ -31,6 +31,13 @@
  *
  */
 
+#ifdef _MSC_VER
+/*
+ * we do not want the warnings about the old deprecated and unsecure CRT functions
+ * since these examples can be compiled under *nix as well
+ */
+#define _CRT_SECURE_NO_WARNINGS
+#endif
 
 #include "pcap.h"
 
@@ -72,7 +79,7 @@ typedef struct udp_header
 void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data);
 
 
-main()
+int main()
 {
 	pcap_if_t *alldevs;
 	pcap_if_t *d;
@@ -194,6 +201,11 @@ void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_cha
 	u_int ip_len;
 	u_short sport,dport;
 	time_t local_tv_sec;
+
+	/*
+	 * unused parameter
+	 */
+	(VOID)(param);
 
 	/* convert the timestamp to readable format */
 	local_tv_sec = header->ts.tv_sec;
