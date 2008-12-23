@@ -107,7 +107,7 @@ void dispatcher_handler(u_char *state, const struct pcap_pkthdr *header, const u
 	struct timeval *old_ts = (struct timeval *)state;
 	u_int delay;
 	LARGE_INTEGER Bps,Pps;
-	struct tm *ltime;
+	struct tm ltime;
 	char timestr[16];
 	time_t local_tv_sec;
 
@@ -130,8 +130,8 @@ void dispatcher_handler(u_char *state, const struct pcap_pkthdr *header, const u
 
 	/* Convert the timestamp to readable format */
 	local_tv_sec = header->ts.tv_sec;
-	ltime=localtime(&local_tv_sec);
-	strftime( timestr, sizeof timestr, "%H:%M:%S", ltime);
+	localtime_s(&ltime, &local_tv_sec);
+	strftime( timestr, sizeof timestr, "%H:%M:%S", &ltime);
 
 	/* Print timestamp*/
 	printf("%s ", timestr);

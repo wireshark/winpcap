@@ -89,7 +89,7 @@ const u_char *pkt_data;
 		}
 		
 		printf("Enter the interface number (1-%d):",i);
-		scanf("%d", &inum);
+		scanf_s("%d", &inum);
 		
 		if (inum < 1 || inum > i)
 		{

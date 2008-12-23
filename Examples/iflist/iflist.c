@@ -31,6 +31,8 @@
  *
  */
 
+#include <stdio.h>
+
 #include "pcap.h"
 
 #ifndef WIN32
@@ -145,7 +147,7 @@ char *iptos(u_long in)
 
 	p = (u_char *)&in;
 	which = (which + 1 == IPTOSBUFFERS ? 0 : which + 1);
-	sprintf(output[which], "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
+	_snprintf_s(output[which], sizeof(output[which]), sizeof(output[which]),"%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
 	return output[which];
 }
 

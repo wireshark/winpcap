@@ -51,7 +51,8 @@ void main(int argc, char **argv)
 	u_char *pktdata;
 	float cpu_time;
 	u_int npacks = 0;
-	
+	errno_t fopen_error;
+
 	/* Check the validity of the command line */
 	if (argc <= 2 || argc >= 5)
 	{
@@ -60,9 +61,9 @@ void main(int argc, char **argv)
 	}
 		
 	/* Retrieve the length of the capture file */
-	capfile=fopen(argv[1],"rb");
-	if(!capfile){
-		printf("Capture file not found!\n");
+	fopen_error = fopen_s(&capfile, argv[1],"rb");
+	if(fopen_error != 0){
+		printf("Error opening the file, errno %d.\n", fopen_error);
 		return;
 	}
 	

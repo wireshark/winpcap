@@ -10,7 +10,7 @@ int i=0;
 pcap_t *adhandle;
 int res;
 char errbuf[PCAP_ERRBUF_SIZE];
-struct tm *ltime;
+struct tm ltime;
 char timestr[16];
 struct pcap_pkthdr *header;
 const u_char *pkt_data;
@@ -41,7 +41,7 @@ time_t local_tv_sec;
     }
     
     printf("Enter the interface number (1-%d):",i);
-    scanf("%d", &inum);
+    scanf_s("%d", &inum);
     
     if(inum < 1 || inum > i)
     {
@@ -84,8 +84,8 @@ time_t local_tv_sec;
 		
 		/* convert the timestamp to readable format */
 		local_tv_sec = header->ts.tv_sec;
-		ltime=localtime(&local_tv_sec);
-		strftime( timestr, sizeof timestr, "%H:%M:%S", ltime);
+		localtime_s(&ltime, &local_tv_sec);
+		strftime( timestr, sizeof timestr, "%H:%M:%S", &ltime);
 		
 		printf("%s,%.6d len:%d\n", timestr, header->ts.tv_usec, header->len);
 	}

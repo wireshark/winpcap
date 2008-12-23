@@ -104,7 +104,7 @@ struct bpf_program fcode;
 	}
 	
 	printf("Enter the interface number (1-%d):",i);
-	scanf("%d", &inum);
+	scanf_s("%d", &inum);
 	
 	if(inum < 1 || inum > i)
 	{
@@ -182,7 +182,7 @@ struct bpf_program fcode;
 /* Callback function invoked by libpcap for every incoming packet */
 void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data)
 {
-	struct tm *ltime;
+	struct tm ltime;
 	char timestr[16];
 	ip_header *ih;
 	udp_header *uh;
@@ -190,10 +190,15 @@ void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_cha
 	u_short sport,dport;
 	time_t local_tv_sec;
 
+	/*
+	 * Unused variable
+	 */
+	(VOID)(param);
+
 	/* convert the timestamp to readable format */
 	local_tv_sec = header->ts.tv_sec;
-	ltime=localtime(&local_tv_sec);
-	strftime( timestr, sizeof timestr, "%H:%M:%S", ltime);
+	localtime_s(&ltime, &local_tv_sec);
+	strftime( timestr, sizeof timestr, "%H:%M:%S", &ltime);
 
 	/* print timestamp and length of the packet */
 	printf("%s.%.6d len:%d ", timestr, header->ts.tv_usec, header->len);

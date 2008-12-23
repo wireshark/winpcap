@@ -91,15 +91,15 @@ float	cpu_time;
 		{
 			
 		case 'i':
-			sscanf(argv[i+1],"%s",AdapterName);
+			sscanf_s(argv[i+1],"%s",AdapterName);
 			break;
 			
 		case 'n':
-			sscanf(argv[i+1],"%d",&npacks);
+			sscanf_s(argv[i+1],"%d",&npacks);
 			break;
 			
 		case 's':
-			sscanf(argv[i+1],"%d",&Snaplen);
+			sscanf_s(argv[i+1],"%d",&Snaplen);
 			break;
 			
 		}
@@ -143,7 +143,7 @@ float	cpu_time;
 			
 		do 
 		{
-			printf("Select the number of the adapter to open : ");scanf("%d",&Open);
+			printf("Select the number of the adapter to open : ");scanf_s("%d",&Open);
 			if (Open>AdapterNum) printf("\nThe number must be smaller than %d",AdapterNum); 
 		} while (Open>AdapterNum);
 		
@@ -195,7 +195,7 @@ float	cpu_time;
 	packetbuff[11]=2;
 	
 	for(i=12;i<1514;i++){
-		packetbuff[i]=i%256;
+		packetbuff[i]= (char)i;
 	}
 	
 	PacketInitPacket(lpPacket,packetbuff,Snaplen);

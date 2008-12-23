@@ -3,7 +3,7 @@
 /* prototype of the packet handler */
 void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data);
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 pcap_if_t *alldevs;
 pcap_if_t *d;
@@ -46,7 +46,7 @@ pcap_dumper_t *dumpfile;
     }
     
     printf("Enter the interface number (1-%d):",i);
-    scanf("%d", &inum);
+    scanf_s("%d", &inum);
     
     if(inum < 1 || inum > i)
     {

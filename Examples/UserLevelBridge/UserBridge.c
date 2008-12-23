@@ -112,15 +112,11 @@ int main()
 	/* Get the filter*/
 	printf("\nSpecify filter (hit return for no filter):");
 	
-	gets(packet_filter);
-	if(strcmp(packet_filter, "") == 0)
-	{
-		sprintf(packet_filter, "");
-	}
+	fgets(packet_filter, sizeof(packet_filter), stdin);
 
 	/* Get the first interface number*/
 	printf("\nEnter the number of the first interface to use (1-%d):",i);
-	scanf("%d", &inum1);
+	scanf_s("%d", &inum1);
 	
 	if(inum1 < 1 || inum1 > i)
 	{
@@ -132,7 +128,7 @@ int main()
 
 	/* Get the second interface number*/
 	printf("Enter the number of the first interface to use (1-%d):",i);
-	scanf("%d", &inum2);
+	scanf_s("%d", &inum2);
 	
 	if(inum2 < 1 || inum2 > i)
 	{
@@ -455,6 +451,11 @@ DWORD WINAPI CaptureAndForwardThread(LPVOID lpParameter)
  *******************************************************************/
 void ctrlc_handler(int sig)
 {
+	/*
+	 * unused variable
+	 */
+	(VOID)(sig);
+
 	kill_forwaders = 1;
 
 	WaitForMultipleObjects(2,

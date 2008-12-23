@@ -50,7 +50,7 @@ int i;
 	/* Fill the rest of the packet */
 	for(i=12;i<100;i++)
 	{
-		packet[i]=i%256;
+		packet[i]=(u_char)i;
 	}
 
 	/* Send down the packet */

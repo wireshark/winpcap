@@ -34,11 +34,12 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <conio.h>
 
 #include <pcap.h>
 
 
-int main(int argc, char **argv)
+int main()
 {	
 pcap_if_t *alldevs, *d;
 pcap_t *fp;
@@ -48,8 +49,6 @@ int res;
 struct pcap_pkthdr *header;
 const u_char *pkt_data;
 struct pcap_pkthdr old;
-
-char a[11];
 
 	printf("SMP_1\n");
 	printf("\nThis program tests the WinPcap kernel driver on SMP machines.\n");
@@ -80,7 +79,7 @@ char a[11];
 	}
 		
 	printf("Enter the interface number (1-%d):",i);
-	scanf("%d", &inum);
+	scanf_s("%d", &inum);
 		
 	if(inum < 1 || inum > i)
 	{
@@ -129,7 +128,7 @@ char a[11];
 		return -1;
 	}
 
-	scanf("%s",a);
+	_getch();
 
 	return 0;
 }

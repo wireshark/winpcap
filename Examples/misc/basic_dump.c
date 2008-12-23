@@ -36,7 +36,7 @@ char errbuf[PCAP_ERRBUF_SIZE];
 	}
 	
 	printf("Enter the interface number (1-%d):",i);
-	scanf("%d", &inum);
+	scanf_s("%d", &inum);
 	
 	if(inum < 1 || inum > i)
 	{
@@ -80,14 +80,20 @@ char errbuf[PCAP_ERRBUF_SIZE];
 /* Callback function invoked by libpcap for every incoming packet */
 void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data)
 {
-	struct tm *ltime;
+	struct tm ltime;
 	char timestr[16];
 	time_t local_tv_sec;
-	
+
+	/*
+	 * unused variables
+	 */
+	(VOID)(param);
+	(VOID)(pkt_data);
+
 	/* convert the timestamp to readable format */
 	local_tv_sec = header->ts.tv_sec;
-	ltime=localtime(&local_tv_sec);
-	strftime( timestr, sizeof timestr, "%H:%M:%S", ltime);
+	localtime_s(&ltime, &local_tv_sec);
+	strftime( timestr, sizeof timestr, "%H:%M:%S", &ltime);
 	
 	printf("%s,%.6d len:%d\n", timestr, header->ts.tv_usec, header->len);
 	

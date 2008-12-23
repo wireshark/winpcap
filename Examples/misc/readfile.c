@@ -57,7 +57,12 @@ void dispatcher_handler(u_char *temp1,
 						const struct pcap_pkthdr *header, const u_char *pkt_data)
 {
 	u_int i=0;
-	
+
+	/*
+	 * Unused variable
+	 */
+	(VOID)temp1;
+
 	/* print pkt timestamp and pkt len */
 	printf("%ld:%ld (%ld)\n", header->ts.tv_sec, header->ts.tv_usec, header->len);			
 	

@@ -89,7 +89,7 @@ int main()
 	do 
 	{
 		printf("Select the number of the adapter to open : ");
-		scanf("%d",&Open);
+		scanf_s("%d",&Open);
 		if (Open>AdapterNum) printf("\nThe number must be smaller than %d",AdapterNum); 
 	} while (Open>AdapterNum);
 	

@@ -109,7 +109,7 @@ struct bpf_stat stat;
 	do 
 	{
 		printf("Select the number of the adapter to open : ");
-		scanf("%d",&Open);
+		scanf_s("%d",&Open);
 		if (Open>AdapterNum) printf("\nThe number must be smaller than %d",AdapterNum); 
 	} while (Open>AdapterNum);
 	
@@ -152,7 +152,7 @@ struct bpf_stat stat;
 	PacketInitPacket(lpPacket,(char*)buffer,256000);
 	
 	//main capture loop
-	while(!kbhit())
+	while(!_kbhit())
 	{
 	    // capture the packets
 		if(PacketReceivePacket(lpAdapter,lpPacket,TRUE)==FALSE){
@@ -199,7 +199,7 @@ void PrintPackets(LPPACKET lpPacket)
 		off=0;
 
 		while(off<ulBytesReceived){	
-			if(kbhit())return;
+			if(_kbhit())return;
 		hdr=(struct bpf_hdr *)(buf+off);
 		tlen1=hdr->bh_datalen;
 		tlen=hdr->bh_caplen;
