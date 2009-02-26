@@ -57,6 +57,7 @@ typedef TC_STATUS	(TC_CALLCONV *TcFcnInstanceSetFeature)		(TC_INSTANCE instance,
 typedef TC_STATUS	(TC_CALLCONV *TcFcnInstanceQueryFeature)	(TC_INSTANCE instance, ULONG feature, PULONG pValue);
 typedef TC_STATUS	(TC_CALLCONV *TcFcnInstanceReceivePackets)	(TC_INSTANCE instance, PTC_PACKETS_BUFFER pBuffer);
 typedef HANDLE		(TC_CALLCONV *TcFcnInstanceGetReceiveWaitHandle) (TC_INSTANCE instance);
+typedef int		(TC_CALLCONV *TcFcnInstanceGetReceiveSelectableFd) (TC_INSTANCE instance);
 typedef TC_STATUS	(TC_CALLCONV *TcFcnInstanceTransmitPackets)	(TC_INSTANCE instance, TC_PACKETS_BUFFER pBuffer);
 typedef TC_STATUS	(TC_CALLCONV *TcFcnInstanceQueryStatistics)	(TC_INSTANCE instance, PTC_STATISTICS pStatistics);
 
@@ -99,6 +100,8 @@ typedef struct _TC_FUNCTIONS
 	TcFcnInstanceReceivePackets	InstanceReceivePackets;
 #ifdef WIN32
 	TcFcnInstanceGetReceiveWaitHandle InstanceGetReceiveWaitHandle;
+#else
+	TcFcnInstanceGetReceiveSelectableFd InstanceGetReceiveSelectableFd;
 #endif
 	TcFcnInstanceTransmitPackets InstanceTransmitPackets;
 	TcFcnInstanceQueryStatistics InstanceQueryStatistics;
@@ -167,9 +170,7 @@ TC_FUNCTIONS g_TcFunctions =
 	TcInstanceSetFeature,
 	TcInstanceQueryFeature,
 	TcInstanceReceivePackets,
-#ifdef WIN32
-	TcInstanceGetReceiveWaitHandle,
-#endif
+	TcInstanceGetReceiveSelectableFd,
 	TcInstanceTransmitPackets,
 	TcInstanceQueryStatistics,
 	TcPacketsBufferCreate,
@@ -596,7 +597,7 @@ TcActivate(pcap_t *p)
 	 * enable reception
 	 */
 	status = g_TcFunctions.InstanceSetFeature(p->TcInstance, TC_INST_FT_RX_STATUS, 1);
-
+	
 	if (status != TC_SUCCESS)
 	{
 		snprintf(p->errbuf, PCAP_ERRBUF_SIZE,"Error enabling reception on a TurboCap instance: %s", g_TcFunctions.StatusGetString(status));
@@ -655,6 +656,7 @@ TcActivate(pcap_t *p)
 	p->setmintocopy_op = TcSetMinToCopy;
 #endif
 	p->cleanup_op = TcCleanup;
+	p->selectable_fd = g_TcFunctions.InstanceGetReceiveSelectableFd(p->TcInstance);
 
 	return (0);
 bad:
@@ -691,7 +693,7 @@ static int TcSetNonBlock(pcap_t *p, int nonblock, char *errbuf)
 
 static void TcCleanup(pcap_t *p)
 {
-		
+
 	if (p->TcPacketsBuffer != NULL)
 	{
 		g_TcFunctions.PacketsBufferDestroy(p->TcPacketsBuffer);
