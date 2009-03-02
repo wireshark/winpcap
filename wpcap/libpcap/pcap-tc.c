@@ -649,6 +649,7 @@ TcActivate(pcap_t *p)
 	p->getnonblock_op = TcGetNonBlock;
 	p->setnonblock_op = TcSetNonBlock;
 	p->stats_op = TcStats;
+	p->selectable_fd = -1;
 #ifdef WIN32
 	p->setbuff_op = TcSetBuff;
 	p->setmode_op = TcSetMode;
