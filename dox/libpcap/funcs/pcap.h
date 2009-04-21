@@ -683,7 +683,7 @@ the receiving process. This function allows you to do the job.
 \return the length of the bytes that are currently available into the packet if the packet satisfies the filter,
 0 otherwise.
 */
-bool pcap_offline_filter(struct bpf_program *prog, const struct pcap_pkthdr *header, const u_char *pkt_data);
+int pcap_offline_filter(struct bpf_program *prog, const struct pcap_pkthdr *header, const u_char *pkt_data);
 
 /*! \brief Save a capture to file.
 
