@@ -167,39 +167,19 @@
 ; this will set the WINPCAP_TARGET_OS variable
     Call GetWindowsVersion
 
-; GV: in some previous versions of NSIS and Vista, the installer seemed to crash when calling the {Locate} macro.
-; As of NSIS 2.16, this problem seems to have been solved.
+	StrCmp $WINPCAP_TARGET_OS "vista" Check_IA64
+	StrCmp $WINPCAP_TARGET_OS "Win7" Check_IA64
+	goto ContinueInstallationOk
 
-;    StrCmp $WINPCAP_TARGET_OS "vista" ContinueVistaInstallation
-;    goto NoVistaInstallation
+Check_IA64:
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "IA64" AbortIA64
+	goto ContinueInstallationOk
 
-;ContinueVistaInstallation:
-;NSIS seems to crash calling {Locate} on VISTA.
-;    Messagebox MB_YESNO|MB_ICONINFORMATION "This machine is running Microsoft Windows Vista/Longhorn x64. This version of Windows is not supported by ${WINPCAP_PRODUCT_NAME}.$\nThe installation will be aborted."
-;    Abort
-
-	StrCmp $WINPCAP_TARGET_OS "vista" CheckVista_X64
-	goto ContinueInstallationVistaOk
-
-CheckVista_x64:
-;	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" AbortVista_x64
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "IA64" AbortVista_x64
-;	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" AbortVista_x64
-	goto ContinueInstallationVistaOk
-
-AbortVista_x64:
-    Messagebox MB_OK|MB_ICONEXCLAMATION "This machine is running Microsoft Windows Vista/Longhorn $WINPCAP_TARGET_ARCHITECTURE. This version of Windows is not supported by ${WINPCAP_PRODUCT_NAME}.$\nThe installation will be aborted."
+AbortIA64:
+    Messagebox MB_OK|MB_ICONEXCLAMATION "This machine is running Microsoft Windows $WINPCAP_TARGET_ARCHITECTURE. This version of Windows is not supported by ${WINPCAP_PRODUCT_NAME}.$\nThe installation will be aborted."
     Abort
 
-
-;ForceVistaInstallation:
-;    StrCpy $WINPCAP_OLD_FOUND "false"
-;    goto SkipWinPcapVersionCheck
-;	
-;
-;NoVistaInstallation:
-
-ContinueInstallationVistaOk:
+ContinueInstallationOk:
 ;Detect all parameters of a previous installation of WinPcap
 ;after this call, all the WINPCAP_OLD_xxx variables are correctly set
     Call IsWinPcapInstalled
@@ -215,6 +195,7 @@ ContinueInstallationVistaOk:
     StrCmp $WINPCAP_TARGET_OS "XP" SupportedOsOk
     StrCmp $WINPCAP_TARGET_OS "2003" SupportedOsOk
     StrCmp $WINPCAP_TARGET_OS "vista" SupportedOsOk 
+    StrCmp $WINPCAP_TARGET_OS "Win7" SupportedOsOk 
 
 ; if we reach this point, the OS is not supported. Simply exit.
     MessageBox MB_ICONEXCLAMATION|MB_OK "This version of Windows is not supported by ${WINPCAP_PRODUCT_NAME}.$\nThe installation will be aborted."
@@ -451,6 +432,7 @@ MainInstallationProcedure:
     StrCmp $WINPCAP_TARGET_OS "XP" CopyFilesNT5
     StrCmp $WINPCAP_TARGET_OS "2003" CopyFilesNT5
     StrCmp $WINPCAP_TARGET_OS "vista" CopyFilesVista  ; vista (beta1) seems not to have the netmon stuff...
+    StrCmp $WINPCAP_TARGET_OS "Win7" CopyFilesWin7
   
 	
 
@@ -522,6 +504,7 @@ CopyFilesNT4:
 
     Goto EndCopy
 
+CopyFilesWin7:
 CopyFilesVista:
     File "Distribution\Vista_x86\packet.dll"
 	
@@ -649,10 +632,12 @@ Section "Uninstall" MainUnistall
     StrCmp $WINPCAP_TARGET_OS "XP" RmFilesNT5
     StrCmp $WINPCAP_TARGET_OS "2003" RmFilesNT5
     StrCmp $WINPCAP_TARGET_OS "vista" RmFilesVista
+    StrCmp $WINPCAP_TARGET_OS "Win7" RmFilesWin7
   
 RmFilesNT4:
 RmFilesNT5:
 RmFilesVista:
+RmFilesWin7:
 
 ;Run uninstall commands
 
@@ -1142,7 +1127,8 @@ FunctionEnd
    ; note: this is not true on x64 machines, the version is 5.2
    StrCmp $R1 '5.1' lbl_winnt_XP
    StrCmp $R1 '5.2' lbl_winnt_XP64_2003
-   StrCmp $R1 '6.0' lbl_vista lbl_error
+   StrCmp $R1 '6.0' lbl_vista
+   StrCmp $R1 '6.1' lbl_Win7 lbl_error
  
  
  
@@ -1184,6 +1170,14 @@ lbl_winnt_2003:
  
    lbl_vista:
      Strcpy $WINPCAP_TARGET_OS 'vista'
+
+	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+	 IfErrors lbl_error
+
+   Goto lbl_done
+ 
+   lbl_Win7:
+     Strcpy $WINPCAP_TARGET_OS 'Win7'
 
 	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
 	 IfErrors lbl_error
@@ -1252,7 +1246,8 @@ lbl_winnt_2003:
    ; note: this is not true on x64 machines, the version is 5.2
    StrCmp $R1 '5.1' lbl_winnt_XP
    StrCmp $R1 '5.2' lbl_winnt_XP64_2003
-   StrCmp $R1 '6.0' lbl_vista lbl_error
+   StrCmp $R1 '6.0' lbl_vista
+   StrCmp $R1 '6.1' lbl_Win7 lbl_error
  
  
  
@@ -1288,6 +1283,14 @@ lbl_winnt_2003:
  
    lbl_vista:
      Strcpy $WINPCAP_TARGET_OS 'vista'
+
+	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+	 IfErrors lbl_error
+
+   Goto lbl_done
+
+   lbl_Win7:
+     Strcpy $WINPCAP_TARGET_OS 'Win7'
 
 	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
 	 IfErrors lbl_error
