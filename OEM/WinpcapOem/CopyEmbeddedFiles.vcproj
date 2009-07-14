@@ -63,6 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				GenerateManifest="false"
 				GenerateDebugInformation="true"
 				TargetMachine="1"
 			/>
@@ -138,6 +139,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				GenerateManifest="false"
 				GenerateDebugInformation="true"
 				TargetMachine="17"
 			/>
@@ -288,6 +290,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				GenerateManifest="false"
 				GenerateDebugInformation="true"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
