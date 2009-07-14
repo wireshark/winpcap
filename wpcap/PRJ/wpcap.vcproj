@@ -45,7 +45,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release_REMOTE_TNT/wpcap.tlb"
+				TypeLibraryName=".\Release REMOTE_TNT/wpcap.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -86,7 +86,7 @@
 				IgnoreDefaultLibraryNames="libcmtd.lib"
 				ModuleDefinitionFile=".\wpcap.def"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Release_REMOTE_TNT/wpcap.pdb"
+				ProgramDatabaseFile="$(OutDir)/wpcap.pdb"
 				SetChecksum="true"
 				ImportLibrary="$(OutDir)/wpcap.lib"
 				TargetMachine="1"
@@ -144,7 +144,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\Release_REMOTE_TNT/wpcap.tlb"
+				TypeLibraryName=".\Release REMOTE_TNT/wpcap.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -157,7 +157,7 @@
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile=".\Release_REMOTE_TNT/wpcap.pch"
+				PrecompiledHeaderFile=".\Release REMOTE_TNT/wpcap.pch"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -185,7 +185,7 @@
 				IgnoreDefaultLibraryNames="libcmtd.lib"
 				ModuleDefinitionFile=".\wpcap.def"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Release_REMOTE_TNT/wpcap.pdb"
+				ProgramDatabaseFile="$(OutDir)/wpcap.pdb"
 				SetChecksum="true"
 				ImportLibrary="$(OutDir)/wpcap.lib"
 				TargetMachine="17"
@@ -243,7 +243,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug_REMOTE_TNT/wpcap.tlb"
+				TypeLibraryName=".\Debug REMOTE_TNT/wpcap.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -282,7 +282,7 @@
 				AdditionalLibraryDirectories="..\..\OEM\WinPcapOem\Debug_TNT\x86"
 				ModuleDefinitionFile=".\wpcap.def"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug_REMOTE_TNT/wpcap.pdb"
+				ProgramDatabaseFile="$(OutDir)/wpcap.pdb"
 				ImportLibrary="$(OutDir)/wpcap.lib"
 				TargetMachine="1"
 			/>
@@ -339,7 +339,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\Debug_REMOTE_TNT/wpcap.tlb"
+				TypeLibraryName=".\Debug REMOTE_TNT/wpcap.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -351,7 +351,7 @@
 				RuntimeLibrary="1"
 				BufferSecurityCheck="true"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile=".\Debug_REMOTE_TNT/wpcap.pch"
+				PrecompiledHeaderFile=".\Debug REMOTE_TNT/wpcap.pch"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
@@ -378,7 +378,7 @@
 				AdditionalLibraryDirectories="..\..\OEM\WinPcapOem\Debug_TNT\x64"
 				ModuleDefinitionFile=".\wpcap.def"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug_REMOTE_TNT/wpcap.pdb"
+				ProgramDatabaseFile="$(OutDir)/wpcap.pdb"
 				ImportLibrary="$(OutDir)/wpcap.lib"
 				TargetMachine="17"
 			/>
@@ -435,7 +435,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug_REMOTE/wpcap.tlb"
+				TypeLibraryName=".\Debug REMOTE/wpcap.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -473,7 +473,7 @@
 				AdditionalLibraryDirectories="..\..\OEM\WinPcapOem\Debug\x86"
 				ModuleDefinitionFile=".\wpcap.def"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug_REMOTE/wpcap.pdb"
+				ProgramDatabaseFile="$(OutDir)/wpcap.pdb"
 				ImportLibrary="$(OutDir)/wpcap.lib"
 				TargetMachine="1"
 			/>
@@ -530,7 +530,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\Debug_REMOTE/wpcap.tlb"
+				TypeLibraryName=".\Debug REMOTE/wpcap.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -542,7 +542,7 @@
 				RuntimeLibrary="1"
 				BufferSecurityCheck="true"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile=".\Debug_REMOTE/wpcap.pch"
+				PrecompiledHeaderFile=".\Debug REMOTE/wpcap.pch"
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
@@ -569,7 +569,7 @@
 				AdditionalLibraryDirectories="..\..\OEM\WinPcapOem\Debug\x64"
 				ModuleDefinitionFile=".\wpcap.def"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug_REMOTE/wpcap.pdb"
+				ProgramDatabaseFile="$(OutDir)/wpcap.pdb"
 				ImportLibrary="$(OutDir)/wpcap.lib"
 				TargetMachine="17"
 			/>
@@ -626,7 +626,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release_REMOTE/wpcap.tlb"
+				TypeLibraryName=".\Release REMOTE/wpcap.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -666,7 +666,7 @@
 				IgnoreDefaultLibraryNames=""
 				ModuleDefinitionFile=".\wpcap.def"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Release_REMOTE/wpcap.pdb"
+				ProgramDatabaseFile="$(OutDir)/wpcap.pdb"
 				SetChecksum="true"
 				ImportLibrary="$(OutDir)/wpcap.lib"
 				TargetMachine="1"
@@ -724,7 +724,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="3"
-				TypeLibraryName=".\Release_REMOTE/wpcap.tlb"
+				TypeLibraryName=".\Release REMOTE/wpcap.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -737,7 +737,7 @@
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
-				PrecompiledHeaderFile=".\Release_REMOTE/wpcap.pch"
+				PrecompiledHeaderFile=".\Release REMOTE/wpcap.pch"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -765,7 +765,7 @@
 				IgnoreDefaultLibraryNames="libcmtd.lib"
 				ModuleDefinitionFile=".\wpcap.def"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Release_REMOTE/wpcap.pdb"
+				ProgramDatabaseFile="$(OutDir)/wpcap.pdb"
 				SetChecksum="true"
 				ImportLibrary="$(OutDir)/wpcap.lib"
 				TargetMachine="17"
