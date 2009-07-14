@@ -1,5 +1,6 @@
 @echo off
 
+
 if "%_BUILDARCH%"=="x86" goto x86_build
 if "%_BUILDARCH%"=="AMD64" goto amd64_build
 if "%_BUILDARCH%"=="IA64" goto ia64_build
@@ -22,7 +23,7 @@ mkdir .\driver\bin\2k 2> nul
 
 copy driver\NPF.RC ..\..\winpcap\packetntx\driver\NPF.RC
 
-set TARGETPATH=..\..\..\winpcap_oem\PacketNtx\driver\bin\2k
+//set TARGETPATH=..\..\..\winpcap_oem\PacketNtx\driver\bin\2k
 set NPF_C_DEFINES=-DNDIS50 -DWPCAP_OEM
 rem ** enable the following line to enable the TME extensions **
 rem set NPF_TME_FILES=tme.c count_packets.c tcp_session.c functions.c bucket_lookup.c normal_lookup.c win_bpf_filter_init.c
@@ -105,8 +106,6 @@ mkdir .\driver\bin\NT4\i386\checked 2> nul
 
 copy driver\NPF.RC ..\..\winpcap\packetntx\driver\NPF.RC
 
-set TARGETPATH=..\..\..\winpcap_oem\PacketNtx\driver\bin\NT4
-
 set NPF_C_DEFINES=-DNDIS30 -D__NPF_NT4__ -DWPCAP_OEM
 
 rem ** enable the following line to enable the TME extensions **
@@ -122,9 +121,16 @@ if NOT "%NPF_COMPILED%" == "1" (
 
 pushd ..\..\winpcap\packetntx\driver
 
+mkdir .\bin 2> nul
+mkdir .\bin\i386 2> nul
+mkdir .\bin\i386\free 2> nul
+mkdir .\bin\i386\checked 2> nul
+
 build -cefw
 
 popd
+
+xcopy /s /e /v ..\..\winpcap\packetntx\driver\bin\i386\* .\driver\bin\NT4\i386\
 
 set TARGETPATH=
 set NPF_C_DEFINES=
