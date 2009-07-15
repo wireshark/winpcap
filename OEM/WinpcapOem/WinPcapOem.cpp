@@ -674,7 +674,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		else if(osVer.dwMajorVersion == 6)
 		{
 			//
-			// Windows Vista
+			// Windows Vista or Win7 (6.1)
 			//
 			
 			//
