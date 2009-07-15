@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040WOEM.txt,v 1.15 2008/08/18 22:37:43 gianlucav Exp $
+$Header: /usr/cvsroot/winpcap_oem/release\040procedures\040WOEM.txt,v 1.16 2008-08-22 18:45:50 gianlucav Exp $
 
 WINPCAP PRO RELEASE PROCEDURE
 =============================
@@ -10,8 +10,10 @@ Needed tools
 ------------
 
 - Visual Studio .NET 2005 SP1 (both x86 and x64 build environments)
-- WDK 6000.
-- The cygnus environment on your path (needed to execute step 11 and 12).
+- WDK 6001.18002.
+- DDKBUILD v. 3.14.37 on the path. The variables WLHBASE and WNETBASE should point
+  to the wDK path.
+- The cygnus environment on your path (needed to execute step 9).
    In particular you will need to have flex, bison, patch.
 - Doxygen 1.5.4 installed and on the path
 
@@ -38,47 +40,55 @@ How to compile WinPcap PRO (NOT for the Toolkit)
 4.  Modify the device string into
 	  %BUILD_TREE%\winpcap\common\wpcapnames.h (first two defines)
 
-5.  Download the libpcap sources (usually 0_9 branch) into 
-	  %BUILD_TREE%\libpcap_<version>
+5.  Download the libpcap sources (usually 1.0 branch) into 
+	  %BUILD_TREE%\libpcap
 
-6.  Be sure that the sources of libpcap do *not* contain any CVS folder. The tarball usually
-    contains the CVS folders if it's a daily snapshot. If any, remove them.
-
-7.  Commit 
+6.  Commit 
 
 		%BUILD_TREE%\winpcap_oem\version.h
 		%BUILD_TREE%\winpcap_oem\dox\prj\winpcap_oem_noc.dox 
 	
 	into the CVS. These should be the *only* modified filew in this module.
 
-8.  Tag the %BUILD_TREE%\winpcap_oem module with the tag 
+7.  Tag the %BUILD_TREE%\winpcap_oem module with the tag 
 	  WINPCAP_PRO_<WinPcap PRO version>_PUBLIC
 
-9.  Tag the %BUILD_TREE%\winpcap module with the tag 
+8.  Tag the %BUILD_TREE%\winpcap module with the tag 
 	  WINPCAP_PRO_<WinPcap PRO version>_PUBLIC
 
-10. Take the contents of %BUILD_TREE%\libpcap_<version> and copy it into
-	  %BUILD_TREE%\winpcap\wpcap\libpcap 
+9.  Go to %BUILD_TREE%\winpcap and execute
+        	integrate_libpcap.bat
+    The correct output should be
 
-11. From the command line, go to folder 
-      %BUILD_TREE%\winpcap\wpcap\libpcap
+Copying files...
+Copying files -- Done
+---------------------------------------
+Applying remote code patch...
+Applying remote code patch -- Done
+---------------------------------------
+Applying TurboCap code patch...
+Applying TurboCap code patch -- Done
+---------------------------------------
+DOS'ifing the libpcap makefile...
+libpcap.dsp: done.
+DOS'ifing the libpcap makefile -- Done
+---------------------------------------
+Generating the compiler files...
+Building the libpcap parser and scanner...
+ --- Done!
+Generating the compiler files -- Done
 
-12. On the command line, type "patch -p1 < remote_code.patch"
-
-13. CD into %BUILD_TREE%\winpcap\wpcap\prj and execute 
-	"build_scanner_parser.bat"	
-
-14. Check that the version of libpcap in
-      %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 869
+10. Check that the version of libpcap in
+      %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 1321
       "static const char pcap_version_string[] = "libpcap version 0.9[.x]";"
     makes sense (??? WHAT DOES IT MEAN???)
 
-15. Check that the version of wpcap in  
-      %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 878
+11. Check that the version of wpcap in  
+      %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 1330
         "static const char wpcap_version_string[] = "3.1";"
     is correct. 
     
-16. Zip the contents of the 5 folders 
+12. Zip the contents of the 5 folders 
 	  %BUILD_TREE%\winpcap_oem
 	  %BUILD_TREE%\winpcap
 	  %BUILD_TREE%\libpcap_<libpcap_version>
@@ -88,32 +98,22 @@ How to compile WinPcap PRO (NOT for the Toolkit)
 		  V
 	  %BUILD_TREE%\sources.zip
 
-17. Open a Win 2000 DDK Free build environment. Go into 
-	  %BUILD_TREE%\winpcap_oem\packetntx. 
-	Execute "compileDriver.bat". Prefast 8.0.86081 should issue 21 warnings 
-	(20080821). 
-	Close the build environment.
-
-18. Open the WinNT4 DDK Release build environment. Go into 
-      %BUILD_TREE%\winpcap_oem\packetntx. 
-    Execute "compileDriver.bat". Close the build 
-    environment. 
-19. Open the Windows Server 2003 Free x64 build environment. Go into 
+13. Open the WinNT4 DDK Release build environment. Go into 
       %BUILD_TREE%\winpcap_oem\packetntx. 
     Execute "compileDriver.bat". Close the build 
     environment. 
 
-20. Open %BUILD_TREE%\winpcap_oem\MakeAll.sln with Visual Studio 2005 SP1.
+14. Open %BUILD_TREE%\winpcap_oem\MakeAll.sln with Visual Studio 2005 SP1.
 
-21. Choose the "Release|Win32" configuration, and then use Build->Rebuild Solution.
+15. Choose the "Release|X64" configuration, and then use Build->Rebuild Solution.
     No warnings should be generated.
 
-22. Choose the "Release|X64" configuration, and then use Build->Rebuild Solution.
+16. Choose the "Release|Win32" configuration, and then use Build->Rebuild Solution.
     No warnings should be generated.
-    
-23. If you are NOT building a SIGNED build, the build is complete :-)
 
-24. Sign all the binaries in 
+17. If you are NOT building a SIGNED build, the build is complete :-)
+
+18. Sign all the binaries in 
 		%BUILD_TREE%\winpcap_oem\OEM\WinPcapOem\Binaries, namely
 			x86\npfnt.sys
 			x86\npf2k.sys
@@ -129,21 +129,21 @@ How to compile WinPcap PRO (NOT for the Toolkit)
 		   signtool sign /v /ac MSCV-VSClass3.cer /s my /n "CACE Technologies, Inc."
 		   /t http://timestamp.verisign.com/scripts/timestamp.dll <binary_name>
 		   
-25. Go back to Visual studio 2005. Choose the "Release STEP2|Win32" configuration, and then
+19. Go back to Visual studio 2005. Choose the "Release STEP2|Win32" configuration, and then
      use Build->Rebuild solution. 
      IT IS IMPERATIVE THAT YOU CHOOSE "REBUILD" SO THAT THE SIGNED BINARIES ARE USED.
 
-26. Choose the "Release STEP2|x64" configuration, and then use Build->Rebuild solution. 
+20. Choose the "Release STEP2|x64" configuration, and then use Build->Rebuild solution. 
      IT IS IMPERATIVE THAT YOU CHOOSE "REBUILD" SO THAT THE SIGNED BINARIES ARE USED.
 
-27. Sign the following binaries 
+21. Sign the following binaries 
 		%BUILD_TREE%\winpcap_oem\wpcap\PRJ\Release REMOTE\x86\wpcap.dll
 		%BUILD_TREE%\winpcap_oem\wpcap\PRJ\Release REMOTE\x64\wpcap.dll
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release\x86\packet.dll
 		%BUILD_TREE%\winpcap_oem\OEM\WinpcapOem\Release\x64\packet.dll
 		with the company certificate + cross certificate
 
-28. The build is complete.
+22. The build is complete.
 
 How to create the developer's pack for WinPcap PRO (NOT for the Toolkit)
 ------------------------------------------------------------------------
@@ -210,10 +210,11 @@ Vanilla BUILD:
 	WinPcapPro_<WinPcap Pro version>_BuildTree.zip
 		
 		
-MD5sum
-------
+Checksums
+---------
 
 1.  Open a command prompt and go into %BUILD_TREE%
 
 2.  Type md5sum.exe WinPcapPro_* > md5sum.txt
 
+3.  Type sha1sum.exe WinPcapPro_* > sha1sum.txt
