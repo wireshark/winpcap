@@ -1,4 +1,4 @@
-; Copyright (c) 2005 - 2008
+; Copyright (c) 2005 - 2009
 ; CACE Technologies
 ; All rights reserved.
 ; 
@@ -46,7 +46,7 @@
   !define WINPCAP_PRJ_REV "0"
   !define WINPCAP_PRJ_BUILD "1452"
   !define WINPCAP_PROJ_VERSION_DOTTED "4.1.0.1452"
-  !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2008 CACE Technologies, Inc."
+  !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2009 CACE Technologies, Inc."
   !define WINPCAP_PRODUCT_NAME "WinPcap 4.1 beta5"
   !define WINPCAP_COMPANY_NAME "CACE Technologies, Inc."
   !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_beta5.exe"
@@ -105,13 +105,18 @@
   Var INT_RET  
   Var NPPTOOLS_DLL_FOUND
   Var INSTALL_VISTA_PACKET_DLL_ON_NT5
+  Var NPF_START_ON_BOOT_CB
+  Var TRUE_OS_VERSION
+
+
 ;--------------------------------
 ;General
-
 
   ;Name and file
   Name "${WINPCAP_PRODUCT_NAME}"
   OutFile "${WINPCAP_FILE_NAME}"
+
+LangString WINPCAP_PRODUCT_NAME_ENG ${LANG_ENGLISH} "${WINPCAP_PRODUCT_NAME}"
   
 ;Get Installation folder from registry if available
   InstallDirRegKey HKLM "Software\WinPcap" ""
@@ -126,6 +131,24 @@
   !define MUI_CUSTOMFUNCTION_ABORT .onInstFailed
   !define MUI_WELCOMEPAGE_TEXT "This Wizard will guide you through the entire WinPcap installation.\r\nFor more information or support, please visit the WinPcap home page.\r\n\r\nhttp://www.winpcap.org"
   
+Function MyCustomPage
+
+  # If you need to skip the page depending on a condition, call Abort.
+  ReserveFile "bootOptions.ini"
+  !insertmacro MUI_HEADER_TEXT "Installation options" "Please review the following options before installing $(WINPCAP_PRODUCT_NAME_ENG)"
+  !insertmacro MUI_INSTALLOPTIONS_EXTRACT "bootOptions.ini"
+  !insertMacro MUI_INSTALLOPTIONS_WRITE "bootOptions.ini" "Field 2" "State" "Debug Information\r\n\r\nOperating system detected on registry: Windows $WINPCAP_TARGET_OS - $WINPCAP_TARGET_ARCHITECTURE\r\nTrue operating system (kernel.dll): Windows $TRUE_OS_VERSION - $WINPCAP_TARGET_ARCHITECTURE\r\nnpptools.dll present on the system: $NPPTOOLS_DLL_FOUND"
+  !insertmacro MUI_INSTALLOPTIONS_DISPLAY "bootOptions.ini"
+  !insertmacro MUI_INSTALLOPTIONS_READ $NPF_START_ON_BOOT_CB "bootOptions.ini" "Field 1" "State"
+  StrCmp $TRUE_OS_VERSION "" IgnoreTrueOsVersion
+  StrCmp $WINPCAP_TARGET_OS $TRUE_OS_VERSION IgnoreTrueOsVersion
+
+  StrCpy $WINPCAP_TARGET_OS $TRUE_OS_VERSION
+
+IgnoreTrueOsVersion:
+
+FunctionEnd
+
 ; This is needed to give focus to the main window after the initial "installer loading..." dialog is shown.
   Function myGUIInit
     ShowWindow $HWNDPARENT 2
@@ -139,6 +162,7 @@
   
   !insertmacro MUI_PAGE_WELCOME
   !insertmacro MUI_PAGE_LICENSE "distribution\license.txt"
+  Page custom MyCustomPage
   !insertmacro MUI_PAGE_INSTFILES
   !define MUI_FINISHPAGE_TEXT_REBOOT "An old version of WinPcap was present on the system. You should reboot the system in order for the new version to work properly."
   !insertmacro MUI_PAGE_FINISH
@@ -166,9 +190,11 @@
 ;Detect the current Windows version
 ; this will set the WINPCAP_TARGET_OS variable
     Call GetWindowsVersion
+    Call GetKernelDllVersion
+    Call IsNppToolsDllInstalled
 
-	StrCmp $WINPCAP_TARGET_OS "vista" Check_IA64
-	StrCmp $WINPCAP_TARGET_OS "Win7" Check_IA64
+	StrCmp $WINPCAP_TARGET_OS "Vista" Check_IA64
+	StrCmp $WINPCAP_TARGET_OS "7" Check_IA64
 	goto ContinueInstallationOk
 
 Check_IA64:
@@ -194,8 +220,8 @@ ContinueInstallationOk:
     StrCmp $WINPCAP_TARGET_OS "2000" SupportedOsOk
     StrCmp $WINPCAP_TARGET_OS "XP" SupportedOsOk
     StrCmp $WINPCAP_TARGET_OS "2003" SupportedOsOk
-    StrCmp $WINPCAP_TARGET_OS "vista" SupportedOsOk 
-    StrCmp $WINPCAP_TARGET_OS "Win7" SupportedOsOk 
+    StrCmp $WINPCAP_TARGET_OS "Vista" SupportedOsOk 
+    StrCmp $WINPCAP_TARGET_OS "7" SupportedOsOk 
 
 ; if we reach this point, the OS is not supported. Simply exit.
     MessageBox MB_ICONEXCLAMATION|MB_OK "This version of Windows is not supported by ${WINPCAP_PRODUCT_NAME}.$\nThe installation will be aborted."
@@ -431,8 +457,8 @@ MainInstallationProcedure:
     StrCmp $WINPCAP_TARGET_OS "2000" CopyFilesNT5
     StrCmp $WINPCAP_TARGET_OS "XP" CopyFilesNT5
     StrCmp $WINPCAP_TARGET_OS "2003" CopyFilesNT5
-    StrCmp $WINPCAP_TARGET_OS "vista" CopyFilesVista  ; vista (beta1) seems not to have the netmon stuff...
-    StrCmp $WINPCAP_TARGET_OS "Win7" CopyFilesWin7
+    StrCmp $WINPCAP_TARGET_OS "Vista" CopyFilesVista  ; vista (beta1) seems not to have the netmon stuff...
+    StrCmp $WINPCAP_TARGET_OS "7" CopyFilesWin7
   
 	
 
@@ -536,6 +562,20 @@ CopiedNT6Files:
 EndCopy:
 
 ;
+; if the driver needs to be started automatically, change the registry key and start it
+;
+
+StrCmp $NPF_START_ON_BOOT_CB "0"  DontAutoStartDriver
+   WriteRegDWORD HKLM "SYSTEM\CurrentControlSet\Services\NPF" "Start" 2
+   push $0
+   ExecDos::exec /TIMEOUT=2000 "net start npf" 
+   pop $0
+   pop $0
+
+
+DontAutoStartDriver:
+
+;
 ;Store installation folder
 ;
     WriteRegStr HKLM "SOFTWARE\WinPcap" "" $INSTDIR
@@ -631,8 +671,8 @@ Section "Uninstall" MainUnistall
     StrCmp $WINPCAP_TARGET_OS "2000" RmFilesNT5
     StrCmp $WINPCAP_TARGET_OS "XP" RmFilesNT5
     StrCmp $WINPCAP_TARGET_OS "2003" RmFilesNT5
-    StrCmp $WINPCAP_TARGET_OS "vista" RmFilesVista
-    StrCmp $WINPCAP_TARGET_OS "Win7" RmFilesWin7
+    StrCmp $WINPCAP_TARGET_OS "Vista" RmFilesVista
+    StrCmp $WINPCAP_TARGET_OS "7" RmFilesWin7
   
 RmFilesNT4:
 RmFilesNT5:
@@ -1324,6 +1364,50 @@ Function NppToolsDllFound
 FunctionEnd
 
 
+Function GetKernelDllVersion
+  GetDLLVersion "$SYSDIR\kernel32.dll" $R0 $R1
+  IfErrors IWINT_Exit 
+  
+  IntCmp $R0 0x00040000	IsNT4
+  IntCmp $R0 0x00050000	Is2000
+  IntCmp $R0 0x00050001	IsXP
+  IntCmp $R0 0x00050002	IsXP2003
+  IntCmp $R0 0x00060000	IsVista
+  IntCmp $R0 0x00060001	IsWin7
+
+  StrCpy $TRUE_OS_VERSION "Unknown"
+  goto IWINT_Exit
+
+IsNT4:
+  StrCpy $TRUE_OS_VERSION "NT"
+  goto IWINT_Exit
+  
+Is2000:
+  StrCpy $TRUE_OS_VERSION "2000"
+  goto IWINT_Exit
+  
+IsXP:
+  StrCpy $TRUE_OS_VERSION "XP"
+  goto IWINT_Exit
+  
+Is2003:
+  StrCpy $TRUE_OS_VERSION "2003"
+  goto IWINT_Exit
+
+IsXP2003:
+  StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" Is2003 IsXP
+
+ 
+IsVista:
+  StrCpy $TRUE_OS_VERSION "Vista"
+  goto IWINT_Exit
+  
+IsWin7:
+  StrCpy $TRUE_OS_VERSION "7"
+
+IWINT_Exit:
+
+FunctionEnd
 
 
 
