@@ -463,8 +463,14 @@ MainInstallationProcedure:
 	
 
 CopyFilesNT5:
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86"  InstallNetMonx86
+	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" NoNetMon
+
+InstallNetMonx86:
 ;	This sets INSTALL_VISTA_PACKET_DLL_ON_NT5 if needed
     Call InstallNetMon
+
+NoNetMon:
 	
 ;
 ; This is a workaround to the problem of not having netmon on some xp installations
