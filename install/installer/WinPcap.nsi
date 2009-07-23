@@ -104,6 +104,8 @@
   Var BOOL_RET  
   Var INT_RET  
   Var NPPTOOLS_DLL_FOUND
+  Var NETNM_INF_FOUND
+  Var NMNT_SYS_FOUND
   Var INSTALL_VISTA_PACKET_DLL_ON_NT5
   Var NPF_START_ON_BOOT_CB
   Var TRUE_OS_VERSION
@@ -137,7 +139,7 @@ Function MyCustomPage
   ReserveFile "bootOptions.ini"
   !insertmacro MUI_HEADER_TEXT "Installation options" "Please review the following options before installing $(WINPCAP_PRODUCT_NAME_ENG)"
   !insertmacro MUI_INSTALLOPTIONS_EXTRACT "bootOptions.ini"
-  !insertMacro MUI_INSTALLOPTIONS_WRITE "bootOptions.ini" "Field 2" "State" "Debug Information\r\n\r\nOperating system detected on registry: Windows $WINPCAP_TARGET_OS - $WINPCAP_TARGET_ARCHITECTURE\r\nTrue operating system (kernel.dll): Windows $TRUE_OS_VERSION - $WINPCAP_TARGET_ARCHITECTURE\r\nnpptools.dll present on the system: $NPPTOOLS_DLL_FOUND"
+  !insertMacro MUI_INSTALLOPTIONS_WRITE "bootOptions.ini" "Field 2" "State" "Debug Information\r\n\r\nOperating system detected on registry: Windows $WINPCAP_TARGET_OS - $WINPCAP_TARGET_ARCHITECTURE\r\nTrue operating system (kernel.dll): Windows $TRUE_OS_VERSION - $WINPCAP_TARGET_ARCHITECTURE\r\nnpptools.dll present on the system:    $NPPTOOLS_DLL_FOUND\r\nnetnm.inf present on the system:       $NETNM_INF_FOUND\r\nnmnt.sys present on the system:        $NMNT_SYS_FOUND\r\n"
   !insertmacro MUI_INSTALLOPTIONS_DISPLAY "bootOptions.ini"
   !insertmacro MUI_INSTALLOPTIONS_READ $NPF_START_ON_BOOT_CB "bootOptions.ini" "Field 1" "State"
   StrCmp $TRUE_OS_VERSION "" IgnoreTrueOsVersion
@@ -191,7 +193,7 @@ FunctionEnd
 ; this will set the WINPCAP_TARGET_OS variable
     Call GetWindowsVersion
     Call GetKernelDllVersion
-    Call IsNppToolsDllInstalled
+    Call IsNetMonAvailable
 
 	StrCmp $WINPCAP_TARGET_OS "Vista" Check_IA64
 	StrCmp $WINPCAP_TARGET_OS "7" Check_IA64
@@ -437,6 +439,24 @@ MainInstallationProcedure:
     SetOutPath "$INSTDIR"
 
 ;
+; dump the current configuration
+;
+    FileOpen $9 "$INSTDIR\install.log" w
+    FileWrite $9 "WinPcap ${WINPCAP_PROJ_VERSION_DOTTED} Installation LOG$\r$\n"
+    FileWrite $9 "-----------------------------------------------------$\r$\n"
+    FileWrite $9 "Debug Information$\r$\n$\r$\n"
+    FileWrite $9 "$\r$\n"
+    FileWrite $9 "Operating system detected on registry: $WINPCAP_TARGET_OS - $WINPCAP_TARGET_ARCHITECTURE$\r$\n"
+    FileWrite $9 "True operating system (kernel.dll):    $TRUE_OS_VERSION - $WINPCAP_TARGET_ARCHITECTURE$\r$\n"
+    FileWrite $9 "npptools.dll present on the system:    $NPPTOOLS_DLL_FOUND$\r$\n"
+    FileWrite $9 "netnm.inf present on the system:       $NETNM_INF_FOUND$\r$\n"
+    FileWrite $9 "nmnt.sys present on the system:        $NMNT_SYS_FOUND$\r$\n"
+    FileWrite $9 "$\r$\n"
+    FileWrite $9 "End of log$\r$\n"
+    FileWrite $9 "-----------------------------------------------------$\r$\n"
+    FileClose $9
+
+;
 ;Copy Files
 ;
 
@@ -468,6 +488,8 @@ CopyFilesNT5:
 
 InstallNetMonx86:
 ;	This sets INSTALL_VISTA_PACKET_DLL_ON_NT5 if needed
+    StrCmp $INSTALL_VISTA_PACKET_DLL_ON_NT5 "false" NoNetMon
+
     Call InstallNetMon
 
 NoNetMon:
@@ -773,7 +795,7 @@ Function InstallNpfService
 	StrCmp $INT_RET 0 End ErrorCannotInstallNpfDriver
  
 ErrorCannotLoadDll:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue anyway."
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
 	SetErrors
 	goto End
 		
@@ -781,7 +803,7 @@ ErrorCannotInstallNpfDriver:
 
 	IntFmt $FORMATTED_INT "0x%08X" $INT_RET
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($FORMATTED_INT). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue anyway."
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($FORMATTED_INT).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
 	SetErrors
 	goto End
 
@@ -812,7 +834,7 @@ Function un.UninstallNpfService
 	StrCmp $INT_RET 0 End ErrorCannotUninstallNpfDriver
  
 ErrorCannotLoadDll:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue anyway."
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
 	SetErrors
 	goto End
 		
@@ -820,7 +842,7 @@ ErrorCannotUninstallNpfDriver:
 
 	IntFmt $FORMATTED_INT "0x%08X" $INT_RET
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($FORMATTED_INT). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue"
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($FORMATTED_INT).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
 	SetErrors
 	goto End
 
@@ -850,7 +872,7 @@ Function InstallRpcapdService
 	StrCmp $INT_RET 0 End ErrorCannotInstallRpcapd
  
 ErrorCannotLoadDll:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue anyway."
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
 	SetErrors
 	goto End
 		
@@ -858,7 +880,7 @@ ErrorCannotInstallRpcapd:
 
 	IntFmt $FORMATTED_INT "0x%08X" $INT_RET
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($FORMATTED_INT). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue"
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($FORMATTED_INT).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
 	SetErrors
 	goto End
 
@@ -888,7 +910,7 @@ Function un.UninstallRpcapdService
 	StrCmp $INT_RET 0 End ErrorCannotUninstallRpcapd
  
 ErrorCannotLoadDll:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue anyway."
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
 	SetErrors
 	goto End
 		
@@ -896,7 +918,7 @@ ErrorCannotUninstallRpcapd:
 
 	IntFmt $FORMATTED_INT "0x%08X" $INT_RET
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($FORMATTED_INT). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue"
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($FORMATTED_INT).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
 	SetErrors
 	goto End
 
@@ -927,7 +949,7 @@ Function InstallNetmon
 	StrCmp $INT_RET 0 End ErrorCannotInstallNetmon
  
 ErrorCannotLoadDll:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL. Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installation will now continue anyway."
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
 	SetErrors
 	goto End
 		
@@ -941,18 +963,18 @@ ErrorCannotInstallNetmon:
 	;
 	; We cannot install NetMon. Let's check if the needed DLLs are in case available on the system. Otherwise we revert to installing
 	; 
-	Call IsNppToolsDllInstalled
+	Call IsNetMonAvailable
 	StrCmp $NPPTOOLS_DLL_FOUND "true" NppToolsAvailableButNotWorking NpptoolsUnavailable
 
 NpptoolsUnavailable:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($FORMATTED_INT - NPPTOOLS=false).$\r$\nThe setup will now install a version of WinPcap without support for Dialup connections and VPNs.$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> reporting this specific warning message."
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($FORMATTED_INT - NPPTOOLS=false).$\r$\nThe setup will now install a version of WinPcap without support for Dialup connections and VPNs.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue."
 	StrCpy $INSTALL_VISTA_PACKET_DLL_ON_NT5 "true"
 	SetErrors
 	Goto End
 
 	
 NppToolsAvailableButNotWorking:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($FORMATTED_INT - NPPTOOLS=true).$\r$\nYou will be able to use WinPcap on standard network adapters, but not on Dialup connections and VPNs.$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> reporting this specific warning message.$\r$\nThe installation will now continue"
+	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($FORMATTED_INT - NPPTOOLS=true).$\r$\nYou will be able to use WinPcap on standard network adapters, but not on Dialup connections and VPNs.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue."
 	SetErrors
 	Goto End
 	
@@ -998,22 +1020,22 @@ Function un.Removex64Files
 	goto End
 
 	ErrorCannotLoadDll:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue anyway."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
 		SetErrors
 		goto End
 		
 	ErrorCannotDisableFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue anyway."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
 		SetErrors
 		goto End
 
 	ErrorCannotLoadDll2:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.\r\nThe uninstallation will now continue anyway."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
 		SetErrors
 		goto End
 		
 	ErrorCannotRevertFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe uninstallation will now continue anyway."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
 		SetErrors
 		goto End
 		
@@ -1048,12 +1070,12 @@ Function DisableFsRedirector
 	StrCmp $BOOL_RET 0 ErrorCannotDisableFsRedirector
     
 	ErrorCannotLoadDll:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installer will now continue anyway."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
 		SetErrors
 		goto End
 		
 	ErrorCannotDisableFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installer will now continue anyway."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
 		SetErrors
 		goto End
 
@@ -1083,12 +1105,12 @@ Function EnableFsRedirector
 	goto End
 
 	ErrorCannotLoadDll2:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installer will now continue anyway."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
 		SetErrors
 		goto End
 		
 	ErrorCannotRevertFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed). Please contact the WinPcap Team <winpcap-team@winpcap.org>.$\r$\nThe installer will now continue anyway."
+		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
 		SetErrors
 		goto End
 		
@@ -1354,21 +1376,43 @@ lbl_winnt_2003:
 
 ;--------------------------------
 ;this function checks if the netmon main dll is installed, and stores all the information in NPPTOOLS_DLL_FOUND
-Function IsNppToolsDllInstalled
+Function IsNetMonAvailable
 
   StrCpy $NPPTOOLS_DLL_FOUND "false"
+  StrCpy $NMNT_SYS_FOUND "false"
+  StrCpy $NETNM_INF_FOUND "false"
   ${Locate} "$SYSDIR" "/M=npptools.dll /G=0 /L=F" 'NppToolsDllFound'
+  ${Locate} "$SYSDIR\drivers" "/M=nmnt.sys /G=0 /L=F" 'NmntSysFound'
+  ${Locate} "$WINDIR\inf" "/M=netnm.inf /G=0 /L=F" 'NetNmInfFound'
+  
+  StrCpy $INSTALL_VISTA_PACKET_DLL_ON_NT5 "false"
+  StrCmp $NPPTOOLS_DLL_FOUND "false" exitLabel
+  StrCmp $NMNT_SYS_FOUND "false" exitLabel
+  StrCmp $NETNM_INF_FOUND "false" exitLabel
+  
+  StrCpy $INSTALL_VISTA_PACKET_DLL_ON_NT5 "true"
+  
+exitLabel:
 
 FunctionEnd
 
-; this callback is called when packet.dll is found. It stores the version of the dll 
-; into  WINPCAP_OLD_PROJ_VERSION_DOTTED
 Function NppToolsDllFound
 
   StrCpy $NPPTOOLS_DLL_FOUND "true"
 
 FunctionEnd
 
+Function NmNtSysFound
+
+  StrCpy $NMNT_SYS_FOUND "true"
+
+FunctionEnd
+
+Function NetNmInfFound
+
+  StrCpy $NETNM_INF_FOUND "true"
+
+FunctionEnd
 
 Function GetKernelDllVersion
   GetDLLVersion "$SYSDIR\kernel32.dll" $R0 $R1
