@@ -31,6 +31,7 @@ CFLAGS = -I ../libpcap -I ../libpcap/bpf -I ../libpcap/lbl \
 	-DSIZEOF_LONG_LONG=8 \
 	-DHAVE_REMOTE -DHAVE_AIRPCAP_API \
 	-DHAVE_TC_API \
+	-DHAVE_ADDRINFO \
 	-mno-cygwin -shared ${OPTFLAGS}
 LDFLAGS = -Wl,--out-implib,../lib/libwpcap.a
 LIBS = -L ../../${PACKET_DIR}/DLL/Project -lPacket -lws2_32
@@ -40,11 +41,11 @@ OBJS = ../libpcap/bpf/net/bpf_filter.o \
 	../libpcap/etherent.o \
 	../libpcap/Win32/Src/ffs.o \
 	../libpcap/gencode.o\
-	../libpcap/Win32/Src/getaddrinfo.o \
 	../libpcap/Win32/Src/getnetbynm.o \
 	../libpcap/Win32/Src/getnetent.o \
 	../libpcap/Win32/Src/getservent.o \
 	../libpcap/grammar.o \
+  ../libpcap/Win32/Src/getaddrinfo.o \
 	../libpcap/inet.o \
 	../libpcap/Win32/Src/inet_aton.o \
 	../libpcap/Win32/Src/inet_net.o \
