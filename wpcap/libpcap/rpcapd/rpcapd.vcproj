@@ -41,7 +41,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\;..\Win32\include;..\..\..\Common;.\Win32-pthreads;..\..\Win32-Extensions"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;HAVE_SNPRINTF;HAVE_VSNPRINTF;HAVE_REMOTE;WPCAP;_CRT_SECURE_NO_DEPRECATE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;HAVE_SNPRINTF;HAVE_VSNPRINTF;HAVE_REMOTE;WPCAP;_CRT_SECURE_NO_DEPRECATE;HAVE_TC_API"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -119,7 +119,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\;..\Win32\include;..\..\..\Common;.\Win32-pthreads;..\..\Win32-Extensions"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;HAVE_SNPRINTF;HAVE_VSNPRINTF;HAVE_REMOTE;WPCAP;_CRT_SECURE_NO_DEPRECATE"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;HAVE_SNPRINTF;HAVE_VSNPRINTF;HAVE_REMOTE;WPCAP;_CRT_SECURE_NO_DEPRECATE;HAVE_TC_API"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
