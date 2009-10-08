@@ -1245,7 +1245,7 @@ lbl_winnt_2003:
    Goto lbl_done
  
    lbl_Win7:
-     Strcpy $WINPCAP_TARGET_OS 'Win7'
+     Strcpy $WINPCAP_TARGET_OS '7'
 
 	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
 	 IfErrors lbl_error
@@ -1358,7 +1358,7 @@ lbl_winnt_2003:
    Goto lbl_done
 
    lbl_Win7:
-     Strcpy $WINPCAP_TARGET_OS 'Win7'
+     Strcpy $WINPCAP_TARGET_OS '7'
 
 	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
 	 IfErrors lbl_error
