@@ -55,7 +55,7 @@ rem
 rem set NPF_TME_FILES=
 rem set NPF_JIT_FILES=
 
-ddkbuild -WNETA64 -prefast %__BUILD_TYPE% .\driver -cefw
+ddkbuild -WLHA64 -prefast %__BUILD_TYPE% .\driver -cefw
 
 set NPF_C_DEFINES=
 rem set NPF_TME_FILES=
