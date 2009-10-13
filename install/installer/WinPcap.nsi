@@ -1385,12 +1385,11 @@ Function IsNetMonAvailable
   ${Locate} "$SYSDIR\drivers" "/M=nmnt.sys /G=0 /L=F" 'NmntSysFound'
   ${Locate} "$WINDIR\inf" "/M=netnm.inf /G=0 /L=F" 'NetNmInfFound'
   
-  StrCpy $INSTALL_VISTA_PACKET_DLL_ON_NT5 "false"
+  StrCpy $INSTALL_VISTA_PACKET_DLL_ON_NT5 "true"
   StrCmp $NPPTOOLS_DLL_FOUND "false" exitLabel
   StrCmp $NMNT_SYS_FOUND "false" exitLabel
   StrCmp $NETNM_INF_FOUND "false" exitLabel
-  
-  StrCpy $INSTALL_VISTA_PACKET_DLL_ON_NT5 "true"
+  StrCpy $INSTALL_VISTA_PACKET_DLL_ON_NT5 "false"
   
 exitLabel:
 
