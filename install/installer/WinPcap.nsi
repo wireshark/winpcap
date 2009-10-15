@@ -109,6 +109,7 @@
   Var INSTALL_VISTA_PACKET_DLL_ON_NT5
   Var NPF_START_ON_BOOT_CB
   Var TRUE_OS_VERSION
+  Var TEMPFILENAME
 
 
 ;--------------------------------
@@ -375,12 +376,37 @@ Section "Main Installer Section" MainInstall
 ; If it fails, then maybe some user is using it. Warn the user (stop the app and restart the installation), and abort the installation.
 ; If it succeeds, if the uninsntaller is present, warn the user and call the uninstaller (advising to choose not to reboot). Then continue anyway.
 ; If rename succeeds and the uninstaller is not present, ask the user what to do (abort, continue+reboot).
+
+;
+; if we are on x64, there is a very interesting bug in NSIS:
+; when you cann CopyFiles "$SYSDIR/source" "$SYSDIR/dest"
+; the stoopid thing copies the file from c:\windows\sysWOW64\source to c:\windows\system32\dest, even if the redirection is enabled
+; the workaround for the moment is copying the file to a temp file, trying to delete it and hope that everything succeeds . if packet.dll is not there, the uninstaller will keep running
+
+ StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" StandardDetection
+ 
+ ; special detection for x64
+
+    GetTempFileName $TEMPFILENAME
+    CopyFiles "$SYSDIR\packet.dll" $TEMPFILENAME
+    Delete "$SYSDIR\packet.dll"
+    IfErrors WinPcapIsInUse
+    
+ ; just delete the temp file
+    Delete $TEMPFILENAME
+
+    goto EndDetection
+
+StandardDetection:
+
     CopyFiles "$SYSDIR\packet.dll" "$SYSDIR\_packet.dlluninstall"
     Delete "$SYSDIR\packet.dll"
     IfErrors WinPcapIsInUse
-
+    
 ;first of all, revert the file name change
     Rename "$SYSDIR\_packet.dlluninstall" "$SYSDIR\packet.dll"
+
+EndDetection:
 
 ; now let's check if an uninstaller is available
     ReadRegStr $WINPCAP_UNINSTALL_EXEC HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" "UninstallString"
