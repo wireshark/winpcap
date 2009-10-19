@@ -140,7 +140,7 @@ Function MyCustomPage
   ReserveFile "bootOptions.ini"
   !insertmacro MUI_HEADER_TEXT "Installation options" "Please review the following options before installing $(WINPCAP_PRODUCT_NAME_ENG)"
   !insertmacro MUI_INSTALLOPTIONS_EXTRACT "bootOptions.ini"
-  !insertMacro MUI_INSTALLOPTIONS_WRITE "bootOptions.ini" "Field 2" "State" "Debug Information\r\n\r\nOperating system detected on registry: Windows $WINPCAP_TARGET_OS - $WINPCAP_TARGET_ARCHITECTURE\r\nTrue operating system (kernel.dll): Windows $TRUE_OS_VERSION - $WINPCAP_TARGET_ARCHITECTURE\r\nnpptools.dll present on the system:    $NPPTOOLS_DLL_FOUND\r\nnetnm.inf present on the system:       $NETNM_INF_FOUND\r\nnmnt.sys present on the system:        $NMNT_SYS_FOUND\r\n"
+  !insertMacro MUI_INSTALLOPTIONS_WRITE "bootOptions.ini" "Field 2" "State" "System Information\r\n\r\nOperating system detected on registry: Windows $WINPCAP_TARGET_OS - $WINPCAP_TARGET_ARCHITECTURE\r\nTrue operating system (kernel.dll): Windows $TRUE_OS_VERSION - $WINPCAP_TARGET_ARCHITECTURE\r\nnpptools.dll present on the system:    $NPPTOOLS_DLL_FOUND\r\nnetnm.inf present on the system:       $NETNM_INF_FOUND\r\nnmnt.sys present on the system:        $NMNT_SYS_FOUND\r\n"
   !insertmacro MUI_INSTALLOPTIONS_DISPLAY "bootOptions.ini"
   !insertmacro MUI_INSTALLOPTIONS_READ $NPF_START_ON_BOOT_CB "bootOptions.ini" "Field 1" "State"
   StrCmp $TRUE_OS_VERSION "" IgnoreTrueOsVersion
