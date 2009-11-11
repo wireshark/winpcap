@@ -476,7 +476,7 @@ returns the link layer type; link layer types it can return include:
 			-# Q.2931 traffic 
 		- a 1-byte VPI value;
 		- a 2-byte VCI field, in network byte order. 
-    - DLT_IEEE802_11_RADIO: link-layer information followed by an 802.11 header - see http://www.shaftnet.org/~pizza/software/capturefrm.txt for a description of the link-layer information. 
+    - DLT_IEEE802_11_RADIO: link-layer information followed by an 802.11 header - see http://www.radiotap.org/ for a description of the link-layer information. 
     - DLT_ARCNET_LINUX: ARCNET, with no exception frames, reassembled packets rather than raw frames, and an extra 16-bit offset field between the destination host and type bytes. 
     - DLT_LINUX_IRDA: Linux-IrDA packets, with a DLT_LINUX_SLL header followed by the IrLAP header. 
 
