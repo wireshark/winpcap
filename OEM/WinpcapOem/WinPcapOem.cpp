@@ -790,7 +790,7 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 				delete_service(NPF_DRIVER_NAME);
 				_unlink(g_DllFullPathNm);
 				_unlink(g_DllFullPathNoNm);
-				_unlink(g_DriverFullPath);
+				WoemDeleteDriverBinary(g_DriverFullPath, is64BitOs);
 
 				ReleaseMutex(g_hGlobalMutex);
 
@@ -859,7 +859,10 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 		//
 		// We've loaded the driver, we can delete its binary
 		//
-		WoemDeleteDriverBinary(g_DriverFullPath, is64BitOs);
+//
+// MCAFEE
+//
+//		WoemDeleteDriverBinary(g_DriverFullPath, is64BitOs);
 	}
 	else
 	{
@@ -991,6 +994,39 @@ BOOL WoemLeaveDll()
 {
 	DWORD result;
 	BOOLEAN retry;
+///
+/// MCAFEE
+///
+	BOOLEAN is64BitOs = FALSE;
+	CHAR osArchitecture[256];
+	HKEY environmentKey = NULL;
+	DWORD keyType;
+	DWORD bufSize;
+
+	bufSize = sizeof(osArchitecture);
+	if (RegOpenKey(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment", &environmentKey) != ERROR_SUCCESS
+		|| RegQueryValueEx(environmentKey, "PROCESSOR_ARCHITECTURE",	NULL,&keyType,(LPBYTE)&osArchitecture,&bufSize) != ERROR_SUCCESS
+		|| keyType != REG_SZ)
+	{
+		//
+		// we ignore the error and assume it's x86
+		//
+	}
+	else
+	if (_stricmp("AMD64", osArchitecture) == 0)
+	{
+		is64BitOs = TRUE;
+		RegCloseKey(environmentKey);
+	}
+
+	if (environmentKey != NULL)
+	{
+		RegCloseKey(environmentKey);
+	}
+
+///
+/// MCAFEE
+///
 
 	//
 	// Try to acquire the ownership of the mutex
@@ -1064,6 +1100,15 @@ BOOL WoemLeaveDll()
 		//
 
 		delete_service(NPF_DRIVER_NAME);
+
+///
+/// MCAFEE
+///
+		WoemDeleteDriverBinary(g_DriverFullPath, is64BitOs);
+///
+/// MCAFEE
+///
+
 //  
 //	Old registry based WinPcap names
 //
