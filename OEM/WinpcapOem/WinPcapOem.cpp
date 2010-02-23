@@ -1482,6 +1482,7 @@ BOOL WoemCreateBinaryNames()
 // note: this function has actually nothing to
 BOOL WoemDeleteDriverBinary(char* FileName, BOOL bDisableFsRedirector)
 {
+#ifndef _AMD64_
 	PVOID OldFsRedirectorValue;
 	HMODULE hKernel32Dll;
 	Wow64DisableWow64FsRedirectionHandler DisableFsRedirector;
@@ -1521,9 +1522,11 @@ BOOL WoemDeleteDriverBinary(char* FileName, BOOL bDisableFsRedirector)
 			return FALSE;
 		}
 	}
+#endif
 
 	_unlink(FileName);
 
+#ifndef _AMD64_
 	if (bDisableFsRedirector)
 	{
 
@@ -1537,6 +1540,7 @@ BOOL WoemDeleteDriverBinary(char* FileName, BOOL bDisableFsRedirector)
 
 		FreeLibrary(hKernel32Dll);
 	}
+#endif 
 
 	return TRUE;
 }
