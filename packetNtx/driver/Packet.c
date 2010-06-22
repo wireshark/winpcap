@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
- * Copyright (c) 2005 - 2007 CACE Technologies, Davis (California)
+ * Copyright (c) 2005 - 2010 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -740,6 +740,18 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	IrpSp = IoGetCurrentIrpStackLocation(Irp);
     FunctionCode=IrpSp->Parameters.DeviceIoControl.IoControlCode;
     Open=IrpSp->FileObject->FsContext;
+
+	if (NPF_StartUsingOpenInstance(Open) == FALSE)
+	{
+		// 
+		// an IRP_MJ_CLEANUP was received, just fail the request
+		//
+		Irp->IoStatus.Information = 0;
+		Irp->IoStatus.Status = STATUS_CANCELLED;
+		IoCompleteRequest(Irp, IO_NO_INCREMENT);
+		TRACE_EXIT();
+		return STATUS_CANCELLED;
+	}
 
     Irp->IoStatus.Status = STATUS_SUCCESS;
 
@@ -1657,12 +1669,19 @@ NTSTATUS NPF_IoControl(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		break;
 	}
 	
+
+	//
+	// release the Open structure
+	//
+	NPF_StopUsingOpenInstance(Open);
+
 	//
 	// complete the IRP
 	//
 	Irp->IoStatus.Information = Information;
 	Irp->IoStatus.Status = Status;
 	IoCompleteRequest(Irp, IO_NO_INCREMENT);
+
 
 	TRACE_EXIT();
 

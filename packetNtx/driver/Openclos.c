@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
- * Copyright (c) 2005 - 2007 CACE Technologies, Davis (California)
+ * Copyright (c) 2005 - 2010 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,6 +38,10 @@
 #include "packet.h"
 #include "..\..\Common\WpcapNames.h"
 
+
+static
+VOID
+NPF_ReleaseOpenInstanceResources(POPEN_INSTANCE pOpen);
 
 static NDIS_MEDIUM MediumArray[] = {
 	NdisMedium802_3,
@@ -328,6 +332,15 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	Open->ReadEvent = NULL;
 
 	//
+	// we need to keep a counter of the pending IRPs
+	// so that when the IRP_MJ_CLEANUP dispatcher gets called,
+	// we can wait for those IRPs to be completed
+	//
+	Open->NumPendingIrps = 0;
+	Open->ClosePending = FALSE;
+	NdisAllocateSpinLock(&Open->OpenInUseLock);
+
+	//
 	//allocate the spinlock for the statistic counters
 	//
 	NdisAllocateSpinLock(&Open->CountersLock);
@@ -435,7 +448,12 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 
 	if (!NT_SUCCESS(returnStatus))
 	{
-		NPF_CloseOpenInstance(Open);
+		NPF_ReleaseOpenInstanceResources(Open);
+		//
+		// Free the open instance itself
+		//
+		ExFreePool(Open);
+		
 	}
 	else
 	{
@@ -451,8 +469,69 @@ NTSTATUS NPF_Open(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 	return returnStatus;
 }
 
+BOOLEAN 
+NPF_StartUsingOpenInstance(
+				   IN POPEN_INSTANCE pOpen
+				   )
+{
+	BOOLEAN returnStatus;
+
+	NdisAcquireSpinLock(&pOpen->OpenInUseLock);
+	if (pOpen->ClosePending)
+	{
+		returnStatus = FALSE;
+	}
+	else
+	{
+		returnStatus = TRUE;
+		pOpen->NumPendingIrps ++;
+	}
+	NdisReleaseSpinLock(&pOpen->OpenInUseLock);
+
+	return returnStatus;
+}
+
 VOID
-NPF_CloseOpenInstance(POPEN_INSTANCE pOpen)
+NPF_StopUsingOpenInstance(
+				  IN POPEN_INSTANCE pOpen
+				  )
+{
+	NdisAcquireSpinLock(&pOpen->OpenInUseLock);
+	ASSERT(pOpen->NumPendingIrps > 0);
+	pOpen->NumPendingIrps --;
+	NdisReleaseSpinLock(&pOpen->OpenInUseLock);
+}
+
+VOID
+NPF_CloseOpenInstance(
+				IN POPEN_INSTANCE pOpen
+				)
+{
+	ULONG i = 0;
+	NDIS_EVENT Event;
+
+	ASSERT(KeGetCurrentIrql() == PASSIVE_LEVEL);
+
+	NdisInitializeEvent(&Event);
+	NdisResetEvent(&Event);
+
+	NdisAcquireSpinLock(&pOpen->OpenInUseLock);
+
+	pOpen->ClosePending = TRUE;
+
+	while(pOpen->NumPendingIrps > 0)
+	{
+		NdisReleaseSpinLock(&pOpen->OpenInUseLock);
+		NdisWaitEvent(&Event,1);
+		NdisAcquireSpinLock(&pOpen->OpenInUseLock);
+	}
+
+	NdisReleaseSpinLock(&pOpen->OpenInUseLock);
+}
+
+
+VOID
+NPF_ReleaseOpenInstanceResources(POPEN_INSTANCE pOpen)
 {
 		PKEVENT pEvent;
 		UINT i;
@@ -464,7 +543,7 @@ NPF_CloseOpenInstance(POPEN_INSTANCE pOpen)
 
 		TRACE_MESSAGE1(PACKET_DEBUG_LOUD, "Open= %p", pOpen);
 
-        NdisFreePacketPool(pOpen->PacketPool);
+		NdisFreePacketPool(pOpen->PacketPool);
 
 #ifdef HAVE_BUGGY_TME_SUPPORT
 		//
@@ -518,11 +597,6 @@ NPF_CloseOpenInstance(POPEN_INSTANCE pOpen)
 		//
 		if(pOpen->DumpFileName.Buffer!=NULL)
 			ExFreePool(pOpen->DumpFileName.Buffer);
-		
-		//
-		// Free the open instance itself
-		//
-		ExFreePool(pOpen);
 
 		TRACE_EXIT();
 }
@@ -536,18 +610,18 @@ VOID NPF_OpenAdapterComplete(
     IN NDIS_STATUS  OpenErrorStatus)
 {
 
-    POPEN_INSTANCE		Open;
-    PLIST_ENTRY			RequestListEntry;
+	POPEN_INSTANCE		Open;
+	PLIST_ENTRY			RequestListEntry;
 	PINTERNAL_REQUEST	MaxSizeReq;
 	NDIS_STATUS			ReqStatus;
 
-    TRACE_ENTER();
+	TRACE_ENTER();
 
-    Open = (POPEN_INSTANCE)ProtocolBindingContext;
+	Open = (POPEN_INSTANCE)ProtocolBindingContext;
 
 	ASSERT(Open != NULL);
 
-    if (Status != NDIS_STATUS_SUCCESS) 
+	if (Status != NDIS_STATUS_SUCCESS) 
 	{
 		//
 		// this is not completely correct, as we are converting an NDIS_STATUS to a NTSTATUS
@@ -564,7 +638,7 @@ VOID NPF_OpenAdapterComplete(
 	//
 	NdisSetEvent(&Open->NdisOpenCloseCompleteEvent);
 	
-    TRACE_EXIT();
+	TRACE_EXIT();
 }
  
 NTSTATUS
@@ -655,7 +729,18 @@ NPF_GetDeviceMTU(
 NTSTATUS
 NPF_Close(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 {
+	POPEN_INSTANCE    pOpen;
+	PIO_STACK_LOCATION  IrpSp;
 	TRACE_ENTER();
+
+	IrpSp = IoGetCurrentIrpStackLocation(Irp);
+	pOpen = IrpSp->FileObject->FsContext;
+
+	ASSERT(pOpen != NULL);
+	//
+	// Free the open instance itself
+	//
+	ExFreePool(pOpen);
 
 	Irp->IoStatus.Status = STATUS_SUCCESS;
 	Irp->IoStatus.Information = 0;
@@ -684,6 +769,8 @@ NPF_Cleanup(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	TRACE_MESSAGE1(PACKET_DEBUG_LOUD, "Open = %p\n", Open);
 
 	ASSERT(Open != NULL);
+
+	NPF_CloseOpenInstance(Open);
 
 	if (Open->ReadEvent != NULL)
 		KeSetEvent(Open->ReadEvent,0,FALSE);
@@ -735,9 +822,9 @@ NPF_Cleanup(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	//
 	// release all the resources
 	//
-	NPF_CloseOpenInstance(Open);
+	NPF_ReleaseOpenInstanceResources(Open);
 
-	IrpSp->FileObject->FsContext = NULL;
+//	IrpSp->FileObject->FsContext = NULL;
 	
 	//
 	// Decrease the counter of open instances
@@ -777,7 +864,7 @@ NPF_CloseAdapterComplete(IN NDIS_HANDLE  ProtocolBindingContext,IN NDIS_STATUS  
 
 	TRACE_ENTER();
 
-    Open = (POPEN_INSTANCE)ProtocolBindingContext;
+	Open = (POPEN_INSTANCE)ProtocolBindingContext;
 
 	ASSERT(Open != NULL);
 
@@ -846,7 +933,7 @@ NPF_UnbindAdapter(
  //		NdisSetEvent(&Open->DumpEvent);
  //	else
 	if (Open->ReadEvent != NULL)
-	 	KeSetEvent(Open->ReadEvent,0,FALSE);
+		KeSetEvent(Open->ReadEvent,0,FALSE);
 
 	//
 	// The following code has been disabled bcause the kernel dump feature has been disabled.

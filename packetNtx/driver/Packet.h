@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
- * Copyright (c) 2005 - 2007 CACE Technologies, Davis (California)
+ * Copyright (c) 2005 - 2010 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -318,6 +318,9 @@ typedef struct _OPEN_INSTANCE
 	NDIS_EVENT		   NdisWriteCompleteEvent;	///< Event that is signalled when all the packets have been successfully sent by NdisSend (and corresponfing sendComplete has been called)
 	NTSTATUS		   OpenCloseStatus;
 	ULONG			   TransmitPendingPackets;	///< Specifies the number of packets that are pending to be transmitted, i.e. have been submitted to NdisSendXXX but the SendComplete has not been called yet.
+	ULONG			   NumPendingIrps;
+	BOOLEAN			   ClosePending; 
+	NDIS_SPIN_LOCK	   OpenInUseLock;
 }
 OPEN_INSTANCE, *POPEN_INSTANCE;
 
@@ -863,9 +866,6 @@ VOID NPF_WriteDumpFile(PFILE_OBJECT FileObject,
 */
 NTSTATUS NPF_CloseDumpFile(POPEN_INSTANCE Open);
 
-VOID
-NPF_CloseOpenInstance(POPEN_INSTANCE pOpen);
-
 BOOLEAN
 NPF_StartUsingBinding(
     IN POPEN_INSTANCE pOpen);
@@ -878,6 +878,18 @@ VOID
 NPF_CloseBinding(
     IN POPEN_INSTANCE pOpen);
 
+BOOLEAN 
+NPF_StartUsingOpenInstance(
+				   IN POPEN_INSTANCE pOpen);
+
+VOID
+NPF_StopUsingOpenInstance(
+				   IN POPEN_INSTANCE pOpen);
+
+VOID
+NPF_CloseOpenInstance(
+				   IN POPEN_INSTANCE pOpen);
+			
 NTSTATUS
 NPF_GetDeviceMTU(
 			 IN POPEN_INSTANCE pOpen,

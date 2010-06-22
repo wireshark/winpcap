@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
- * Copyright (c) 2005 - 2007 CACE Technologies, Davis (California)
+ * Copyright (c) 2005 - 2010 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -72,6 +72,20 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	IrpSp = IoGetCurrentIrpStackLocation(Irp);
     Open=IrpSp->FileObject->FsContext;
 
+
+	if (NPF_StartUsingOpenInstance(Open) == FALSE)
+	{
+		// 
+		// an IRP_MJ_CLEANUP was received, just fail the request
+		//
+		Irp->IoStatus.Information = 0;
+		Irp->IoStatus.Status = STATUS_CANCELLED;
+		IoCompleteRequest(Irp, IO_NO_INCREMENT);
+		TRACE_EXIT();
+		return STATUS_CANCELLED;
+	}
+
+
 	//
 	// we need to test if the device is still bound to the Network adapter,
 	// so we perform a start/stop using binding.
@@ -80,6 +94,7 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 	if(NPF_StartUsingBinding(Open) == FALSE)
 	{
+		NPF_StopUsingOpenInstance(Open);
 		// The Network adapter has been removed or diasabled
 		EXIT_FAILURE(0);
 	}
@@ -87,11 +102,13 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 	if (Open->Size == 0)	
 	{
+		NPF_StopUsingOpenInstance(Open);
 		EXIT_FAILURE(0);
 	}
 
 	if( Open->mode & MODE_DUMP && Open->DumpFileHandle == NULL ){  
 		// this instance is in dump mode, but the dump file has still not been opened
+		NPF_StopUsingOpenInstance(Open);
 		EXIT_FAILURE(0);
 	}
 	
@@ -126,6 +143,7 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 			if (CurrBuff == NULL)
 			{
+				NPF_StopUsingOpenInstance(Open);
 				EXIT_FAILURE(0);
 			}
 
@@ -133,6 +151,7 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			{
 				if (IrpSp->Parameters.Read.Length < sizeof(struct bpf_hdr) + 24)
 				{
+					NPF_StopUsingOpenInstance(Open);
 					Irp->IoStatus.Status = STATUS_BUFFER_TOO_SMALL;
 					IoCompleteRequest(Irp, IO_NO_INCREMENT);
 					return STATUS_BUFFER_TOO_SMALL;
@@ -142,6 +161,7 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			{
 				if (IrpSp->Parameters.Read.Length < sizeof(struct bpf_hdr) + 16)
 				{
+					NPF_StopUsingOpenInstance(Open);
 					Irp->IoStatus.Status = STATUS_BUFFER_TOO_SMALL;
 					IoCompleteRequest(Irp, IO_NO_INCREMENT);
 					return STATUS_BUFFER_TOO_SMALL;
@@ -174,6 +194,8 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			Open->Nbytes.QuadPart=0;
 			NdisReleaseSpinLock( &Open->CountersLock );
 			
+			NPF_StopUsingOpenInstance(Open);
+
 			Irp->IoStatus.Status = STATUS_SUCCESS;
 			IoCompleteRequest(Irp, IO_NO_INCREMENT);
 			
@@ -201,11 +223,13 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 			if (UserPointer == NULL)
 			{
+				NPF_StopUsingOpenInstance(Open);
 				EXIT_FAILURE(0);
 			}
 
 			if ((!IS_VALIDATED(Open->tme.validated_blocks,Open->tme.active_read))||(IrpSp->Parameters.Read.Length<sizeof(struct bpf_hdr)))
 			{	
+				NPF_StopUsingOpenInstance(Open);
 				EXIT_FAILURE(0);
 			}
 			
@@ -253,6 +277,7 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			header->bh_caplen=bytecopy;
 			header->bh_datalen=header->bh_caplen;
 
+			NPF_StopUsingOpenInstance(Open);
 			EXIT_SUCCESS(bytecopy+sizeof(struct bpf_hdr));
 		}
 
@@ -266,12 +291,14 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 			// The timeout has expired, but the buffer is still empty (or the packets must be written to file).
 			// We must awake the application, returning an empty buffer.
 		{
+			NPF_StopUsingOpenInstance(Open);
 			EXIT_SUCCESS(0);
 		}
 				
 #else // not HAVE_BUGGY_TME_SUPPORT
 		if(Open->mode==MODE_MON)   //this capture instance is in monitor mode
 		{   
+			NPF_StopUsingOpenInstance(Open);
 			EXIT_FAILURE(0);
 		}
 #endif // HAVE_BUGGY_TME_SUPPORT
@@ -293,6 +320,7 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 
 	if (packp == NULL)
 	{
+		NPF_StopUsingOpenInstance(Open);
 		EXIT_FAILURE(0);
 	}
 
@@ -303,6 +331,7 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 	{
 		if (available == copied)
 		{
+			NPF_StopUsingOpenInstance(Open);
 			EXIT_SUCCESS(copied);
 		}
 		
@@ -317,6 +346,7 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 				plen = Header->header.bh_caplen;
 				if (plen + sizeof (struct bpf_hdr) > available - copied)  
 				{  //if the packet does not fit into the user buffer, we've ended copying packets
+					NPF_StopUsingOpenInstance(Open);
 					EXIT_SUCCESS(copied);
 				}
 				
@@ -374,7 +404,10 @@ NTSTATUS NPF_Read(IN PDEVICE_OBJECT DeviceObject,IN PIRP Irp)
 		}
 	}
 		
-	{EXIT_SUCCESS(copied);}
+	{
+		NPF_StopUsingOpenInstance(Open);
+		EXIT_SUCCESS(copied);
+	}
 
 //------------------------------------------------------------------------------
 
