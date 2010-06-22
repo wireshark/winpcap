@@ -445,7 +445,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\libpcap;..\libpcap\lbl;..\libpcap\bpf\;..\..\common;..\libpcap\win32\include;..\Win32-Extensions"
-				PreprocessorDefinitions="LIBPCAP_EXPORTS;WIN2;_DEBUG;_WINDOWS;HAVE_ADDRINFO;YY_NEVER_INTERACTIVE;yylval=pcap_lval;HAVE_STRERROR;__STDC__;INET6;SIZEOF_CHAR=1;SIZEOF_SHORT=2;SIZEOF_INT=4;WPCAP;HAVE_SNPRINTF;HAVE_VSNPRINTF;HAVE_REMOTE;_U_=;_CRT_SECURE_NO_WARNINGS;YY_NO_UNISTD_H;HAVE_TC_API"
+				PreprocessorDefinitions="LIBPCAP_EXPORTS;WIN32;_DEBUG;_WINDOWS;HAVE_ADDRINFO;YY_NEVER_INTERACTIVE;yylval=pcap_lval;HAVE_STRERROR;__STDC__;INET6;SIZEOF_CHAR=1;SIZEOF_SHORT=2;SIZEOF_INT=4;WPCAP;HAVE_SNPRINTF;HAVE_VSNPRINTF;HAVE_REMOTE;_U_=;_CRT_SECURE_NO_WARNINGS;YY_NO_UNISTD_H;HAVE_TC_API"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
