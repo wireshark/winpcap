@@ -89,8 +89,8 @@ Global
 		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Release|x64.Build.0 = Release|x64
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug No AirPcap|Win32.ActiveCfg = Debug No AirPcap|Win32
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug No AirPcap|Win32.Build.0 = Debug No AirPcap|Win32
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug No AirPcap|x64.ActiveCfg = Release No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug No AirPcap|x64.Build.0 = Release No AirPcap|x64
+		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug No AirPcap|x64.ActiveCfg = Debug No AirPcap|x64
+		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug No AirPcap|x64.Build.0 = Debug No AirPcap|x64
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug No NetMon|Win32.ActiveCfg = Debug|Win32
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug No NetMon|x64.ActiveCfg = Debug|x64
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug No NetMon|x64.Build.0 = Debug|x64
@@ -125,7 +125,6 @@ Global
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release|x64.ActiveCfg = Release|x64
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release|x64.Build.0 = Release|x64
 		{34378168-44FC-4671-A964-20E750DB90A3}.Debug No AirPcap|Win32.ActiveCfg = Debug|Win32
-		{34378168-44FC-4671-A964-20E750DB90A3}.Debug No AirPcap|Win32.Build.0 = Debug|Win32
 		{34378168-44FC-4671-A964-20E750DB90A3}.Debug No AirPcap|x64.ActiveCfg = Debug|Win32
 		{34378168-44FC-4671-A964-20E750DB90A3}.Debug No NetMon|Win32.ActiveCfg = Debug|Win32
 		{34378168-44FC-4671-A964-20E750DB90A3}.Debug No NetMon|Win32.Build.0 = Debug|Win32
@@ -158,7 +157,6 @@ Global
 		{34378168-44FC-4671-A964-20E750DB90A3}.Release|Win32.Build.0 = Release|Win32
 		{34378168-44FC-4671-A964-20E750DB90A3}.Release|x64.ActiveCfg = Release|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug No AirPcap|Win32.ActiveCfg = Debug|Win32
-		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug No AirPcap|Win32.Build.0 = Debug|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug No AirPcap|x64.ActiveCfg = Debug|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug No NetMon|Win32.ActiveCfg = Debug|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug No NetMon|Win32.Build.0 = Debug|Win32
