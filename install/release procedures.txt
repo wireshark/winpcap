@@ -1,4 +1,4 @@
-$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.18 2008-08-08 23:49:24 gianlucav Exp $
+$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.19 2009-10-08 17:08:15 gianlucav Exp $
 
 WINPCAP RELEASE PROCEDURE
 =========================
@@ -24,8 +24,7 @@ Needed tools/libraries (x86 and x64)
 - If packet.dll is compiled with NpfIm support, the NpfIm developer's pack
   should be available in the folder 
 	%BUILD_TREE%\NpfIm_DevPack
-- DDKBUILD on your path and with the following ENV variables set:
-	WNETBASE=c:\winddk\6001.18002
+- DDKBUILD (at least 3.15.38) on your path and with the following ENV variables set:
 	WLHBASE=c:\winddk\6001.18002
 
 How to compile WinPcap
