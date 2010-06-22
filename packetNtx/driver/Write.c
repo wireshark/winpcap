@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
- * Copyright (c) 2005 - 2007 CACE Technologies, Davis (California)
+ * Copyright (c) 2005 - 2010 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,6 +59,18 @@ NPF_Write(
 
     Open=IrpSp->FileObject->FsContext;
 	
+	if (NPF_StartUsingOpenInstance(Open) == FALSE)
+	{
+		// 
+		// an IRP_MJ_CLEANUP was received, just fail the request
+		//
+		Irp->IoStatus.Information = 0;
+		Irp->IoStatus.Status = STATUS_CANCELLED;
+		IoCompleteRequest(Irp, IO_NO_INCREMENT);
+		TRACE_EXIT();
+		return STATUS_CANCELLED;
+	}
+
 	NumSends = Open->Nwrites;
 
 	//
@@ -66,6 +78,7 @@ NPF_Write(
 	//
 	if (NumSends == 0)
 	{
+		NPF_StopUsingOpenInstance(Open);
 		Irp->IoStatus.Information = 0;
 		Irp->IoStatus.Status = STATUS_SUCCESS;
 		IoCompleteRequest(Irp, IO_NO_INCREMENT);
@@ -87,6 +100,8 @@ NPF_Write(
 	{
 		TRACE_MESSAGE(PACKET_DEBUG_LOUD,"Frame size out of range, or maxFrameSize = 0. Send aborted");
 
+		NPF_StopUsingOpenInstance(Open);
+
 		Irp->IoStatus.Information = 0;
 		Irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
 		IoCompleteRequest(Irp, IO_NO_INCREMENT);
@@ -101,6 +116,8 @@ NPF_Write(
 	if(NPF_StartUsingBinding(Open) == FALSE)
 	{ 
 		TRACE_MESSAGE(PACKET_DEBUG_LOUD,"Adapter is probably unbinding, cannot send packets");
+
+		NPF_StopUsingOpenInstance(Open);
 
 		Irp->IoStatus.Information = 0;
 		Irp->IoStatus.Status = STATUS_INVALID_DEVICE_REQUEST;
@@ -119,6 +136,8 @@ NPF_Write(
 		NPF_StopUsingBinding(Open);
 
 		TRACE_MESSAGE(PACKET_DEBUG_LOUD,"Another Send operation is in progress, aborting.");
+
+		NPF_StopUsingOpenInstance(Open);
 
 		Irp->IoStatus.Information = 0;
 		Irp->IoStatus.Status = STATUS_UNSUCCESSFUL;
@@ -237,6 +256,8 @@ NPF_Write(
 	Open->WriteInProgress = FALSE;
 	NdisReleaseSpinLock(&Open->WriteLock);
 
+	NPF_StopUsingOpenInstance(Open);
+
 	//
 	// Complete the Irp and return success
 	//
@@ -266,10 +287,12 @@ NPF_BufferedWrite(
 	LARGE_INTEGER		StartTicks, CurTicks, TargetTicks;
 	LARGE_INTEGER		TimeFreq;
 	struct timeval		BufStartTime;
-	struct sf_pkthdr	*winpcap_hdr;
+	struct sf_pkthdr	*pWinpcapHdr;
 	PMDL				TmpMdl;
-	PCHAR				CurPos;
-	PCHAR				EndOfUserBuff = UserBuff + UserBuffSize;
+	ULONG				Pos = 0;
+//	PCHAR				CurPos;
+//	PCHAR				EndOfUserBuff = UserBuff + UserBuffSize;
+	INT					result;
 
     IF_LOUD(DbgPrint("NPF: BufferedWrite, UserBuff=%p, Size=%u\n", UserBuff, UserBuffSize);)
 		
@@ -311,51 +334,70 @@ NPF_BufferedWrite(
 	
 	// Reset the pending packets counter
 	Open->Multiple_Write_Counter = 0;
-
-	// Start from the first packet
-	winpcap_hdr = (struct sf_pkthdr*)UserBuff;
-	
-	// Retrieve the time references
-	StartTicks = KeQueryPerformanceCounter(&TimeFreq);
-	BufStartTime.tv_sec = winpcap_hdr->ts.tv_sec;
-	BufStartTime.tv_usec = winpcap_hdr->ts.tv_usec;
-	
-	// Chech the consistency of the user buffer
-	if( (PCHAR)winpcap_hdr + winpcap_hdr->caplen + sizeof(struct sf_pkthdr) > EndOfUserBuff )
-	{
-		IF_LOUD(DbgPrint("Buffered Write: bogus packet buffer\n");)
-
-		// 
-		// release ownership of the NdisAdapter binding
-		//
-		NPF_StopUsingBinding(Open);
-		return -1;
-	}
 	
 	// Save the current time stamp counter
-	CurTicks = KeQueryPerformanceCounter(NULL);
+	CurTicks = KeQueryPerformanceCounter(&TimeFreq);
 	
 	//
 	// Main loop: send the buffer to the wire
 	//
 	while(TRUE)
 	{
+		if (Pos == UserBuffSize)
+		{
+			//
+			// end of buffer
+			//
+			result = Pos;
+			break;
+		}
 
-		if(winpcap_hdr->caplen ==0 || winpcap_hdr->caplen > Open->MaxFrameSize)
+		if (UserBuffSize - Pos < sizeof(*pWinpcapHdr))
+		{
+			// Malformed header
+			IF_LOUD(DbgPrint("NPF_BufferedWrite: malformed or bogus user buffer, aborting write.\n");)
+
+			result = -1;
+			break;
+		}
+
+		pWinpcapHdr = (struct sf_pkthdr*)(UserBuff + Pos);
+
+		if(pWinpcapHdr->caplen ==0 || pWinpcapHdr->caplen > Open->MaxFrameSize)
 		{
 			// Malformed header
 			IF_LOUD(DbgPrint("NPF_BufferedWrite: malformed or bogus user buffer, aborting write.\n");)
 			
-			// 
-			// release ownership of the NdisAdapter binding
-			//
-			NPF_StopUsingBinding(Open);
-			return -1;
+			result = -1;
+			break;
 		}
 
+		if (Pos == 0)
+		{
+			// Retrieve the time references
+			StartTicks = KeQueryPerformanceCounter(&TimeFreq);
+			BufStartTime.tv_sec = pWinpcapHdr->ts.tv_sec;
+			BufStartTime.tv_usec = pWinpcapHdr->ts.tv_usec;
+		}
+
+		Pos += sizeof(*pWinpcapHdr);
+
+		if (pWinpcapHdr->caplen > UserBuffSize - Pos)
+		{
+			//
+			// the packet is missing!!
+			//
+			IF_LOUD(DbgPrint("NPF_BufferedWrite: malformed or bogus user buffer, aborting write.\n");)
+			
+			result = -1;
+			break;
+		}
+
+		Pos += pWinpcapHdr->caplen;
+
 		// Allocate an MDL to map the packet data
-		TmpMdl = IoAllocateMdl((PCHAR)winpcap_hdr + sizeof(struct sf_pkthdr),
-			winpcap_hdr->caplen,
+		TmpMdl = IoAllocateMdl(UserBuff + Pos,
+			pWinpcapHdr->caplen,
 			FALSE,
 			FALSE,
 			NULL);
@@ -365,11 +407,8 @@ NPF_BufferedWrite(
 			// Unable to map the memory: packet lost
 			IF_LOUD(DbgPrint("NPF_BufferedWrite: unable to allocate the MDL.\n");)
 
-			// 
-			// release ownership of the NdisAdapter binding
-			//
-			NPF_StopUsingBinding(Open);
-			return -1;
+			result = -1;
+			break;
 		}
 		
 		MmBuildMdlForNonPagedPool(TmpMdl);	// XXX can this line be removed?
@@ -394,11 +433,8 @@ NPF_BufferedWrite(
 				// Second failure, report an error
 				IoFreeMdl(TmpMdl);
 		
-				// 
-				// release ownership of the NdisAdapter binding
-				//
-				NPF_StopUsingBinding(Open);
-				return -1;
+				result = -1;
+				break;
 			}
 
 		}
@@ -435,47 +471,21 @@ NPF_BufferedWrite(
 				Status
 				);				
 		}
-		
-		// Step to the next packet in the buffer
-		(PCHAR)winpcap_hdr += winpcap_hdr->caplen + sizeof(struct sf_pkthdr);
-		
-		// Check if the end of the user buffer has been reached
-		if( (PCHAR)winpcap_hdr >= EndOfUserBuff )
-		{
-			IF_LOUD(DbgPrint("NPF_BufferedWrite: End of buffer.\n");)
-
-			// Wait the completion of pending sends
-			NPF_WaitEndOfBufferedWrite(Open);
-
-			// 
-			// release ownership of the NdisAdapter binding
-			//
-			NPF_StopUsingBinding(Open);
-	
-			return (INT)((PCHAR)winpcap_hdr - UserBuff);
-		}
 	
 		if( Sync ){
 			
 			// Release the application if it has been blocked for approximately more than 1 seconds
-			if( winpcap_hdr->ts.tv_sec - BufStartTime.tv_sec > 1 )
+			if( pWinpcapHdr->ts.tv_sec - BufStartTime.tv_sec > 1 )
 			{
 				IF_LOUD(DbgPrint("NPF_BufferedWrite: timestamp elapsed, returning.\n");)
-		
-				// Wait the completion of pending sends
-				NPF_WaitEndOfBufferedWrite(Open);
 					
-				// 
-				// release ownership of the NdisAdapter binding
-				//
-				NPF_StopUsingBinding(Open);
-				return (INT)((PCHAR)winpcap_hdr - UserBuff);
+				result = Pos;
 			}
 			
 			// Calculate the time interval to wait before sending the next packet
 			TargetTicks.QuadPart = StartTicks.QuadPart +
-				(LONGLONG)((winpcap_hdr->ts.tv_sec - BufStartTime.tv_sec) * 1000000 +
-				winpcap_hdr->ts.tv_usec - BufStartTime.tv_usec) *
+				(LONGLONG)((pWinpcapHdr->ts.tv_sec - BufStartTime.tv_sec) * 1000000 +
+				pWinpcapHdr->ts.tv_usec - BufStartTime.tv_usec) *
 				(TimeFreq.QuadPart) / 1000000;
 			
 			// Wait until the time interval has elapsed
@@ -485,12 +495,15 @@ NPF_BufferedWrite(
 	
 	}
 
+	// Wait the completion of pending sends
+	NPF_WaitEndOfBufferedWrite(Open);
+
 	// 
 	// release ownership of the NdisAdapter binding
 	//
 	NPF_StopUsingBinding(Open);
 
-	return (INT)((PCHAR)winpcap_hdr - UserBuff);
+	return result;
 }
 
 //-------------------------------------------------------------------
