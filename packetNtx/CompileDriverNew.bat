@@ -29,7 +29,7 @@ rem ** enable the following line to enable the TME extensions **
 rem set NPF_TME_FILES=tme.c count_packets.c tcp_session.c functions.c bucket_lookup.c normal_lookup.c win_bpf_filter_init.c
 rem set NPF_C_DEFINES=%NPF_C_DEFINES% -DHAVE_BUGGY_TME_SUPPORT
 
-ddkbuild -WNET -prefast %__BUILD_TYPE% .\driver -cefw
+ddkbuild -WLHXP -prefast %__BUILD_TYPE% .\driver -cefw
 
 rem ** enable the following line to enable the TME extensions **
 rem set NPF_TME_FILES=
