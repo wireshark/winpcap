@@ -1,4 +1,4 @@
-; Copyright (c) 2005 - 2009
+; Copyright (c) 2005 - 2010
 ; CACE Technologies
 ; All rights reserved.
 ; 
@@ -44,12 +44,12 @@
   !define WINPCAP_PRJ_MAJOR "4"
   !define WINPCAP_PRJ_MINOR "1"
   !define WINPCAP_PRJ_REV "0"
-  !define WINPCAP_PRJ_BUILD "1753"
-  !define WINPCAP_PROJ_VERSION_DOTTED "4.1.0.1753"
-  !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2009 CACE Technologies, Inc."
-  !define WINPCAP_PRODUCT_NAME "WinPcap 4.1.1"
+  !define WINPCAP_PRJ_BUILD "1999"
+  !define WINPCAP_PROJ_VERSION_DOTTED "4.1.0.1999"
+  !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2010 CACE Technologies, Inc."
+  !define WINPCAP_PRODUCT_NAME "WinPcap 4.1.2"
   !define WINPCAP_COMPANY_NAME "CACE Technologies, Inc."
-  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_1.exe"
+  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_2.exe"
 
 ; letter 'r'
   !define REINSTALL_FLAG "114"  
