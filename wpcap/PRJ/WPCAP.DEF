@@ -91,3 +91,4 @@ EXPORTS
  		pcap_set_buffer_size
  		pcap_hopen_offline
  		pcap_setdirection
+		pcap_free_datalinks
