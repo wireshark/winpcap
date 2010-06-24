@@ -393,8 +393,6 @@ NPF_BufferedWrite(
 			break;
 		}
 
-		Pos += pWinpcapHdr->caplen;
-
 		// Allocate an MDL to map the packet data
 		TmpMdl = IoAllocateMdl(UserBuff + Pos,
 			pWinpcapHdr->caplen,
@@ -412,7 +410,9 @@ NPF_BufferedWrite(
 		}
 		
 		MmBuildMdlForNonPagedPool(TmpMdl);	// XXX can this line be removed?
-		
+
+		Pos += pWinpcapHdr->caplen;
+
 		// Allocate a packet from our free list
 		NdisAllocatePacket( &Status, &pPacket, Open->PacketPool);
 		
