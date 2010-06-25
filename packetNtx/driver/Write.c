@@ -473,13 +473,40 @@ NPF_BufferedWrite(
 		}
 	
 		if( Sync ){
-			
+
+			if (Pos == UserBuffSize)
+			{
+				result = Pos;
+				break;
+			}
+
+			if ((UserBuffSize - Pos) < sizeof(*pWinpcapHdr))
+			{
+				// Malformed header
+				IF_LOUD(DbgPrint("NPF_BufferedWrite: malformed or bogus user buffer, aborting write.\n");)
+
+				result = -1;
+				break;
+			}
+
+			pWinpcapHdr = (struct sf_pkthdr*)(UserBuff + Pos);
+
+			if(pWinpcapHdr->caplen ==0 || pWinpcapHdr->caplen > Open->MaxFrameSize || pWinpcapHdr->caplen > (UserBuffSize - Pos - sizeof(*pWinpcapHdr)))
+			{
+				// Malformed header
+				IF_LOUD(DbgPrint("NPF_BufferedWrite: malformed or bogus user buffer, aborting write.\n");)
+				
+				result = -1;
+				break;
+			}
+
 			// Release the application if it has been blocked for approximately more than 1 seconds
 			if( pWinpcapHdr->ts.tv_sec - BufStartTime.tv_sec > 1 )
 			{
 				IF_LOUD(DbgPrint("NPF_BufferedWrite: timestamp elapsed, returning.\n");)
 					
 				result = Pos;
+				break;
 			}
 			
 			// Calculate the time interval to wait before sending the next packet
