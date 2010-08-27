@@ -1016,7 +1016,6 @@ BOOL WoemLeaveDll()
 	if (_stricmp("AMD64", osArchitecture) == 0)
 	{
 		is64BitOs = TRUE;
-		RegCloseKey(environmentKey);
 	}
 
 	if (environmentKey != NULL)
