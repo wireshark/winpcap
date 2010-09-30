@@ -39,12 +39,8 @@
 #pragma warning (disable : 4710) // inline function not expanded. used for strsafe functions
 #endif
 
-//
-// this should be removed in the long term.  GV 20080807
-//
-#define _CRT_SECURE_NO_WARNINGS
-
 #include <packet32.h>
+#include <tchar.h>
 #include <StrSafe.h>
 
 #include "Packet32-Int.h"
@@ -190,6 +186,64 @@ __declspec (dllexport) VOID PacketRegWoemLeaveHandler(PVOID Handler)
 #endif // WPCAP_OEM_UNLOAD_H
 
 //---------------------------------------------------------------------------
+
+#ifndef _WINNT4
+//
+// This wrapper around loadlibrary appends the system folder (usually c:\windows\system32)
+// to the relative path of the DLL, so that the DLL is always loaded from an absolute path
+// (It's no longer possible to load airpcap.dll from the application folder).
+// This solves the DLL Hijacking issue discovered in August 2010
+// http://blog.metasploit.com/2010/08/exploiting-dll-hijacking-flaws.html
+//
+HMODULE LoadLibrarySafe(LPCTSTR lpFileName)
+{
+  TCHAR path[MAX_PATH];
+  TCHAR fullFileName[MAX_PATH];
+  UINT res;
+  HMODULE hModule = NULL;
+  do
+  {
+	res = GetSystemDirectory(path, MAX_PATH);
+
+	if (res == 0)
+	{
+		//
+		// some bad failure occurred;
+		//
+		break;
+	}
+	
+	if (res > MAX_PATH)
+	{
+		//
+		// the buffer was not big enough
+		//
+		SetLastError(ERROR_INSUFFICIENT_BUFFER);
+		break;
+	}
+
+	OutputDebugString(path);
+
+	if (res + 1 + _tcslen(lpFileName) + 1 < MAX_PATH)
+	{
+		memcpy(fullFileName, path, res * sizeof(TCHAR));
+		fullFileName[res] = _T('\\');
+		memcpy(&fullFileName[res + 1], lpFileName, (_tcslen(lpFileName) + 1) * sizeof(TCHAR));
+
+		OutputDebugString(fullFileName);
+
+		hModule = LoadLibrary(fullFileName);
+	}
+	else
+	{
+		SetLastError(ERROR_INSUFFICIENT_BUFFER);
+	}
+
+  }while(FALSE);
+
+  return hModule;
+}
+#endif
 
 /*! 
   \brief The main dll function.
@@ -351,7 +405,7 @@ VOID PacketLoadLibrariesDynamically()
 	
 #ifdef HAVE_AIRPCAP_API
 	/* We dinamically load the airpcap library in order link it only when it's present on the system */
-	if((AirpcapLib =  LoadLibrary(TEXT("airpcap.dll"))) == NULL)
+	if((AirpcapLib =  LoadLibrarySafe(TEXT("airpcap.dll"))) == NULL)
 	{
 		// Report the error but go on
 		TRACE_PRINT("AirPcap library not found on this system");
@@ -400,7 +454,7 @@ VOID PacketLoadLibrariesDynamically()
 	
 #ifdef HAVE_DAG_API
 	/* We dinamically load the dag library in order link it only when it's present on the system */
-	if((DagcLib =  LoadLibrary(TEXT("dagc.dll"))) == NULL)
+	if((DagcLib =  LoadLibrarySafe(TEXT("dagc.dll"))) == NULL)
 	{
 		// Report the error but go on
 		TRACE_PRINT("dag capture library not found on this system");
@@ -2353,6 +2407,19 @@ BOOLEAN PacketSendPacket(LPADAPTER AdapterObject,LPPACKET lpPacket,BOOLEAN Sync)
 	TRACE_EXIT("PacketSendPacket");
 	return Result;
 }
+
+/*!
+  \brief Header associated to a packet in the driver's buffer when the driver is in dump mode.
+  Similar to the bpf_hdr structure, but simpler.
+*/
+struct sf_pkthdr {
+    struct timeval	ts;			///< time stamp
+    UINT			caplen;		///< Length of captured portion. The captured portion can be different from 
+								///< the original packet, because it is possible (with a proper filter) to 
+								///< instruct the driver to capture only a portion of the packets. 
+    UINT			len;		///< Length of the original packet (off wire).
+};
+
 
 /*! 
   \brief Sends a buffer of packets to the network.
