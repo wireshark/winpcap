@@ -222,15 +222,11 @@ HMODULE LoadLibrarySafe(LPCTSTR lpFileName)
 		break;
 	}
 
-	OutputDebugString(path);
-
 	if (res + 1 + _tcslen(lpFileName) + 1 < MAX_PATH)
 	{
 		memcpy(fullFileName, path, res * sizeof(TCHAR));
 		fullFileName[res] = _T('\\');
 		memcpy(&fullFileName[res + 1], lpFileName, (_tcslen(lpFileName) + 1) * sizeof(TCHAR));
-
-		OutputDebugString(fullFileName);
 
 		hModule = LoadLibrary(fullFileName);
 	}
