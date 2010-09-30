@@ -48,7 +48,9 @@ HMODULE g_hModule = NULL;
 #include "win_bpf_filter_init.h"
 #endif HAVE_BUGGY_TME_SUPPORT
 
+#include <tchar.h>
 #include <packet32.h>
+#include "../Packet32-Int.h"
 #include "wanpacket.h"
 
 /*!
@@ -102,7 +104,7 @@ BOOLEAN APIENTRY DllMain( HANDLE hModule, DWORD  Reason, LPVOID lpReserved)
     switch(Reason)
     {
 	case DLL_PROCESS_ATTACH:
-		g_hModule = LoadLibrary("npp\\ndisnpp.dll");
+		g_hModule = LoadLibrarySafe(_T("npp\\ndisnpp.dll"));
 		break;
 
 	case DLL_PROCESS_DETACH:
@@ -223,7 +225,7 @@ BOOLEAN WanPacketTestAdapter()
 
 	if ( g_hModule == NULL)
 	{
-		g_hModule = LoadLibraryA("npp\\ndisnpp.dll");
+		g_hModule = LoadLibrarySafe(_T("npp\\ndisnpp.dll"));
 	}
 
 	if ( g_hModule == NULL)
@@ -342,7 +344,7 @@ PWAN_ADAPTER WanPacketOpenAdapter()
 
 	if ( g_hModule == NULL)
 	{
-		g_hModule = LoadLibraryA("npp\\ndisnpp.dll");
+		g_hModule = LoadLibrarySafe(_T("npp\\ndisnpp.dll"));
 	}
 
 	if ( g_hModule == NULL)
