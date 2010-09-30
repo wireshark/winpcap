@@ -43,6 +43,10 @@
 #include <string.h>
 #include <errno.h>
 
+#ifdef WIN32
+#include <tchar.h>
+#endif
+
 typedef TC_STATUS	(TC_CALLCONV *TcFcnQueryPortList)			(PTC_PORT *ppPorts, PULONG pLength);
 typedef TC_STATUS	(TC_CALLCONV *TcFcnFreePortList)			(TC_PORT *pPorts);
 
@@ -238,6 +242,62 @@ typedef struct _PPI_HEADER
 #pragma pack(pop)
 
 #ifdef WIN32
+//
+// This wrapper around loadlibrary appends the system folder (usually c:\windows\system32)
+// to the relative path of the DLL, so that the DLL is always loaded from an absolute path
+// (It's no longer possible to load airpcap.dll from the application folder).
+// This solves the DLL Hijacking issue discovered in August 2010
+// http://blog.metasploit.com/2010/08/exploiting-dll-hijacking-flaws.html
+//
+HMODULE LoadLibrarySafe(LPCTSTR lpFileName)
+{
+  TCHAR path[MAX_PATH];
+  TCHAR fullFileName[MAX_PATH];
+  UINT res;
+  HMODULE hModule = NULL;
+  do
+  {
+	res = GetSystemDirectory(path, MAX_PATH);
+
+	if (res == 0)
+	{
+		//
+		// some bad failure occurred;
+		//
+		break;
+	}
+	
+	if (res > MAX_PATH)
+	{
+		//
+		// the buffer was not big enough
+		//
+		SetLastError(ERROR_INSUFFICIENT_BUFFER);
+		break;
+	}
+
+	OutputDebugString(path);
+
+	if (res + 1 + _tcslen(lpFileName) + 1 < MAX_PATH)
+	{
+		memcpy(fullFileName, path, res * sizeof(TCHAR));
+		fullFileName[res] = _T('\\');
+		memcpy(&fullFileName[res + 1], lpFileName, (_tcslen(lpFileName) + 1) * sizeof(TCHAR));
+
+		OutputDebugString(fullFileName);
+
+		hModule = LoadLibrary(fullFileName);
+	}
+	else
+	{
+		SetLastError(ERROR_INSUFFICIENT_BUFFER);
+	}
+
+  }while(FALSE);
+
+  return hModule;
+}
+
 /*
  * NOTE: this function should be called by the pcap functions that can theoretically
  *       deal with the Tc library for the first time, namely listing the adapters and
@@ -274,7 +334,7 @@ TC_API_LOAD_STATUS LoadTcFunctions()
 
 		currentStatus = TC_API_CANNOT_LOAD;
 
-		g_TcFunctions.hTcApiDllHandle = LoadLibrary("TcApi.dll");
+		g_TcFunctions.hTcApiDllHandle = LoadLibrarySafe("TcApi.dll");
 		if (g_TcFunctions.hTcApiDllHandle == NULL)	break;
 
 		g_TcFunctions.QueryPortList					= (TcFcnQueryPortList)			GetProcAddress(g_TcFunctions.hTcApiDllHandle, "TcQueryPortList");
