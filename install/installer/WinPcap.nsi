@@ -801,25 +801,42 @@ SectionEnd
 Function InstallNpfService
 	
 	push $0
-	push $1
+	push $8
+	push $9
 	
-	StrCpy $1 $OUTDIR
+;
+; we need to do all this to load WinPcapInstall.dll instead of just using System::Call with an 
+; absolute path because System:Call is broken in NSIS 2.46 and fails to work properly when
+; the absolute path contains parentheses
+;	
+System::Call "kernel32::LoadLibrary(t '$INSTDIR\WinPcapInstall.dll') i .r8"
+
+StrCmp $8 "error" ErrorCannotLoadDll
+StrCmp $8 "0" ErrorCannotLoadDll
+
+System::Call "kernel32::GetProcAddress(i r8, t 'manage_npf_driver') i .r9"
+
+StrCmp $9 "error" UnloadKernelDllAndBailOut
+StrCmp $9 "0" UnloadKernelDllAndBailOut
+goto DllLoadedOk
+
+UnloadKernelDllAndBailOut:
+System::Call "kernel32::FreeLibrary(i r8)"  
+goto ErrorCannotLoadDll
+
+DllLoadedOk:
+
+System::Call "::$9(t '',i ${REINSTALL_FLAG}) i .r0"
+StrCpy $INT_RET  $0
+System::Call "kernel32::FreeLibrary(i r8)"  
 	
-	SetOutPath $INSTDIR
-	
-; NOTE: NEVER EVER pass the path to the DLL to System::Call. On x64, it crashes the system.dll DLL.
-	System::Call 'WinPcapInstall::manage_npf_driver(t, i) i("",${REINSTALL_FLAG}).r0 ? u'
-	
-	SetOutPath $1
-	
-	StrCpy $INT_RET  $0
-	
-	pop $1
+	pop $9
+	pop $8
 	pop $0
 
 	StrCmp $INT_RET "error" ErrorCannotLoadDll
 	StrCmp $INT_RET 0 End ErrorCannotInstallNpfDriver
- 
+  
 ErrorCannotLoadDll:
 	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
 	SetErrors
@@ -840,20 +857,32 @@ FunctionEnd
 Function un.UninstallNpfService
 	
 	push $0
-	push $1
+	push $8
+	push $9
 	
-	StrCpy $1 $OUTDIR
+System::Call "kernel32::LoadLibrary(t '$INSTDIR\WinPcapInstall.dll') i .r8"
+
+StrCmp $8 "error" ErrorCannotLoadDll
+StrCmp $8 "0" ErrorCannotLoadDll
+
+System::Call "kernel32::GetProcAddress(i r8, t 'manage_npf_driver') i .r9"
+
+StrCmp $9 "error" UnloadKernelDllAndBailOut
+StrCmp $9 "0" UnloadKernelDllAndBailOut
+goto DllLoadedOk
+
+UnloadKernelDllAndBailOut:
+System::Call "kernel32::FreeLibrary(i r8)"  
+goto ErrorCannotLoadDll
+
+DllLoadedOk:
+
+System::Call "::$9(t '',i ${UNINSTALL_FLAG}) i .r0"
+StrCpy $INT_RET  $0
+System::Call "kernel32::FreeLibrary(i r8)"  
 	
-	SetOutPath $INSTDIR
-	
-; NOTE: NEVER EVER pass the path to the DLL to System::Call. On x64, it crashes the system.dll DLL.
-	System::Call 'WinPcapInstall::manage_npf_driver(t, i) i("",${UNINSTALL_FLAG}).r0 ? u'
-	
-	SetOutPath $1
-	
-	StrCpy $INT_RET  $0
-	
-	pop $1
+	pop $9
+	pop $8
 	pop $0
 
 	StrCmp $INT_RET "error" ErrorCannotLoadDll
@@ -877,21 +906,34 @@ End:
 FunctionEnd
 
 Function InstallRpcapdService
+
 	push $0
-	push $1
+	push $8
+	push $9
 	
-	StrCpy $1 $OUTDIR
+System::Call "kernel32::LoadLibrary(t '$INSTDIR\WinPcapInstall.dll') i .r8"
+
+StrCmp $8 "error" ErrorCannotLoadDll
+StrCmp $8 "0" ErrorCannotLoadDll
+
+System::Call "kernel32::GetProcAddress(i r8, t 'manage_rpcapd_service') i .r9"
+
+StrCmp $9 "error" UnloadKernelDllAndBailOut
+StrCmp $9 "0" UnloadKernelDllAndBailOut
+goto DllLoadedOk
+
+UnloadKernelDllAndBailOut:
+System::Call "kernel32::FreeLibrary(i r8)"  
+goto ErrorCannotLoadDll
+
+DllLoadedOk:
+
+System::Call "::$9(t '',i ${REINSTALL_FLAG}) i .r0"
+StrCpy $INT_RET  $0
+System::Call "kernel32::FreeLibrary(i r8)"  
 	
-	SetOutPath $INSTDIR
-	
-; NOTE: NEVER EVER pass the path to the DLL to System::Call. On x64, it crashes the system.dll DLL.
-	System::Call 'WinPcapInstall::manage_rpcapd_service(t, i) i("",${REINSTALL_FLAG}).r0 ? u'
-	
-	SetOutPath $1
-	
-	StrCpy $INT_RET  $0
-	
-	pop $1
+	pop $9
+	pop $8
 	pop $0
 
 	StrCmp $INT_RET "error" ErrorCannotLoadDll
@@ -916,20 +958,32 @@ FunctionEnd
 
 Function un.UninstallRpcapdService
 	push $0
-	push $1
+	push $8
+	push $9
 	
-	StrCpy $1 $OUTDIR
+System::Call "kernel32::LoadLibrary(t '$INSTDIR\WinPcapInstall.dll') i .r8"
+
+StrCmp $8 "error" ErrorCannotLoadDll
+StrCmp $8 "0" ErrorCannotLoadDll
+
+System::Call "kernel32::GetProcAddress(i r8, t 'manage_rpcapd_service') i .r9"
+
+StrCmp $9 "error" UnloadKernelDllAndBailOut
+StrCmp $9 "0" UnloadKernelDllAndBailOut
+goto DllLoadedOk
+
+UnloadKernelDllAndBailOut:
+System::Call "kernel32::FreeLibrary(i r8)"  
+goto ErrorCannotLoadDll
+
+DllLoadedOk:
+
+System::Call "::$9(t '',i ${UNINSTALL_FLAG}) i .r0"
+StrCpy $INT_RET  $0
+System::Call "kernel32::FreeLibrary(i r8)"  
 	
-	SetOutPath $INSTDIR
-	
-; NOTE: NEVER EVER pass the path to the DLL to System::Call. On x64, it crashes the system.dll DLL.
-	System::Call 'WinPcapInstall::manage_rpcapd_service(t, i) i("",${UNINSTALL_FLAG}).r0 ? u'
-	
-	SetOutPath $1
-	
-	StrCpy $INT_RET  $0
-	
-	pop $1
+	pop $9
+	pop $8
 	pop $0
 
 	StrCmp $INT_RET "error" ErrorCannotLoadDll
@@ -955,20 +1009,32 @@ FunctionEnd
 Function InstallNetmon
 	
 	push $0
-	push $1
+	push $8
+	push $9
 	
-	StrCpy $1 $OUTDIR
+System::Call "kernel32::LoadLibrary(t '$INSTDIR\WinPcapInstall.dll') i .r8"
+
+StrCmp $8 "error" ErrorCannotLoadDll
+StrCmp $8 "0" ErrorCannotLoadDll
+
+System::Call "kernel32::GetProcAddress(i r8, t 'manage_netmon') i .r9"
+
+StrCmp $9 "error" UnloadKernelDllAndBailOut
+StrCmp $9 "0" UnloadKernelDllAndBailOut
+goto DllLoadedOk
+
+UnloadKernelDllAndBailOut:
+System::Call "kernel32::FreeLibrary(i r8)"  
+goto ErrorCannotLoadDll
+
+DllLoadedOk:
+
+System::Call "::$9(t '',i ${INSTALL_FLAG}) i .r0"
+StrCpy $INT_RET  $0
+System::Call "kernel32::FreeLibrary(i r8)"  
 	
-	SetOutPath $INSTDIR
-	
-; NOTE: NEVER EVER pass the path to the DLL to System::Call. On x64, it crashes the system.dll DLL.
-	System::Call 'WinPcapInstall::manage_netmon(t, i) i("",${INSTALL_FLAG}).r0 ? u'
-	
-	SetOutPath $1
-	
-	StrCpy $INT_RET  $0
-	
-	pop $1
+	pop $9
+	pop $8
 	pop $0
 
 	StrCmp $INT_RET "error" ErrorCannotLoadDll
