@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
- * Copyright (c) 2005 - 2006 CACE Technologies, Davis (California)
+ * Copyright (c) 2005 - 2010 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,12 +39,12 @@
 #pragma warning (disable : 4710) // inline function not expanded. used for strsafe functions
 #endif
 
-#include <packet32.h>
+#include <Packet32.h>
 #include <tchar.h>
-#include <StrSafe.h>
+#include <strsafe.h>
 
 #include "Packet32-Int.h"
-#include "..\driver\ioctls.h"
+#include "../driver/ioctls.h"
 
 #ifdef HAVE_WANPACKET_API
 #include "wanpacket/wanpacket.h"
@@ -94,8 +94,8 @@ CHAR g_LogFileName[1024] = "winpcap_debug.txt";
 
 #include <windows.h>
 #include <windowsx.h>
-#include <Iphlpapi.h>
-#include <IPIfCons.h>
+#include <iphlpapi.h>
+#include <ipifcons.h>
 
 #include <WpcapNames.h>
 
@@ -979,7 +979,7 @@ BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLe
 {
     DWORD   dwVerInfoSize;  // Size of version information block
     DWORD   dwVerHnd=0;   // An 'ignored' parameter, always '0'
-	LPSTR   lpstrVffInfo;
+	LPTSTR   lpstrVffInfo;
 	UINT	cbTranslate, dwBytes;
 	TCHAR	SubBlock[64];
 	PVOID	lpBuffer;
@@ -1025,7 +1025,7 @@ BOOL PacketGetFileVersion(LPTSTR FileName, PCHAR VersionBuff, UINT VersionBuffLe
 		// Create the file version string for the first (i.e. the only one) language.
 		StringCchPrintf(SubBlock,
 			sizeof(SubBlock)/sizeof(SubBlock[0]),
-			TEXT("\\StringFileInfo\\%04x%04x\\FileVersion"),
+			(TCHAR*)TEXT("\\StringFileInfo\\%04x%04x\\FileVersion"),
 			(*lpTranslate).wLanguage,
 			(*lpTranslate).wCodePage);
 		
