@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999 - 2005 NetGroup, Politecnico di Torino (Italy)
- * Copyright (c) 2005 - 2006 CACE Technologies, Davis (California)
+ * Copyright (c) 2005 - 2010 CACE Technologies, Davis (California)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,7 +53,7 @@
 //
 #define _CRT_SECURE_NO_DEPRECATE
 
-#include <packet32.h>
+#include <Packet32.h>
 #include "Packet32-Int.h"
 #include "debug.h"
 
@@ -63,7 +63,7 @@
 
 #include <windows.h>
 #include <windowsx.h>
-#include <Iphlpapi.h>
+#include <iphlpapi.h>
 #include <strsafe.h>
 #include <WpcapNames.h>
 
