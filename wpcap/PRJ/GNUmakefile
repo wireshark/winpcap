@@ -17,12 +17,12 @@ OPTFLAGS = -O
 LFLAGS = -Ppcap_
 YFLAGS = -y -p pcap_
 
-PACKET_DIR = packetNTx
+PACKET_DIR = packetNtx
 INSTALL_DIR = ${SYSTEMROOT}\system32
 
 CFLAGS = -I ../libpcap -I ../libpcap/bpf -I ../libpcap/lbl \
 	-I ../libpcap/Win32/Include -I../libpcap/Win32/Include/ipv6kit \
-	-I ../../common -I ../Win32-Extensions \
+	-I ../../Common -I ../Win32-Extensions \
 	-I ../../../Airpcap_DevPack/include \
 	-DLIBPCAP_EXPORTS -DYY_NEVER_INTERACTIVE -Dyylval=pcap_lval \
 	-DHAVE_STRERROR -DNEED_ADDRINFO_H -DINET6 -DWIN32 \
@@ -33,8 +33,8 @@ CFLAGS = -I ../libpcap -I ../libpcap/bpf -I ../libpcap/lbl \
 	-DHAVE_TC_API \
 	-DHAVE_ADDRINFO \
 	-mno-cygwin -shared ${OPTFLAGS}
-LDFLAGS = -Wl,--out-implib,../lib/libwpcap.a
-LIBS = -L ../../${PACKET_DIR}/DLL/Project -lPacket -lws2_32
+LDFLAGS = -Wl,--allow-multiple-definition -Wl,--out-implib,../lib/libwpcap.a
+LIBS = -L ../../${PACKET_DIR}/DLL/Project -lpacket -lws2_32
 OBJS = ../libpcap/bpf/net/bpf_filter.o \
 	../libpcap/bpf_dump.o \
 	../libpcap/bpf_image.o \
@@ -45,7 +45,7 @@ OBJS = ../libpcap/bpf/net/bpf_filter.o \
 	../libpcap/Win32/Src/getnetent.o \
 	../libpcap/Win32/Src/getservent.o \
 	../libpcap/grammar.o \
-  ../libpcap/Win32/Src/getaddrinfo.o \
+	../libpcap/Win32/Src/getaddrinfo.o \
 	../libpcap/inet.o \
 	../libpcap/Win32/Src/inet_aton.o \
 	../libpcap/Win32/Src/inet_net.o \
@@ -67,7 +67,7 @@ OBJS = ../libpcap/bpf/net/bpf_filter.o \
 main: ${OBJS}
 	@${RM} -rf ../lib/
 	mkdir ../lib/
-	${CC} ${CFLAGS} ${LDFLAGS} -o wpcap.dll wpcap.def ${OBJS} ${LIBS}
+	${CC} ${CFLAGS} ${LDFLAGS} -o wpcap.dll WPCAP.DEF ${OBJS} ${LIBS}
 
 install:
 	cp wpcap.dll ${INSTALL_DIR}
