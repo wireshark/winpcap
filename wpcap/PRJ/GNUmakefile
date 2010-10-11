@@ -17,6 +17,9 @@ OPTFLAGS = -O
 LFLAGS = -Ppcap_
 YFLAGS = -y -p pcap_
 
+FLEX = flex
+BISON = bison
+
 PACKET_DIR = packetNtx
 INSTALL_DIR = ${SYSTEMROOT}\system32
 
@@ -80,11 +83,11 @@ clean:
 
 .y.c:
 	@${RM} ../libpcap/grammar.c ../libpcap/tokdefs.h
-	${YACC} ${YFLAGS} -d $<
+	${BISON} ${YFLAGS} -d $<
 	mv y.tab.c ../libpcap/grammar.c
 	mv y.tab.h ../libpcap/tokdefs.h
 .l.c:
 	@${RM} $@
-	${LEX} ${LFLAGS} -t $< >$*.c
+	${FLEX} ${LFLAGS} -t $< >$*.c
 .c.o:
 	${CC} ${CFLAGS} -o $*.o -c $<
