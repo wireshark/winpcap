@@ -26,7 +26,7 @@ INSTALL_DIR = ${SYSTEMROOT}\system32
 CFLAGS = -I ../libpcap -I ../libpcap/bpf -I ../libpcap/lbl \
 	-I ../libpcap/Win32/Include -I../libpcap/Win32/Include/ipv6kit \
 	-I ../../Common -I ../Win32-Extensions \
-	-I ../../../Airpcap_DevPack/include \
+	-I ../../../AirPcap_DevPack/include \
 	-DLIBPCAP_EXPORTS -DYY_NEVER_INTERACTIVE -Dyylval=pcap_lval \
 	-DHAVE_STRERROR -DNEED_ADDRINFO_H -DINET6 -DWIN32 \
 	-DSIZEOF_CHAR=1 -DSIZEOF_SHORT=2 -DSIZEOF_INT=4 -DSIZEOF_LONG_LONG=8 -DWPCAP -D'_U_=' \
@@ -35,9 +35,10 @@ CFLAGS = -I ../libpcap -I ../libpcap/bpf -I ../libpcap/lbl \
 	-DHAVE_REMOTE -DHAVE_AIRPCAP_API \
 	-DHAVE_TC_API \
 	-DHAVE_ADDRINFO \
+	-DYY_NO_UNISTD_H \
 	-mno-cygwin -shared ${OPTFLAGS}
-LDFLAGS = -Wl,--allow-multiple-definition -Wl,--out-implib,../lib/libwpcap.a
-LIBS = -L ../../${PACKET_DIR}/DLL/Project -lpacket -lws2_32
+LDFLAGS = -Wl,--out-implib,../lib/libwpcap.a
+LIBS = -L ../../${PACKET_DIR}/Dll/Project -lpacket -lws2_32
 OBJS = ../libpcap/bpf/net/bpf_filter.o \
 	../libpcap/bpf_dump.o \
 	../libpcap/bpf_image.o \
