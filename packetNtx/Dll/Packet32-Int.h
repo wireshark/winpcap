@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2006
- * CACE Technologies LLC, Davis (CA)
+ * Copyright (c) 2006 - 2010
+ * CACE Technologies Inc., Davis (CA)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  * notice, this list of conditions and the following disclaimer in the
  * documentation and/or other materials provided with the distribution.
- * 3. Neither the name of the company (CACE Technologies LLC) nor the 
+ * 3. Neither the name of the company (CACE Technologies Inc.) nor the 
  * names of its contributors may be used to endorse or promote products 
  * derived from this software without specific prior written permission.
  *
@@ -43,13 +43,17 @@
 #endif //HAVE_NPFIM_API
 
 #ifdef __MINGW32__
+#ifdef __MINGW64__
+#include <ntddndis.h>
+#else /*__MINGW64__*/
 #include <ddk/ntddndis.h>
-#else
+#endif /*__MINGW64__*/
+#else /*__MINGW32__*/
 #pragma warning( push )
 #pragma warning( disable : 4201 )
 #include <ntddndis.h>
 #pragma warning( pop )
-#endif //__MINGW32__
+#endif /*__MINGW32__*/
 
 /*!
   \brief Linked list item containing one of the IP addresses associated with an adapter.
