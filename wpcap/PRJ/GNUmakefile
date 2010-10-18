@@ -35,6 +35,7 @@ CFLAGS = -I ../libpcap -I ../libpcap/bpf -I ../libpcap/lbl \
 	-DHAVE_REMOTE -DHAVE_AIRPCAP_API \
 	-DHAVE_TC_API \
 	-DHAVE_ADDRINFO \
+	-DHAVE_LIMITS_H \
 	-DYY_NO_UNISTD_H \
 	-mno-cygwin -shared ${OPTFLAGS}
 LDFLAGS = -Wl,--out-implib,../lib/libwpcap.a
