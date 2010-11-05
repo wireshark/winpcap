@@ -657,7 +657,7 @@ OF FUNCTIONS FOR WIRELESS SUPPORT.
 pcap_get_airpcap_handle() allows to obtain the airpcap handle of an open adapter. This handle can be used with
 the AirPcap API functions to perform wireless-releated operations, e.g. changing the channel or enabling 
 WEP decryption. For more details about the AirPcap wireless capture adapters, see 
-http://www.cacetech.com/products/airpcap.htm
+http://www.cacetech.com/products/airpcap.html
 	
 \param p: handle to an open libpcap adapter
 
