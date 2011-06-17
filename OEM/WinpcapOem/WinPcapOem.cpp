@@ -207,9 +207,11 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 	BOOL is64BitOs = FALSE;
 	BOOL bLoadDriverResult;
 	BOOL bUseNetMonPacket;
-
+	char errorString[PACKET_ERRSTR_SIZE];
+	
 	TRACE_ENTER("WoemEnterDllInternal");
 
+	errorString[PACKET_ERRSTR_SIZE - 1] = '\0';
 	WoemErrorString[PACKET_ERRSTR_SIZE - 1] = '\0';
 
 #ifdef TNT_BUILD
@@ -755,9 +757,11 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			//		
 			if(create_driver_service(NPF_DRIVER_NAME, 
 				NPF_SERVICE_DESC, 
-				NPF_DRIVER_COMPLETE_PATH) == -1)
+				NPF_DRIVER_COMPLETE_PATH,
+				errorString, PACKET_ERRSTR_SIZE) == -1)
 			{
-				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("unable to create the packet driver service");
+				_snprintf(WoemErrorString, PACKET_ERRSTR_SIZE - 1, "unable to create the packet driver service: %s", errorString);
+				TRACE_MESSAGE("%s", WoemErrorString);
 
 				_unlink(g_DllFullPathNm);
 				_unlink(g_DllFullPathNoNm);
@@ -783,9 +787,11 @@ BOOL WoemEnterDllInternal(HINSTANCE DllHandle, char *WoemErrorString)
 			//
 			// Load the driver
 			//
-			if(start_service(NPF_DRIVER_NAME) == -1)
+			if(start_service(NPF_DRIVER_NAME, errorString, PACKET_ERRSTR_SIZE) == -1)
 			{
-				WOEM_ENTER_DLL_TRACE_AND_COPY_ERROR("unable to start the packet driver service");
+				
+				_snprintf(WoemErrorString, PACKET_ERRSTR_SIZE - 1, "unable to start the packet driver service: %s", errorString);
+				TRACE_MESSAGE("%s", WoemErrorString);
 
 				delete_service(NPF_DRIVER_NAME);
 				_unlink(g_DllFullPathNm);
@@ -994,7 +1000,6 @@ BOOL WoemLeaveDll()
 {
 	DWORD result;
 	BOOLEAN retry;
-///
 /// MCAFEE
 ///
 	BOOLEAN is64BitOs = FALSE;
