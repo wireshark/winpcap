@@ -18,8 +18,8 @@
 ////////////////////////////////////////////////////////////////////
 int delete_service(LPCTSTR ServiceName);
 int stop_service(LPCTSTR ServiceName);
-int start_service(LPCTSTR ServiceName);
-int create_driver_service(LPCTSTR ServiceName, LPCTSTR ServiceDescription, LPCTSTR ServicePath);
+int start_service(LPCTSTR ServiceName, char *ErrorString, size_t Length);
+int create_driver_service(LPCTSTR ServiceName, LPCTSTR ServiceDescription, LPCTSTR ServicePath, char* ErrorString, size_t Length);
 int check_if_service_is_running(LPCTSTR ServiceName);
 int check_if_service_is_present(LPCTSTR ServiceName);
 int change_start_type_service(LPCTSTR ServiceName, DWORD StartType);
