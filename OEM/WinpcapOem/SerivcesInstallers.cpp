@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003 - 2005 NetGroup, Politecnico di Torino (Italy).
- * Copyright (c) 2005 CACE Technologies, Davis (California).
+ * Copyright (c) 2005 -2011 Riverbed Technology, San Francisco (California).
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -89,6 +89,7 @@ inline ULONG ReleaseObj(IUnknown* punk)
 }
 
 void DisplayErrorText(DWORD dwLastError);
+static void ConvertLastErrorToString(DWORD dwLastError, char *errorString, size_t length);
 
 
 ///////////////////////////////////////////////////////////////////////
@@ -717,20 +718,29 @@ int change_start_type_service(LPCTSTR ServiceName, DWORD StartType)
 }
 
 
-int start_service(LPCTSTR ServiceName)
+int start_service(LPCTSTR ServiceName, char* ErrorString, size_t Length)
 {
 	SC_HANDLE SCM_Handle;
 	SC_HANDLE ServiceHandle;
 	DWORD ReturnValue;
-	
+	DWORD LastError;
+	char InternalErrorMsg[PACKET_ERRSTR_SIZE];
+
 	SCM_Handle=OpenSCManager(NULL,  /*local machine  */
 		NULL,						/*active database*/
 		SC_MANAGER_ALL_ACCESS);
 	
 	if (SCM_Handle == NULL)
 	{
-		TRACE_MESSAGE("Error opening Service Control Manager: ");
-		DisplayErrorText(GetLastError());
+		LastError = GetLastError();
+		::ConvertLastErrorToString(LastError, InternalErrorMsg, PACKET_ERRSTR_SIZE);
+		if (Length > 0)
+		{
+			ErrorString[Length - 1] = '\0';		
+			_snprintf(ErrorString, Length, "Error opening Service Control Manager: %s", InternalErrorMsg);		
+		}
+		TRACE_MESSAGE("Error opening Service Control Manager: %s", InternalErrorMsg);
+		
 		return -1;
 	}
 	
@@ -741,8 +751,14 @@ int start_service(LPCTSTR ServiceName)
 	
 	if (ServiceHandle == NULL)
 	{
-		TRACE_MESSAGE("Error opening service %s: ",ServiceName);
-		DisplayErrorText(GetLastError());
+		LastError = GetLastError();
+		::ConvertLastErrorToString(LastError, InternalErrorMsg, PACKET_ERRSTR_SIZE);
+		if (Length > 0)
+		{
+			ErrorString[Length - 1] = '\0';		
+			_snprintf(ErrorString, Length, "Error opening service %s: %s", ServiceName, InternalErrorMsg);		
+		}
+		TRACE_MESSAGE("Error opening service %s: %s", ServiceName, InternalErrorMsg);
 		
 		if (!CloseServiceHandle(SCM_Handle))
 			TRACE_MESSAGE("Error closing Service control Manager\n");
@@ -754,8 +770,14 @@ int start_service(LPCTSTR ServiceName)
 	
 	if (!StartService(ServiceHandle,0,NULL))
 	{
-		TRACE_MESSAGE("Error starting service %s:",ServiceName);
-		DisplayErrorText(GetLastError());
+		LastError = GetLastError();
+		::ConvertLastErrorToString(LastError, InternalErrorMsg, PACKET_ERRSTR_SIZE);
+		if (Length > 0)
+		{
+			ErrorString[Length - 1] = '\0';		
+			_snprintf(ErrorString, Length, "Error starting service %s: %s", ServiceName, InternalErrorMsg);		
+		}
+		TRACE_MESSAGE("Error starting service %s: %s", ServiceName, InternalErrorMsg);
 		ReturnValue=-1;
 		
 	}
@@ -764,27 +786,42 @@ int start_service(LPCTSTR ServiceName)
 	
 	if (!CloseServiceHandle(ServiceHandle))
 	{
-		TRACE_MESSAGE("Error closing service %s\n",ServiceName);
+		LastError = GetLastError();
+		::ConvertLastErrorToString(LastError, InternalErrorMsg, PACKET_ERRSTR_SIZE);
+		if (Length > 0)
+		{
+			ErrorString[Length - 1] = '\0';		
+			_snprintf(ErrorString, Length, "Error closing service handle %s: %s", ServiceName, InternalErrorMsg);		
+		}
+		TRACE_MESSAGE("Error closing service handle %s: %s", ServiceName, InternalErrorMsg);
 		ReturnValue=-1;
 	}
 	
 	
 	if (!CloseServiceHandle(SCM_Handle))
 	{
-		TRACE_MESSAGE("Error closing Service control Manager\n");
+		LastError = GetLastError();
+		::ConvertLastErrorToString(LastError, InternalErrorMsg, PACKET_ERRSTR_SIZE);
+		if (Length > 0)
+		{
+			ErrorString[Length - 1] = '\0';		
+			_snprintf(ErrorString, Length, "Error closing Service Control Manager: %s", InternalErrorMsg);		
+		}
+		TRACE_MESSAGE("Error closing Service Control Manager: %s", InternalErrorMsg);
 		ReturnValue=-1;
 	}
 	
 	return ReturnValue;
-	
 }
 
 
-int create_driver_service(LPCTSTR ServiceName,LPCTSTR ServiceDescription,LPCTSTR ServicePath)
+int create_driver_service(LPCTSTR ServiceName,LPCTSTR ServiceDescription,LPCTSTR ServicePath, char *ErrorString, size_t Length)
 {
 	SC_HANDLE SCM_Handle;
 	SC_HANDLE ServiceHandle;
-	DWORD ReturnValue;
+	DWORD LastError;
+	char InternalErrorMsg[PACKET_ERRSTR_SIZE];
+	int ReturnValue;
 	
 	SCM_Handle=OpenSCManager(NULL,  /*local machine  */
 		NULL,						/*active database*/
@@ -792,10 +829,14 @@ int create_driver_service(LPCTSTR ServiceName,LPCTSTR ServiceDescription,LPCTSTR
 	
 	if (SCM_Handle==NULL)
 	{
-		
-		TRACE_MESSAGE("Error opening Service Control Manager: ");
-		DisplayErrorText(GetLastError());
-		
+		LastError = GetLastError();
+		::ConvertLastErrorToString(LastError, InternalErrorMsg, PACKET_ERRSTR_SIZE);
+		if (Length > 0)
+		{
+			ErrorString[Length-1] = '\0';
+			_snprintf(ErrorString, Length, "Error opening Service Control Manager: %s", InternalErrorMsg);
+		}
+		TRACE_MESSAGE("Error opening Service Control Manager: %s", InternalErrorMsg);
 		return -1;
 	}
 	
@@ -815,7 +856,8 @@ int create_driver_service(LPCTSTR ServiceName,LPCTSTR ServiceDescription,LPCTSTR
 	
 	if (ServiceHandle==NULL)
 	{
-		if(GetLastError() == ERROR_SERVICE_EXISTS)
+		LastError = GetLastError();
+		if(LastError == ERROR_SERVICE_EXISTS)
 		{
 			if (!CloseServiceHandle(SCM_Handle))
 				if (stdout != NULL)
@@ -824,17 +866,19 @@ int create_driver_service(LPCTSTR ServiceName,LPCTSTR ServiceDescription,LPCTSTR
 				return 0;
 		}			
 		
-		TRACE_MESSAGE("Error creating service %s: (%d)",
-			ServiceName,
-			GetLastError());
-		
-		DisplayErrorText(GetLastError());
+		::ConvertLastErrorToString(LastError, InternalErrorMsg, PACKET_ERRSTR_SIZE);
+		if (Length > 0)
+		{
+			ErrorString[Length - 1] = '\0';		
+			_snprintf(ErrorString, Length, "Error creating service %s: %s", ServiceName, InternalErrorMsg);
+		}
+		TRACE_MESSAGE("%s", ErrorString);
 		
 		if (!CloseServiceHandle(SCM_Handle))
 			if (stdout != NULL)
 				TRACE_MESSAGE("Error closing Service control Manager\n");
 			
-			return -1;
+		return -1;
 	}
 	
 	TRACE_MESSAGE("Service %s successfully created.\n",ServiceName);
@@ -843,14 +887,26 @@ int create_driver_service(LPCTSTR ServiceName,LPCTSTR ServiceDescription,LPCTSTR
 	
 	if (!CloseServiceHandle(ServiceHandle))
 	{
-		TRACE_MESSAGE("Error closing service %s.\n",ServiceName);
+		::ConvertLastErrorToString(GetLastError(), InternalErrorMsg, PACKET_ERRSTR_SIZE);
+		if (Length > 0)
+		{
+			ErrorString[Length - 1] = '\0';		
+			_snprintf(ErrorString, Length, "Error closing service %s: %s", ServiceName, InternalErrorMsg);		
+		}
+		TRACE_MESSAGE("Error closing service %s: %s", ServiceName, InternalErrorMsg);
 		ReturnValue=-1;
 	}
 	
 	
 	if (!CloseServiceHandle(SCM_Handle))
 	{
-		TRACE_MESSAGE("Error closing Service control Manager\n");
+		::ConvertLastErrorToString(GetLastError(), InternalErrorMsg, PACKET_ERRSTR_SIZE);
+		if (Length > 0)
+		{
+			ErrorString[Length - 1] = '\0';		
+			_snprintf(ErrorString, Length, "Error closing Service Control Manager: %s", InternalErrorMsg);		
+		}
+		TRACE_MESSAGE("Error closing Service Control Manager: %s", InternalErrorMsg);
 		ReturnValue=-1;
 	}
 	
@@ -946,6 +1002,42 @@ int check_if_service_is_present(LPCTSTR ServiceName)
 	return 0;
 }
 
+void ConvertLastErrorToString(DWORD dwLastError, char *errorString, size_t length)
+{
+    LPSTR MessageBuffer;
+    DWORD dwBufferLength;
+	
+    DWORD dwFormatFlags = FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_IGNORE_INSERTS |
+        FORMAT_MESSAGE_FROM_SYSTEM ;
+	
+    //
+    // Call FormatMessage() to allow for message 
+    //  text to be acquired from the system 
+    //  or from the supplied module handle.
+    //
+	
+    if(dwBufferLength = FormatMessageA(
+        dwFormatFlags,
+        NULL, // module to get message from (NULL == system)
+        dwLastError,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // default language
+        (LPSTR) &MessageBuffer,
+        0,
+        NULL
+        ))
+    {
+		if (length > 0)
+		{
+			errorString[length-1] = '\0';
+			strncpy(errorString, MessageBuffer, length-1);
+		}
+        //
+        // Free the buffer allocated by the system.
+        //
+        LocalFree(MessageBuffer);
+    }
+}
 
 void DisplayErrorText(DWORD dwLastError)
 {
@@ -987,3 +1079,4 @@ void DisplayErrorText(DWORD dwLastError)
     if(hModule != NULL)
         FreeLibrary(hModule);
 }
+
