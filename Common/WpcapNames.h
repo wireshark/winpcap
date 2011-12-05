@@ -39,8 +39,8 @@
 //  - please do not use prefix names longer than 70 chars. 
 //  - the following characters are surely accepted in the prefixes:  "[A-Z][a-z][0-9]_-',"   
 //
-#define NPF_DRIVER_NAME							"NPF"					///< (HHH) Packet.dll
-#define NPF_DRIVER_NAME_WIDECHAR				L"NPF"					///< (HHH) Packet.dll
+#define NPF_DRIVER_NAME							"WPRO_41_2529"					///< (HHH) Packet.dll
+#define NPF_DRIVER_NAME_WIDECHAR				L"WPRO_41_2529"					///< (HHH) Packet.dll
 
 //
 // Derived strings
