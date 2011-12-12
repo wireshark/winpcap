@@ -15,14 +15,14 @@
 #define WINPCAPOEM_MAJOR	4
 #define WINPCAPOEM_MINOR	1
 #define WINPCAPOEM_REV		2
-#define WINPCAPOEM_BUILD	2529
+#define WINPCAPOEM_BUILD	2536
 
-#define WINPCAPOEM_VER_STRING	"4.1.2.2529.Pro"
+#define WINPCAPOEM_VER_STRING	"4.1.2.2536.Pro"
 
 #define WINPCAPOEM_COMPANY_NAME 			"Riverbed Technology"
 
 #define WINPCAPOEM_PACKET_WRAPPER_NAME 		"Packet.dll Wrapper"
-#define WINPCAPOEM_VERSION_STRING 			"4.1.2.2529.Pro"
+#define WINPCAPOEM_VERSION_STRING 			"4.1.2.2536.Pro"
 #define WINPCAPOEM_PRODUCT_NAME 			"WinPcap Professional"
 #define WINPCAPOEM_COPYRIGHT_STRING 		"Copyright © 2005-2011 Riverbed Technology"
 #define WINPCAPOEM_PACKET_WRAPPER_FILENAME 	"Packet.dll (wrapper)"
