@@ -2442,11 +2442,15 @@ INT PacketSendPackets(LPADAPTER AdapterObject, PVOID PacketBuff, ULONG Size, BOO
 				&BytesTransfered,
 				NULL);
 
-			// Exit from the loop on termination or error
-			if(TotBytesTransfered >= Size || Res != TRUE)
+			// Exit from the loop on error
+			if(Res != TRUE)
 				break;
 
 			TotBytesTransfered += BytesTransfered;
+
+			// Exit from the loop if we have transferred everything
+			if(TotBytesTransfered >= Size)
+				break;
 
 			// calculate the time interval to wait before sending the next packet
 			TargetTicks.QuadPart = StartTicks.QuadPart +
