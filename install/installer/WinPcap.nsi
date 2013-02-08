@@ -1,5 +1,5 @@
-; Copyright (c) 2005 - 2010
-; CACE Technologies
+; Copyright (c) 2005 - 2010 CACE Technologies
+; Copyright (c) 2010 - 2013 Riverbed Technology
 ; All rights reserved.
 ; 
 ; Redistribution and use in source and binary forms, with or without 
@@ -11,9 +11,9 @@
 ; 2. Redistributions in binary form must reproduce the above copyright 
 ; notice, this list of conditions and the following disclaimer in the 
 ; documentation and/or other materials provided with the distribution. 
-; 3. Neither the name of CACE            nor the names of its 
-; contributors may be used to endorse or promote products derived from 
-; this software without specific prior written permission. 
+; 3. Neither the name of CACE Technologies, Riverbed Technology nor the 
+; names of their contributors may be used to endorse or promote products
+; derived from this software without specific prior written permission. 
 ; 
 ; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
 ; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
@@ -45,9 +45,10 @@
   !define WINPCAP_PRJ_REV "0"
   !define WINPCAP_PRJ_BUILD "2001"
   !define WINPCAP_PROJ_VERSION_DOTTED "4.1.0.2001"
-  !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2010 CACE Technologies, Inc."
+  !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2013 Riverbed Technology, Inc."
   !define WINPCAP_PRODUCT_NAME "WinPcap 4.1.2"
-  !define WINPCAP_COMPANY_NAME "CACE Technologies, Inc."
+  !define WINPCAP_COMPANY_NAME "Riverbed Technology, Inc."
+  !define WINPCAP_COMPANY_URL "http://www.riverbed.com/"
   !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_2.exe"
 
 ; letter 'r'
@@ -608,11 +609,11 @@ DontAutoStartDriver:
 
     WriteRegStr HKLM \
 	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
-	"Publisher" "CACE Technologies"  
+	"Publisher" "${WINPCAP_COMPANY_NAME}"  
 
     WriteRegStr HKLM \
 	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
-	"URLInfoAbout" "http://www.cacetech.com"
+	"URLInfoAbout" "${WINPCAP_COMPANY_URL}"
   
     WriteRegStr HKLM \
 	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
