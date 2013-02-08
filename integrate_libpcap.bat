@@ -25,6 +25,7 @@ echo ---------------------------------------
 echo Applying remote code patch...
 pushd .\wpcap\libpcap\
 patch -p1 -s < remote_code.patch 
+chmod -R guoa+rw *
 del /s *.orig >NUL 2>NUL
 popd
 echo Applying remote code patch -- Done
@@ -34,6 +35,7 @@ echo ---------------------------------------
 echo Applying TurboCap code patch...
 pushd .\wpcap\libpcap\
 patch -p1 -s < tc.patch 
+chmod -R guoa+rw *
 del /s *.orig >NUL 2>NUL
 popd
 echo Applying TurboCap code patch -- Done
