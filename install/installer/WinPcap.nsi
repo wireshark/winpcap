@@ -43,13 +43,13 @@
   !define WINPCAP_PRJ_MAJOR "4"
   !define WINPCAP_PRJ_MINOR "1"
   !define WINPCAP_PRJ_REV "0"
-  !define WINPCAP_PRJ_BUILD "2001"
-  !define WINPCAP_PROJ_VERSION_DOTTED "4.1.0.2001"
+  !define WINPCAP_PRJ_BUILD "2002"
+  !define WINPCAP_PROJ_VERSION_DOTTED "4.1.0.2002"
   !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2013 Riverbed Technology, Inc."
-  !define WINPCAP_PRODUCT_NAME "WinPcap 4.1.2"
+  !define WINPCAP_PRODUCT_NAME "WinPcap 4.1.3"
   !define WINPCAP_COMPANY_NAME "Riverbed Technology, Inc."
   !define WINPCAP_COMPANY_URL "http://www.riverbed.com/"
-  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_2.exe"
+  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_3.exe"
 
 ; letter 'r'
   !define REINSTALL_FLAG "114"  
