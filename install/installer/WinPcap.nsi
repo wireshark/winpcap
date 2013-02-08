@@ -30,7 +30,6 @@
 ; This is the NSIS project for WinPcap installation. It will require NSIS
 ; from http://nsis.sourceforge.net/, plus three plugins:
 ;
-;   - nsweb (http://nsis.sourceforge.net/wiki/NsWeb:_A_plugin_to_display_the_web_browser_control_in_a_custom_page)
 ;   - Internet (http://nsis.sourceforge.net/wiki/Internet_plugin)
 ;   - ExecDos (http://nsis.sourceforge.net/wiki/ExecDos)
 ;
@@ -159,10 +158,6 @@ FunctionEnd
 
 ;--------------------------------
 ;Installer Pages
-
-  ;Installer
-  Page custom "ShowHtmlPage" "" ""
-  
   !insertmacro MUI_PAGE_WELCOME
   !insertmacro MUI_PAGE_LICENSE "distribution\license.txt"
   Page custom MyCustomPage
@@ -289,17 +284,6 @@ IA64InstallAbort:
 
 NormalInstallation:
 
-
-;WindowsOTBanner:
-; Windows OT. Simply use our local copy of the banner.
-    File /oname=$TEMP\CACE_Banner.htm CACE_Banner.htm
-    File /oname=$TEMP\CACE_Logo.gif  CACE_Logo.gif
-    File /oname=$TEMP\NetSol.jpg NetSol.jpg
-
-;Ended:
-
-;SkipWebPageStuff:
-
   FunctionEnd
 
 
@@ -328,41 +312,16 @@ NormalUninstallation:
 ;--------------------------------
 ;Called when the installation fails. Just remove any temp file on the machine.
   Function .onInstFailed
-    call CleanupTempFiles
   FunctionEnd
 
 ;--------------------------------
 ;Called when the installation succeeds. Just remove any temp file on the machine.
   Function .onInstSuccess
-    call CleanupTempFiles
-  FunctionEnd
-
-;--------------------------------
-;Remove any temp file used during the installation
-  Function CleanupTempFiles
-   Delete /REBOOTOK $TEMP\CACE_Banner.htm
-   Delete /REBOOTOK $TEMP\CACE_Logo.gif
-   Delete /REBOOTOK $TEMP\NetSol.jpg
-  FunctionEnd
-
-;--------------------------------
-;Called to show the initial web page with the banneer.
-  Function "ShowHtmlPage"
-
-!insertmacro MUI_HEADER_TEXT "${WINPCAP_PRODUCT_NAME} Installer" "Welcome to the ${WINPCAP_PRODUCT_NAME} Installation Wizard"
-
-    nsWeb::ShowWebInPage "$TEMP\CACE_Banner.htm"
-
   FunctionEnd
 
 ;--------------------------------
 ;Main Installer Section
 Section "Main Installer Section" MainInstall
-
-;
-; First of all, we delete the intermediate files used only by the installer
-;
-    Call CleanupTempFiles
 
 ;Assume no reboot by default
     SetRebootFlag false
