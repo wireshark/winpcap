@@ -198,6 +198,7 @@ FunctionEnd
 
 	StrCmp $WINPCAP_TARGET_OS "Vista" Check_IA64
 	StrCmp $WINPCAP_TARGET_OS "7" Check_IA64
+	StrCmp $WINPCAP_TARGET_OS "8" Check_IA64
 	goto ContinueInstallationOk
 
 Check_IA64:
@@ -225,6 +226,7 @@ ContinueInstallationOk:
     StrCmp $WINPCAP_TARGET_OS "2003" SupportedOsOk
     StrCmp $WINPCAP_TARGET_OS "Vista" SupportedOsOk 
     StrCmp $WINPCAP_TARGET_OS "7" SupportedOsOk 
+    StrCmp $WINPCAP_TARGET_OS "8" SupportedOsOk
 
 ; if we reach this point, the OS is not supported. Simply exit.
     MessageBox MB_ICONEXCLAMATION|MB_OK "This version of Windows is not supported by ${WINPCAP_PRODUCT_NAME}.$\nThe installation will be aborted."
@@ -505,8 +507,7 @@ MainInstallationProcedure:
     StrCmp $WINPCAP_TARGET_OS "2003" CopyFilesNT5
     StrCmp $WINPCAP_TARGET_OS "Vista" CopyFilesVista  ; vista (beta1) seems not to have the netmon stuff...
     StrCmp $WINPCAP_TARGET_OS "7" CopyFilesWin7
-  
-	
+    StrCmp $WINPCAP_TARGET_OS "8" CopyFilesWin8
 
 CopyFilesNT5:
 	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86"  InstallNetMonx86
@@ -584,6 +585,7 @@ CopyFilesNT4:
 
     Goto EndCopy
 
+CopyFilesWin8:
 CopyFilesWin7:
 CopyFilesVista:
     File "Distribution\Vista_x86\packet.dll"
@@ -727,11 +729,13 @@ Section "Uninstall" MainUnistall
     StrCmp $WINPCAP_TARGET_OS "2003" RmFilesNT5
     StrCmp $WINPCAP_TARGET_OS "Vista" RmFilesVista
     StrCmp $WINPCAP_TARGET_OS "7" RmFilesWin7
+    StrCmp $WINPCAP_TARGET_OS "8" RmFilesWin8
   
 RmFilesNT4:
 RmFilesNT5:
 RmFilesVista:
 RmFilesWin7:
+RmFilesWin8:
 
 ;Run uninstall commands
 
@@ -1289,9 +1293,8 @@ FunctionEnd
    StrCmp $R1 '5.2' lbl_winnt_XP64_2003
    StrCmp $R1 '6.0' lbl_vista
    StrCmp $R1 '6.1' lbl_Win7 lbl_error
- 
- 
- 
+   StrCmp $R1 '6.2' lbl_Win8 lbl_error
+  
    lbl_winnt_x:
      StrCpy $WINPCAP_TARGET_OS 'NT'
 
@@ -1338,6 +1341,14 @@ lbl_winnt_2003:
  
    lbl_Win7:
      Strcpy $WINPCAP_TARGET_OS '7'
+
+	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+	 IfErrors lbl_error
+
+   Goto lbl_done
+
+   lbl_Win8:
+     Strcpy $WINPCAP_TARGET_OS '8'
 
 	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
 	 IfErrors lbl_error
@@ -1408,6 +1419,7 @@ lbl_winnt_2003:
    StrCmp $R1 '5.2' lbl_winnt_XP64_2003
    StrCmp $R1 '6.0' lbl_vista
    StrCmp $R1 '6.1' lbl_Win7 lbl_error
+   StrCmp $R1 '6.2' lbl_Win8 lbl_error
  
  
  
@@ -1451,6 +1463,14 @@ lbl_winnt_2003:
 
    lbl_Win7:
      Strcpy $WINPCAP_TARGET_OS '7'
+
+	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+	 IfErrors lbl_error
+
+   Goto lbl_done
+
+   lbl_Win8:
+     Strcpy $WINPCAP_TARGET_OS '8'
 
 	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
 	 IfErrors lbl_error
@@ -1515,6 +1535,7 @@ Function GetKernelDllVersion
   IntCmp $R0 0x00050002	IsXP2003
   IntCmp $R0 0x00060000	IsVista
   IntCmp $R0 0x00060001	IsWin7
+  IntCmp $R0 0x00060002 IsWin8
 
   StrCpy $TRUE_OS_VERSION "Unknown"
   goto IWINT_Exit
@@ -1545,6 +1566,11 @@ IsVista:
   
 IsWin7:
   StrCpy $TRUE_OS_VERSION "7"
+  goto IWINT_Exit
+  
+IsWin8:
+  StrCpy $TRUE_OS_VERSION "8"
+  goto IWINT_Exit
 
 IWINT_Exit:
 
