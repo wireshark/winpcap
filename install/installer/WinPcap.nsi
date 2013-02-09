@@ -1252,7 +1252,7 @@ FunctionEnd
    StrCmp $R1 '5.1' lbl_winnt_XP
    StrCmp $R1 '5.2' lbl_winnt_XP64_2003
    StrCmp $R1 '6.0' lbl_vista
-   StrCmp $R1 '6.1' lbl_Win7 lbl_error
+   StrCmp $R1 '6.1' lbl_Win7
    StrCmp $R1 '6.2' lbl_Win8 lbl_error
   
    lbl_winnt_x:
