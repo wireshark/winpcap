@@ -1,4 +1,7 @@
-$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.19 2009-10-08 17:08:15 gianlucav Exp $
+$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.20 2010/06/22 22:31:08 gianlucav Exp $
+
+20130224-GV: Commented out all the instructions to create a devpack and the online manual, as the compilation of
+the cygwin wpcap.dll is broken now.
 
 WINPCAP RELEASE PROCEDURE
 =========================
@@ -132,19 +135,20 @@ How to compile WinPcap
     Execute "compileDriver.bat". 
     Close the build environment. 
 	NOTE: TODO add how to check if the build was ok or not.
-
-18. Cygwin compilation (needed for the developer's pack).
-    Open a cygwin shell.
-
-19. Go into 
-	  %BUILD_TREE\winpcap\packetntx\dll\project
-	
-20. Type "make".
-
-21. Go into 
-	 %BUILD_TREE\winpcap\wpcap\PRJ
-
-22. Type "make". 1 warning should be generated.
+#
+#18. Cygwin compilation (needed for the developer's pack).
+#    Open a cygwin shell.
+#
+#19. Go into 
+#	  %BUILD_TREE\winpcap\packetntx\dll\project
+#	
+#20. Type "make".
+#
+#21. Go into 
+#	 %BUILD_TREE\winpcap\wpcap\PRJ
+#
+#22. Type "make". 1 warning should be generated.
+#
 
 How to sign the binaries and create the installer for WinPcap 
 -------------------------------------------------------------
@@ -181,20 +185,20 @@ How to sign the binaries and create the installer for WinPcap
 		%BUILD_TREE%\winpcap\install\installer\WinPcap_<version>.exe
 		with the company certificate + cross certificate
 
-How to create the developer's pack for WinPcap
-----------------------------------------------
-
-1.  After the build is completed, in a command prompt go to 
- 	  %BUILD_TREE%\winpcap
-
-2.  Run "build_wpdpack.bat". The script will pause after each step of the
-    build:
-	a. Creation of the include folder (no errors/warnings)
-	b. Creation of the lib folder (no errors/warnings)
-	c. Creation of the Examples and Examples-pcap folders (no errors/warnings)
-	d. creation of the documentation. Some warnings/errors are generated:
-	   - a Doxygen warning processing the file winpcap/dox/libpcap/funcs/pcap.h
-	   
+#How to create the developer's pack for WinPcap
+#----------------------------------------------
+#
+#1.  After the build is completed, in a command prompt go to 
+# 	  %BUILD_TREE%\winpcap
+#
+#2.  Run "build_wpdpack.bat". The script will pause after each step of the
+#    build:
+#	a. Creation of the include folder (no errors/warnings)
+#	b. Creation of the lib folder (no errors/warnings)
+#	c. Creation of the Examples and Examples-pcap folders (no errors/warnings)
+#	d. creation of the documentation. Some warnings/errors are generated:
+#	   - a Doxygen warning processing the file winpcap/dox/libpcap/funcs/pcap.h
+#	   
 
 How to create the public sources zip file
 -----------------------------------------
@@ -224,10 +228,10 @@ How to create the public sources zip file
 SCM procedures part #1
 ----------------------
 
-1.  %BUILD_TREE%\winpcap\wpdpack\
-		|
-		v
-	WinPcap_<version>_WpdPack.zip
+#1.  %BUILD_TREE%\winpcap\wpdpack\
+#		|
+#		v
+#	WinPcap_<version>_WpdPack.zip
 
 2.  %BUILD_TREE%\Sources\winpcap
         |
@@ -241,42 +245,42 @@ SCM procedures part #1
     
 WEB FOLDER
 ----------
-
-1. Call the script 
-	%BUILD_TREE%\create_web.bat <version_short>
-   where <version_short> is something like "40b3"
-   
-2. Create a file called "index.html" into
-		%BUILD_TREE%\web\docs\docs_<version_short>\
-	The content of the file is this one:
-	
-	.................................................
-	<SCRIPT language=JavaScript>
-		function redirt(thisarea) { thisurl = '' + thisarea; window.location=thisurl; }
-	</SCRIPT> 
-
-	<HTML>
-	<head>
-	<META HTTP-EQUIV=Refresh CONTENT="0; URL=../docs_<version_short>/html/main.html">
-	</head>
-	<BODY>
-	</BODY>
-	</HTML>
-	.................................................
-
-	Be sure to modify the "URL" attribute with the proper folder name.
-
+#
+#1. Call the script 
+#	%BUILD_TREE%\create_web.bat <version_short>
+#   where <version_short> is something like "40b3"
+#   
+#2. Create a file called "index.html" into
+#		%BUILD_TREE%\web\docs\docs_<version_short>\
+#	The content of the file is this one:
+#	
+#	.................................................
+#	<SCRIPT language=JavaScript>
+#		function redirt(thisarea) { thisurl = '' + thisarea; window.location=thisurl; }
+#	</SCRIPT> 
+#
+#	<HTML>
+#	<head>
+#	<META HTTP-EQUIV=Refresh CONTENT="0; URL=../docs_<version_short>/html/main.html">
+#	</head>
+#	<BODY>
+#	</BODY>
+#	</HTML>
+#	.................................................
+#
+#	Be sure to modify the "URL" attribute with the proper folder name.
+#
 3. Copy the following file
 		%BUILD_TREE%\WinPcap_<version>_Installer.exe
 				|
 				V
 		%BUILD_TREE%\web\install\bin\WinPcap_<version_short>.exe (e.g. WinPcap_4_0_beta3.exe)
 		
-4. Copy the following file
-		%BUILD_TREE%\WinPcap_<version>_WpdPack.zip
-				|
-				V
-		%BUILD_TREE%\web\install\bin\WpdPack_<version_short>.zip (e.g. WpdPack_4_0_beta3.zip)
+#4. Copy the following file
+#		%BUILD_TREE%\WinPcap_<version>_WpdPack.zip
+#				|
+#				V
+#		%BUILD_TREE%\web\install\bin\WpdPack_<version_short>.zip (e.g. WpdPack_4_0_beta3.zip)
 		
 5. Copy the following file
 		%BUILD_TREE%\WinPcap_<version>_PublicSources.zip
