@@ -80,7 +80,7 @@ u_int bpf_filter(pc, p, wirelen, buflen)
 
 {
 	register u_int32 A, X;
-	register int k;
+	register bpf_u_int32 k;
 
 #ifdef HAVE_BUGGY_TME_SUPPORT
 	u_int32 j,tmp;
@@ -115,7 +115,7 @@ u_int bpf_filter(pc, p, wirelen, buflen)
 
 		case BPF_LD|BPF_W|BPF_ABS:
 			k = pc->k;
-			if (k + sizeof(int) > buflen) {
+			if (k >= buflen || k + sizeof(int) > buflen) {
 				return 0;
 			}
 			A = EXTRACT_LONG(&p[k]);
@@ -123,7 +123,7 @@ u_int bpf_filter(pc, p, wirelen, buflen)
 
 		case BPF_LD|BPF_H|BPF_ABS:
 			k = pc->k;
-			if (k + sizeof(short) > buflen) {
+			if (k >= buflen || k + sizeof(short) > buflen) {
 				return 0;
 			}
 			A = EXTRACT_SHORT(&p[k]);
@@ -131,7 +131,7 @@ u_int bpf_filter(pc, p, wirelen, buflen)
 
 		case BPF_LD|BPF_B|BPF_ABS:
 			k = pc->k;
-			if ((int)k >= (int)buflen) {
+			if (k >= buflen) {
 				return 0;
 			}
 			A = p[k];
@@ -147,7 +147,7 @@ u_int bpf_filter(pc, p, wirelen, buflen)
 
 		case BPF_LD|BPF_W|BPF_IND:
 			k = X + pc->k;
-			if (k + sizeof(int) > buflen) {
+			if (k >= buflen || k + sizeof(int) > buflen) {
 				return 0;
 			}
 			A = EXTRACT_LONG(&p[k]);
@@ -155,7 +155,7 @@ u_int bpf_filter(pc, p, wirelen, buflen)
 
 		case BPF_LD|BPF_H|BPF_IND:
 			k = X + pc->k;
-			if (k + sizeof(short) > buflen) {
+			if (k >= buflen || k + sizeof(short) > buflen) {
 				return 0;
 			}
 			A = EXTRACT_SHORT(&p[k]);
@@ -163,7 +163,7 @@ u_int bpf_filter(pc, p, wirelen, buflen)
 
 		case BPF_LD|BPF_B|BPF_IND:
 			k = X + pc->k;
-			if ((int)k >= (int)buflen) {
+			if (k >= buflen) {
 				return 0;
 			}
 			A = p[k];
@@ -171,7 +171,7 @@ u_int bpf_filter(pc, p, wirelen, buflen)
 
 		case BPF_LDX|BPF_MSH|BPF_B:
 			k = pc->k;
-			if ((int)k >= (int)buflen) {
+			if (k >= buflen) {
 				return 0;
 			}
 			X = (p[pc->k] & 0xf) << 2;

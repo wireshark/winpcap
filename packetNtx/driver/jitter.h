@@ -297,6 +297,11 @@ JIT_BPF_Filter;
    emitm(&stream, 0x75, 1);\
    emitm(&stream, off8, 1);
 
+/// ja off32
+#define JAb(off8) \
+   emitm(&stream, 0x77, 1);\
+   emitm(&stream, off8, 1);
+
 /// je off32
 #define JE(off32) \
    emitm(&stream, 0x0f, 1);\
@@ -312,6 +317,16 @@ JIT_BPF_Filter;
 /// jle off8
 #define JLEb(off8) \
    emitm(&stream, 0x7e, 1);\
+   emitm(&stream, off8, 1);
+
+/// jbe off8
+#define JBEb(off8) \
+   emitm(&stream, 0x76, 1);\
+   emitm(&stream, off8, 1);
+
+/// jb off8
+#define JBb(off8) \
+   emitm(&stream, 0x72, 1);\
    emitm(&stream, off8, 1);
 
 /// ja off32
