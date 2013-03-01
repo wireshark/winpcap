@@ -18,13 +18,13 @@
 // 4.1.0.1752 -->  WinPcap  4.1 RTM
 // 4.1.0.1753 -->  WinPcap  4.1.1 RTM
 // 4.1.0.2001 -->  WinPcap  4.1.2 RTM
-// 4.1.0.2974 -->  WinPcap  4.1.3 RTM
+// 4.1.0.2980 -->  WinPcap  4.1.3 RTM
 
 #define WINPCAP_MAJOR	4
 #define WINPCAP_MINOR	1
 #define WINPCAP_REV		0
-#define WINPCAP_BUILD	2974
-#define WINPCAP_VER_STRING	"4.1.0.2974"
+#define WINPCAP_BUILD	2980
+#define WINPCAP_VER_STRING	"4.1.0.2980"
 #define WINPCAP_PACKET9x_STRING_VERSION	"4.1.3"
 #define WINPCAP_WPCAP_STRING_VERSION "4.1.3"
 
