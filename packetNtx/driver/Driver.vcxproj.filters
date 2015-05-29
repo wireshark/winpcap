@@ -1,0 +1,125 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Files\TME">
+      <UniqueIdentifier>{47b05242-41f8-40fe-b9e8-18d0573d151f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Header Files\TME">
+      <UniqueIdentifier>{395be13e-53a5-45ed-a260-50e73b4aa094}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx</Extensions>
+    </Filter>
+    <Filter Include="Build Scripts">
+      <UniqueIdentifier>{83eaa963-fea8-4691-aa91-887ecfc0e129}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dump.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="jitter.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Openclos.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Packet.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Read.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="win_bpf_filter.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Write.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bucket_lookup.c">
+      <Filter>Source Files\TME</Filter>
+    </ClCompile>
+    <ClCompile Include="count_packets.c">
+      <Filter>Source Files\TME</Filter>
+    </ClCompile>
+    <ClCompile Include="functions.c">
+      <Filter>Source Files\TME</Filter>
+    </ClCompile>
+    <ClCompile Include="normal_lookup.c">
+      <Filter>Source Files\TME</Filter>
+    </ClCompile>
+    <ClCompile Include="tcp_session.c">
+      <Filter>Source Files\TME</Filter>
+    </ClCompile>
+    <ClCompile Include="tme.c">
+      <Filter>Source Files\TME</Filter>
+    </ClCompile>
+    <ClCompile Include="win_bpf_filter_init.c">
+      <Filter>Source Files\TME</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\Common\dagc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Debug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="jitter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Packet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="time_calls.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="valid_insns.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="win_bpf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="bucket_lookup.h">
+      <Filter>Header Files\TME</Filter>
+    </ClInclude>
+    <ClInclude Include="count_packets.h">
+      <Filter>Header Files\TME</Filter>
+    </ClInclude>
+    <ClInclude Include="functions.h">
+      <Filter>Header Files\TME</Filter>
+    </ClInclude>
+    <ClInclude Include="memory_t.h">
+      <Filter>Header Files\TME</Filter>
+    </ClInclude>
+    <ClInclude Include="normal_lookup.h">
+      <Filter>Header Files\TME</Filter>
+    </ClInclude>
+    <ClInclude Include="tcp_session.h">
+      <Filter>Header Files\TME</Filter>
+    </ClInclude>
+    <ClInclude Include="tme.h">
+      <Filter>Header Files\TME</Filter>
+    </ClInclude>
+    <ClInclude Include="win_bpf_filter_init.h">
+      <Filter>Header Files\TME</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\CompileDriverNew.bat">
+      <Filter>Build Scripts</Filter>
+    </None>
+    <None Include="Sources">
+      <Filter>Build Scripts</Filter>
+    </None>
+  </ItemGroup>
+</Project>

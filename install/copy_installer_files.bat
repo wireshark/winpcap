@@ -1,20 +1,16 @@
 @echo off
-mkdir installer\distribution		 2>nul >nul
-mkdir installer\distribution\x86	 2>nul >nul
-mkdir installer\distribution\NT4	 2>nul >nul
+mkdir installer\distribution     2>nul >nul
+mkdir installer\distribution\x86   2>nul >nul
 
-mkdir installer\distribution\x64	 2>nul >nul
-mkdir installer\distribution\Vista_x86	 2>nul >nul
-mkdir installer\distribution\Vista_x64	 2>nul >nul
+mkdir installer\distribution\x64   2>nul >nul
+mkdir installer\distribution\Vista_x86   2>nul >nul
+mkdir installer\distribution\Vista_x64   2>nul >nul
 
 rem
 rem  Driver
 rem 
 xcopy /v /Y ..\packetNtx\driver\bin\i386\npf.sys installer\distribution\x86\ >nul
 xcopy /v /Y  ..\packetNtx\driver\bin\i386\npf.pdb installer\distribution\x86\ >nul
-
-xcopy /v /Y  ..\packetNtx\driver\bin\NT4\i386\free\npf.sys installer\distribution\NT4\ >nul
-
 xcopy /v /Y  ..\packetNtx\driver\bin\amd64\npf.sys installer\distribution\x64\ >nul
 xcopy /v /Y  ..\packetNtx\driver\bin\amd64\npf.pdb installer\distribution\x64\ >nul
 
@@ -29,12 +25,6 @@ xcopy /v /Y  ..\packetntx\dll\project\Release\x86\Packet.dll installer\distribut
 xcopy /v /Y  ..\packetntx\dll\project\Release\x86\Packet.pdb installer\distribution\x86\ >nul
 xcopy /v /Y  ..\packetntx\dll\project\Release\x64\Packet.dll installer\distribution\x64\ >nul
 xcopy /v /Y  ..\packetntx\dll\project\Release\x64\Packet.pdb installer\distribution\x64\ >nul
-
-rem
-rem windows NT4 (x86)
-rem
-xcopy /v /Y  "..\packetntx\dll\project\Release NT4\x86\Packet.dll" installer\distribution\NT4\ >nul
-xcopy /v /Y  "..\packetntx\dll\project\Release NT4\x86\Packet.pdb" installer\distribution\NT4\ >nul
 
 rem
 rem Windows Vista (x86 and x64)

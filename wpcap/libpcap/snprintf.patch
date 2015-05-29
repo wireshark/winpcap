@@ -1,0 +1,12 @@
+diff --git a/pcap-stdinc.h b/pcap-stdinc.h
+--- a/pcap-stdinc.h
++++ b/pcap-stdinc.h
+@@ -60,7 +60,7 @@
+ 
+ #define caddr_t char*
+ 
+-#if _MSC_VER < 1500
++#ifdef _MSC_VER
+ #define snprintf _snprintf
+ #define vsnprintf _vsnprintf
+ #define strdup _strdup

@@ -1,10 +1,12 @@
 @echo off
 
 if  "%2" == "checked" (
-	set __BUILD_TYPE=checked
+  set __BUILD_TYPE=checked
 ) else (
-	set __BUILD_TYPE=free
+  set __BUILD_TYPE=free
 )
+
+set W7BASE=C:\WinDDK\7600.16385.1
 
 if "%1"=="x86" goto x86_build
 if "%1"=="AMD64" goto amd64_build
@@ -29,7 +31,7 @@ rem ** enable the following line to enable the TME extensions **
 rem set NPF_TME_FILES=tme.c count_packets.c tcp_session.c functions.c bucket_lookup.c normal_lookup.c win_bpf_filter_init.c
 rem set NPF_C_DEFINES=%NPF_C_DEFINES% -DHAVE_BUGGY_TME_SUPPORT
 
-ddkbuild -WLHXP -prefast %__BUILD_TYPE% .\driver -cefw
+ddkbuild -WIN7XP %__BUILD_TYPE% .\driver -prefast -cefw
 
 rem ** enable the following line to enable the TME extensions **
 rem set NPF_TME_FILES=
@@ -55,7 +57,7 @@ rem
 rem set NPF_TME_FILES=
 rem set NPF_JIT_FILES=
 
-ddkbuild -WLHA64 -prefast %__BUILD_TYPE% .\driver -cefw
+ddkbuild -WIN7NETA64 %__BUILD_TYPE% .\driver -prefast -cefw
 
 set NPF_C_DEFINES=
 rem set NPF_TME_FILES=

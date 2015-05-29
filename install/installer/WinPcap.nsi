@@ -1,32 +1,32 @@
 ; Copyright (c) 2005 - 2010 CACE Technologies
 ; Copyright (c) 2010 - 2013 Riverbed Technology
 ; All rights reserved.
-; 
-; Redistribution and use in source and binary forms, with or without 
-; modification, are permitted provided that the following conditions 
+;
+; Redistribution and use in source and binary forms, with or without
+; modification, are permitted provided that the following conditions
 ; are met:
-; 
-; 1. Redistributions of source code must retain the above copyright 
+;
+; 1. Redistributions of source code must retain the above copyright
 ; notice, this list of conditions and the following disclaimer.
-; 2. Redistributions in binary form must reproduce the above copyright 
-; notice, this list of conditions and the following disclaimer in the 
-; documentation and/or other materials provided with the distribution. 
-; 3. Neither the name of CACE Technologies, Riverbed Technology nor the 
+; 2. Redistributions in binary form must reproduce the above copyright
+; notice, this list of conditions and the following disclaimer in the
+; documentation and/or other materials provided with the distribution.
+; 3. Neither the name of CACE Technologies, Riverbed Technology nor the
 ; names of their contributors may be used to endorse or promote products
-; derived from this software without specific prior written permission. 
-; 
-; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
-; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
-; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
-; A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
-; OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
-; SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
-; LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-; DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
-; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+; derived from this software without specific prior written permission.
+;
+; THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+; "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+; LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+; A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+; OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+; SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+; LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+; DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+; THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-; 
+;
 ; This is the NSIS project for WinPcap installation. It will require NSIS
 ; from http://nsis.sourceforge.net/, plus three plugins:
 ;
@@ -43,21 +43,21 @@
   !define WINPCAP_PRJ_MAJOR "4"
   !define WINPCAP_PRJ_MINOR "1"
   !define WINPCAP_PRJ_REV "0"
-  !define WINPCAP_PRJ_BUILD "2980"
-  !define WINPCAP_PROJ_VERSION_DOTTED "4.1.0.2980"
-  !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2013 Riverbed Technology, Inc."
-  !define WINPCAP_PRODUCT_NAME "WinPcap 4.1.3"
+  !define WINPCAP_PRJ_BUILD "4001"
+  !define WINPCAP_PROJ_VERSION_DOTTED "4.1.0.4001"
+  !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2015 Riverbed Technology, Inc."
+  !define WINPCAP_PRODUCT_NAME "WinPcap 4.1.4"
   !define WINPCAP_COMPANY_NAME "Riverbed Technology, Inc."
   !define WINPCAP_COMPANY_URL "http://www.riverbed.com/"
-  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_3.exe"
+  !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_4.exe"
 
 ; letter 'r'
-  !define REINSTALL_FLAG "114"  
+  !define REINSTALL_FLAG "114"
 ; letter u
-  !define UNINSTALL_FLAG	"117"
-; letter 'i'   
+  !define UNINSTALL_FLAG  "117"
+; letter 'i'
   !define INSTALL_FLAG "105"
- 
+
   ;Default installation folder
   InstallDir "$PROGRAMFILES\WinPcap"
 
@@ -85,6 +85,17 @@
   ShowUninstDetails nevershow
   XPStyle on
 
+; Set the requested execution level to admin
+    RequestExecutionLevel admin
+
+; Set the supported OS in the manifest (nsis 3.x only)
+;    ManifestSupportedOS
+
+
+; Make it look nice on High DPI systems (nsis 3.x only)
+;    ManifestDPIAware true
+
+
   Var FORMATTED_INT
   Var WINPCAP_OLD_FOUND
   Var WINPCAP_UNINSTALL_EXEC
@@ -101,8 +112,8 @@
   Var WINPCAP_IS_ADMIN
   Var VARIABLE_1
   Var WOW_FS_REDIR_OLD_VAL
-  Var BOOL_RET  
-  Var INT_RET  
+  Var BOOL_RET
+  Var INT_RET
   Var NPPTOOLS_DLL_FOUND
   Var NETNM_INF_FOUND
   Var NMNT_SYS_FOUND
@@ -120,10 +131,10 @@
   OutFile "${WINPCAP_FILE_NAME}"
 
 LangString WINPCAP_PRODUCT_NAME_ENG ${LANG_ENGLISH} "${WINPCAP_PRODUCT_NAME}"
-  
+
 ;Get Installation folder from registry if available
   InstallDirRegKey HKLM "Software\WinPcap" ""
-  
+
 ;--------------------------------
 ;User interface Configuration
 
@@ -133,7 +144,7 @@ LangString WINPCAP_PRODUCT_NAME_ENG ${LANG_ENGLISH} "${WINPCAP_PRODUCT_NAME}"
   !define MUI_CUSTOMFUNCTION_GUIINIT myGuiInit
   !define MUI_CUSTOMFUNCTION_ABORT .onInstFailed
   !define MUI_WELCOMEPAGE_TEXT "This Wizard will guide you through the entire WinPcap installation.\r\nFor more information or support, please visit the WinPcap home page.\r\n\r\nhttp://www.winpcap.org"
-  
+
 Function MyCustomPage
 
   # If you need to skip the page depending on a condition, call Abort.
@@ -170,7 +181,7 @@ FunctionEnd
   !insertmacro MUI_UNPAGE_CONFIRM
   !insertmacro MUI_UNPAGE_INSTFILES
   !insertmacro MUI_UNPAGE_FINISH
-  
+
 ;--------------------------------
 ;Languages
   !insertmacro MUI_LANGUAGE "English"
@@ -180,7 +191,7 @@ FunctionEnd
 
   Function .onInit
 
-; Initialize the plugin directorty. Needed??
+; Initialize the plugin directory. Needed??
     InitPluginsDir
 
 ; Deny any attempt to start a silent installation of WinPcap
@@ -192,14 +203,16 @@ FunctionEnd
     Call GetKernelDllVersion
     Call IsNetMonAvailable
 
-	StrCmp $WINPCAP_TARGET_OS "Vista" Check_IA64
-	StrCmp $WINPCAP_TARGET_OS "7" Check_IA64
-	StrCmp $WINPCAP_TARGET_OS "8" Check_IA64
-	goto ContinueInstallationOk
+  StrCmp $WINPCAP_TARGET_OS "Vista" Check_IA64
+  StrCmp $WINPCAP_TARGET_OS "7" Check_IA64
+  StrCmp $WINPCAP_TARGET_OS "8" Check_IA64
+  StrCmp $WINPCAP_TARGET_OS "8.1" Check_IA64
+  StrCmp $WINPCAP_TARGET_OS "10.0" Check_IA64
+  goto ContinueInstallationOk
 
 Check_IA64:
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "IA64" AbortIA64
-	goto ContinueInstallationOk
+  StrCmp $WINPCAP_TARGET_ARCHITECTURE "IA64" AbortIA64
+  goto ContinueInstallationOk
 
 AbortIA64:
     Messagebox MB_OK|MB_ICONEXCLAMATION "This machine is running Microsoft Windows $WINPCAP_TARGET_ARCHITECTURE. This version of Windows is not supported by ${WINPCAP_PRODUCT_NAME}.$\nThe installation will be aborted."
@@ -216,13 +229,15 @@ ContinueInstallationOk:
     StrCmp $WINPCAP_TARGET_OS "95" Windows9xNotSupported
     StrCmp $WINPCAP_TARGET_OS "98" Windows9xNotSupported
     StrCmp $WINPCAP_TARGET_OS "ME" Windows9xNotSupported
-    StrCmp $WINPCAP_TARGET_OS "NT" SupportedOsOk
-    StrCmp $WINPCAP_TARGET_OS "2000" SupportedOsOk
+    StrCmp $WINPCAP_TARGET_OS "NT" WindowsNT2KNotSupported
+    StrCmp $WINPCAP_TARGET_OS "2000" WindowsNT2KNotSupported
     StrCmp $WINPCAP_TARGET_OS "XP" SupportedOsOk
     StrCmp $WINPCAP_TARGET_OS "2003" SupportedOsOk
-    StrCmp $WINPCAP_TARGET_OS "Vista" SupportedOsOk 
-    StrCmp $WINPCAP_TARGET_OS "7" SupportedOsOk 
+    StrCmp $WINPCAP_TARGET_OS "Vista" SupportedOsOk
+    StrCmp $WINPCAP_TARGET_OS "7" SupportedOsOk
     StrCmp $WINPCAP_TARGET_OS "8" SupportedOsOk
+    StrCmp $WINPCAP_TARGET_OS "8.1" SupportedOsOk
+    StrCmp $WINPCAP_TARGET_OS "10.0" SupportedOsOk
 
 ; if we reach this point, the OS is not supported. Simply exit.
     MessageBox MB_ICONEXCLAMATION|MB_OK "This version of Windows is not supported by ${WINPCAP_PRODUCT_NAME}.$\nThe installation will be aborted."
@@ -231,7 +246,11 @@ ContinueInstallationOk:
 Windows9xNotSupported:
     MessageBox MB_ICONEXCLAMATION|MB_OK "The Windows 9x family of Microsoft operating systems is no longer supported by ${WINPCAP_PRODUCT_NAME}.$\n$\nThe latest releases supporting Windows 9x are $\n- WinPcap 4.0beta2 (unstable) $\n- WinPcap 3.1 (stable)$\navailable at http://www.winpcap.org/install or http://www.winpcap.org/archive$\n$\nThe installation will now abort."
     Quit
-   
+
+
+WindowsNT2KNotSupported:
+    MessageBox MB_ICONEXCLAMATION|MB_OK "The Windows NT and 2000 Microsoft operating systems are no longer supported by ${WINPCAP_PRODUCT_NAME}.$\n$\nThe latest releases supporting Windows 9x are $\n- WinPcap 4.0beta2 (unstable) $\n- WinPcap 3.1 (stable)$\navailable at http://www.winpcap.org/install or http://www.winpcap.org/archive$\n$\nThe installation will now abort."
+    Quit
 
 SupportedOsOk:
 
@@ -272,13 +291,13 @@ CheckX86:
     StrCmp $WINPCAP_TARGET_OS "95" NormalInstallation
     StrCmp $WINPCAP_TARGET_OS "98" NormalInstallation
     StrCmp $WINPCAP_TARGET_OS "ME" NormalInstallation
-	
+
     StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" NormalInstallation
     StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" NormalInstallation
-    StrCmp $WINPCAP_TARGET_ARCHITECTURE "IA64" IA64InstallAbort 
+    StrCmp $WINPCAP_TARGET_ARCHITECTURE "IA64" IA64InstallAbort
 
-IA64InstallAbort: 
-  
+IA64InstallAbort:
+
     MessageBox MB_ICONEXCLAMATION|MB_OK  "You are trying to install ${WINPCAP_PRODUCT_NAME} on an Itanium platform. This platform is still not supported by WinPcap.$\n$\nThe installation will now abort."
 
     Quit
@@ -346,14 +365,14 @@ Section "Main Installer Section" MainInstall
 ; the workaround for the moment is copying the file to a temp file, trying to delete it and hope that everything succeeds . if packet.dll is not there, the uninstaller will keep running
 
  StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" StandardDetection
- 
+
  ; special detection for x64
 
     GetTempFileName $TEMPFILENAME
     CopyFiles "$SYSDIR\packet.dll" $TEMPFILENAME
     Delete "$SYSDIR\packet.dll"
     IfErrors WinPcapIsInUse
-    
+
  ; just delete the temp file
     Delete $TEMPFILENAME
 
@@ -364,7 +383,7 @@ StandardDetection:
     CopyFiles "$SYSDIR\packet.dll" "$SYSDIR\_packet.dlluninstall"
     Delete "$SYSDIR\packet.dll"
     IfErrors WinPcapIsInUse
-    
+
 ;first of all, revert the file name change
     Rename "$SYSDIR\_packet.dlluninstall" "$SYSDIR\packet.dll"
 
@@ -373,7 +392,7 @@ EndDetection:
 ; now let's check if an uninstaller is available
     ReadRegStr $WINPCAP_UNINSTALL_EXEC HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" "UninstallString"
     IfErrors WinpcapUninstallerNotDetected
-  
+
 ;An uninstaller has been detected. Ask the user if he wants to remove it.
     Messagebox MB_YESNO|MB_ICONINFORMATION "A previous version of WinPcap has been detected on this system and needs to be removed before proceeding.$\nDo you want to uninstall it? (Note: if you click 'No', this installer will abort.)" IDYES RemoveRecent IDNO AbortInstallation
 
@@ -461,26 +480,26 @@ MainInstallationProcedure:
     File "Distribution\X86\pthreadVC.dll"
 
 ;Now jump to the copy functions related to this OS
-    StrCmp $WINPCAP_TARGET_OS "NT" CopyFilesNT4
-    StrCmp $WINPCAP_TARGET_OS "2000" CopyFilesNT5
     StrCmp $WINPCAP_TARGET_OS "XP" CopyFilesNT5
     StrCmp $WINPCAP_TARGET_OS "2003" CopyFilesNT5
     StrCmp $WINPCAP_TARGET_OS "Vista" CopyFilesVista  ; vista (beta1) seems not to have the netmon stuff...
     StrCmp $WINPCAP_TARGET_OS "7" CopyFilesWin7
     StrCmp $WINPCAP_TARGET_OS "8" CopyFilesWin8
+    StrCmp $WINPCAP_TARGET_OS "8.1" CopyFilesWin81
+    StrCmp $WINPCAP_TARGET_OS "10.0" CopyFilesWin10
 
 CopyFilesNT5:
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86"  InstallNetMonx86
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" NoNetMon
+  StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86"  InstallNetMonx86
+  StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" NoNetMon
 
 InstallNetMonx86:
-;	This sets INSTALL_VISTA_PACKET_DLL_ON_NT5 if needed
-    StrCmp $INSTALL_VISTA_PACKET_DLL_ON_NT5 "false" NoNetMon
+; This sets INSTALL_VISTA_PACKET_DLL_ON_NT5 if needed
+  StrCmp $INSTALL_VISTA_PACKET_DLL_ON_NT5 "false" NoNetMon
 
-    Call InstallNetMon
+  Call InstallNetMon
 
 NoNetMon:
-	
+
 ;
 ; This is a workaround to the problem of not having netmon on some xp installations
 ; NOTE: we keep installing wanpacket.dll even if the vista version of packet.dll
@@ -490,89 +509,80 @@ NoNetMon:
 StrCmp $INSTALL_VISTA_PACKET_DLL_ON_NT5 "true" CopyVistaPacketDll CopyXpPacketDll
 
 CopyXpPacketDll:
-    File "Distribution\x86\packet.dll"
-    Goto DriverInstall
+  File "Distribution\x86\packet.dll"
+  Goto DriverInstall
 
 CopyVistaPacketDll:
-    File "Distribution\Vista_x86\packet.dll"
-    Goto DriverInstall
-	
-DriverInstall:	
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86"  CopyX86DriverLabel
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" CopyAMD64DriverAndDllsLabel
-	
-CopyX86DriverLabel:	
-	File /oname=drivers\npf.sys Distribution\x86\npf.sys
-    goto CopiedNT5Files
-    
+  File "Distribution\Vista_x86\packet.dll"
+  Goto DriverInstall
+
+DriverInstall:
+  StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86"  CopyX86DriverLabel
+  StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" CopyAMD64DriverAndDllsLabel
+
+CopyX86DriverLabel:
+  File /oname=drivers\npf.sys Distribution\x86\npf.sys
+  goto CopiedNT5Files
+
 CopyAMD64DriverAndDllsLabel:
-	Call DisableFsRedirector ;;ignore the error for the moment
-	
-    SetOutPath "$SYSDIR"
-	File /oname=drivers\npf.sys Distribution\x64\npf.sys
-	File Distribution\x64\wpcap.dll
-	StrCmp $INSTALL_VISTA_PACKET_DLL_ON_NT5 "true" Copyx64VistaPacketDll Copyx64XpPacketDll
+  Call DisableFsRedirector ;;ignore the error for the moment
+
+  SetOutPath "$SYSDIR"
+  File /oname=drivers\npf.sys Distribution\x64\npf.sys
+  File Distribution\x64\wpcap.dll
+  StrCmp $INSTALL_VISTA_PACKET_DLL_ON_NT5 "true" Copyx64VistaPacketDll Copyx64XpPacketDll
 
 Copyx64VistaPacketDll:
-	File Distribution\Vista_x64\packet.dll
-	Goto EndNT5x64Copy
+  File Distribution\Vista_x64\packet.dll
+  Goto EndNT5x64Copy
 
 Copyx64XpPacketDll:
-	File Distribution\x64\packet.dll
-	Goto EndNT5x64Copy
+  File Distribution\x64\packet.dll
+  Goto EndNT5x64Copy
 
 EndNT5x64Copy:
 
-	Call EnableFsRedirector
+  Call EnableFsRedirector
 
-CopiedNT5Files:    
-  
-;Run install commands
-
-	Call InstallNpfService
-    Call InstallRpcapdService
-
-    Goto EndCopy
-
-CopyFilesNT4:
-    File 'Distribution\NT4\packet.dll'
-	File /oname=drivers\npf.sys Distribution\nt4\npf.sys
+CopiedNT5Files:
 
 ;Run install commands
 
-    Call InstallNpfService
-    Call InstallRpcapdService
+  Call InstallNpfService
+  Call InstallRpcapdService
 
     Goto EndCopy
 
+CopyFilesWin10:
+CopyFilesWin81:
 CopyFilesWin8:
 CopyFilesWin7:
 CopyFilesVista:
-    File "Distribution\Vista_x86\packet.dll"
-	
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86"  CopyX86NT6DriverLabel
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" CopyAMD64NT6DriverAndDllsLabel
-	
-CopyX86NT6DriverLabel:	
-	File /oname=drivers\npf.sys Distribution\x86\npf.sys
-    goto CopiedNT6Files
-    
+  File "Distribution\Vista_x86\packet.dll"
+
+  StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86"  CopyX86NT6DriverLabel
+  StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" CopyAMD64NT6DriverAndDllsLabel
+
+CopyX86NT6DriverLabel:
+  File /oname=drivers\npf.sys Distribution\x86\npf.sys
+  goto CopiedNT6Files
+
 CopyAMD64NT6DriverAndDllsLabel:
-	Call DisableFsRedirector ;;ignore the error for the moment
-	
-    SetOutPath "$SYSDIR"
-	File /oname=drivers\npf.sys Distribution\x64\npf.sys
-	File Distribution\x64\wpcap.dll
-	File Distribution\Vista_x64\packet.dll
+  Call DisableFsRedirector ;;ignore the error for the moment
 
-	Call EnableFsRedirector
+  SetOutPath "$SYSDIR"
+  File /oname=drivers\npf.sys Distribution\x64\npf.sys
+  File Distribution\x64\wpcap.dll
+  File Distribution\Vista_x64\packet.dll
 
-CopiedNT6Files:    
-  
+  Call EnableFsRedirector
+
+CopiedNT6Files:
+
 ;Run install commands
 
-	Call InstallNpfService
-    Call InstallRpcapdService
+  Call InstallNpfService
+  Call InstallRpcapdService
 
     Goto EndCopy
 EndCopy:
@@ -584,7 +594,7 @@ EndCopy:
 StrCmp $NPF_START_ON_BOOT_CB "0"  DontAutoStartDriver
    WriteRegDWORD HKLM "SYSTEM\CurrentControlSet\Services\NPF" "Start" 2
    push $0
-   ExecDos::exec /TIMEOUT=2000 "net start npf" 
+   ExecDos::exec /TIMEOUT=2000 "net start npf"
    pop $0
    pop $0
 
@@ -595,45 +605,45 @@ DontAutoStartDriver:
 ;Store installation folder
 ;
     WriteRegStr HKLM "SOFTWARE\WinPcap" "" $INSTDIR
- 
+
 ;
 ;Create an "add/remove programs" entry
 ;
     WriteRegStr HKLM \
-	"Software\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
-	"DisplayName" "${WINPCAP_PRODUCT_NAME}"
+  "Software\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \
+  "DisplayName" "${WINPCAP_PRODUCT_NAME}"
 
     WriteRegStr HKLM \
-	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
-	"UninstallString" "$INSTDIR\uninstall.exe"  
+  "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \
+  "UninstallString" "$INSTDIR\uninstall.exe"
 
     WriteRegStr HKLM \
-	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
-	"Publisher" "${WINPCAP_COMPANY_NAME}"  
+  "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \
+  "Publisher" "${WINPCAP_COMPANY_NAME}"
 
     WriteRegStr HKLM \
-	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
-	"URLInfoAbout" "${WINPCAP_COMPANY_URL}"
-  
-    WriteRegStr HKLM \
-	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
-	"URLUpdateInfo" "http://www.winpcap.org"
+  "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \
+  "URLInfoAbout" "${WINPCAP_COMPANY_URL}"
 
     WriteRegStr HKLM \
-	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
-	"VersionMajor" "${WINPCAP_PRJ_MAJOR}"  
+  "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \
+  "URLUpdateInfo" "http://www.winpcap.org"
 
     WriteRegStr HKLM \
-	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
-	"VersionMinor" "${WINPCAP_PRJ_MINOR}"  
+  "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \
+  "VersionMajor" "${WINPCAP_PRJ_MAJOR}"
 
     WriteRegStr HKLM \
-	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
-	"DisplayVersion" "${WINPCAP_PROJ_VERSION_DOTTED}"
+  "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \
+  "VersionMinor" "${WINPCAP_PRJ_MINOR}"
 
     WriteRegStr HKLM \
-	"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \ 
-	"DisplayIcon" "$INSTDIR\uninstall.exe"  
+  "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \
+  "DisplayVersion" "${WINPCAP_PROJ_VERSION_DOTTED}"
+
+    WriteRegStr HKLM \
+  "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\WinPcapInst" \
+  "DisplayIcon" "$INSTDIR\uninstall.exe"
 
     CreateDirectory "$SMPROGRAMS\WinPcap"
 
@@ -663,15 +673,15 @@ SectionEnd
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${MainInstall} $(DESC_MainInstall)
   !insertmacro MUI_FUNCTION_DESCRIPTION_END
- 
+
 ;--------------------------------
 ;Uninstaller Section
 Section "Uninstall" MainUnistall
 
     SetShellVarContext all
 
-	SetOutPath "$INSTDIR"
-	File "distribution\x86\WinPcapInstall.dll"
+  SetOutPath "$INSTDIR"
+  File "distribution\x86\WinPcapInstall.dll"
 
 ;Move to the system folder, whatever system we are
     SetOutPath "$SYSDIR"
@@ -680,42 +690,40 @@ Section "Uninstall" MainUnistall
 ;Delete files
 ;
 ;Now jump to the remove functions related to this OS
-;    StrCmp $WINPCAP_TARGET_OS "95" RmFiles9x
-;    StrCmp $WINPCAP_TARGET_OS "98" RmFiles9x
-;    StrCmp $WINPCAP_TARGET_OS "ME" RmFiles9x
-    StrCmp $WINPCAP_TARGET_OS "NT" RmFilesNT4
-    StrCmp $WINPCAP_TARGET_OS "2000" RmFilesNT5
     StrCmp $WINPCAP_TARGET_OS "XP" RmFilesNT5
     StrCmp $WINPCAP_TARGET_OS "2003" RmFilesNT5
     StrCmp $WINPCAP_TARGET_OS "Vista" RmFilesVista
     StrCmp $WINPCAP_TARGET_OS "7" RmFilesWin7
     StrCmp $WINPCAP_TARGET_OS "8" RmFilesWin8
-  
-RmFilesNT4:
+    StrCmp $WINPCAP_TARGET_OS "8.1" RmFilesWin81
+    StrCmp $WINPCAP_TARGET_OS "10.0" RmFilesWin10
+
 RmFilesNT5:
 RmFilesVista:
 RmFilesWin7:
 RmFilesWin8:
+RmFilesWin81:
+RmFilesWin10:
 
 ;Run uninstall commands
 
-    Call un.UninstallNpfService	
+    Call un.UninstallNpfService
     Call un.UninstallRpcapdService
 
 ;Delete files
 ; The rebootok is used to delete the files on reboot if they are in use.
-;NOTE: this file does not exist on Vista and NT4, but NSIS ignores any file that doesn't exist :-))
+;NOTE: this file does not exist on Vista, but NSIS ignores any file that doesn't exist :-))
 
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" RemoveX86DriverLabel
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" RemoveAMD64DriverLabel
+  StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" RemoveX86DriverLabel
+  StrCmp $WINPCAP_TARGET_ARCHITECTURE "AMD64" RemoveAMD64DriverLabel
 
 RemoveX86DriverLabel:
-	Call un.RemoveX86Driver
-	Goto EndRm
+  Call un.RemoveX86Driver
+  Goto EndRm
 
 RemoveAMD64DriverLabel:
-	Call un.Removex64Files
-	Goto EndRm
+  Call un.Removex64Files
+  Goto EndRm
 
 ;RmFiles9x:
 ;    Delete /REBOOTOK "$SYSDIR\npf.vxd"
@@ -763,16 +771,16 @@ SectionEnd
   VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "${WINPCAP_PROJ_VERSION_DOTTED}"
 
 Function InstallNpfService
-	
-	push $0
-	push $8
-	push $9
-	
+
+  push $0
+  push $8
+  push $9
+
 ;
-; we need to do all this to load WinPcapInstall.dll instead of just using System::Call with an 
+; we need to do all this to load WinPcapInstall.dll instead of just using System::Call with an
 ; absolute path because System:Call is broken in NSIS 2.46 and fails to work properly when
 ; the absolute path contains parentheses
-;	
+;
 System::Call "kernel32::LoadLibrary(t '$INSTDIR\WinPcapInstall.dll') i .r8"
 
 StrCmp $8 "error" ErrorCannotLoadDll
@@ -785,45 +793,45 @@ StrCmp $9 "0" UnloadKernelDllAndBailOut
 goto DllLoadedOk
 
 UnloadKernelDllAndBailOut:
-System::Call "kernel32::FreeLibrary(i r8)"  
+System::Call "kernel32::FreeLibrary(i r8)"
 goto ErrorCannotLoadDll
 
 DllLoadedOk:
 
 System::Call "::$9(t '',i ${REINSTALL_FLAG}) i .r0"
 StrCpy $INT_RET  $0
-System::Call "kernel32::FreeLibrary(i r8)"  
-	
-	pop $9
-	pop $8
-	pop $0
+System::Call "kernel32::FreeLibrary(i r8)"
 
-	StrCmp $INT_RET "error" ErrorCannotLoadDll
-	StrCmp $INT_RET 0 End ErrorCannotInstallNpfDriver
-  
+  pop $9
+  pop $8
+  pop $0
+
+  StrCmp $INT_RET "error" ErrorCannotLoadDll
+  StrCmp $INT_RET 0 End ErrorCannotInstallNpfDriver
+
 ErrorCannotLoadDll:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
-	SetErrors
-	goto End
-		
+  MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
+  SetErrors
+  goto End
+
 ErrorCannotInstallNpfDriver:
 
-	IntFmt $FORMATTED_INT "0x%08X" $INT_RET
+  IntFmt $FORMATTED_INT "0x%08X" $INT_RET
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($FORMATTED_INT).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
-	SetErrors
-	goto End
+  MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($FORMATTED_INT).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
+  SetErrors
+  goto End
 
 End:
 
 FunctionEnd
 
 Function un.UninstallNpfService
-	
-	push $0
-	push $8
-	push $9
-	
+
+  push $0
+  push $8
+  push $9
+
 System::Call "kernel32::LoadLibrary(t '$INSTDIR\WinPcapInstall.dll') i .r8"
 
 StrCmp $8 "error" ErrorCannotLoadDll
@@ -836,34 +844,34 @@ StrCmp $9 "0" UnloadKernelDllAndBailOut
 goto DllLoadedOk
 
 UnloadKernelDllAndBailOut:
-System::Call "kernel32::FreeLibrary(i r8)"  
+System::Call "kernel32::FreeLibrary(i r8)"
 goto ErrorCannotLoadDll
 
 DllLoadedOk:
 
 System::Call "::$9(t '',i ${UNINSTALL_FLAG}) i .r0"
 StrCpy $INT_RET  $0
-System::Call "kernel32::FreeLibrary(i r8)"  
-	
-	pop $9
-	pop $8
-	pop $0
+System::Call "kernel32::FreeLibrary(i r8)"
 
-	StrCmp $INT_RET "error" ErrorCannotLoadDll
-	StrCmp $INT_RET 0 End ErrorCannotUninstallNpfDriver
- 
+  pop $9
+  pop $8
+  pop $0
+
+  StrCmp $INT_RET "error" ErrorCannotLoadDll
+  StrCmp $INT_RET 0 End ErrorCannotUninstallNpfDriver
+
 ErrorCannotLoadDll:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
-	SetErrors
-	goto End
-		
+  MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
+  SetErrors
+  goto End
+
 ErrorCannotUninstallNpfDriver:
 
-	IntFmt $FORMATTED_INT "0x%08X" $INT_RET
+  IntFmt $FORMATTED_INT "0x%08X" $INT_RET
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($FORMATTED_INT).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
-	SetErrors
-	goto End
+  MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the NPF driver ($FORMATTED_INT).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
+  SetErrors
+  goto End
 
 End:
 
@@ -871,10 +879,10 @@ FunctionEnd
 
 Function InstallRpcapdService
 
-	push $0
-	push $8
-	push $9
-	
+  push $0
+  push $8
+  push $9
+
 System::Call "kernel32::LoadLibrary(t '$INSTDIR\WinPcapInstall.dll') i .r8"
 
 StrCmp $8 "error" ErrorCannotLoadDll
@@ -887,44 +895,44 @@ StrCmp $9 "0" UnloadKernelDllAndBailOut
 goto DllLoadedOk
 
 UnloadKernelDllAndBailOut:
-System::Call "kernel32::FreeLibrary(i r8)"  
+System::Call "kernel32::FreeLibrary(i r8)"
 goto ErrorCannotLoadDll
 
 DllLoadedOk:
 
 System::Call "::$9(t '',i ${REINSTALL_FLAG}) i .r0"
 StrCpy $INT_RET  $0
-System::Call "kernel32::FreeLibrary(i r8)"  
-	
-	pop $9
-	pop $8
-	pop $0
+System::Call "kernel32::FreeLibrary(i r8)"
 
-	StrCmp $INT_RET "error" ErrorCannotLoadDll
-	StrCmp $INT_RET 0 End ErrorCannotInstallRpcapd
- 
+  pop $9
+  pop $8
+  pop $0
+
+  StrCmp $INT_RET "error" ErrorCannotLoadDll
+  StrCmp $INT_RET 0 End ErrorCannotInstallRpcapd
+
 ErrorCannotLoadDll:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
-	SetErrors
-	goto End
-		
+  MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
+  SetErrors
+  goto End
+
 ErrorCannotInstallRpcapd:
 
-	IntFmt $FORMATTED_INT "0x%08X" $INT_RET
+  IntFmt $FORMATTED_INT "0x%08X" $INT_RET
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($FORMATTED_INT).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
-	SetErrors
-	goto End
+  MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($FORMATTED_INT).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
+  SetErrors
+  goto End
 
 End:
 
 FunctionEnd
 
 Function un.UninstallRpcapdService
-	push $0
-	push $8
-	push $9
-	
+  push $0
+  push $8
+  push $9
+
 System::Call "kernel32::LoadLibrary(t '$INSTDIR\WinPcapInstall.dll') i .r8"
 
 StrCmp $8 "error" ErrorCannotLoadDll
@@ -937,45 +945,45 @@ StrCmp $9 "0" UnloadKernelDllAndBailOut
 goto DllLoadedOk
 
 UnloadKernelDllAndBailOut:
-System::Call "kernel32::FreeLibrary(i r8)"  
+System::Call "kernel32::FreeLibrary(i r8)"
 goto ErrorCannotLoadDll
 
 DllLoadedOk:
 
 System::Call "::$9(t '',i ${UNINSTALL_FLAG}) i .r0"
 StrCpy $INT_RET  $0
-System::Call "kernel32::FreeLibrary(i r8)"  
-	
-	pop $9
-	pop $8
-	pop $0
+System::Call "kernel32::FreeLibrary(i r8)"
 
-	StrCmp $INT_RET "error" ErrorCannotLoadDll
-	StrCmp $INT_RET 0 End ErrorCannotUninstallRpcapd
- 
+  pop $9
+  pop $8
+  pop $0
+
+  StrCmp $INT_RET "error" ErrorCannotLoadDll
+  StrCmp $INT_RET 0 End ErrorCannotUninstallRpcapd
+
 ErrorCannotLoadDll:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
-	SetErrors
-	goto End
-		
+  MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
+  SetErrors
+  goto End
+
 ErrorCannotUninstallRpcapd:
 
-	IntFmt $FORMATTED_INT "0x%08X" $INT_RET
+  IntFmt $FORMATTED_INT "0x%08X" $INT_RET
 
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($FORMATTED_INT).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
-	SetErrors
-	goto End
+  MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the rpcapd service ($FORMATTED_INT).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
+  SetErrors
+  goto End
 
 End:
 
 FunctionEnd
 
 Function InstallNetmon
-	
-	push $0
-	push $8
-	push $9
-	
+
+  push $0
+  push $8
+  push $9
+
 System::Call "kernel32::LoadLibrary(t '$INSTDIR\WinPcapInstall.dll') i .r8"
 
 StrCmp $8 "error" ErrorCannotLoadDll
@@ -988,152 +996,152 @@ StrCmp $9 "0" UnloadKernelDllAndBailOut
 goto DllLoadedOk
 
 UnloadKernelDllAndBailOut:
-System::Call "kernel32::FreeLibrary(i r8)"  
+System::Call "kernel32::FreeLibrary(i r8)"
 goto ErrorCannotLoadDll
 
 DllLoadedOk:
 
 System::Call "::$9(t '',i ${INSTALL_FLAG}) i .r0"
 StrCpy $INT_RET  $0
-System::Call "kernel32::FreeLibrary(i r8)"  
-	
-	pop $9
-	pop $8
-	pop $0
+System::Call "kernel32::FreeLibrary(i r8)"
 
-	StrCmp $INT_RET "error" ErrorCannotLoadDll
-	StrCmp $INT_RET 0 End ErrorCannotInstallNetmon
- 
+  pop $9
+  pop $8
+  pop $0
+
+  StrCmp $INT_RET "error" ErrorCannotLoadDll
+  StrCmp $INT_RET 0 End ErrorCannotInstallNetmon
+
 ErrorCannotLoadDll:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
-	SetErrors
-	goto End
-		
+  MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while loading the WinPcap Install Helper DLL.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
+  SetErrors
+  goto End
+
 ErrorCannotInstallNetmon:
 
-	;
-	IntFmt $FORMATTED_INT "0x%08X" $INT_RET
+  ;
+  IntFmt $FORMATTED_INT "0x%08X" $INT_RET
 
-	StrCmp $FORMATTED_INT "0x0004A020" RebootRequiredLabel  ;reboot required
+  StrCmp $FORMATTED_INT "0x0004A020" RebootRequiredLabel  ;reboot required
 
-	;
-	; We cannot install NetMon. Let's check if the needed DLLs are in case available on the system. Otherwise we revert to installing
-	; 
-	Call IsNetMonAvailable
-	StrCmp $NPPTOOLS_DLL_FOUND "true" NppToolsAvailableButNotWorking NpptoolsUnavailable
+  ;
+  ; We cannot install NetMon. Let's check if the needed DLLs are in case available on the system. Otherwise we revert to installing
+  ;
+  Call IsNetMonAvailable
+  StrCmp $NPPTOOLS_DLL_FOUND "true" NppToolsAvailableButNotWorking NpptoolsUnavailable
 
 NpptoolsUnavailable:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($FORMATTED_INT - NPPTOOLS=false).$\r$\nThe setup will now install a version of WinPcap without support for Dialup connections and VPNs.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue."
-	StrCpy $INSTALL_VISTA_PACKET_DLL_ON_NT5 "true"
-	SetErrors
-	Goto End
+  MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($FORMATTED_INT - NPPTOOLS=false).$\r$\nThe setup will now install a version of WinPcap without support for Dialup connections and VPNs.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue."
+  StrCpy $INSTALL_VISTA_PACKET_DLL_ON_NT5 "true"
+  SetErrors
+  Goto End
 
-	
+
 NppToolsAvailableButNotWorking:
-	MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($FORMATTED_INT - NPPTOOLS=true).$\r$\nYou will be able to use WinPcap on standard network adapters, but not on Dialup connections and VPNs.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue."
-	SetErrors
-	Goto End
-	
+  MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while installing the Microsoft Network Monitor Driver (NetMon) ($FORMATTED_INT - NPPTOOLS=true).$\r$\nYou will be able to use WinPcap on standard network adapters, but not on Dialup connections and VPNs.$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue."
+  SetErrors
+  Goto End
+
 RebootRequiredLabel:
-	SetRebootFlag true
-	
+  SetRebootFlag true
+
 End:
 
 FunctionEnd
 
 Function un.Removex64Files
-	
-	push $0
-	push $1
-	
-	System::Call 'kernel32::Wow64DisableWow64FsRedirection(*i .r1).r0'
-	
-	StrCpy $BOOL_RET $0
-	StrCpy $WOW_FS_REDIR_OLD_VAL $1
-	pop $1
-	pop $0
 
-	StrCmp $BOOL_RET "error" ErrorCannotLoadDll
-	StrCmp $BOOL_RET 0 ErrorCannotDisableFsRedirector
-    
+  push $0
+  push $1
+
+  System::Call 'kernel32::Wow64DisableWow64FsRedirection(*i .r1).r0'
+
+  StrCpy $BOOL_RET $0
+  StrCpy $WOW_FS_REDIR_OLD_VAL $1
+  pop $1
+  pop $0
+
+  StrCmp $BOOL_RET "error" ErrorCannotLoadDll
+  StrCmp $BOOL_RET 0 ErrorCannotDisableFsRedirector
+
     Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
     Delete /REBOOTOK "$SYSDIR\packet.dll"
     Delete /REBOOTOK "$SYSDIR\wpcap.dll"
 
-	push $0
-	push $1
-	
-	StrCpy $1 $WOW_FS_REDIR_OLD_VAL
-	System::Call 'kernel32::Wow64RevertWow64FsRedirection(*i .r1).r0'
-	StrCpy $BOOL_RET $0
-	pop $1
-	pop $0
+  push $0
+  push $1
+
+  StrCpy $1 $WOW_FS_REDIR_OLD_VAL
+  System::Call 'kernel32::Wow64RevertWow64FsRedirection(*i .r1).r0'
+  StrCpy $BOOL_RET $0
+  pop $1
+  pop $0
 
 
-	StrCmp $BOOL_RET "error" ErrorCannotLoadDll2
-	StrCmp $BOOL_RET 0 ErrorCannotRevertFsRedirector
-	
-	goto End
+  StrCmp $BOOL_RET "error" ErrorCannotLoadDll2
+  StrCmp $BOOL_RET 0 ErrorCannotRevertFsRedirector
 
-	ErrorCannotLoadDll:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
-		SetErrors
-		goto End
-		
-	ErrorCannotDisableFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
-		SetErrors
-		goto End
+  goto End
 
-	ErrorCannotLoadDll2:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
-		SetErrors
-		goto End
-		
-	ErrorCannotRevertFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
-		SetErrors
-		goto End
-		
-End:		
+  ErrorCannotLoadDll:
+    MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
+    SetErrors
+    goto End
+
+  ErrorCannotDisableFsRedirector:
+    MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
+    SetErrors
+    goto End
+
+  ErrorCannotLoadDll2:
+    MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
+    SetErrors
+    goto End
+
+  ErrorCannotRevertFsRedirector:
+    MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe uninstallation will now continue anyway."
+    SetErrors
+    goto End
+
+End:
 
 FunctionEnd
 
 Function un.RemoveX86Driver
-	
+
     Delete /REBOOTOK "$SYSDIR\drivers\npf.sys"
 
 FunctionEnd
 
 Function DisableFsRedirector
-	
-	push $0
-	push $1
-	
-	System::Call 'kernel32::Wow64DisableWow64FsRedirection(*i .r1).r0'
-	
-	StrCpy $BOOL_RET $0
-	StrCpy $WOW_FS_REDIR_OLD_VAL $1
-	pop $1
-	pop $0
-	
-	;
-	; success
-	;
-	goto End
-	
-	StrCmp $BOOL_RET "error" ErrorCannotLoadDll
-	StrCmp $BOOL_RET 0 ErrorCannotDisableFsRedirector
-    
-	ErrorCannotLoadDll:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
-		SetErrors
-		goto End
-		
-	ErrorCannotDisableFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
-		SetErrors
-		goto End
+
+  push $0
+  push $1
+
+  System::Call 'kernel32::Wow64DisableWow64FsRedirection(*i .r1).r0'
+
+  StrCpy $BOOL_RET $0
+  StrCpy $WOW_FS_REDIR_OLD_VAL $1
+  pop $1
+  pop $0
+
+  ;
+  ; success
+  ;
+  goto End
+
+  StrCmp $BOOL_RET "error" ErrorCannotLoadDll
+  StrCmp $BOOL_RET 0 ErrorCannotDisableFsRedirector
+
+  ErrorCannotLoadDll:
+    MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64DisableWow64FsRedirection).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
+    SetErrors
+    goto End
+
+  ErrorCannotDisableFsRedirector:
+    MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64DisableWow64FsRedirection failed).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
+    SetErrors
+    goto End
 
 
 End:
@@ -1142,34 +1150,34 @@ FunctionEnd
 
 Function EnableFsRedirector
 
-	push $0
-	push $1
-	
-	StrCpy $1 $WOW_FS_REDIR_OLD_VAL
-	System::Call 'kernel32::Wow64RevertWow64FsRedirection(*i .r1).r0'
-	StrCpy $BOOL_RET $0
-	pop $1
-	pop $0
+  push $0
+  push $1
+
+  StrCpy $1 $WOW_FS_REDIR_OLD_VAL
+  System::Call 'kernel32::Wow64RevertWow64FsRedirection(*i .r1).r0'
+  StrCpy $BOOL_RET $0
+  pop $1
+  pop $0
 
 
-	StrCmp $BOOL_RET "error" ErrorCannotLoadDll2
-	StrCmp $BOOL_RET 0 ErrorCannotRevertFsRedirector
-	
-	;
-	; success
-	;
-	goto End
+  StrCmp $BOOL_RET "error" ErrorCannotLoadDll2
+  StrCmp $BOOL_RET 0 ErrorCannotRevertFsRedirector
 
-	ErrorCannotLoadDll2:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
-		SetErrors
-		goto End
-		
-	ErrorCannotRevertFsRedirector:
-		MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
-		SetErrors
-		goto End
-		
+  ;
+  ; success
+  ;
+  goto End
+
+  ErrorCannotLoadDll2:
+    MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (cannot load Wow64RevertWow64FsRedirection).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
+    SetErrors
+    goto End
+
+  ErrorCannotRevertFsRedirector:
+    MessageBox MB_OK|MB_ICONEXCLAMATION "An error occurred while disabling the WOW64 FileSystem Redirector (Wow64RevertWow64FsRedirection failed).$\r$\n$\r$\nPlease contact the WinPcap Team <winpcap-team@winpcap.org> including the file c:\Program Files\WinPcap\install.log.$\r$\n$\r$\nThe installation will now continue anyway."
+    SetErrors
+    goto End
+
 End:
 
 FunctionEnd
@@ -1201,249 +1209,284 @@ FunctionEnd
 ;   Call GetWindowsVersion
 ;   Pop $R0
 ;   ; at this point $R0 is "NT 4.0" or whatnot
- 
+
  Function GetWindowsVersion
- 
+
    Push $R0
    Push $R1
- 
+
    ClearErrors
- 
+
    ReadRegStr $R0 HKLM \
    "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
 
    IfErrors 0 lbl_winnt
-   
+
    ; we are not NT
    ReadRegStr $R0 HKLM \
    "SOFTWARE\Microsoft\Windows\CurrentVersion" VersionNumber
- 
+
    StrCpy $R1 $R0 1
    StrCmp $R1 '4' 0 lbl_error
- 
+
    StrCpy $R1 $R0 3
- 
+
    StrCmp $R1 '4.0' lbl_win32_95
    StrCmp $R1 '4.9' lbl_win32_ME lbl_win32_98
- 
+
    lbl_win32_95:
      StrCpy $WINPCAP_TARGET_OS '95'
    Goto lbl_done
- 
+
    lbl_win32_98:
      StrCpy $WINPCAP_TARGET_OS '98'
    Goto lbl_done
- 
+
    lbl_win32_ME:
      StrCpy $WINPCAP_TARGET_OS 'ME'
    Goto lbl_done
- 
+
    lbl_winnt:
 
    StrCpy $R1 $R0 1
- 
+
    StrCmp $R1 '3' lbl_winnt_x
    StrCmp $R1 '4' lbl_winnt_x
- 
+
    StrCpy $R1 $R0 3
- 
+
    StrCmp $R1 '5.0' lbl_winnt_2000
    ; note: this is not true on x64 machines, the version is 5.2
    StrCmp $R1 '5.1' lbl_winnt_XP
    StrCmp $R1 '5.2' lbl_winnt_XP64_2003
    StrCmp $R1 '6.0' lbl_vista
    StrCmp $R1 '6.1' lbl_Win7
-   StrCmp $R1 '6.2' lbl_Win8 lbl_error
-  
+   StrCmp $R1 '6.2' lbl_Win8
+   StrCmp $R1 '6.3' lbl_Win81
+   StrCmp $R1 '6.4' lbl_Win10 lbl_error
+
    lbl_winnt_x:
      StrCpy $WINPCAP_TARGET_OS 'NT'
 
-	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+   ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
 
    Goto lbl_done
- 
+
    lbl_winnt_2000:
      Strcpy $WINPCAP_TARGET_OS '2000'
 
-	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+   ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
 
    Goto lbl_done
- 
+
    lbl_winnt_XP:
      Strcpy $WINPCAP_TARGET_OS 'XP'
 
-	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
-	 
-	 IfErrors lbl_error
+   ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+
+   IfErrors lbl_error
 
    Goto lbl_done
- 
+
    lbl_winnt_XP64_2003:
 
-	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
-	 IfErrors lbl_error
+   ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+   IfErrors lbl_error
 
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE 'x86' lbl_winnt_2003 lbl_winnt_XP
+  StrCmp $WINPCAP_TARGET_ARCHITECTURE 'x86' lbl_winnt_2003 lbl_winnt_XP
 
 lbl_winnt_2003:
 
      Strcpy $WINPCAP_TARGET_OS '2003'
 
    Goto lbl_done
- 
+
    lbl_vista:
      Strcpy $WINPCAP_TARGET_OS 'vista'
 
-	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
-	 IfErrors lbl_error
+   ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+   IfErrors lbl_error
 
    Goto lbl_done
- 
+
    lbl_Win7:
      Strcpy $WINPCAP_TARGET_OS '7'
 
-	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
-	 IfErrors lbl_error
+   ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+   IfErrors lbl_error
 
    Goto lbl_done
 
    lbl_Win8:
      Strcpy $WINPCAP_TARGET_OS '8'
 
-	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
-	 IfErrors lbl_error
+   ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+   IfErrors lbl_error
+
+   Goto lbl_done
+
+   lbl_Win81:
+     Strcpy $WINPCAP_TARGET_OS '8.1'
+
+   ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+   IfErrors lbl_error
+
+   Goto lbl_done
+
+   lbl_Win10:
+     Strcpy $WINPCAP_TARGET_OS '10.0'
+
+   ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+   IfErrors lbl_error
 
    Goto lbl_done
 
    lbl_error:
      Strcpy $WINPCAP_TARGET_OS ''
    lbl_done:
- 
+
    Pop $R1
    Pop $R0
- 
+
  FunctionEnd
 
 ;--------------------------------
 ;Exactly the same of previous function, but the name starts with "un."
 ;The reason is that the NSIS uninstaller accepts only function that start with "un."
- 
+
  Function un.GetWindowsVersion
- 
+
    Push $R0
    Push $R1
- 
+
    ClearErrors
- 
+
    ReadRegStr $R0 HKLM \
    "SOFTWARE\Microsoft\Windows NT\CurrentVersion" CurrentVersion
 
    IfErrors 0 lbl_winnt
-   
+
    ; we are not NT
    ReadRegStr $R0 HKLM \
    "SOFTWARE\Microsoft\Windows\CurrentVersion" VersionNumber
- 
+
    StrCpy $R1 $R0 1
    StrCmp $R1 '4' 0 lbl_error
- 
+
    StrCpy $R1 $R0 3
- 
+
    StrCmp $R1 '4.0' lbl_win32_95
    StrCmp $R1 '4.9' lbl_win32_ME lbl_win32_98
- 
+
    lbl_win32_95:
      StrCpy $WINPCAP_TARGET_OS '95'
    Goto lbl_done
- 
+
    lbl_win32_98:
      StrCpy $WINPCAP_TARGET_OS '98'
    Goto lbl_done
- 
+
    lbl_win32_ME:
      StrCpy $WINPCAP_TARGET_OS 'ME'
    Goto lbl_done
- 
+
    lbl_winnt:
 
    StrCpy $R1 $R0 1
- 
+
    StrCmp $R1 '3' lbl_winnt_x
    StrCmp $R1 '4' lbl_winnt_x
- 
+
    StrCpy $R1 $R0 3
- 
+
    StrCmp $R1 '5.0' lbl_winnt_2000
    ; note: this is not true on x64 machines, the version is 5.2
    StrCmp $R1 '5.1' lbl_winnt_XP
    StrCmp $R1 '5.2' lbl_winnt_XP64_2003
    StrCmp $R1 '6.0' lbl_vista
-   StrCmp $R1 '6.1' lbl_Win7 lbl_error
-   StrCmp $R1 '6.2' lbl_Win8 lbl_error
- 
- 
- 
+   StrCmp $R1 '6.1' lbl_Win7
+   StrCmp $R1 '6.2' lbl_Win8
+   StrCmp $R1 '6.3' lbl_Win81
+   StrCmp $R1 '6.4' lbl_Win10 lbl_error
+
+
    lbl_winnt_x:
      StrCpy $WINPCAP_TARGET_OS 'NT'
    Goto lbl_done
- 
+
    lbl_winnt_2000:
      Strcpy $R0 '2000'
    Goto lbl_done
- 
+
    lbl_winnt_XP:
      Strcpy $WINPCAP_TARGET_OS 'XP'
 
-	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
-	 
-	 IfErrors lbl_error
+   ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+
+   IfErrors lbl_error
 
    Goto lbl_done
- 
+
    lbl_winnt_XP64_2003:
 
-	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
-	 IfErrors lbl_error
+   ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+   IfErrors lbl_error
 
-	StrCmp $WINPCAP_TARGET_ARCHITECTURE 'x86' lbl_winnt_2003 lbl_winnt_XP
+  StrCmp $WINPCAP_TARGET_ARCHITECTURE 'x86' lbl_winnt_2003 lbl_winnt_XP
 
 lbl_winnt_2003:
 
      Strcpy $WINPCAP_TARGET_OS '2003'
 
    Goto lbl_done
- 
+
    lbl_vista:
      Strcpy $WINPCAP_TARGET_OS 'vista'
 
-	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
-	 IfErrors lbl_error
+   ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+   IfErrors lbl_error
 
    Goto lbl_done
 
    lbl_Win7:
      Strcpy $WINPCAP_TARGET_OS '7'
 
-	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
-	 IfErrors lbl_error
+   ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+   IfErrors lbl_error
 
    Goto lbl_done
 
    lbl_Win8:
      Strcpy $WINPCAP_TARGET_OS '8'
 
-	 ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
-	 IfErrors lbl_error
+   ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+   IfErrors lbl_error
+
+   Goto lbl_done
+
+   lbl_Win81:
+     Strcpy $WINPCAP_TARGET_OS '8.1'
+
+   ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+   IfErrors lbl_error
+
+   Goto lbl_done
+
+   lbl_Win10:
+     Strcpy $WINPCAP_TARGET_OS '10.0'
+
+   ReadRegStr $WINPCAP_TARGET_ARCHITECTURE HKEY_LOCAL_MACHINE "System\CurrentControlSet\Control\Session Manager\Environment" "PROCESSOR_ARCHITECTURE"
+   IfErrors lbl_error
 
    Goto lbl_done
 
    lbl_error:
      Strcpy $WINPCAP_TARGET_OS ''
    lbl_done:
- 
+
    Pop $R1
    Pop $R0
- 
+
  FunctionEnd
 
 ;--------------------------------
@@ -1456,13 +1499,13 @@ Function IsNetMonAvailable
   ${Locate} "$SYSDIR" "/M=npptools.dll /G=0 /L=F" 'NppToolsDllFound'
   ${Locate} "$SYSDIR\drivers" "/M=nmnt.sys /G=0 /L=F" 'NmntSysFound'
   ${Locate} "$WINDIR\inf" "/M=netnm.inf /G=0 /L=F" 'NetNmInfFound'
-  
+
   StrCpy $INSTALL_VISTA_PACKET_DLL_ON_NT5 "true"
   StrCmp $NPPTOOLS_DLL_FOUND "false" exitLabel
   StrCmp $NMNT_SYS_FOUND "false" exitLabel
   StrCmp $NETNM_INF_FOUND "false" exitLabel
   StrCpy $INSTALL_VISTA_PACKET_DLL_ON_NT5 "false"
-  
+
 exitLabel:
 
 FunctionEnd
@@ -1487,15 +1530,17 @@ FunctionEnd
 
 Function GetKernelDllVersion
   GetDLLVersion "$SYSDIR\kernel32.dll" $R0 $R1
-  IfErrors IWINT_Exit 
-  
-  IntCmp $R0 0x00040000	IsNT4
-  IntCmp $R0 0x00050000	Is2000
-  IntCmp $R0 0x00050001	IsXP
-  IntCmp $R0 0x00050002	IsXP2003
-  IntCmp $R0 0x00060000	IsVista
-  IntCmp $R0 0x00060001	IsWin7
+  IfErrors IWINT_Exit
+
+  IntCmp $R0 0x00040000 IsNT4
+  IntCmp $R0 0x00050000 Is2000
+  IntCmp $R0 0x00050001 IsXP
+  IntCmp $R0 0x00050002 IsXP2003
+  IntCmp $R0 0x00060000 IsVista
+  IntCmp $R0 0x00060001 IsWin7
   IntCmp $R0 0x00060002 IsWin8
+  IntCmp $R0 0x00060003 IsWin8_1
+  IntCmp $R0 0x000a0000 IsWin10
 
   StrCpy $TRUE_OS_VERSION "Unknown"
   goto IWINT_Exit
@@ -1503,15 +1548,15 @@ Function GetKernelDllVersion
 IsNT4:
   StrCpy $TRUE_OS_VERSION "NT"
   goto IWINT_Exit
-  
+
 Is2000:
   StrCpy $TRUE_OS_VERSION "2000"
   goto IWINT_Exit
-  
+
 IsXP:
   StrCpy $TRUE_OS_VERSION "XP"
   goto IWINT_Exit
-  
+
 Is2003:
   StrCpy $TRUE_OS_VERSION "2003"
   goto IWINT_Exit
@@ -1519,17 +1564,25 @@ Is2003:
 IsXP2003:
   StrCmp $WINPCAP_TARGET_ARCHITECTURE "x86" Is2003 IsXP
 
- 
+
 IsVista:
   StrCpy $TRUE_OS_VERSION "Vista"
   goto IWINT_Exit
-  
+
 IsWin7:
   StrCpy $TRUE_OS_VERSION "7"
   goto IWINT_Exit
-  
+
 IsWin8:
   StrCpy $TRUE_OS_VERSION "8"
+  goto IWINT_Exit
+
+IsWin8_1:
+  StrCpy $TRUE_OS_VERSION "8.1"
+  goto IWINT_Exit
+
+IsWin10:
+  StrCpy $TRUE_OS_VERSION "10.0"
   goto IWINT_Exit
 
 IWINT_Exit:
@@ -1547,15 +1600,15 @@ Function IsWinPcapInstalled
 
 FunctionEnd
 
-; this callback is called when packet.dll is found. It stores the version of the dll 
+; this callback is called when packet.dll is found. It stores the version of the dll
 ; into  WINPCAP_OLD_PROJ_VERSION_DOTTED
 Function PacketFound
 
   StrCpy $WINPCAP_OLD_FOUND "true"
 
   GetDLLVersion "$SYSDIR\packet.dll" $R0 $R1
-  IfErrors IWINT_Exit 
- 
+  IfErrors IWINT_Exit
+
   IntOp $WINPCAP_OLD_PRJ_MAJOR $R0 / 0x00010000
   IntOp $WINPCAP_OLD_PRJ_MINOR $R0 & 0x0000FFFF
   IntOp $WINPCAP_OLD_PRJ_REV $R1 / 0x00010000
@@ -1597,7 +1650,7 @@ NsisSameVer2:
     IntCmp $WINPCAP_OLD_PRJ_REV "0" NsisSameVer3 NoNsisInst NsisInst
 NsisSameVer3:
     IntCmp $WINPCAP_OLD_PRJ_BUILD "26" NsisInst NoNsisInst NsisInst
-    
+
 NoNsisInst:
     StrCpy $WINPCAP_OLD_INSTALLER "ghost"
     Goto CheckForReboot
@@ -1620,7 +1673,7 @@ CheckForReboot:
   goto RebootNeeded
 
 NoRebootNeeded:
-  
+
   StrCpy $WINPCAP_OLD_REBOOT_NEEDED "false"
   goto PF_End
 
@@ -1744,7 +1797,7 @@ Pop $R1
 FunctionEnd
 
 
-   
+
 
 
 

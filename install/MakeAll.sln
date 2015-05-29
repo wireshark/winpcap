@@ -1,21 +1,17 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Packet", "..\packetNtx\Dll\Project\Packet.vcproj", "{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}"
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Packet", "..\packetNtx\Dll\Project\Packet.vcxproj", "{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wpcap", "..\wpcap\PRJ\wpcap.vcproj", "{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}"
-	ProjectSection(ProjectDependencies) = postProject
-		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52} = {17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wpcap", "..\wpcap\PRJ\wpcap.vcxproj", "{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinPcap Installer Helper", "WinPcap Installer Helper\WinPcap Installer Helper.vcproj", "{34378168-44FC-4671-A964-20E750DB90A3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinPcap Installer Helper", "WinPcap Installer Helper\WinPcap Installer Helper.vcxproj", "{34378168-44FC-4671-A964-20E750DB90A3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rpcapd", "..\wpcap\libpcap\rpcapd\rpcapd.vcproj", "{4ACD9F0C-4716-4F6E-AD37-B60D73265840}"
-	ProjectSection(ProjectDependencies) = postProject
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5} = {20B438DA-CBEC-4AFF-B11C-67B301D14AD5}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rpcapd", "..\wpcap\libpcap\rpcapd\rpcapd.vcxproj", "{4ACD9F0C-4716-4F6E-AD37-B60D73265840}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinPcap NTx Driver", "..\packetNtx\driver\Driver.vcproj", "{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinPcap NTx Driver", "..\packetNtx\driver\Driver.vcxproj", "{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,8 +19,6 @@ Global
 		Debug No AirPcap|x64 = Debug No AirPcap|x64
 		Debug No NetMon|Win32 = Debug No NetMon|Win32
 		Debug No NetMon|x64 = Debug No NetMon|x64
-		Debug NT4|Win32 = Debug NT4|Win32
-		Debug NT4|x64 = Debug NT4|x64
 		Debug|Win32 = Debug|Win32
 		Debug|x64 = Debug|x64
 		Release LOG_TO_FILE|Win32 = Release LOG_TO_FILE|Win32
@@ -35,10 +29,6 @@ Global
 		Release No NetMon LOG_TO_FILE|x64 = Release No NetMon LOG_TO_FILE|x64
 		Release No NetMon|Win32 = Release No NetMon|Win32
 		Release No NetMon|x64 = Release No NetMon|x64
-		Release NT4 LOG_TO_FILE|Win32 = Release NT4 LOG_TO_FILE|Win32
-		Release NT4 LOG_TO_FILE|x64 = Release NT4 LOG_TO_FILE|x64
-		Release NT4|Win32 = Release NT4|Win32
-		Release NT4|x64 = Release NT4|x64
 		Release|Win32 = Release|Win32
 		Release|x64 = Release|x64
 	EndGlobalSection
@@ -51,10 +41,6 @@ Global
 		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Debug No NetMon|Win32.Build.0 = Debug No NetMon|Win32
 		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Debug No NetMon|x64.ActiveCfg = Debug No NetMon|x64
 		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Debug No NetMon|x64.Build.0 = Debug No NetMon|x64
-		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Debug NT4|Win32.ActiveCfg = Debug NT4|Win32
-		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Debug NT4|Win32.Build.0 = Debug NT4|Win32
-		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Debug NT4|x64.ActiveCfg = Debug NT4|x64
-		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Debug NT4|x64.Build.0 = Debug NT4|x64
 		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Debug|Win32.ActiveCfg = Debug|Win32
 		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Debug|Win32.Build.0 = Debug|Win32
 		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Debug|x64.ActiveCfg = Debug|x64
@@ -75,14 +61,6 @@ Global
 		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Release No NetMon|Win32.Build.0 = Release No NetMon|Win32
 		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Release No NetMon|x64.ActiveCfg = Release No NetMon|x64
 		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Release No NetMon|x64.Build.0 = Release No NetMon|x64
-		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Release NT4 LOG_TO_FILE|Win32.ActiveCfg = Release NT4 LOG_TO_FILE|Win32
-		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Release NT4 LOG_TO_FILE|Win32.Build.0 = Release NT4 LOG_TO_FILE|Win32
-		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Release NT4 LOG_TO_FILE|x64.ActiveCfg = Release NT4 LOG_TO_FILE|x64
-		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Release NT4 LOG_TO_FILE|x64.Build.0 = Release NT4 LOG_TO_FILE|x64
-		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Release NT4|Win32.ActiveCfg = Release NT4|Win32
-		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Release NT4|Win32.Build.0 = Release NT4|Win32
-		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Release NT4|x64.ActiveCfg = Release NT4|x64
-		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Release NT4|x64.Build.0 = Release NT4|x64
 		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Release|Win32.ActiveCfg = Release|Win32
 		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Release|Win32.Build.0 = Release|Win32
 		{17D62EEB-EABF-4D94-B1FF-BCDAAFA7DA52}.Release|x64.ActiveCfg = Release|x64
@@ -92,46 +70,39 @@ Global
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug No AirPcap|x64.ActiveCfg = Debug No AirPcap|x64
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug No AirPcap|x64.Build.0 = Debug No AirPcap|x64
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug No NetMon|Win32.ActiveCfg = Debug|Win32
+		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug No NetMon|Win32.Build.0 = Debug|Win32
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug No NetMon|x64.ActiveCfg = Debug|x64
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug No NetMon|x64.Build.0 = Debug|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug NT4|Win32.ActiveCfg = Debug No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug NT4|x64.ActiveCfg = Debug No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug NT4|x64.Build.0 = Debug No AirPcap|x64
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug|Win32.ActiveCfg = Debug|Win32
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug|Win32.Build.0 = Debug|Win32
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug|x64.ActiveCfg = Debug|x64
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Debug|x64.Build.0 = Debug|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release LOG_TO_FILE|Win32.ActiveCfg = Release No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release LOG_TO_FILE|x64.ActiveCfg = Release No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release LOG_TO_FILE|x64.Build.0 = Release No AirPcap|x64
+		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release LOG_TO_FILE|Win32.ActiveCfg = Release|Win32
+		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release LOG_TO_FILE|Win32.Build.0 = Release|Win32
+		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release LOG_TO_FILE|x64.ActiveCfg = Release|x64
+		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release LOG_TO_FILE|x64.Build.0 = Release|x64
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No AirPcap|Win32.ActiveCfg = Release No AirPcap|Win32
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No AirPcap|Win32.Build.0 = Release No AirPcap|Win32
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No AirPcap|x64.ActiveCfg = Release No AirPcap|x64
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No AirPcap|x64.Build.0 = Release No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No NetMon LOG_TO_FILE|Win32.ActiveCfg = Release No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No NetMon LOG_TO_FILE|x64.ActiveCfg = Release No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No NetMon LOG_TO_FILE|x64.Build.0 = Release No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No NetMon|Win32.ActiveCfg = Release No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No NetMon|x64.ActiveCfg = Release No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No NetMon|x64.Build.0 = Release No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release NT4 LOG_TO_FILE|Win32.ActiveCfg = Release No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release NT4 LOG_TO_FILE|x64.ActiveCfg = Release No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release NT4 LOG_TO_FILE|x64.Build.0 = Release No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release NT4|Win32.ActiveCfg = Release No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release NT4|x64.ActiveCfg = Release No AirPcap|x64
-		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release NT4|x64.Build.0 = Release No AirPcap|x64
+		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No NetMon LOG_TO_FILE|Win32.ActiveCfg = Release|Win32
+		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No NetMon LOG_TO_FILE|Win32.Build.0 = Release|Win32
+		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No NetMon LOG_TO_FILE|x64.ActiveCfg = Release|x64
+		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No NetMon LOG_TO_FILE|x64.Build.0 = Release|x64
+		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No NetMon|Win32.ActiveCfg = Release|Win32
+		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No NetMon|Win32.Build.0 = Release|Win32
+		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No NetMon|x64.ActiveCfg = Release|x64
+		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release No NetMon|x64.Build.0 = Release|x64
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release|Win32.ActiveCfg = Release|Win32
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release|Win32.Build.0 = Release|Win32
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release|x64.ActiveCfg = Release|x64
 		{20B438DA-CBEC-4AFF-B11C-67B301D14AD5}.Release|x64.Build.0 = Release|x64
 		{34378168-44FC-4671-A964-20E750DB90A3}.Debug No AirPcap|Win32.ActiveCfg = Debug|Win32
+		{34378168-44FC-4671-A964-20E750DB90A3}.Debug No AirPcap|Win32.Build.0 = Debug|Win32
 		{34378168-44FC-4671-A964-20E750DB90A3}.Debug No AirPcap|x64.ActiveCfg = Debug|Win32
 		{34378168-44FC-4671-A964-20E750DB90A3}.Debug No NetMon|Win32.ActiveCfg = Debug|Win32
 		{34378168-44FC-4671-A964-20E750DB90A3}.Debug No NetMon|Win32.Build.0 = Debug|Win32
 		{34378168-44FC-4671-A964-20E750DB90A3}.Debug No NetMon|x64.ActiveCfg = Debug|Win32
-		{34378168-44FC-4671-A964-20E750DB90A3}.Debug NT4|Win32.ActiveCfg = Debug|Win32
-		{34378168-44FC-4671-A964-20E750DB90A3}.Debug NT4|Win32.Build.0 = Debug|Win32
-		{34378168-44FC-4671-A964-20E750DB90A3}.Debug NT4|x64.ActiveCfg = Debug|Win32
 		{34378168-44FC-4671-A964-20E750DB90A3}.Debug|Win32.ActiveCfg = Debug|Win32
 		{34378168-44FC-4671-A964-20E750DB90A3}.Debug|Win32.Build.0 = Debug|Win32
 		{34378168-44FC-4671-A964-20E750DB90A3}.Debug|x64.ActiveCfg = Debug|Win32
@@ -147,23 +118,15 @@ Global
 		{34378168-44FC-4671-A964-20E750DB90A3}.Release No NetMon|Win32.ActiveCfg = Release|Win32
 		{34378168-44FC-4671-A964-20E750DB90A3}.Release No NetMon|Win32.Build.0 = Release|Win32
 		{34378168-44FC-4671-A964-20E750DB90A3}.Release No NetMon|x64.ActiveCfg = Release|Win32
-		{34378168-44FC-4671-A964-20E750DB90A3}.Release NT4 LOG_TO_FILE|Win32.ActiveCfg = Release|Win32
-		{34378168-44FC-4671-A964-20E750DB90A3}.Release NT4 LOG_TO_FILE|Win32.Build.0 = Release|Win32
-		{34378168-44FC-4671-A964-20E750DB90A3}.Release NT4 LOG_TO_FILE|x64.ActiveCfg = Release|Win32
-		{34378168-44FC-4671-A964-20E750DB90A3}.Release NT4|Win32.ActiveCfg = Release|Win32
-		{34378168-44FC-4671-A964-20E750DB90A3}.Release NT4|Win32.Build.0 = Release|Win32
-		{34378168-44FC-4671-A964-20E750DB90A3}.Release NT4|x64.ActiveCfg = Release|Win32
 		{34378168-44FC-4671-A964-20E750DB90A3}.Release|Win32.ActiveCfg = Release|Win32
 		{34378168-44FC-4671-A964-20E750DB90A3}.Release|Win32.Build.0 = Release|Win32
 		{34378168-44FC-4671-A964-20E750DB90A3}.Release|x64.ActiveCfg = Release|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug No AirPcap|Win32.ActiveCfg = Debug|Win32
+		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug No AirPcap|Win32.Build.0 = Debug|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug No AirPcap|x64.ActiveCfg = Debug|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug No NetMon|Win32.ActiveCfg = Debug|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug No NetMon|Win32.Build.0 = Debug|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug No NetMon|x64.ActiveCfg = Debug|Win32
-		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug NT4|Win32.ActiveCfg = Debug|Win32
-		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug NT4|Win32.Build.0 = Debug|Win32
-		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug NT4|x64.ActiveCfg = Debug|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug|Win32.ActiveCfg = Debug|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug|Win32.Build.0 = Debug|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Debug|x64.ActiveCfg = Debug|Win32
@@ -179,46 +142,37 @@ Global
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Release No NetMon|Win32.ActiveCfg = Release|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Release No NetMon|Win32.Build.0 = Release|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Release No NetMon|x64.ActiveCfg = Release|Win32
-		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Release NT4 LOG_TO_FILE|Win32.ActiveCfg = Release|Win32
-		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Release NT4 LOG_TO_FILE|Win32.Build.0 = Release|Win32
-		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Release NT4 LOG_TO_FILE|x64.ActiveCfg = Release|Win32
-		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Release NT4|Win32.ActiveCfg = Release|Win32
-		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Release NT4|Win32.Build.0 = Release|Win32
-		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Release NT4|x64.ActiveCfg = Release|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Release|Win32.ActiveCfg = Release|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Release|Win32.Build.0 = Release|Win32
 		{4ACD9F0C-4716-4F6E-AD37-B60D73265840}.Release|x64.ActiveCfg = Release|Win32
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug No AirPcap|Win32.ActiveCfg = Debug|Win32
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug No AirPcap|Win32.Build.0 = Debug|Win32
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug No AirPcap|x64.ActiveCfg = Debug|x64
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug No AirPcap|x64.Build.0 = Debug|x64
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug No NetMon|Win32.ActiveCfg = Debug|Win32
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug No NetMon|Win32.Build.0 = Debug|Win32
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug No NetMon|x64.ActiveCfg = Debug|x64
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug No NetMon|x64.Build.0 = Debug|x64
-		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug NT4|Win32.ActiveCfg = Debug|x64
-		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug NT4|x64.ActiveCfg = Debug|x64
-		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug NT4|x64.Build.0 = Debug|x64
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug|Win32.ActiveCfg = Debug|Win32
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug|Win32.Build.0 = Debug|Win32
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug|x64.ActiveCfg = Debug|x64
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Debug|x64.Build.0 = Debug|x64
-		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release LOG_TO_FILE|Win32.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release LOG_TO_FILE|Win32.ActiveCfg = Release|Win32
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release LOG_TO_FILE|Win32.Build.0 = Release|Win32
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release LOG_TO_FILE|x64.ActiveCfg = Release|x64
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release LOG_TO_FILE|x64.Build.0 = Release|x64
-		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No AirPcap|Win32.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No AirPcap|Win32.ActiveCfg = Release|Win32
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No AirPcap|Win32.Build.0 = Release|Win32
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No AirPcap|x64.ActiveCfg = Release|x64
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No AirPcap|x64.Build.0 = Release|x64
-		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No NetMon LOG_TO_FILE|Win32.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No NetMon LOG_TO_FILE|Win32.ActiveCfg = Release|Win32
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No NetMon LOG_TO_FILE|Win32.Build.0 = Release|Win32
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No NetMon LOG_TO_FILE|x64.ActiveCfg = Release|x64
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No NetMon LOG_TO_FILE|x64.Build.0 = Release|x64
-		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No NetMon|Win32.ActiveCfg = Release|x64
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No NetMon|Win32.ActiveCfg = Release|Win32
+		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No NetMon|Win32.Build.0 = Release|Win32
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No NetMon|x64.ActiveCfg = Release|x64
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release No NetMon|x64.Build.0 = Release|x64
-		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release NT4 LOG_TO_FILE|Win32.ActiveCfg = Release|x64
-		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release NT4 LOG_TO_FILE|x64.ActiveCfg = Release|x64
-		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release NT4 LOG_TO_FILE|x64.Build.0 = Release|x64
-		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release NT4|Win32.ActiveCfg = Release|x64
-		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release NT4|x64.ActiveCfg = Release|x64
-		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release NT4|x64.Build.0 = Release|x64
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release|Win32.ActiveCfg = Release|Win32
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release|Win32.Build.0 = Release|Win32
 		{5E91F1EF-C30E-43F7-9187-E37A0BDA7FDB}.Release|x64.ActiveCfg = Release|x64

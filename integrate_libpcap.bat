@@ -24,7 +24,7 @@ echo ---------------------------------------
 
 echo Applying remote code patch...
 pushd .\wpcap\libpcap\
-patch -p1 -s < remote_code.patch 
+patch -p1 -s < remote_code.patch
 chmod -R guoa+rw *
 del /s *.orig >NUL 2>NUL
 popd
@@ -34,11 +34,21 @@ echo ---------------------------------------
 
 echo Applying TurboCap code patch...
 pushd .\wpcap\libpcap\
-patch -p1 -s < tc.patch 
+patch -p1 -s < tc.patch
 chmod -R guoa+rw *
 del /s *.orig >NUL 2>NUL
 popd
 echo Applying TurboCap code patch -- Done
+
+echo ---------------------------------------
+
+echo Applying _snprintf _MSC_VER patch...
+pushd .\wpcap\libpcap\
+patch -p1 -s < snprintf.patch
+chmod -R guoa+rw *
+del /s *.orig >NUL 2>NUL
+popd
+echo Applying _snprintf _MSC_VER patch -- Done
 
 echo ---------------------------------------
 

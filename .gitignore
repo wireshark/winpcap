@@ -40,6 +40,10 @@ CPackSourceConfig.cmake
 *.nativecodeanalysis.xml
 *.rc
 *.res
+*.vcxproj.user
+*.opensdf
+*.sdf
+*.v12.suo
 
 # Misc #
 ########
@@ -50,3 +54,36 @@ cscope.*
 dummy.cpp
 tags
 TAGS
+
+# Project specific ignores
+install/WinPcap Installer Helper/Debug
+packetNtx/Dll/Project/Debug
+packetNtx/driver/Debug
+wpcap/PRJ/Debug
+wpcap/libpcap/rpcapd/Debug
+install/installer/distribution/x64
+install/installer/distribution/x86
+install/WinPcap Installer Helper/Release
+packetNtx/Dll/Project/Debug No NetMon
+packetNtx/Dll/Project/Release LOG_TO_FILE
+packetNtx/Dll/Project/Release No NetMon LOG_TO_FILE
+packetNtx/Dll/Project/Release No NetMon
+packetNtx/Dll/Project/Release
+packetNtx/buildfre_win7_amd64.log
+packetNtx/buildfre_win7_x86.log
+packetNtx/driver/Release
+packetNtx/driver/bin
+packetNtx/driver/objfre_win7_amd64
+packetNtx/driver/objfre_win7_x86
+packetNtx/driver/x64
+wpcap/PRJ/Debug No AirPcap
+wpcap/PRJ/Release No AirPcap
+wpcap/PRJ/Release
+wpcap/libpcap/rpcapd/Release
+packetNtx/driver/PREfast_defects_*
+packetNtx/driver/buildchk_*
+packetNtx/driver/buildfre_*
+packetNtx/driver/objchk_*
+packetNtx/driver/objfre_*
+packetNtx/driver/prefastchk_*
+packetNtx/driver/prefastfre_*
