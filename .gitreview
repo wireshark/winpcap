@@ -1,0 +1,6 @@
+[gerrit]
+host=code.wireshark.org
+port=29418
+project=winpcap.git
+defaultremote=origin
+defaultbranch=master
