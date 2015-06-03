@@ -1,0 +1,270 @@
+diff -urb ..\winpcap\Examples\/PacketDriver/GetMacAddress/GetMacAddress.c .\Examples/PacketDriver/GetMacAddress/GetMacAddress.c
+--- ..\winpcap\Examples\/PacketDriver/GetMacAddress/GetMacAddress.c	2008-12-23 02:43:56.000000000 -0800
++++ .\Examples/PacketDriver/GetMacAddress/GetMacAddress.c	2009-07-14 15:59:25.765625000 -0700
+@@ -50,6 +50,16 @@
+ 	ULONG		AdapterLength;
+ 	PPACKET_OID_DATA  OidData;
+ 	BOOLEAN		Status;
++	CHAR		ErrBuffer[1024];
++
++	//
++	// start WinPcap Professional
++	//
++	if(PacketStartOem(ErrBuffer, sizeof(ErrBuffer)) == FALSE)
++	{
++		printf("Cannot start WinPcap Professional: %s\n", ErrBuffer);
++		return -1;
++	}
+ 	
+ 	//
+ 	// Obtain the name of the adapters installed on this machine
+diff -urb ..\winpcap\Examples\/PacketDriver/TestPacketCapture/TestPacketCapture.c .\Examples/PacketDriver/TestPacketCapture/TestPacketCapture.c
+--- ..\winpcap\Examples\/PacketDriver/TestPacketCapture/TestPacketCapture.c	2008-12-23 02:43:58.000000000 -0800
++++ .\Examples/PacketDriver/TestPacketCapture/TestPacketCapture.c	2009-07-14 15:59:25.781250000 -0700
+@@ -72,6 +72,17 @@
+ 
+ struct bpf_stat stat;
+ 	
++	CHAR		ErrBuffer[1024];
++
++	//
++	// start WinPcap Professional
++	//
++	if(PacketStartOem(ErrBuffer, sizeof(ErrBuffer)) == FALSE)
++	{
++		printf("Cannot start WinPcap Professional: %s\n", ErrBuffer);
++		return -1;
++	}
++
+ 	//
+ 	// Obtain the name of the adapters installed on this machine
+ 	//
+diff -urb ..\winpcap\Examples\/PacketDriver/TestPacketSend/TestPacketSend.c .\Examples/PacketDriver/TestPacketSend/TestPacketSend.c
+--- ..\winpcap\Examples\/PacketDriver/TestPacketSend/TestPacketSend.c	2008-12-23 02:43:58.000000000 -0800
++++ .\Examples/PacketDriver/TestPacketSend/TestPacketSend.c	2009-07-14 15:59:25.781250000 -0700
+@@ -71,6 +71,7 @@
+ ULONG		AdapterLength;
+ 
+ float	cpu_time;
++CHAR		ErrBuffer[1024];
+ 	
+ 	printf("Traffic Generator v 0.9999\nCopyright 1999 Loris Degioanni (loris@netgroup-serv.polito.it)");
+ 	printf("\nSends a set of packets to the network using packet.dll API.\n");
+@@ -81,6 +82,14 @@
+ 		return -1;
+ 	}
+ 	
++	//
++	// start WinPcap Professional
++	//
++	if(PacketStartOem(ErrBuffer, sizeof(ErrBuffer)) == FALSE)
++	{
++		printf("Cannot start WinPcap Professional: %s\n", ErrBuffer);
++		return -1;
++	}
+ 	
+ 	AdapterName[0]=0;
+ 	
+diff -urb ..\winpcap\Examples\/UDPdump/udpdump.c .\Examples/UDPdump/udpdump.c
+--- ..\winpcap\Examples\/UDPdump/udpdump.c	2008-12-23 02:43:58.000000000 -0800
++++ .\Examples/UDPdump/udpdump.c	2009-07-14 15:59:25.781250000 -0700
+@@ -80,6 +80,13 @@
+ char packet_filter[] = "ip and udp";
+ struct bpf_program fcode;
+ 
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	/* Retrieve the device list */
+ 	if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf) == -1)
+ 	{
+diff -urb ..\winpcap\Examples\/UserLevelBridge/UserBridge.c .\Examples/UserLevelBridge/UserBridge.c
+--- ..\winpcap\Examples\/UserLevelBridge/UserBridge.c	2008-12-23 02:43:59.000000000 -0800
++++ .\Examples/UserLevelBridge/UserBridge.c	2009-07-14 15:59:25.796875000 -0700
+@@ -78,6 +78,13 @@
+ 	struct bpf_program fcode;
+ 	in_out_adapters couple0, couple1;
+ 
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	/* 
+ 	 * Retrieve the device list 
+ 	 */
+diff -urb ..\winpcap\Examples\/iflist/iflist.c .\Examples/iflist/iflist.c
+--- ..\winpcap\Examples\/iflist/iflist.c	2008-12-23 02:43:57.000000000 -0800
++++ .\Examples/iflist/iflist.c	2009-07-14 15:59:25.796875000 -0700
+@@ -56,6 +56,13 @@
+   char errbuf[PCAP_ERRBUF_SIZE+1];
+   char source[PCAP_ERRBUF_SIZE+1];
+ 
++  /* start WinPcap Professional */
++  if (pcap_start_oem(errbuf, 0) == -1)
++  {
++    fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++    exit(1);
++  }
++
+   printf("Enter the device you want to list:\n"
+ 			"rpcap://              ==> lists interfaces in the local machine\n"
+ 			"rpcap://hostname:port ==> lists interfaces in a remote machine\n"
+diff -urb ..\winpcap\Examples\/misc/basic_dump.c .\Examples/misc/basic_dump.c
+--- ..\winpcap\Examples\/misc/basic_dump.c	2008-12-23 02:43:55.000000000 -0800
++++ .\Examples/misc/basic_dump.c	2009-07-14 15:59:25.812500000 -0700
+@@ -12,6 +12,13 @@
+ pcap_t *adhandle;
+ char errbuf[PCAP_ERRBUF_SIZE];
+ 	
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	/* Retrieve the device list on the local machine */
+ 	if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf) == -1)
+ 	{
+diff -urb ..\winpcap\Examples\/misc/basic_dump_ex.c .\Examples/misc/basic_dump_ex.c
+--- ..\winpcap\Examples\/misc/basic_dump_ex.c	2008-12-23 02:43:55.000000000 -0800
++++ .\Examples/misc/basic_dump_ex.c	2009-07-14 15:59:25.812500000 -0700
+@@ -16,6 +16,12 @@
+ const u_char *pkt_data;
+ time_t local_tv_sec;
+ 	
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
+     
+ 	/* Retrieve the device list on the local machine */
+ 	if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf) == -1)
+diff -urb ..\winpcap\Examples\/misc/savedump.c .\Examples/misc/savedump.c
+--- ..\winpcap\Examples\/misc/savedump.c	2008-12-23 02:43:55.000000000 -0800
++++ .\Examples/misc/savedump.c	2009-07-14 15:59:25.828125000 -0700
+@@ -14,6 +14,12 @@
+ pcap_dumper_t *dumpfile;
+ 
+ 
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		return -1;
++	}
+ 	
+     /* Check command line */
+ 	if(argc != 2)
+diff -urb ..\winpcap\Examples\/misc/sendpack.c .\Examples/misc/sendpack.c
+--- ..\winpcap\Examples\/misc/sendpack.c	2008-12-23 02:43:55.000000000 -0800
++++ .\Examples/misc/sendpack.c	2009-07-14 15:59:25.859375000 -0700
+@@ -11,6 +11,14 @@
+ u_char packet[100];
+ int i;
+ 
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		return;
++	}
++	
++
+ 	/* Check the validity of the command line */
+ 	if (argc != 2)
+ 	{
+diff -urb ..\winpcap\Examples\/pcap_filter/pcap_filter.c .\Examples/pcap_filter/pcap_filter.c
+--- ..\winpcap\Examples\/pcap_filter/pcap_filter.c	2006-07-24 14:08:27.000000000 -0700
++++ .\Examples/pcap_filter/pcap_filter.c	2009-07-14 15:59:25.812500000 -0700
+@@ -90,6 +90,13 @@
+ 		}
+ 	}
+ 
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	// open a capture from the network
+ 	if (source != NULL)
+ 	{
+diff -urb ..\winpcap\Examples\/pktdump_ex/pktdump_ex.c .\Examples/pktdump_ex/pktdump_ex.c
+--- ..\winpcap\Examples\/pktdump_ex/pktdump_ex.c	2008-12-23 02:43:57.000000000 -0800
++++ .\Examples/pktdump_ex/pktdump_ex.c	2009-07-14 15:59:25.828125000 -0700
+@@ -60,6 +60,13 @@
+ 		   "      pktdump_ex -s file://c:/temp/file.acp\n"
+ 		   "      pktdump_ex -s rpcap://\\Device\\NPF_{C8736017-F3C3-4373-94AC-9A34B7DAD998}\n\n");
+ 
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	if(argc < 3)
+ 	{
+ 
+diff -urb ..\winpcap\Examples\/sendcap/sendcap.c .\Examples/sendcap/sendcap.c
+--- ..\winpcap\Examples\/sendcap/sendcap.c	2008-12-23 02:43:57.000000000 -0800
++++ .\Examples/sendcap/sendcap.c	2009-07-14 16:00:48.468750000 -0700
+@@ -53,6 +53,13 @@
+ 	u_int npacks = 0;
+ 	errno_t fopen_error;
+ 
++  /* start WinPcap Professional */
++  if (pcap_start_oem(errbuf, 0) == -1)
++  {
++    fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++    exit(1);
++  }
++
+ 	/* Check the validity of the command line */
+ 	if (argc <= 2 || argc >= 5)
+ 	{
+diff -urb ..\winpcap\Examples\/smp_1/smp_1.c .\Examples/smp_1/smp_1.c
+--- ..\winpcap\Examples\/smp_1/smp_1.c	2008-12-23 02:43:57.000000000 -0800
++++ .\Examples/smp_1/smp_1.c	2009-07-14 15:59:25.828125000 -0700
+@@ -56,6 +56,13 @@
+ 	printf("and that the caplen is equal to the packet length.\n");
+ 	printf("If there is an error, it will print out a message saying \"Inconsistent XXX\"\n");
+ 
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf) == -1)
+ 	{
+ 		fprintf(stderr,"Error in pcap_findalldevs: %s\n", errbuf);
+diff -urb ..\winpcap\Examples\/tcptop/tcptop.c .\Examples/tcptop/tcptop.c
+--- ..\winpcap\Examples\/tcptop/tcptop.c	2008-12-23 02:43:57.000000000 -0800
++++ .\Examples/tcptop/tcptop.c	2009-07-14 15:59:25.843750000 -0700
+@@ -56,6 +56,13 @@
+ 		return;
+ 	}
+ 		
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	/* Open the output adapter */
+ 	if ( (fp= pcap_open(argv[1], 100, PCAP_OPENFLAG_PROMISCUOUS, 1000, NULL, errbuf) ) == NULL)
+ 	{

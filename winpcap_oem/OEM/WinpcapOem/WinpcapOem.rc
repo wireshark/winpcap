@@ -1,0 +1,86 @@
+//Microsoft Developer Studio generated resource script.
+//
+
+#define APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 1 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "resource.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Data
+//
+
+#ifdef _AMD64_
+
+IDP_DLL2K		RCDATA  MOVEABLE PURE   "binaries\\x64\\packet2k.dll"
+IDP_DLLVISTA	RCDATA	MOVEABLE PURE	"binaries\\x64\\packetVista.dll"
+IDP_DRIx64		RCDATA  MOVEABLE PURE   "binaries\\x64\\npfx64.sys"
+
+#else
+//
+// x86
+//
+IDP_DLL2K		RCDATA  MOVEABLE PURE   "binaries\\x86\\packet2k.dll"
+IDP_DRI2K		RCDATA  MOVEABLE PURE   "binaries\\x86\\npf2k.sys"
+IDP_DLLNT		RCDATA  MOVEABLE PURE   "binaries\\x86\\packetnt.dll"
+IDP_DRINT		RCDATA  MOVEABLE PURE   "binaries\\x86\\npfnt.sys"
+IDP_DLLVISTA	RCDATA	MOVEABLE PURE	"binaries\\x86\\packetVista.dll"
+IDP_DRIx64		RCDATA  MOVEABLE PURE   "binaries\\x64\\npfx64.sys"
+
+#endif //not _AMD64_
+
+HSH_AUTH_PROC           RCDATA  MOVEABLE PURE   "binaries\\tools.bin"
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""resource.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE 
+BEGIN
+    "#include ""WinPcapOem.rc2""\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#include "WinPcapOem.rc2"
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

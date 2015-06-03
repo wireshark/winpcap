@@ -1,0 +1,46 @@
+//
+// WinPcapOem.rc2 - resources Microsoft Visual C++ does not edit directly
+//
+
+#ifdef APSTUDIO_INVOKED
+	#error this file is not editable by Microsoft Visual C++
+#endif //APSTUDIO_INVOKED
+
+
+#include "..\..\version.h"
+#include "..\..\..\winpcap\common\WpcapNames.h"
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION		WINPCAPOEM_MAJOR,WINPCAPOEM_MINOR,WINPCAPOEM_REV,WINPCAPOEM_BUILD
+ PRODUCTVERSION		WINPCAPOEM_MAJOR,WINPCAPOEM_MINOR,WINPCAPOEM_REV,WINPCAPOEM_BUILD
+ FILEFLAGSMASK 0x17L
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "000004b0"
+        BEGIN
+			VALUE "CompanyName",       WINPCAPOEM_COMPANY_NAME
+			VALUE "FileDescription",   "packet.dll Wrapper Dynamic Link Library"
+			VALUE "FileVersion",       WINPCAPOEM_VER_STRING
+			VALUE "InternalName",      WINPCAPOEM_PRODUCT_NAME
+			VALUE "LegalCopyright",    WINPCAPOEM_COPYRIGHT_STRING
+			VALUE "LegalTrademarks",   ""
+			VALUE "OriginalFilename",  "packet.dll"
+			VALUE "ProductName",       WINPCAPOEM_PRODUCT_NAME " (" NPF_DRIVER_NAME ")"
+			VALUE "ProductVersion",    WINPCAPOEM_VER_STRING
+            VALUE "Build Description", WINPCAPOEM_BUILD_DESCRIPTION
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0, 1200
+    END
+END

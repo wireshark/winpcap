@@ -1,0 +1,255 @@
+diff -urb ..\WinPcap\Examples-pcap/UDPdump/udpdump.c .\Examples-pcap/UDPdump/udpdump.c
+--- ..\WinPcap\Examples-pcap/UDPdump/udpdump.c	2008-12-23 02:54:49.000000000 -0800
++++ .\Examples-pcap/UDPdump/udpdump.c	2009-07-14 16:51:15.796875000 -0700
+@@ -39,6 +39,8 @@
+ #define _CRT_SECURE_NO_WARNINGS
+ #endif
+ 
++#define WPCAP //this is needed to use pcap_start_oem
++
+ #include "pcap.h"
+ 
+ /* 4 bytes IP address */
+@@ -91,6 +93,13 @@
+ 	char packet_filter[] = "ip and udp";
+ 	struct bpf_program fcode;
+ 	
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
++	
+ 	/* Retrieve the device list */
+ 	if(pcap_findalldevs(&alldevs, errbuf) == -1)
+ 	{
+diff -urb ..\WinPcap\Examples-pcap/basic_dump/basic_dump.c .\Examples-pcap/basic_dump/basic_dump.c
+--- ..\WinPcap\Examples-pcap/basic_dump/basic_dump.c	2008-12-23 02:54:48.000000000 -0800
++++ .\Examples-pcap/basic_dump/basic_dump.c	2009-07-14 16:48:44.203125000 -0700
+@@ -6,6 +6,8 @@
+ #define _CRT_SECURE_NO_WARNINGS
+ #endif
+ 
++#define WPCAP //this is needed to use pcap_start_oem
++
+ #include "pcap.h"
+ 
+ /* prototype of the packet handler */
+@@ -20,6 +22,13 @@
+ 	pcap_t *adhandle;
+ 	char errbuf[PCAP_ERRBUF_SIZE];
+ 	
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	/* Retrieve the device list */
+ 	if(pcap_findalldevs(&alldevs, errbuf) == -1)
+ 	{
+diff -urb ..\WinPcap\Examples-pcap/basic_dump_ex/basic_dump_ex.c .\Examples-pcap/basic_dump_ex/basic_dump_ex.c
+--- ..\WinPcap\Examples-pcap/basic_dump_ex/basic_dump_ex.c	2008-12-23 02:54:48.000000000 -0800
++++ .\Examples-pcap/basic_dump_ex/basic_dump_ex.c	2009-07-14 16:49:28.671875000 -0700
+@@ -6,6 +6,8 @@
+ #define _CRT_SECURE_NO_WARNINGS
+ #endif
+ 
++#define WPCAP //this is needed to use pcap_start_oem
++
+ #include "pcap.h"
+ 
+ int main()
+@@ -23,6 +25,12 @@
+ 	const u_char *pkt_data;
+ 	time_t local_tv_sec;
+ 		
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
+     
+ 	/* Retrieve the device list */
+ 	if(pcap_findalldevs(&alldevs, errbuf) == -1)
+diff -urb ..\WinPcap\Examples-pcap/iflist/iflist.c .\Examples-pcap/iflist/iflist.c
+--- ..\WinPcap\Examples-pcap/iflist/iflist.c	2008-12-23 02:54:48.000000000 -0800
++++ .\Examples-pcap/iflist/iflist.c	2009-07-14 16:49:28.625000000 -0700
+@@ -39,6 +39,8 @@
+ #define _CRT_SECURE_NO_WARNINGS
+ #endif
+ 
++#define WPCAP //this is needed to use pcap_start_oem
++
+ #include "pcap.h"
+ 
+ #ifndef WIN32
+@@ -61,6 +63,13 @@
+ 	pcap_if_t *d;
+ 	char errbuf[PCAP_ERRBUF_SIZE+1];
+ 	
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	/* Retrieve the device list */
+ 	if(pcap_findalldevs(&alldevs, errbuf) == -1)
+ 	{
+diff -urb ..\WinPcap\Examples-pcap/pcap_filter/pcap_filter.c .\Examples-pcap/pcap_filter/pcap_filter.c
+--- ..\WinPcap\Examples-pcap/pcap_filter/pcap_filter.c	2006-02-22 09:28:33.000000000 -0800
++++ .\Examples-pcap/pcap_filter/pcap_filter.c	2009-07-14 16:49:28.593750000 -0700
+@@ -35,6 +35,8 @@
+ #include <stdlib.h>
+ #include <stdio.h>
+ 
++#define WPCAP //this is needed to use pcap_start_oem
++
+ #include <pcap.h>
+ 
+ #define MAX_PRINT 80
+@@ -90,6 +92,13 @@
+ 		}
+ 	}
+ 	
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	// open a capture from the network
+ 	if (source != NULL)
+ 	{
+diff -urb ..\WinPcap\Examples-pcap/pktdump_ex/pktdump_ex.c .\Examples-pcap/pktdump_ex/pktdump_ex.c
+--- ..\WinPcap\Examples-pcap/pktdump_ex/pktdump_ex.c	2008-12-23 02:54:49.000000000 -0800
++++ .\Examples-pcap/pktdump_ex/pktdump_ex.c	2009-07-14 16:50:29.265625000 -0700
+@@ -42,6 +42,8 @@
+ #include <stdlib.h>
+ #include <stdio.h>
+ 
++#define WPCAP //this is needed to use pcap_start_oem
++
+ #include <pcap.h>
+ 
+ #define LINE_LEN 16
+@@ -63,6 +65,13 @@
+ 		"      pktdump_ex -s file.acp\n"
+ 		"      pktdump_ex -s \\Device\\NPF_{C8736017-F3C3-4373-94AC-9A34B7DAD998}\n\n");
+ 
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	if(argc < 3)
+ 	{
+ 		printf("\nNo adapter selected: printing the device list:\n");
+diff -urb ..\WinPcap\Examples-pcap/readfile/readfile.c .\Examples-pcap/readfile/readfile.c
+--- ..\WinPcap\Examples-pcap/readfile/readfile.c	2008-12-23 02:54:49.000000000 -0800
++++ .\Examples-pcap/readfile/readfile.c	2009-07-14 16:48:44.187500000 -0700
+@@ -1,4 +1,5 @@
+ #include <stdio.h>
++#define WPCAP //this is needed to use pcap_start_oem
+ #include <pcap.h>
+ 
+ #define LINE_LEN 16
+@@ -17,6 +18,13 @@
+ 
+ 	}
+ 	
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
++
+ 	/* Open the capture file */
+ 	if ((fp = pcap_open_offline(argv[1],			// name of the device
+ 						 errbuf					// error buffer
+diff -urb ..\WinPcap\Examples-pcap/readfile_ex/readfile_ex.c .\Examples-pcap/readfile_ex/readfile_ex.c
+--- ..\WinPcap\Examples-pcap/readfile_ex/readfile_ex.c	2005-07-20 16:02:59.000000000 -0700
++++ .\Examples-pcap/readfile_ex/readfile_ex.c	2009-07-14 16:50:47.281250000 -0700
+@@ -1,4 +1,7 @@
+ #include <stdio.h>
++
++#define WPCAP //this is needed to use pcap_start_oem
++
+ #include <pcap.h>
+ 
+ #define LINE_LEN 16
+@@ -19,6 +22,13 @@
+ 
+ 	}
+ 	
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
++	
+ 	/* Open the capture file */
+ 	if ((fp = pcap_open_offline(argv[1],			// name of the device
+ 						 errbuf					// error buffer
+diff -urb ..\WinPcap\Examples-pcap/savedump/savedump.c .\Examples-pcap/savedump/savedump.c
+--- ..\WinPcap\Examples-pcap/savedump/savedump.c	2008-12-23 02:54:49.000000000 -0800
++++ .\Examples-pcap/savedump/savedump.c	2009-07-14 16:50:56.765625000 -0700
+@@ -6,6 +6,8 @@
+ #define _CRT_SECURE_NO_WARNINGS
+ #endif
+ 
++#define WPCAP //this is needed to use pcap_start_oem
++
+ #include "pcap.h"
+ 
+ /* prototype of the packet handler */
+@@ -29,6 +31,13 @@
+         return -1;
+     }
+     
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
++    
+ 	/* Retrieve the device list on the local machine */
+ 	if (pcap_findalldevs(&alldevs, errbuf) == -1)
+ 	{
+diff -urb ..\WinPcap\Examples-pcap/sendpack/sendpack.c .\Examples-pcap/sendpack/sendpack.c
+--- ..\WinPcap\Examples-pcap/sendpack/sendpack.c	2008-12-23 02:54:49.000000000 -0800
++++ .\Examples-pcap/sendpack/sendpack.c	2009-07-14 16:51:04.453125000 -0700
+@@ -1,6 +1,8 @@
+ #include <stdlib.h>
+ #include <stdio.h>
+ 
++#define WPCAP //this is needed to use pcap_start_oem
++
+ #include <pcap.h>
+ 
+ 
+@@ -18,6 +20,13 @@
+ 		return 1;
+ 	}
+     
++	/* start WinPcap Professional */
++	if (pcap_start_oem(errbuf, 0) == -1)
++	{
++		fprintf(stderr, "Error starting WinPcap Professional: %s\n", errbuf);
++		exit(1);
++	}
++    
+ 	/* Open the adapter */
+ 	if ((fp = pcap_open_live(argv[1],		// name of the device
+ 							 65536,			// portion of the packet to capture. It doesn't matter in this case 
