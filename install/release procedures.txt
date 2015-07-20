@@ -1,4 +1,3 @@
-$Header: /usr/cvsroot_private/winpcap/install/release\040procedures.txt,v 1.20 2010/06/22 22:31:08 gianlucav Exp $
 
 20130224-GV: Commented out all the instructions to create a devpack and the online manual, as the compilation of
 the cygwin wpcap.dll is broken now.
@@ -17,7 +16,7 @@ Needed tools/libraries (x86 and x64)
 ------------------------------
 
 - Microsoft Visual Studio 2013 Update 4.
-- Microsoft Windows SDK 7.1 install.ed in the standard place
+- Microsoft Windows SDK 7.1 installed in the standard place
 - Microsoft Windows Driver Kit 7.1 installed in the standard place.
 - git.
 - Doxygen 1.5.6 installed and on the path
@@ -33,7 +32,7 @@ Needed tools/libraries (x86 and x64)
 How to compile WinPcap
 ------------------------------------------------
 
-1.  Download winpcap (HEAD) from the CVS into %BUILD_TREE%
+1.  Download winpcap (HEAD) from Git into %BUILD_TREE%
     NOTE: DO NOT USE A %BUILD_TREE% path containing spaces, the NT4 DDK build
           gets screwed up with spaces in the paths!!
 
@@ -84,10 +83,13 @@ How to compile WinPcap
 	in the libpcap folder
 	git checkout -b libpcap_1_0_rel0b origin/libpcap_1_0_rel0b
 
-11. On the command line, go to folder
+11. Run `powershell tools\win-setup.ps1 ..`. This will download and unzip
+    the contents of the AirPcap devpack into %BUILD_TREE%
+
+12. On the command line, go to folder
       %BUILD_TREE%\winpcap
 
-12. Execute integrate_libpcap.bat. The script should not generate any
+13. Execute integrate_libpcap.bat. The script should not generate any
     error. The expected output is
 
     Copying files...
@@ -111,17 +113,17 @@ How to compile WinPcap
      --- Done!
     Generating the compiler files -- Done
 
-13. Check that the version of libpcap in
+14. Check that the version of libpcap in
       %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 1300
       "static const char pcap_version_string[] = "libpcap version 0.9[.x]";"
     makes sense (??? WHAT DOES IT MEAN???)
 
-14. Check that the version of wpcap in
+15. Check that the version of wpcap in
       %BUILD_TREE%\winpcap\wpcap\libpcap\pcap.c line 1309
         "static const char wpcap_version_string[] = "3.1";"
     matches the version of WinPcap.
 
-15. Zip the contents of the three folders
+16. Zip the contents of the three folders
 	  %BUILD_TREE%\winpcap
 	  %BUILD_TREE%\libpcap
 	  %BUILD_TREE%\Airpcap_Devpack
@@ -129,7 +131,7 @@ How to compile WinPcap
 		  V
 	  %BUILD_TREE%\sources.zip
 
-16. Open a Visual Studio 2013 command prompt, go to
+17. Open a Visual Studio 2013 command prompt, go to
 	  %BUILD_TREE%\install\
 	and execute BuildMe.bat
 
