@@ -83,6 +83,14 @@ How to compile WinPcap
 	in the libpcap folder
 	git checkout -b libpcap_1_0_rel0b origin/libpcap_1_0_rel0b
 
+    If you are using Git for Windows you need to ensure that your checked
+    out text files have LF line endings, otherwise the patch commands in
+    integrate_libpcap.bat will fail. You can do so by running
+
+        git config core.autocrlf false
+        git rm --cached -r .
+        git reset --hard
+
 11. Run `powershell tools\win-setup.ps1 ..`. This will download and unzip
     the contents of the AirPcap devpack into %BUILD_TREE%
 
