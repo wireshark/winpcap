@@ -1,0 +1,60 @@
+;-------------------------------------------------------------------------
+; Npf.INF -- WinPCap Network Packet Filter Driver
+;
+; Copyright (c) Wireshark Foundation, Inc.  All rights reserved.
+;-------------------------------------------------------------------------
+[version]
+Signature   = "$Windows NT$"
+Class       = NetService
+ClassGUID   = {4D36E974-E325-11CE-BFC1-08002BE10318}
+Provider    = %WFINC%
+DriverVer   = 07/25/2015,4.1.0.4001
+CatalogFile = npfx64.cat
+
+[Manufacturer]
+%WFINC%=WFINC,NTamd64
+
+[WFINC.NTamd64]
+%Npf_Desc%=Install, npf
+
+;-------------------------------------------------------------------------
+; Installation Section
+;-------------------------------------------------------------------------
+[Install]
+Copyfiles = npf.copyfiles.sys
+
+[SourceDisksNames]
+1=%Npf_Desc%,"",,
+
+[SourceDisksFiles]
+npf.sys=1
+
+[DestinationDirs]
+DefaultDestDir=12
+npf.copyfiles.sys=12
+
+[npf.copyfiles.sys]
+npf.sys,,,2
+
+
+;-------------------------------------------------------------------------
+; Service installation support
+;-------------------------------------------------------------------------
+[Install.Services]
+AddService=Npf,,Npf_Service_Inst
+
+[Npf_Service_Inst]
+DisplayName     = %Npf_Desc%
+ServiceType     = 1 ;SERVICE_KERNEL_DRIVER
+StartType       = 2 ;SERVICE_AUTO_START
+ErrorControl    = 1 ;SERVICE_ERROR_NORMAL
+ServiceBinary   = %12%\npf.sys
+
+[Strings]
+WFINC = "Wireshark Foundation, Inc."
+Npf_Desc = "Netgroup Packet Filter Driver"
+
+
+
+
+
