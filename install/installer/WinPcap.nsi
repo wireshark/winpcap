@@ -47,10 +47,10 @@
   !define WINPCAP_PRJ_REV "0"
   !define WINPCAP_PRJ_BUILD "4001"
   !define WINPCAP_PROJ_VERSION_DOTTED "4.1.0.4001"
-  !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2015 Riverbed Technology, Inc."
+  !define WINPCAP_LEGAL_COPYRIGHT "© 2005 - 2015 Wireshark Foundation, Inc."
   !define WINPCAP_PRODUCT_NAME "WinPcap 4.1.4"
-  !define WINPCAP_COMPANY_NAME "Riverbed Technology, Inc."
-  !define WINPCAP_COMPANY_URL "http://www.riverbed.com/"
+  !define WINPCAP_COMPANY_NAME "Wireshark Foundation, Inc."
+  !define WINPCAP_COMPANY_URL "https://www.wireshark.org/"
   !define WINPCAP_FILE_NAME "WinPcap_${WINPCAP_PRJ_MAJOR}_${WINPCAP_PRJ_MINOR}_4.exe"
 
 ; letter 'r'

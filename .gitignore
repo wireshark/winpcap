@@ -61,6 +61,9 @@ packetNtx/Dll/Project/Debug
 packetNtx/driver/Debug
 wpcap/PRJ/Debug
 wpcap/libpcap/rpcapd/Debug
+install/NPF_CABS
+install/setup.inf
+install/setup.rpt
 install/installer/distribution/x64
 install/installer/distribution/x86
 install/WinPcap Installer Helper/Release

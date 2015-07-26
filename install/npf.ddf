@@ -1,0 +1,27 @@
+;*** MakeCAB Directive file for npf ***
+;
+
+; Setup
+.Set CabinetFileCountThreshold=0
+.Set FolderFileCountThreshold=0
+.Set FolderSizeThreshold=0
+.Set MaxCabinetSize=0
+.Set MaxDiskFileCount=0
+.Set MaxDiskSize=0
+.Set CompressionType=MSZIP;** All files are compressed in cabinet files
+.Set Cabinet=on
+.Set Compress=on
+
+; Filename for cab file
+.Set CabinetNameTemplate=npf%arch%.cab
+
+; Filename for disk directory
+.Set DiskDirectory1=NPF_CABS
+
+; Package directory in cab
+.Set DestinationDir=npf
+
+; Files for driver
+npf%arch%.inf
+installer\distribution\%arch%\npf.sys
+;*** <the end>
