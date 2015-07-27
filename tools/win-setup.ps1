@@ -25,7 +25,7 @@
 
 # To do:
 # - NuGet-ize the AirPcap devpack.
-# - Add NSIS ExecDos (site is currently down).
+# - NuGet-ize ExecDos.
 # - Have a designated libraries directory? We currently use ".."
 
 <#
@@ -71,11 +71,12 @@ Param(
 # trouble instead of trying to catch exceptions everywhere.
 $ErrorActionPreference = "Stop"
 
-$WinCurrentTag = "2015-05-30"
+$WinCurrentTag = "2015-07-27"
 
 # Archive file = uncompressed subdirectory.
 $WinArchives = @{
     "AirPcap_Devpack_4_1_0_1622.zip" = "";
+    "ExecDos.zip" = "ExecDos";
 }
 
 # Plain file downloads
@@ -89,10 +90,11 @@ $CurrentTag = $WinCurrentTag;
 
 $CleanupItems = @(
     "AirPcap_Devpack_4_1_0_1622"
+    "nsis-plugins"
     "current-tag.txt"
 )
 
-[Uri] $DownloadPrefix = "https://anonsvn.wireshark.org/wireshark-win32-libs/tags/$($CurrentTag)/packages"
+[Uri] $DownloadPrefix = "https://anonsvn.wireshark.org/winpcap-libs/tags/$($CurrentTag)/packages"
 $Global:SevenZip = "7-zip-not-found"
 
 # Functions

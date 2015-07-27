@@ -37,6 +37,8 @@
 ;This includes the modern user interface
 !include "MUI.nsh"
 
+!addplugindir "..\..\..\ExecDos\Plugins\x86-ansi"
+
 ;--------------------------------
 ;Project definitions
 

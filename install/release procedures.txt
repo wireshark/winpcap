@@ -26,14 +26,19 @@ Needed tools/libraries (x86 and x64)
 - If packet.dll is compiled with NpfIm support, the NpfIm developer's pack
   should be available in the folder
 	%BUILD_TREE%\NpfIm_DevPack
-- Nsis and the Nsis ExecDos plugin (x86-ansi version) (http://nsis.sourceforge.net/ExecDos_plug-in), place plugin DLL
-  in the plugins directory of your nsis installation.
+- Nsis.
+- The Nsis ExecDos plugin (x86-ansi version) (http://nsis.sourceforge.net/ExecDos_plug-in).
+  Downloaded by win-setup.ps1
 
 How to compile WinPcap
 ------------------------------------------------
 
-1.  Download winpcap (HEAD) from Git into %BUILD_TREE%
-    NOTE: DO NOT USE A %BUILD_TREE% path containing spaces, the NT4 DDK build
+1.  Choose a build directory (%BUILD_TREE%). It will contain the WinPcap source
+    directory and supporting libraries.
+
+    Download winpcap (HEAD) from Git into %BUILD_TREE%.
+
+    NOTE: DO NOT USE A %BUILD_TREE% path containing spaces. The NT4 DDK build
           gets screwed up with spaces in the paths!!
 
 2.  Modify the version info into these files (version is x.y.0.z for release
@@ -92,7 +97,7 @@ How to compile WinPcap
         git reset --hard
 
 11. Run `powershell tools\win-setup.ps1 ..`. This will download and unzip
-    the contents of the AirPcap devpack into %BUILD_TREE%
+    the contents of the AirPcap devpack and ExecDos into %BUILD_TREE%
 
 12. On the command line, go to folder
       %BUILD_TREE%\winpcap
