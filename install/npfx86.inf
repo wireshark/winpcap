@@ -11,16 +11,16 @@ Provider    = %WFINC%
 DriverVer   = 07/25/2015,4.1.0.4001
 CatalogFile = npfx86.cat
 
-[Manufacturer]
-%WFINC%=WFINC,NTx86
+;[Manufacturer]
+;%WFINC%=WFINC,NTx86
 
-[WFINC.NTx86]
-%Npf_Desc%=Install, npf
+;[WFINC.NTx86]
+;%Npf_Desc%=Install, npf
 
 ;-------------------------------------------------------------------------
 ; Installation Section
 ;-------------------------------------------------------------------------
-[Install]
+[DefaultInstall]
 Copyfiles = npf.copyfiles.sys
 
 [SourceDisksNames]
@@ -40,21 +40,17 @@ npf.sys,,,2
 ;-------------------------------------------------------------------------
 ; Service installation support
 ;-------------------------------------------------------------------------
-[Install.Services]
+[DefaultInstall.Services]
 AddService=Npf,,Npf_Service_Inst
 
 [Npf_Service_Inst]
 DisplayName     = %Npf_Desc%
 ServiceType     = 1 ;SERVICE_KERNEL_DRIVER
-StartType       = 2 ;SERVICE_AUTO_START
+;StartType       = 2 ;SERVICE_AUTO_START
+StartType       = 1 ;SERVICE_SYSTEM_START
 ErrorControl    = 1 ;SERVICE_ERROR_NORMAL
 ServiceBinary   = %12%\npf.sys
 
 [Strings]
 WFINC = "Wireshark Foundation, Inc."
 Npf_Desc = "Netgroup Packet Filter Driver"
-
-
-
-
-
